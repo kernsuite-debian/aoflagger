@@ -1,0 +1,28 @@
+Source: aoflagger
+Section: science
+Priority: extra
+Maintainer: Gijs Molenaar <gijs@pythonic.nl>
+Build-Depends: debhelper (>= 8.0.0), cmake, libxml2-dev, zlib1g-dev,
+ libpng12-dev, libblas-dev, libboost-dev, libboost-system-dev,
+ libboost-signals-dev, libboost-filesystem-dev, libboost-thread-dev,
+ libboost-date-time-dev, gfortran, liblapack-dev, libgtkmm-3.0-dev,
+ libfftw3-dev, libcfitsio3-dev, libcasacore2-dev
+Standards-Version: 3.9.2
+Homepage: http://sourceforge.net/projects/aoflagger/
+
+Package: aoflagger
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: tool for finding RFI in radio astronomical observations
+ The AOFlagger is a tool that can find and remove radio-frequency interference
+ (RFI) in radio astronomical observations. The code has been highly optimized
+ for speed and accuracy. It is used by default for the LOFAR radio telescope
+ and thus is in productional stage. The software can run in a fully automated
+ way, but a graphical interface is provided to analyse results and tweak the
+ strategy. The preferred input file format is the Casa Measurement Set (MS)
+ format.
+ .
+ Besides the flagger, the software consists of tools to efficiently visualize
+ data in different ways, such as plotting time-frequency diagrams and power
+ spectra. It provides the programs rficonsole, rfigui, aoqplot, aoquality and
+ more.

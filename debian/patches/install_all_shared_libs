@@ -1,0 +1,12 @@
+Description: install all shared libs
+
+--- aoflagger-2.7.1.orig/src/CMakeLists.txt
++++ aoflagger-2.7.1/src/CMakeLists.txt
+@@ -317,4 +317,7 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND A
+ endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
+ 
+ install (TARGETS aoflagger DESTINATION lib) 
++install (TARGETS aoflaggerremote DESTINATION lib) 
++install (TARGETS aoflaggergui DESTINATION lib) 
++
+ install (FILES interface/aoflagger.h DESTINATION include)
