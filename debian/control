@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 8.0.0), cmake, libxml2-dev, zlib1g-dev,
  libpng12-dev, libblas-dev, libboost-dev, libboost-system-dev,
  libboost-signals-dev, libboost-filesystem-dev, libboost-thread-dev,
  libboost-date-time-dev, gfortran, liblapack-dev, libgtkmm-3.0-dev,
- libfftw3-dev, libcfitsio3-dev, libcasacore2-dev
+ libfftw3-dev, libcfitsio3-dev, casacore-dev
 Standards-Version: 3.9.2
 Homepage: http://sourceforge.net/projects/aoflagger/
 
