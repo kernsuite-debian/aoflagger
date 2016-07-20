@@ -1,4 +1,5 @@
 ASCL-Id: 1010.017
+Bug-Database: https://sourceforge.net/p/aoflagger/tickets/
 Name: AOFlagger
 Reference: 
  Author: >
@@ -12,3 +13,4 @@ Reference:
  Eprint: http://mnras.oxfordjournals.org/content/405/1/155
  URL: http://adsabs.harvard.edu/abs/2010MNRAS.405..155O 
  Doi: 10.1111/j.1365-2966.2010.16471.x 
+Repository: https://sourceforge.net/p/aoflagger/code/ci/master/tree/
