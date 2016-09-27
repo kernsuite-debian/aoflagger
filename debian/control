@@ -18,7 +18,7 @@ Build-Depends: casacore-dev,
                libfftw3-dev,
                libgtkmm-3.0-dev,
                liblapack-dev,
-               libpng12-dev,
+               libpng-dev,
                libxml2-dev,
                zlib1g-dev
 Standards-Version: 3.9.8
