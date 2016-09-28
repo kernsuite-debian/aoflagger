@@ -1,0 +1,58 @@
+From: Ole Streicher <olebole@debian.org>
+Date: Wed, 28 Sep 2016 08:46:00 +0200
+Subject: Fix refpointer NULL check
+
+---
+ src/gui/imagewidget.cpp   | 2 +-
+ src/gui/plot/plot2d.cpp   | 2 +-
+ src/gui/plot/plotwidget.h | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/gui/imagewidget.cpp b/src/gui/imagewidget.cpp
+index 410e573..e55a3c5 100644
+--- a/src/gui/imagewidget.cpp
++++ b/src/gui/imagewidget.cpp
+@@ -197,7 +197,7 @@ void ImageWidget::Update()
+   if(HasImage())
+ 	{
+ 		Glib::RefPtr<Gdk::Window> window = get_window();
+-		if(window != 0 && get_width() > 0 && get_height() > 0)
++		if(window && get_width() > 0 && get_height() > 0)
+ 		{
+ 			update(window->create_cairo_context(), get_width(), get_height());
+ 			window->invalidate(false);
+diff --git a/src/gui/plot/plot2d.cpp b/src/gui/plot/plot2d.cpp
+index 1d5bcf8..cf87d24 100644
+--- a/src/gui/plot/plot2d.cpp
++++ b/src/gui/plot/plot2d.cpp
+@@ -35,7 +35,7 @@ void Plot2D::Render(Gtk::DrawingArea &drawingArea)
+ 		_system.AddToSystem(**i);
+ 
+ 	Glib::RefPtr<Gdk::Window> window = drawingArea.get_window();
+-	if(window != 0)
++	if(window)
+ 	{
+ 		Cairo::RefPtr<Cairo::Context> cr = window->create_cairo_context();
+ 
+diff --git a/src/gui/plot/plotwidget.h b/src/gui/plot/plotwidget.h
+index dd209af..aba4feb 100644
+--- a/src/gui/plot/plotwidget.h
++++ b/src/gui/plot/plotwidget.h
+@@ -35,7 +35,7 @@ class PlotWidget : public Gtk::DrawingArea {
+ 		{
+ 			redraw();
+ 			Glib::RefPtr<Gdk::Window> window = get_window();
+-			if(window != 0)
++			if(window)
+ 				window->invalidate(false);
+ 		}
+ 	private:
+@@ -53,7 +53,7 @@ class PlotWidget : public Gtk::DrawingArea {
+ 				_plot->Render(*this);
+ 			else {
+ 				Glib::RefPtr<Gdk::Window> window = get_window();
+-				if(window != 0)
++				if(window)
+ 				{
+ 					Cairo::RefPtr<Cairo::Context> cr = window->create_cairo_context();
+ 					cr->set_source_rgba(1, 1, 1, 1);

@@ -1,1 +1,2 @@
 #install_all_shared_libs
+Fix-refpointer-NULL-check.patch
