@@ -1,1 +1,2 @@
 Fix-refpointer-NULL-check.patch
+Build-shared-lib-with-SONAME-and-SOVERSION.patch

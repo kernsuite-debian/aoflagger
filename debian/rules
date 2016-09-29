@@ -1,21 +1,15 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-export DH_VERBOSE=1
+#export DH_VERBOSE=1
 
-CMAKE_FLAGS = -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=ON
-
-DEB_HOST_ARCH_CPU := $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
-
-ifeq ($(DEB_HOST_ARCH),amd64)
-	CMAKE_FLAGS += -DCMAKE_C_FLAGS="-march=x86-64 -O2" -DCMAKE_CXX_FLAGS="-march=x86-64 -O2"
-endif
-
-override_dh_auto_configure:
-	dh_auto_configure -- $(CMAKE_FLAGS)
+CMAKE_FLAGS += -DCMAKE_SKIP_RPATH=ON -DDEB_BUILD_MULTIARCH=`dpkg-architecture -qDEB_BUILD_MULTIARCH`
 
 %:
 	dh $@ --parallel
+
+override_dh_auto_configure:
+	dh_auto_configure -- $(CMAKE_FLAGS)
 
 override_dh_auto_test:
 	true
