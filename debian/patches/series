@@ -1,2 +1,4 @@
 Fix-refpointer-NULL-check.patch
 Build-shared-lib-with-SONAME-and-SOVERSION.patch
+Disable-special-RPATH-handling.patch
+Disable-special-RPATH-handling-1.patch
