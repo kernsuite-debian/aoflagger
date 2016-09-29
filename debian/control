@@ -1,6 +1,6 @@
 Source: aoflagger
 Section: science
-Priority: extra
+Priority: optional
 Maintainer: Debian Astro Team <debian-astro-maintainers@lists.alioth.debian.org>
 Uploaders: Gijs Molenaar <gijs@pythonic.nl>, Ole Streicher <olebole@debian.org>
 Build-Depends: casacore-dev,
@@ -46,6 +46,8 @@ Description: Find RFI in radio astronomical observations
 
 Package: libaoflagger0
 Architecture: any
+Multi-Arch: same
+Section: libs
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Find RFI in radio astronomical observations (shared lib)
  The AOFlagger is a tool that can find and remove radio-frequency interference
@@ -60,6 +62,7 @@ Description: Find RFI in radio astronomical observations (shared lib)
 
 Package: aoflagger-dev
 Architecture: any
+Section: libdevel
 Depends: libaoflagger0 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
