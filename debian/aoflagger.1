@@ -1,0 +1,57 @@
+.TH AOFLAGGER "1" "2016-07-09" "AOFlagger"
+.SH NAME
+AOFlagger \- execute an RFI strategy on one or several observations
+.SH SYNOPSIS
+.B aoflagger
+[\fI\,options\/\fR] \fI\,<obs1> \/\fR[\fI\,<obs2> \/\fR[..]]
+.SH DESCRIPTION
+This program will execute an RFI strategy as can be created with the RFI gui
+and executes it on one or several observations.
+This tool supports at least the Casa measurement set, the SDFITS and
+Filterbank formats. See the documentation for support of other file types.
+.PP
+The old name of this program is rficonsole.
+.SH OPTIONS
+.TP
+\fB\-v\fR
+produce verbose output
+.TP
+\fB\-j\fR
+overrides the number of threads specified in the strategy
+(default: one thread for each CPU core)
+.TP
+\fB\-strategy\fR
+specifies a possible customized strategy
+.TP
+\fB\-direct\-read\fR
+perform the slowest IO but will always work.
+.TP
+\fB\-indirect\-read\fR
+reorder the measurement set before starting, which is normally
+faster but requires free disk space to reorder the data to.
+.TP
+\fB\-memory\-read\fR
+read the entire measurement set in memory. This is the fastest, but
+requires much memory.
+.TP
+\fB\-auto\-read\-mode\fR
+select either memory or direct mode based on available memory (default).
+.TP
+\fB\-skip\-flagged\fR
+skip an ms if it has already been processed by AOFlagger according
+to its HISTORY table.
+.TP
+\fB\-uvw\fR
+reads uvw values (some exotic strategies require these)
+.TP
+\fB\-column\fR <name>
+specify column to flag
+.TP
+\fB\-bands\fR <list>
+comma separated list of (zero\-indexed) band ids to process
+.TP
+\fB\-fields\fR <list>
+comma separated list of (zero\-indexed) field ids to process
+.PP
+.SH AUTHOR
+André Offringa <offringa@gmail.com>

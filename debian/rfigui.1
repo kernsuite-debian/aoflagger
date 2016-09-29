@@ -1,0 +1,27 @@
+.TH AOFLAGGER "1" "2016-06-21" "2.8.0"
+.SH NAME
+AOFlagger \- analyze the time\-frequency information in radio astronomical observations
+.SH SYNOPSIS
+.B rfigui
+[\-option1 [\-option2 ...]] [measurement set]
+.SH DESCRIPTION
+The RFIGui is a program to analyze the time\-frequency information in
+radio astronomical observations.
+.PP
+The main window will be opened when no parameters are specified.
+.SH OPTIONS
+.TP
+\fB\-help\fR
+Display a help message and exit.
+.TP
+\fB\-version\fR
+Display AOFlagger version and exit.
+.TP
+\fB\-save\-baseline\fR <filename> <antenna1> <antenna2> <band> <sequence index>
+Save the selected baseline to the given filename. The parameter can be
+specified multiple times to save multiple baselines in one run. When
+this parameter is specified, the main window will not open and the
+program will exit after saving the requested baselines.
+.TP
+\fB\-data\-column\fR <columnname>
+Open the selected column name.

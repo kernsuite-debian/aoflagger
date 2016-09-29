@@ -1,0 +1,66 @@
+.TH AOQUALITY "1" "September 2016" "AOQUALITY"
+.SH NAME
+AOQuality \- Handle AOFlagger measurement set quality statistics
+.SH SYNOPSIS
+.B aoquality
+<action> [\fIoptions\fR]
+.SH "ACTIONS"
+.TP
+\fBhelp\fR
+Get more info about an action (usage: 'aoquality help <action>')
+.TP
+\fBcollect\fR [-c/-tf/-h] <ms> [quack timesteps] [list of antennae]
+The collect action will go over a whole measurement set and 
+collect the default statistics. It will write the results in the 
+quality subtables of the main measurement set.
+.IP
+Currently, the default statistics are:
+RFIRatio, Count, Mean, SumP2, DCount, DMean, DSumP2.
+.IP
+The subtables that will be updated are:
+QUALITY_KIND_NAME, QUALITY_TIME_STATISTIC,
+QUALITY_FREQUENCY_STATISTIC and QUALITY_BASELINE_STATISTIC.
+.IP
+\fB\-c\fR will use the CORRECTED_DATA column.
+and writes them in the quality tables.
+.TP
+\fBcombine\fR <target_ms> [<in_ms> [<in_ms> ..]
+This will read all given input measurement sets, combine the statistics and 
+write the results to a target measurement set. The target measurement set should
+not exist beforehand.
+.TP
+\fBhistogram\fR <query> <ms>
+Various histogram actions.
+.IP
+Query can be: rfislope \- performs linear regression on the part of
+the histogram that should contain the RFI.
+Reports one value per polarisation.
+.TP
+\fBliststats\fR
+Display a list of possible statistic kinds.
+.TP
+\fBquery_b\fR <kind> <ms>
+Prints the given statistic for each baseline.
+.TP
+\fBquery_t\fR <kind> <ms>
+Print the given statistic for each time step.
+.TP
+\fBquery_f\fR <kind> <ms>
+Print the given statistic for each frequency.
+.TP
+\fBquery_g\fR <kind> <ms>
+Print the given statistic for this measurement set.
+.TP
+\fBremove\fR [ms]
+Completely remove all quality tables from the measurement set.
+.TP
+\fBsummarize\fR <ms>
+Gives a summary of the statistics in the measurement set.
+.TP
+\fBsummarizerfi\fR
+Give a summary of the rfi statistics.
+.PP
+A few actions take a statistic kind. Some common statistic kinds are:
+StandardDeviation, Variance, Mean, RFIPercentage, RFIRatio,
+Count. These are case sensitive. Run 'aoquality liststats' for a full
+list.
