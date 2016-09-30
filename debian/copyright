@@ -6,6 +6,7 @@ Files: *
 Copyright: 2008-2015 A. R. Offringa
  2009 ASTRON (Netherlands Institute for Radio Astronomy)
  2014-2016 Gijs Molenaar <gijs@pythonic.nl>
+ 2016 Ole Streicher <olebole@debian.org>
 License: GPL-3.0+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
