@@ -1,5 +1,5 @@
-aoflagger (2.8.0-1) UNRELEASED; urgency=low
+aoflagger (2.8.0-1) unstable; urgency=low
 
   * Initial release. Closes: #830120
 
- -- Gijs Molenaar <gijs@pythonic.nl>  Tue, 28 Jun 2016 10:39:55 +0000
+ -- Ole Streicher <olebole@debian.org>  Fri, 30 Sep 2016 09:14:11 +0200
