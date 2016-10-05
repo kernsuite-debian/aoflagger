@@ -76,5 +76,5 @@ Description: Find RFI in radio astronomical observations (development files)
  strategy. The preferred input file format is the Casa Measurement Set (MS)
  format.
  .
- This package contains the header file to compile own programs against the
- shared library.
+ This package contains static library and the header file to compile
+ own programs against the library.

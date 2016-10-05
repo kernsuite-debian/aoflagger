@@ -3,27 +3,37 @@ Date: Thu, 29 Sep 2016 20:35:34 +0200
 Subject: Build shared lib with SONAME and SOVERSION
 
 ---
- src/CMakeLists.txt | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ src/CMakeLists.txt | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 6db670e..ab2f7a0 100644
+index 6db670e..dd3c11a 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -253,7 +253,8 @@ if(SIGCXX_FOUND)
+@@ -253,10 +253,15 @@ if(SIGCXX_FOUND)
    set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
  endif(SIGCXX_FOUND)
  
 -add_library(aoflagger ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
-+add_library(aoflagger SHARED ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
-+SET_TARGET_PROPERTIES(aoflagger PROPERTIES SOVERSION 0)
- target_link_libraries(aoflagger ${ALL_LIBRARIES})
+-target_link_libraries(aoflagger ${ALL_LIBRARIES})
++add_library(aoflagger-lib STATIC ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
++set_target_properties(aoflagger-lib PROPERTIES OUTPUT_NAME aoflagger)
  
- link_libraries(aoflagger)
-@@ -311,5 +312,5 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
+-link_libraries(aoflagger)
++add_library(aoflagger-shared SHARED ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
++set_target_properties(aoflagger-shared PROPERTIES OUTPUT_NAME aoflagger)
++SET_TARGET_PROPERTIES(aoflagger-shared PROPERTIES SOVERSION 0)
++target_link_libraries(aoflagger-shared ${ALL_LIBRARIES})
++
++link_libraries(aoflagger-shared)
+ 
+ add_library(aoflaggerremote OBJECT ${REMOTE_FILES})
+ set(AOFLAGGERREMOTE_OBJECT $<TARGET_OBJECTS:aoflaggerremote>)
+@@ -311,5 +316,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  	install (TARGETS aoquality aoremoteclient DESTINATION bin)
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  
 -install (TARGETS aoflagger DESTINATION lib) 
-+install (TARGETS aoflagger DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
++install (TARGETS aoflagger-shared DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
++install (TARGETS aoflagger-lib DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
  install (FILES interface/aoflagger.h DESTINATION include)
