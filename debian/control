@@ -27,7 +27,7 @@ Vcs-Browser: https://anonscm.debian.org/cgit/debian-astro/packages/aoflagger.git
 Homepage: http://sourceforge.net/projects/aoflagger/
 
 Package: aoflagger
-Architecture: any
+Architecture: any-amd64 any-i386
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Suggests: aoflagger-dev
 Description: Find RFI in radio astronomical observations
@@ -45,7 +45,7 @@ Description: Find RFI in radio astronomical observations
  more.
 
 Package: libaoflagger0
-Architecture: any
+Architecture: any-amd64 any-i386
 Multi-Arch: same
 Section: libs
 Depends: ${misc:Depends}, ${shlibs:Depends}
@@ -61,7 +61,7 @@ Description: Find RFI in radio astronomical observations (shared lib)
  This package contains the shared library.
 
 Package: aoflagger-dev
-Architecture: any
+Architecture: any-amd64 any-i386
 Section: libdevel
 Depends: libaoflagger0 (= ${binary:Version}),
          ${misc:Depends},
