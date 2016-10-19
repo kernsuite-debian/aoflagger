@@ -1,3 +1,9 @@
+aoflagger (2.8.0-3) unstable; urgency=low
+
+  * Use libcfitsio-dev dependency. Closes: #841215
+
+ -- Ole Streicher <olebole@debian.org>  Wed, 19 Oct 2016 09:07:27 +0200
+
 aoflagger (2.8.0-2) unstable; urgency=medium
 
   * Add static library
