@@ -1,6 +1,7 @@
 aoflagger (2.8.0-4) unstable; urgency=medium
 
   * Use portable settings to build
+  * Sort out shared lib dependencies
 
  -- Ole Streicher <olebole@debian.org>  Thu, 20 Oct 2016 10:13:53 +0200
 

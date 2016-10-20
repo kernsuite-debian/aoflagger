@@ -3,14 +3,31 @@ Date: Thu, 29 Sep 2016 20:35:34 +0200
 Subject: Build shared lib with SONAME and SOVERSION
 
 ---
- src/CMakeLists.txt | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ src/CMakeLists.txt | 29 +++++++++++++++++++----------
+ 1 file changed, 19 insertions(+), 10 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 6db670e..dd3c11a 100644
+index 6db670e..34d8b7c 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -253,10 +253,15 @@ if(SIGCXX_FOUND)
+@@ -228,15 +228,10 @@ else()
+ endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND)
+ 
+ set(ALL_LIBRARIES
+-	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
+ 	${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY}
+-	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_SIGNALS_LIBRARY}
++	${Boost_DATE_TIME_LIBRARY}
+ 	${FFTW3_LIB}
+ 	${CASACORE_LIBRARIES}
+-	${LAPACK_lapack_LIBRARY}
+-	${CFITSIO_LIBRARY}
+-	${CMAKE_THREAD_LIBS_INIT}
+-	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
+ 	${CMAKE_THREAD_LIBS_INIT})
+ 
+ if(GTKMM_FOUND AND GLIBMM_FOUND)
+@@ -253,10 +248,23 @@ if(SIGCXX_FOUND)
    set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
  endif(SIGCXX_FOUND)
  
@@ -23,13 +40,21 @@ index 6db670e..dd3c11a 100644
 +add_library(aoflagger-shared SHARED ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
 +set_target_properties(aoflagger-shared PROPERTIES OUTPUT_NAME aoflagger)
 +SET_TARGET_PROPERTIES(aoflagger-shared PROPERTIES SOVERSION 0)
-+target_link_libraries(aoflagger-shared ${ALL_LIBRARIES})
++target_link_libraries(aoflagger-shared PRIVATE
++  ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY}
++  ${Boost_FILESYSTEM_LIBRARY}
++  ${FFTW3_LIB}
++  ${CASACORE_LIBRARIES}
++  ${CFITSIO_LIBRARY}
++  ${CMAKE_THREAD_LIBS_INIT}
++  ${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
++  ${CMAKE_THREAD_LIBS_INIT})
 +
 +link_libraries(aoflagger-shared)
  
  add_library(aoflaggerremote OBJECT ${REMOTE_FILES})
  set(AOFLAGGERREMOTE_OBJECT $<TARGET_OBJECTS:aoflaggerremote>)
-@@ -311,5 +316,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
+@@ -311,5 +319,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  	install (TARGETS aoquality aoremoteclient DESTINATION bin)
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  
