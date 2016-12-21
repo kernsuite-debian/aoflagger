@@ -1,3 +1,11 @@
+aoflagger (2.9.0-1) unstable; urgency=low
+
+  * New upstream version 2.9.0
+  * Rediff patches
+  * Mark Arch: any since upstream made it portable now
+
+ -- Ole Streicher <olebole@debian.org>  Wed, 21 Dec 2016 14:54:14 +0100
+
 aoflagger (2.8.0-5) unstable; urgency=medium
 
   * Enable SSE on i386
