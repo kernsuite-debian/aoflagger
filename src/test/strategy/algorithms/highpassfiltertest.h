@@ -56,7 +56,7 @@ inline void HighPassFilterTest::TestFilter::operator()()
 	
 	// Fitting
 	LocalFitMethod fitMethod;
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, StokesIPolarisation, Image2D::CreateCopy(testImage));
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, Image2D::CreateCopy(testImage));
 	fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
 	fitMethod.Initialize(data);
 	for(size_t i=0;i<fitMethod.TaskCount();++i)
@@ -83,7 +83,7 @@ inline void HighPassFilterTest::TestSmallImageFilter::operator()()
 	
 	// Fitting
 	LocalFitMethod fitMethod;
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, StokesIPolarisation, Image2D::CreateCopy(testImage));
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, Image2D::CreateCopy(testImage));
 	fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
 	fitMethod.Initialize(data);
 	for(size_t i=0;i<fitMethod.TaskCount();++i)

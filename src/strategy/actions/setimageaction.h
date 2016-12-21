@@ -175,14 +175,22 @@ namespace rfiStrategy {
 			}
 			void Set(TimeFrequencyData &dest, const TimeFrequencyData &source)
 			{
-				TimeFrequencyData *phaseData =
+				/*TimeFrequencyData *phaseData =
 					source.CreateTFData(dest.PhaseRepresentation());
 				TimeFrequencyData *phaseAndPolData =
 					phaseData->CreateTFData(dest.Polarisation());
 				delete phaseData;
 				phaseAndPolData->SetMask(dest);
 				dest = *phaseAndPolData;
-				delete phaseAndPolData;
+				delete phaseAndPolData;*/
+				if(dest.ImageCount() != source.ImageCount())
+				{
+					std::ostringstream s;
+					s << "Set image action was executed with incompatible polarizations: input had " << source.ImageCount() << ", output had " << dest.ImageCount();
+					throw BadUsageException(s.str());
+				}
+				for(size_t i=0; i!=dest.ImageCount(); ++i)
+					dest.SetImage(i, source.GetImage(i));
 			}
 			void PerformAdd(class ArtifactSet &artifacts, class ProgressListener &)
 			{
@@ -191,6 +199,7 @@ namespace rfiStrategy {
 					default:
 					case FromOriginal:
 					{
+						/*
 						TimeFrequencyData *phaseData =
 							artifacts.OriginalData().CreateTFData(artifacts.RevisedData().PhaseRepresentation());
 						TimeFrequencyData *phaseAndPolData =
@@ -200,6 +209,10 @@ namespace rfiStrategy {
 							TimeFrequencyData::CreateTFDataFromSum(*phaseAndPolData, artifacts.RevisedData());
 						delete phaseAndPolData;
 						summedData->SetMask(artifacts.RevisedData());
+						artifacts.SetRevisedData(*summedData);
+						delete summedData;*/
+						TimeFrequencyData *summedData =
+							TimeFrequencyData::CreateTFDataFromSum(artifacts.OriginalData(), artifacts.RevisedData());
 						artifacts.SetRevisedData(*summedData);
 						delete summedData;
 					}

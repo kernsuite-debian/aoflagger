@@ -7,6 +7,7 @@
 Plot2D::Plot2D() :
 	_width(640),
 	_height(480),
+	_logarithmicXAxis(false),
 	_logarithmicYAxis(false),
 	_showAxes(true),
 	_showAxisDescriptions(true),
@@ -35,7 +36,7 @@ void Plot2D::Render(Gtk::DrawingArea &drawingArea)
 		_system.AddToSystem(**i);
 
 	Glib::RefPtr<Gdk::Window> window = drawingArea.get_window();
-	if(window != 0)
+	if(window)
 	{
 		Cairo::RefPtr<Cairo::Context> cr = window->create_cairo_context();
 
@@ -100,6 +101,8 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 				_horizontalScale.InitializeTextTicks(refPointSet.TickLabels());
 			else if(refPointSet.XIsTime())
 				_horizontalScale.InitializeTimeTicks(_system.XRangeMin(refPointSet), _system.XRangeMax(refPointSet));
+			else if(_logarithmicXAxis)
+				_horizontalScale.InitializeLogarithmicTicks(MinPositiveX(), MaxPositiveX());
 			else
 				_horizontalScale.InitializeNumericTicks(MinX(), MaxX());
 			_horizontalScale.SetUnitsCaption(_customHAxisDescription.empty() ? refPointSet.XUnits() : _customHAxisDescription);
@@ -163,8 +166,8 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet)
 	pointSet.Sort();
 
 	double
-		xLeft = MinX(),
-		xRight = MaxX(),
+		xLeft = _logarithmicXAxis ? MinPositiveX() : MinX(),
+		xRight = _logarithmicXAxis ? MaxPositiveX() : MaxX(),
 		yMin = _logarithmicYAxis ? MinPositiveY() : MinY(),
 		yMax = _logarithmicYAxis ? MaxPositiveY() : MaxY();
 	if(!std::isfinite(xLeft) || !std::isfinite(xRight))
@@ -195,9 +198,9 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet)
 	const double plotWidth = _width - rightMargin - plotLeftMargin;
 	const double plotHeight = _height - bottomMargin - _topMargin;
 	
-	double fx = (double) plotWidth / (xRight - xLeft);
-	
 	double
+		minXLog10 = log10(xLeft),
+		maxXLog10 = log10(xRight),
 		minYLog10 = log10(yMin),
 		maxYLog10 = log10(yMax);
 
@@ -210,7 +213,24 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet)
 	for(size_t i=0;i<iterationCount;++i)
 	{
 		double
+			x1Val, x2Val,
 			y1Val, y2Val;
+		
+		if(_logarithmicXAxis)
+		{
+			if(pointSet.GetX(i) <= 0.0)
+				x1Val = 0.0;
+			else
+				x1Val = (log10(pointSet.GetX(i)) - minXLog10) / (maxXLog10 - minXLog10);
+			if(pointSet.GetX(i+1) <= 0.0)
+				x2Val = 0.0;
+			else
+				x2Val = (log10(pointSet.GetX(i+1)) - minXLog10) / (maxXLog10 - minXLog10);
+		}
+		else {
+			x1Val = (pointSet.GetX(i) - xLeft) / (xRight - xLeft);
+			x2Val = (pointSet.GetX(i+1) - xLeft) / (xRight - xLeft);
+		}
 		
 		if(_logarithmicYAxis)
 		{
@@ -230,10 +250,10 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet)
 		if(y1Val > 1.0) y1Val = 1.0;
 		if(y2Val < 0.0) y2Val = 0.0;
 		if(y2Val > 1.0) y2Val = 1.0;
-			
+		
 		double
-			x1 = (pointSet.GetX(i) - xLeft) * fx + plotLeftMargin,
-			x2 = (pointSet.GetX(i+1) - xLeft) * fx + plotLeftMargin,
+			x1 = x1Val * plotWidth + plotLeftMargin,
+			x2 = x2Val * plotWidth + plotLeftMargin,
 			y1 = (1.0 - y1Val) * plotHeight + _topMargin,
 			y2 = (1.0 - y2Val) * plotHeight + _topMargin;
 

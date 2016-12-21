@@ -156,7 +156,7 @@ class ParmTable
 				<< "r11=" << r11Count << ", "
 				<< "i00=" << i00Count << ", "
 				<< "i11=" << i11Count << "\n";
-			return TimeFrequencyData(AutoDipolePolarisation, xxReal, xxImag, yyReal, yyImag);
+			return TimeFrequencyData(Polarization::XX, xxReal, xxImag, Polarization::YY, yyReal, yyImag);
 		}
 		
 		const GainNameEntry &FindEntry(int x, int y, enum GainNameEntry::Component c, const std::string &antenna) const
@@ -208,7 +208,7 @@ class ParmTable
 				if(nameId == r00)
 				{
 					const unsigned curYShape = values.shape(row)[1];
-					if(values.shape(row)[0] > curXShape)
+					if(values.shape(row)[0] > (int) curXShape)
 						curXShape = values.shape(row)[0];
 					if(startX(row) < currentX)
 						throw std::runtime_error("Table is not correctly ordered");

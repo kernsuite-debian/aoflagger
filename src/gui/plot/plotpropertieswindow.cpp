@@ -13,6 +13,8 @@
 PlotPropertiesWindow::PlotPropertiesWindow(Plot2D &plot, const std::string &title) :
 	Gtk::Window(),
 	_plot(plot),
+	_titleEntry(),
+	
 	_applyButton("_Apply", true),
 	_exportButton("_Export", true),
 	_closeButton("_Close", true),
@@ -33,10 +35,13 @@ PlotPropertiesWindow::PlotPropertiesWindow(Plot2D &plot, const std::string &titl
 	_hRangeMinEntry(),
 	_hRangeMaxEntry(),
 	
-	_optionsFrame("Options"),
-	_normalOptionsButton("Normal scale"),
-	_logScaleButton("Logarithmic scale"),
-	_zeroSymmetricButton("Symmetric around zero"),
+	_xOptionsFrame("X options"),
+	_xLogScaleButton("Logarithmic scale"),
+	
+	_yOptionsFrame("Y options"),
+	_yNormalOptionsButton("Normal scale"),
+	_yLogScaleButton("Logarithmic scale"),
+	_yZeroSymmetricButton("Symmetric around zero"),
 	
 	_axesDescriptionFrame("Axes"),
 	_hAxisDescriptionButton("Horizontal description"),
@@ -53,6 +58,9 @@ PlotPropertiesWindow::PlotPropertiesWindow(Plot2D &plot, const std::string &titl
 	initHRangeWidgets();
 	initOptionsWidgets();
 	initAxesDescriptionWidgets();
+	
+	_titleEntry.set_text(_plot.Title());
+	_topVBox.pack_start(_titleEntry);
 	
 	_framesHBox.pack_start(_framesRightVBox);
 	
@@ -147,23 +155,28 @@ void PlotPropertiesWindow::initOptionsWidgets()
 {
 	Gtk::RadioButton::Group group;
 	
-	_optionsBox.pack_start(_normalOptionsButton);
-	_normalOptionsButton.set_group(group);
+	_xOptionsBox.pack_start(_xLogScaleButton);
+	_xLogScaleButton.set_active(_plot.LogarithmicXAxis());
+	_xOptionsFrame.add(_xOptionsBox);
+	_framesRightVBox.pack_start(_xOptionsFrame);
+	
+	_yOptionsBox.pack_start(_yNormalOptionsButton);
+	_yNormalOptionsButton.set_group(group);
 
-	_optionsBox.pack_start(_logScaleButton);
-	_logScaleButton.set_group(group);
+	_yOptionsBox.pack_start(_yLogScaleButton);
+	_yLogScaleButton.set_group(group);
 
-	_optionsBox.pack_start(_zeroSymmetricButton);
-	_zeroSymmetricButton.set_group(group);
+	_yOptionsBox.pack_start(_yZeroSymmetricButton);
+	_yZeroSymmetricButton.set_group(group);
 	
 	if(_plot.LogarithmicYAxis())
-		_logScaleButton.set_active(true);
+		_yLogScaleButton.set_active(true);
 	else
-		_normalOptionsButton.set_active(true);
+		_yNormalOptionsButton.set_active(true);
 
-	_optionsFrame.add(_optionsBox);
+	_yOptionsFrame.add(_yOptionsBox);
 	
-	_framesRightVBox.pack_start(_optionsFrame);
+	_framesRightVBox.pack_start(_yOptionsFrame);
 }
 
 void PlotPropertiesWindow::initAxesDescriptionWidgets()
@@ -202,6 +215,8 @@ void PlotPropertiesWindow::updateVMinMaxEntries()
 
 void PlotPropertiesWindow::onApplyClicked()
 {
+	_plot.SetTitle(_titleEntry.get_text());
+	
 	if(_minMaxVRangeButton.get_active())
 		_plot.SetVRangeDetermination(Plot2D::MinMaxRange);
 	else if(_winsorizedVRangeButton.get_active())
@@ -221,9 +236,11 @@ void PlotPropertiesWindow::onApplyClicked()
 		_plot.SetMaxX(atof(_hRangeMaxEntry.get_text().c_str()));
 	}
 	
-	if(_normalOptionsButton.get_active())
+	_plot.SetLogarithmicXAxis(_xLogScaleButton.get_active());
+	
+	if(_yNormalOptionsButton.get_active())
 		_plot.SetLogarithmicYAxis(false);
-	else if(_logScaleButton.get_active())
+	else if(_yLogScaleButton.get_active())
 		_plot.SetLogarithmicYAxis(true);
 	
 	if(_hAxisDescriptionButton.get_active())

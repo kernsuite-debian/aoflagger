@@ -111,7 +111,7 @@ namespace rfiStrategy {
 			size_t frequencyCount = reader->Set().FrequencyCount(i->band);
 			Mask2DPtr flaggedMask = Mask2D::CreateSetMaskPtr<true>(scans, frequencyCount);
 			std::vector<Mask2DCPtr> masks;
-			for(size_t p=0;p<reader->PolarizationCount();++p)
+			for(size_t p=0;p<reader->Polarizations().size();++p)
 				masks.push_back(flaggedMask);
 			reader->AddWriteTask(masks, i->antenna1, i->antenna2, i->band, i->sequenceId);
 		}

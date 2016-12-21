@@ -23,32 +23,32 @@ Image2DCPtr TimeFrequencyData::GetDifference(const Image2DCPtr &left, const Imag
 	return StokesImager::CreateDifference(left, right);
 }
 
-Image2DCPtr TimeFrequencyData::GetSinglePhaseFromDipolePhase(size_t xx, size_t yy) const
+Image2DCPtr TimeFrequencyData::getSinglePhaseFromTwoPolPhase(size_t polA, size_t polB) const
 {
-	return StokesImager::CreateAvgPhase(_images[xx], _images[yy]);
+	return StokesImager::CreateAvgPhase(_data[polA]._images[0], _data[polB]._images[0]);
 }
 
 Image2DCPtr TimeFrequencyData::GetZeroImage() const
 {
-	return Image2D::CreateZeroImagePtr(_images[0]->Width(), _images[0]->Height());
+	return Image2D::CreateZeroImagePtr(ImageWidth(), ImageHeight());
 }
 
 Mask2DCPtr TimeFrequencyData::GetCombinedMask() const
 {
-	if(_flagging.empty())
+	if(MaskCount() == 0)
 		return GetSetMask<false>();
-	else if(_flagging.size() == 1)
-		return _flagging[0];
+	else if(MaskCount() == 1)
+		return GetMask(0);
 	else
 	{
-		std::vector<Mask2DCPtr>::const_iterator i = _flagging.begin();
-		Mask2DPtr mask = Mask2D::CreateCopy(*i);
-		++i;
-		while(i!=_flagging.end())
+		Mask2DPtr mask = Mask2D::CreateCopy(GetMask(0));
+		size_t i = 0;
+		while(i!= MaskCount())
 		{
+			const Mask2DCPtr& curMask = GetMask(i);
 			for(unsigned y=0;y<mask->Height();++y) {
 				for(unsigned x=0;x<mask->Width();++x) {
-					bool v = (*i)->Value(x, y);
+					bool v = curMask->Value(x, y);
 					if(v)
 						mask->SetValue(x, y, true);
 				}
@@ -59,259 +59,96 @@ Mask2DCPtr TimeFrequencyData::GetCombinedMask() const
 	}
 }
 
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromSingleComplex(enum PhaseRepresentation phase) const
+TimeFrequencyData* TimeFrequencyData::CreateTFData(enum PhaseRepresentation phase) const
 {
-	TimeFrequencyData *data;
-	switch(phase)
+	if(phase == _phaseRepresentation)
+		return new TimeFrequencyData(*this);
+	else if(_phaseRepresentation == ComplexRepresentation)
 	{
-		case RealPart:
-			data = new TimeFrequencyData(RealPart, _polarisationType, _images[0]);
-			break;
-		case ImaginaryPart:
-			data = new TimeFrequencyData(ImaginaryPart, _polarisationType, _images[1]);
-			break;
-		case AmplitudePart:
-			data = new TimeFrequencyData(AmplitudePart, _polarisationType, GetAbsoluteFromComplex(0, 1));
-			break;
-		case PhasePart:
-			data = new TimeFrequencyData(PhasePart, _polarisationType, GetPhaseFromComplex(_images[0], _images[1]));
-			break;
-		default:
-			throw BadUsageException("Creating TF data with non implemented phase parameters");
-	}
-	CopyFlaggingTo(data);
-	return data;
-}
-
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromDipoleComplex(enum PhaseRepresentation phase) const
-{
-	TimeFrequencyData *data;
-	switch(phase)
-	{
-		case RealPart:
-			data = new TimeFrequencyData(RealPart,
-				GetRealPartFromDipole(XXPolarisation),
-				GetRealPartFromDipole(XYPolarisation),
-				GetRealPartFromDipole(YXPolarisation),
-				GetRealPartFromDipole(YYPolarisation));
-			break;
-		case ImaginaryPart:
-			data = new TimeFrequencyData(ImaginaryPart,
-				GetImaginaryPartFromDipole(XXPolarisation),
-				GetImaginaryPartFromDipole(XYPolarisation),
-				GetImaginaryPartFromDipole(YXPolarisation),
-				GetImaginaryPartFromDipole(YYPolarisation));
-			break;
-		case AmplitudePart:
+		TimeFrequencyData* data = new TimeFrequencyData();
+		data->_phaseRepresentation = phase;
+		data->_data.resize(_data.size());
+		for(size_t i=0; i!=_data.size(); ++i)
+		{
+			const PolarizedTimeFrequencyData& source = _data[i];
+			PolarizedTimeFrequencyData& dest = data->_data[i];
+			dest._polarization = source._polarization;
+			dest._flagging = source._flagging;
+			switch(phase)
 			{
-				Image2DCPtr
-					xx = GetAmplitudePartFromDipole(XXPolarisation),
-					xy = GetAmplitudePartFromDipole(XYPolarisation),
-					yx = GetAmplitudePartFromDipole(YXPolarisation),
-					yy = GetAmplitudePartFromDipole(YYPolarisation);
-				data = new TimeFrequencyData(AmplitudePart, xx, xy, yx, yy);
+				case RealPart:
+					dest._images[0] = source._images[0];
+					break;
+				case ImaginaryPart:
+					dest._images[0] = source._images[1];
+					break;
+				case AmplitudePart:
+					dest._images[0] = GetAbsoluteFromComplex(source._images[0], source._images[1]);
+					break;
+				case PhasePart:
+					dest._images[0] = StokesImager::CreateAvgPhase(source._images[0], source._images[1]);
+					break;
+				case ComplexRepresentation:
+					break; // already handled above.
 			}
-			break;
-		case PhasePart:
-			{
-				Image2DCPtr
-					xx = GetPhasePartFromDipole(XXPolarisation),
-					xy = GetPhasePartFromDipole(XYPolarisation),
-					yx = GetPhasePartFromDipole(YXPolarisation),
-					yy = GetPhasePartFromDipole(YYPolarisation);
-				data = new TimeFrequencyData(PhasePart, xx, xy, yx, yy);
-			}
-			break;
-		default:
-			throw BadUsageException("Creating TF data with non implemented phase parameters (not real/imaginary/amplitude)");
-	}
-	CopyFlaggingTo(data);
-	return data;
-}
-
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromAutoDipoleComplex(enum PhaseRepresentation phase) const
-{
-	TimeFrequencyData *data;
-	switch(phase)
-	{
-		case RealPart:
-			data = new TimeFrequencyData(RealPart, AutoDipolePolarisation,
-				GetRealPartFromAutoDipole(XXPolarisation),
-				GetRealPartFromAutoDipole(YYPolarisation));
-			break;
-		case ImaginaryPart:
-			data = new TimeFrequencyData(ImaginaryPart, AutoDipolePolarisation,
-				GetImaginaryPartFromAutoDipole(XXPolarisation),
-				GetImaginaryPartFromAutoDipole(YYPolarisation));
-			break;
-		case AmplitudePart:
-			{
-				Image2DCPtr
-					xx = GetAmplitudePartFromAutoDipole(XXPolarisation),
-					yy = GetAmplitudePartFromAutoDipole(YYPolarisation);
-				data = new TimeFrequencyData(AmplitudePart, AutoDipolePolarisation, xx, yy);
-			}
-			break;
-		case PhasePart:
-			{
-				Image2DCPtr
-					xx = GetPhasePartFromAutoDipole(XXPolarisation),
-					yy = GetPhasePartFromAutoDipole(YYPolarisation);
-				data = new TimeFrequencyData(PhasePart, AutoDipolePolarisation, xx, yy);
-			}
-			break;
-		default:
-			throw BadUsageException("Creating TF data with non implemented phase parameters (not real/imaginary/amplitude)");
-	}
-	CopyFlaggingTo(data);
-	return data;
-}
-
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromCrossDipoleComplex(enum PhaseRepresentation phase) const
-{
-	TimeFrequencyData *data;
-	switch(phase)
-	{
-		case RealPart:
-			data = new TimeFrequencyData(RealPart, CrossDipolePolarisation,
-				GetRealPartFromCrossDipole(XYPolarisation),
-				GetRealPartFromCrossDipole(YXPolarisation));
-			break;
-		case ImaginaryPart:
-			data = new TimeFrequencyData(ImaginaryPart, CrossDipolePolarisation,
-				GetImaginaryPartFromCrossDipole(XYPolarisation),
-				GetImaginaryPartFromCrossDipole(YXPolarisation));
-			break;
-		case AmplitudePart:
-			{
-				Image2DCPtr
-					xy = GetAmplitudePartFromCrossDipole(XYPolarisation),
-					yx = GetAmplitudePartFromCrossDipole(YXPolarisation);
-				data = new TimeFrequencyData(AmplitudePart, CrossDipolePolarisation, xy, yx);
-			}
-			break;
-		case PhasePart:
-			{
-				Image2DCPtr
-					xy = GetPhasePartFromAutoDipole(XYPolarisation),
-					yx = GetPhasePartFromAutoDipole(YXPolarisation);
-				data = new TimeFrequencyData(PhasePart, CrossDipolePolarisation, xy, yx);
-			}
-			break;
-		default:
-			throw BadUsageException("Creating TF data with non implemented phase parameters (not real/imaginary/amplitude)");
-	}
-	CopyFlaggingTo(data);
-	return data;
+		}
+		return data;
+	} else throw BadUsageException("Request for time/frequency data with a phase representation that can not be extracted from the source (source is not complex)");
 }
 
 TimeFrequencyData *TimeFrequencyData::CreateTFDataFromComplexCombination(const TimeFrequencyData &real, const TimeFrequencyData &imaginary)
 {
-	if(real.PhaseRepresentation() == ComplexRepresentation || imaginary.PhaseRepresentation() == ComplexRepresentation)
-		throw BadUsageException("Trying to create complex from real/imaginary time frequency that is are already complex");
-	if(real.Polarisation() != imaginary.Polarisation())
-		throw BadUsageException("Combining real/imaginary time frequency data from different polarisations"); 
-	switch(real.Polarisation())
+	if(real.PhaseRepresentation() == ComplexRepresentation ||
+		imaginary.PhaseRepresentation() == ComplexRepresentation)
+		throw BadUsageException("Trying to create complex TF data from incorrect phase representations");
+	if(real.Polarisations() != imaginary.Polarisations())
+		throw BadUsageException("Combining real/imaginary time frequency data from different polarisations");
+	TimeFrequencyData* data = new TimeFrequencyData();
+	data->_data.resize(real._data.size());
+	data->_phaseRepresentation = ComplexRepresentation;
+	for(size_t i=0; i!=real._data.size(); ++i)
 	{
-		case XXPolarisation:
-		case XYPolarisation:
-		case YXPolarisation:
-		case YYPolarisation:
-		case SinglePolarisation:
-		case StokesIPolarisation:
-		case StokesQPolarisation:
-		case StokesUPolarisation:
-		case StokesVPolarisation:
-			return new TimeFrequencyData(real.Polarisation(), real._images[0], imaginary._images[0]);
-		case DipolePolarisation:
-			return new TimeFrequencyData(
-				real._images[0], imaginary._images[0],
-				real._images[1], imaginary._images[1],
-				real._images[2], imaginary._images[2],
-				real._images[3], imaginary._images[3]);
-		case AutoDipolePolarisation:
-			return new TimeFrequencyData(AutoDipolePolarisation,
-				real._images[0], imaginary._images[0],
-				real._images[1], imaginary._images[1]);
-		case CrossDipolePolarisation:
-			return new TimeFrequencyData(CrossDipolePolarisation,
-				real._images[0], imaginary._images[0],
-				real._images[1], imaginary._images[1]);
+		data->_data[i]._polarization = real._data[i]._polarization;
+		data->_data[i]._images[0] = real._data[i]._images[0];
+		data->_data[i]._images[1] = imaginary._data[i]._images[0];
+		data->_data[i]._flagging = real._data[i]._flagging;
 	}
-	throw BadUsageException("Invalid polarisation type");
+	return data;
 }
 
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromDipoleCombination(const TimeFrequencyData &xx, const TimeFrequencyData &xy, const TimeFrequencyData &yx, const TimeFrequencyData &yy)
+TimeFrequencyData *TimeFrequencyData::CreateTFDataFromPolarizationCombination(const TimeFrequencyData &xx, const TimeFrequencyData &xy, const TimeFrequencyData &yx, const TimeFrequencyData &yy)
 {
 	if(xx.PhaseRepresentation() != xy.PhaseRepresentation() ||
 		xx.PhaseRepresentation() != yx.PhaseRepresentation() ||
 		xx.PhaseRepresentation() != yy.PhaseRepresentation())
 		throw BadUsageException("Trying to create dipole time frequency combination from data with different phase representations!");
 
-	TimeFrequencyData *data;
-	switch(xx.PhaseRepresentation())
+	TimeFrequencyData *data = new TimeFrequencyData();
+	data->_data.resize(4);
+	data->_phaseRepresentation = xx._phaseRepresentation;
+	for(size_t i=0; i!=xx._data.size(); ++i)
 	{
-		case PhasePart:
-		case AmplitudePart:
-		case RealPart:
-		case ImaginaryPart:
-			data = new TimeFrequencyData(xx.PhaseRepresentation(), xx._images[0], xy._images[0],yx._images[0], yy._images[0]);
-			break;
-		case ComplexRepresentation:
-			data = new TimeFrequencyData(xx._images[0], xx._images[1], xy._images[0], xy._images[1], yx._images[0], yx._images[1], yy._images[0], yy._images[1]);
-			break;
-		default:
-			throw BadUsageException("Invalid phase representation");
+		data->_data[0] = xx._data[0];
+		data->_data[1] = xy._data[0];
+		data->_data[2] = yx._data[0];
+		data->_data[3] = yy._data[0];
 	}
-	data->SetIndividualPolarisationMasks(xx.GetSingleMask(), xy.GetSingleMask(), yx.GetSingleMask(), yy.GetSingleMask());
 	return data;
 }
 
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromAutoDipoleCombination(const TimeFrequencyData &xx, const TimeFrequencyData &yy)
+TimeFrequencyData *TimeFrequencyData::CreateTFDataFromPolarizationCombination(const TimeFrequencyData &xx, const TimeFrequencyData &yy)
 {
 	if(xx.PhaseRepresentation() != yy.PhaseRepresentation())
 		throw BadUsageException("Trying to create auto dipole time frequency combination from data with different phase representations!");
 
-	TimeFrequencyData *data;
-	switch(xx.PhaseRepresentation())
+	TimeFrequencyData *data = new TimeFrequencyData();
+	data->_data.resize(2);
+	data->_phaseRepresentation = xx._phaseRepresentation;
+	for(size_t i=0; i!=xx._data.size(); ++i)
 	{
-		case PhasePart:
-		case AmplitudePart:
-		case RealPart:
-		case ImaginaryPart:
-			data = new TimeFrequencyData(xx.PhaseRepresentation(), AutoDipolePolarisation, xx._images[0], yy._images[0]);
-			break;
-		case ComplexRepresentation:
-			data = new TimeFrequencyData(AutoDipolePolarisation, xx._images[0], xx._images[1], yy._images[0], yy._images[1]);
-			break;
-		default:
-			throw BadUsageException("Invalid phase representation");
+		data->_data[0] = xx._data[0];
+		data->_data[1] = yy._data[0];
 	}
-	data->SetIndividualPolarisationMasks(xx.GetSingleMask(), yy.GetSingleMask());
-	return data;
-}
-
-TimeFrequencyData *TimeFrequencyData::CreateTFDataFromCrossDipoleCombination(const TimeFrequencyData &xy, const TimeFrequencyData &yx)
-{
-	if(xy.PhaseRepresentation() != yx.PhaseRepresentation())
-		throw BadUsageException("Trying to create cross dipole time frequency combination from data with different phase representations!");
-
-	TimeFrequencyData *data;
-	switch(xy.PhaseRepresentation())
-	{
-		case PhasePart:
-		case AmplitudePart:
-		case RealPart:
-		case ImaginaryPart:
-			data = new TimeFrequencyData(xy.PhaseRepresentation(), AutoDipolePolarisation, xy._images[0], yx._images[0]);
-			break;
-		case ComplexRepresentation:
-			data = new TimeFrequencyData(AutoDipolePolarisation, xy._images[0], xy._images[1], yx._images[0], yx._images[1]);
-			break;
-		default:
-			throw BadUsageException("Invalid phase representation");
-	}
-	data->SetIndividualPolarisationMasks(xy.GetSingleMask(), yx.GetSingleMask());
 	return data;
 }
 
@@ -321,56 +158,65 @@ void TimeFrequencyData::SetImagesToZero()
 	{
 		Image2DPtr zeroImage = Image2D::CreateZeroImagePtr(ImageWidth(), ImageHeight());
 		Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(ImageWidth(), ImageHeight());
-		for(std::vector<Image2DCPtr>::iterator i=_images.begin();i!=_images.end();++i)
-			(*i) = zeroImage;
-		for(std::vector<Mask2DCPtr>::iterator i=_flagging.begin();i!=_flagging.end();++i)
-			(*i) = mask;
+		for(PolarizedTimeFrequencyData& data : _data)
+		{
+			data._images[0] = zeroImage;
+			if(data._images[1])
+				data._images[1] = zeroImage;
+			data._flagging = mask;
+		}
 	}
 }
 
 void TimeFrequencyData::MultiplyImages(long double factor)
 {
-	for(std::vector<Image2DCPtr>::iterator i=_images.begin();i!=_images.end();++i)
+	for(PolarizedTimeFrequencyData& data : _data)
 	{
-		Image2DPtr newImage = Image2D::CreateCopy(*i);
-		newImage->MultiplyValues(factor);
-		(*i) = newImage;
+		if(data._images[0])
+		{
+			Image2DPtr newImage = Image2D::CreateCopy(data._images[0]);
+			newImage->MultiplyValues(factor);
+			data._images[0] = newImage;
+		}
+		if(data._images[1])
+		{
+			Image2DPtr newImage = Image2D::CreateCopy(data._images[1]);
+			newImage->MultiplyValues(factor);
+			data._images[1] = newImage;
+		}
 	}
 }
 
 void TimeFrequencyData::JoinMask(const TimeFrequencyData &other)
 {
-	if(other._flagging.size() == _flagging.size())
-	{
-		for(size_t i=0;i<_flagging.size();++i)
-		{
-			Mask2DPtr mask = Mask2D::CreateCopy(_flagging[i]);
-			mask->Join(other._flagging[i]);
-			_flagging[i] = mask;
-		}
-	} else if(other._flagging.size() == 1)
-	{
-		for(size_t i=0;i<_flagging.size();++i)
-		{
-			Mask2DPtr mask = Mask2D::CreateCopy(_flagging[i]);
-			mask->Join(other._flagging[0]);
-			_flagging[i] = mask;
-		}
-	} else if(_flagging.size() == 1)
-	{
-		Mask2DPtr mask = Mask2D::CreateCopy(_flagging[0]);
-		mask->Join(other.GetSingleMask());
-		_flagging[0] = mask;
-	} else if(other._flagging.empty())
+	if(other.MaskCount() == 0)
 	{
 		// Nothing to be done; other has no flags
-	}	else if(_flagging.empty())
+	} else if(other.MaskCount() == MaskCount())
 	{
-		for(std::vector<Mask2DCPtr>::const_iterator i=other._flagging.begin();
-			i!=other._flagging.end();++i)
+		for(size_t i=0;i<MaskCount();++i)
 		{
-			_flagging.push_back(*i);
+			Mask2DPtr mask = Mask2D::CreateCopy(GetMask(i));
+			mask->Join(other.GetMask(i));
+			SetMask(i, mask);
 		}
+	} else if(other.MaskCount() == 1)
+	{
+		for(size_t i=0;i<MaskCount();++i)
+		{
+			Mask2DPtr mask = Mask2D::CreateCopy(GetMask(i));
+			mask->Join(other.GetMask(0));
+			SetMask(i, mask);
+		}
+	} else if(MaskCount() == 1)
+	{
+		Mask2DPtr mask = Mask2D::CreateCopy(GetMask(0));
+		mask->Join(other.GetSingleMask());
+		SetMask(0, mask);
+	}	else if(MaskCount() == 0 && _data.size() == other._data.size())
+	{
+		for(size_t i=0; i!=_data.size(); ++i)
+			_data[i]._flagging = other._data[i]._flagging;
 	}
 	else
 		throw BadUsageException("Joining time frequency flagging with incompatible structures");

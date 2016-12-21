@@ -56,17 +56,18 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> BaselinePlotPage::constr
 		TimeFrequencyData data;
 		if(polarizationCount == 1)
 		{
-			data = TimeFrequencyData(TimeFrequencyData::ComplexRepresentation, SinglePolarisation, realImages[0], imagImages[0]);
+			data = TimeFrequencyData(Polarization::StokesI, realImages[0], imagImages[0]);
 			data.SetGlobalMask(mask[0]);
 		}
 		else if(polarizationCount == 2)
 		{
-			data = TimeFrequencyData(AutoDipolePolarisation, realImages[0], imagImages[0], realImages[1], imagImages[1]);
+			data = TimeFrequencyData(Polarization::XX, realImages[0], imagImages[0],
+															 Polarization::YY, realImages[1], imagImages[1]);
 			data.SetIndividualPolarisationMasks(mask[0], mask[1]);
 		}
 		else if(polarizationCount == 4)
 		{
-			data = TimeFrequencyData(realImages[0], imagImages[0], realImages[1], imagImages[1], realImages[2], imagImages[2], realImages[3], imagImages[3]);
+			data = TimeFrequencyData::FromLinear(realImages[0], imagImages[0], realImages[1], imagImages[1], realImages[2], imagImages[2], realImages[3], imagImages[3]);
 			data.SetIndividualPolarisationMasks(mask[0], mask[1], mask[2], mask[3]);
 		}
 		else {

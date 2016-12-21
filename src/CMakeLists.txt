@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -DNDEBUG -funroll-loops -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -DNDEBUG -funroll-loops -O3 -std=c++11")
 
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists) 
@@ -19,17 +19,12 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
 	  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance")
 	endif(NOT PORTABLE)
 else()
-	# We add -msse2 because it needs the sse2 instruction set to compile some files, and
-	# this will force its inclusion in case the below -march=natve is not set.
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
   message(STATUS " CXX compiler does not support -march=native : your code will not be optimized with -march=native.")
   message(STATUS " This probably means your gcc is old ( < 4.2).")
 endif(COMPILER_SUPPORTS_MARCH_NATIVE)
 
 if(COMPILER_SUPPORTS_PEDANTIC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wno-long-long -Werror=vla -std=c++11")
-else(COMPILER_SUPPORTS_PEDANTIC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wno-long-long -Werror=vla")
 endif(COMPILER_SUPPORTS_PEDANTIC)
 
 if(HAVE_POSIX_FALLOCATE)
@@ -253,7 +248,8 @@ if(SIGCXX_FOUND)
   set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
 endif(SIGCXX_FOUND)
 
-add_library(aoflagger ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
+add_library(aoflagger SHARED ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
+SET_TARGET_PROPERTIES(aoflagger PROPERTIES SOVERSION 0)
 target_link_libraries(aoflagger ${ALL_LIBRARIES})
 
 link_libraries(aoflagger)

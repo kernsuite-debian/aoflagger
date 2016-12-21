@@ -4,7 +4,6 @@
 
 #include "../actions/absthresholdaction.h"
 #include "../actions/action.h"
-#include "../actions/adapter.h"
 #include "../actions/addstatisticsaction.h"
 #include "../actions/baselineselectionaction.h"
 #include "../actions/calibratepassbandaction.h"
@@ -222,8 +221,6 @@ Action *StrategyReader::parseAction(xmlNode *node)
 	std::string typeStr((const char*) typeCh);
 	if(typeStr == "AbsThresholdAction")
 		newAction = parseAbsThresholdAction(node);
-	else if(typeStr == "Adapter")
-		newAction = parseAdapter(node);
 	else if(typeStr == "AddStatisticsAction")
 		newAction = parseAddStatistics(node);
 	else if(typeStr == "BaselineSelectionAction")
@@ -308,14 +305,6 @@ Action *StrategyReader::parseAbsThresholdAction(xmlNode *node)
 {
 	AbsThresholdAction *newAction = new AbsThresholdAction();
 	newAction->SetThreshold(getDouble(node, "threshold"));
-	return newAction;
-}
-
-Action *StrategyReader::parseAdapter(xmlNode *node)
-{
-	Adapter *newAction = new Adapter();
-	newAction->SetRestoreOriginals(getBool(node, "restore-originals"));
-	parseChildren(node, newAction);
 	return newAction;
 }
 
@@ -496,10 +485,10 @@ Action *StrategyReader::parseForEachMSAction(xmlNode *node)
 Action *StrategyReader::parseForEachPolarisationBlock(xmlNode *node)
 {
 	ForEachPolarisationBlock *newAction = new ForEachPolarisationBlock();
-	newAction->SetOnXX(getBool(node, "on-xx"));
-	newAction->SetOnXY(getBool(node, "on-xy"));
-	newAction->SetOnYX(getBool(node, "on-yx"));
-	newAction->SetOnYY(getBool(node, "on-yy"));
+	newAction->SetOnPP(getBool(node, "on-xx"));
+	newAction->SetOnPQ(getBool(node, "on-xy"));
+	newAction->SetOnQP(getBool(node, "on-yx"));
+	newAction->SetOnQQ(getBool(node, "on-yy"));
 	newAction->SetOnStokesI(getBool(node, "on-stokes-i"));
 	newAction->SetOnStokesQ(getBool(node, "on-stokes-q"));
 	newAction->SetOnStokesU(getBool(node, "on-stokes-u"));

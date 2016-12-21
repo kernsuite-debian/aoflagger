@@ -96,7 +96,7 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservatio
 	field.delayDirectionRA = delayDirectionRA;
 	metaData->SetField(field);
 
-	return std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr>(TimeFrequencyData(StokesIPolarisation, tfOutputter._real, tfOutputter._imaginary), TimeFrequencyMetaDataPtr(metaData));
+	return std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr>(TimeFrequencyData(Polarization::StokesI, tfOutputter._real, tfOutputter._imaginary), TimeFrequencyMetaDataPtr(metaData));
 }
 
 template<typename T>

@@ -1,3 +1,9 @@
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
+#ifdef USE_INTRINSICS
+
 #include <stdint.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
@@ -369,3 +375,5 @@ template
 void ThresholdMitigater::HorizontalSumThresholdLargeSSE<128>(Image2DCPtr input, Mask2DPtr mask, num_t threshold);
 template
 void ThresholdMitigater::HorizontalSumThresholdLargeSSE<256>(Image2DCPtr input, Mask2DPtr mask, num_t threshold);
+
+#endif

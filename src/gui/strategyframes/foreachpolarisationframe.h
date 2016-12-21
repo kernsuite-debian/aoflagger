@@ -17,10 +17,10 @@ class ForEachPolarisationFrame : public Gtk::Frame {
 		ForEachPolarisationFrame(rfiStrategy::ForEachPolarisationBlock &action, EditStrategyWindow &editStrategyWindow)
 		: Gtk::Frame("For each polarisation"),
 		_editStrategyWindow(editStrategyWindow), _action(action),
-		_onXXButton("XX"),
-		_onXYButton("XY"),
-		_onYXButton("YX"),
-		_onYYButton("YY"),
+		_onXXButton("XX / RR"),
+		_onXYButton("XY / RL"),
+		_onYXButton("YX / LR"),
+		_onYYButton("YY / LL"),
 		_onStokesIButton("Stokes I"),
 		_onStokesQButton("Stokes Q"),
 		_onStokesUButton("Stokes U"),
@@ -28,19 +28,19 @@ class ForEachPolarisationFrame : public Gtk::Frame {
 		_applyButton("Apply")
 		{
 			_box.pack_start(_onXXButton);
-			_onXXButton.set_active(_action.OnXX());
+			_onXXButton.set_active(_action.OnPP());
 			_onXXButton.show();
 
 			_box.pack_start(_onXYButton);
-			_onXYButton.set_active(_action.OnXY());
+			_onXYButton.set_active(_action.OnPQ());
 			_onXYButton.show();
 
 			_box.pack_start(_onYXButton);
-			_onYXButton.set_active(_action.OnYX());
+			_onYXButton.set_active(_action.OnQP());
 			_onYXButton.show();
 
 			_box.pack_start(_onYYButton);
-			_onYYButton.set_active(_action.OnYY());
+			_onYYButton.set_active(_action.OnQQ());
 			_onYYButton.show();
 
 			_box.pack_start(_onStokesIButton);
@@ -87,10 +87,10 @@ class ForEachPolarisationFrame : public Gtk::Frame {
 
 		void onApplyClicked()
 		{
-			_action.SetOnXX(_onXXButton.get_active());
-			_action.SetOnXY(_onXYButton.get_active());
-			_action.SetOnYX(_onYXButton.get_active());
-			_action.SetOnYY(_onYYButton.get_active());
+			_action.SetOnPP(_onXXButton.get_active());
+			_action.SetOnPQ(_onXYButton.get_active());
+			_action.SetOnQP(_onYXButton.get_active());
+			_action.SetOnQQ(_onYYButton.get_active());
 			_action.SetOnStokesI(_onStokesIButton.get_active());
 			_action.SetOnStokesQ(_onStokesQButton.get_active());
 			_action.SetOnStokesU(_onStokesUButton.get_active());

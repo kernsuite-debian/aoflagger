@@ -3,6 +3,10 @@
 #include "thresholdmitigater.h"
 #include "thresholdtools.h"
 
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
 template<size_t Length>
 void ThresholdMitigater::HorizontalSumThreshold(Image2DCPtr input, Mask2DPtr mask, num_t threshold)
 {
@@ -186,6 +190,7 @@ void ThresholdMitigater::VerticalSumThresholdLargeReference(Image2DCPtr input, M
 	}
 }
 
+#ifdef USE_INTRINSICS
 void ThresholdMitigater::VerticalSumThresholdLargeSSE(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold)
 {
 	switch(length)
@@ -219,6 +224,7 @@ void ThresholdMitigater::HorizontalSumThresholdLargeSSE(Image2DCPtr input, Mask2
 		default: throw BadUsageException("Invalid value for length");
 	}	
 }
+#endif
 
 void ThresholdMitigater::HorizontalVarThreshold(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold)
 {

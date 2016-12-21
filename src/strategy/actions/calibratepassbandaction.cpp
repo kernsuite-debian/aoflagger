@@ -2,9 +2,15 @@
 
 #include "../algorithms/thresholdtools.h"
 
-#include <xmmintrin.h>
-
 #include <vector>
+
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
+#ifdef USE_INTRINSICS
+#include <xmmintrin.h>
+#endif
 
 namespace rfiStrategy {
 
@@ -56,19 +62,30 @@ namespace rfiStrategy {
 					correctionFactor = 0.0;
 				else
 					correctionFactor = 1.0 / stddev[step];
+#ifdef USE_INTRINSICS
 				const __m128 corrFact4 = _mm_set_ps(correctionFactor, correctionFactor, correctionFactor, correctionFactor);
+#endif
 				
 				for(size_t y=startY; y!=endY; ++y)
 				{
 					const float *inputPtr = image.ValuePtr(0, y);
 					float *destPtr = destImage->ValuePtr(0, y);
 					
+#ifdef USE_INTRINSICS
 					for(size_t x=0;x<image.Width();x+=4)
 					{
 						_mm_store_ps(destPtr, _mm_mul_ps(corrFact4, _mm_load_ps(inputPtr)));
 						inputPtr += 4;
 						destPtr += 4;
 					}
+#else
+					for(size_t x=0;x<image.Width();x++)
+					{
+						*destPtr = correctionFactor * *inputPtr;
+						inputPtr ++;
+						destPtr ++;
+					}
+#endif
 				}
 			}
 			data.SetImage(i, Image2DPtr(destImage));

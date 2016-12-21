@@ -244,7 +244,7 @@ namespace rfiStrategy {
 		
 		metaData.SetUVW(uvws);
 		metaData.SetObservationTimes(observationTimes);
-		return TimeFrequencyData(StokesIPolarisation, real, imaginary);
+		return TimeFrequencyData(Polarization::StokesI, real, imaginary);
 	}
 
 	void FitsImageSet::ReadPrimarySingleTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData)
@@ -461,11 +461,11 @@ namespace rfiStrategy {
 		metaData.SetObservationTimes(observationTimes);
 		if(polarizationCount == 1)
 		{
-			data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, StokesIPolarisation, images[0]);
+			data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, images[0]);
 			data.SetGlobalMask(masks[0]);
 		} else if(polarizationCount == 2)
 		{
-			data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, AutoDipolePolarisation, images[0], images[1]);
+			data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::XX, images[0], Polarization::YY, images[1]);
 			data.SetIndividualPolarisationMasks(masks[0], masks[1]);
 		}
 		else throw std::runtime_error("Don't know how to convert polarizations in file");

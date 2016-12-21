@@ -237,12 +237,12 @@ namespace rfiStrategy {
 		size_t s = _sequences[msIndex._sequenceIndex].sequenceId;
 
 		std::vector<Mask2DCPtr> allFlags;
-		if(flags.size() > _reader->PolarizationCount())
+		if(flags.size() > _reader->Polarizations().size())
 			throw std::runtime_error("Trying to write more polarizations to image set than available");
-		else if(flags.size() < _reader->PolarizationCount())
+		else if(flags.size() < _reader->Polarizations().size())
 		{
 			if(flags.size() == 1)
-				for(size_t i=0;i<_reader->PolarizationCount();++i)
+				for(size_t i=0;i<_reader->Polarizations().size();++i)
 					allFlags.push_back(flags[0]);
 			else
 				throw std::runtime_error("Incorrect number of polarizations in write action");

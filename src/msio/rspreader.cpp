@@ -30,8 +30,8 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadChannelBeam
 	
 	std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> data = ReadSingleBeamlet(timestepStart*(unsigned long) 256, timestepEnd*(unsigned long) 256, beamletCount, beamletIndex);
 
-	TimeFrequencyData *allX = data.first.CreateTFData(XXPolarisation);
-	TimeFrequencyData *allY = data.first.CreateTFData(YYPolarisation);
+	TimeFrequencyData *allX = data.first.CreateTFData(Polarization::XX);
+	TimeFrequencyData *allY = data.first.CreateTFData(Polarization::YY);
 	Image2DCPtr xr = allX->GetRealPart();
 	Image2DCPtr xi = allX->GetImaginaryPart();
 	Image2DCPtr yr = allY->GetRealPart();
@@ -79,7 +79,7 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadChannelBeam
 		}
 	}
 	
-	data.first = TimeFrequencyData(AutoDipolePolarisation, outXR, outXI, outYR, outYI);
+	data.first = TimeFrequencyData(Polarization::XX, outXR, outXI, Polarization::YY, outYR, outYI);
 	data.first.SetGlobalMask(outMask);
 	BandInfo band = data.second->Band();
 	band.channels.clear();
@@ -106,8 +106,8 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadSingleBeaml
 	Image2DPtr imaginaryY = Image2D::CreateZeroImagePtr(width, 1);
 	Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(width, 1);
 	
-	TimeFrequencyData *allX = data.first.CreateTFData(XXPolarisation);
-	TimeFrequencyData *allY = data.first.CreateTFData(YYPolarisation);
+	TimeFrequencyData *allX = data.first.CreateTFData(Polarization::XX);
+	TimeFrequencyData *allY = data.first.CreateTFData(Polarization::YY);
 	Image2DCPtr xr = allX->GetRealPart();
 	Image2DCPtr xi = allX->GetImaginaryPart();
 	Image2DCPtr yr = allY->GetRealPart();
@@ -124,7 +124,7 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadSingleBeaml
 		imaginaryY->SetValue(x, 0, yi->Value(x, beamletIndex));
 		mask->SetValue(x, 0, maskWithBeamlets->Value(x, beamletIndex));
 	}
-	data.first = TimeFrequencyData(AutoDipolePolarisation, realX, imaginaryX, realY, imaginaryY);
+	data.first = TimeFrequencyData(Polarization::XX, realX, imaginaryX, Polarization::YY, realY, imaginaryY);
 	data.first.SetGlobalMask(mask);
 	BandInfo band = data.second->Band();
 	band.channels[0] = data.second->Band().channels[beamletIndex];
@@ -242,7 +242,7 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadAllBeamlets
 	metaData->SetObservationTimes(observationTimes);
 	
 	std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> data;
-	data.first = TimeFrequencyData(AutoDipolePolarisation, realX, imaginaryX, realY, imaginaryY);
+	data.first = TimeFrequencyData(Polarization::XX, realX, imaginaryX, Polarization::YY, realY, imaginaryY);
 	data.first.SetGlobalMask(mask);
 	data.second = metaData;
 	return data;

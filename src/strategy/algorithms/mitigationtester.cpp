@@ -595,7 +595,7 @@ void MitigationTester::SubtractBackground(Image2DPtr image)
 	Mask2DPtr zero = Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
 	LocalFitMethod fittedImage;
 	fittedImage.SetToWeightedAverage(20, 40, 7.5, 15.0);
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, SinglePolarisation, image);
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, image);
 	data.SetGlobalMask(zero);
 	fittedImage.Initialize(data);
 	for(unsigned i=0;i<fittedImage.TaskCount();++i)

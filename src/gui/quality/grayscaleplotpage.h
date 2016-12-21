@@ -22,7 +22,7 @@ class GrayScalePlotPage : public PlotSheet {
 		
 		void SavePdf(const std::string& filename, QualityTablesFormatter::StatisticKind kind)
 		{
-			updateImageImpl(kind, AutoDipolePolarisation, TimeFrequencyData::AmplitudePart);
+			updateImageImpl(kind, Polarization::StokesI, TimeFrequencyData::AmplitudePart);
 			_imageWidget.SavePdf(filename);
 		}
 		
@@ -39,14 +39,14 @@ class GrayScalePlotPage : public PlotSheet {
 		
 		ImageWidget &grayScaleWidget() { return _imageWidget; }
 	private:
-		void updateImageImpl(QualityTablesFormatter::StatisticKind statisticKind, PolarisationType polarisation, enum TimeFrequencyData::PhaseRepresentation phase);
+		void updateImageImpl(QualityTablesFormatter::StatisticKind statisticKind, PolarizationEnum polarisation, enum TimeFrequencyData::PhaseRepresentation phase);
 		
 		void initStatisticKinds(Gtk::Toolbar& toolbar);
 		void initPolarizations(Gtk::Toolbar& toolbar);
 		void initPhaseButtons(Gtk::Toolbar& toolbar);
 		void initPlotOptions(Gtk::Toolbar& toolbar);
 		
-		enum PolarisationType getSelectedPolarization() const;
+		PolarizationEnum getSelectedPolarization() const;
 		enum TimeFrequencyData::PhaseRepresentation getSelectedPhase() const;
 		
 		void onSelectCount() { _selectStatisticKind = QualityTablesFormatter::CountStatistic; updateImage(); }
@@ -82,7 +82,7 @@ class GrayScalePlotPage : public PlotSheet {
 		Image2DCPtr normalizeXAxis(Image2DCPtr input);
 		Image2DCPtr normalizeYAxis(Image2DCPtr input);
 		
-		void setToPolarization(TimeFrequencyData &data, PolarisationType polarisation);
+		void setToPolarization(TimeFrequencyData &data, PolarizationEnum polarisation);
 		void setToPhase(TimeFrequencyData &data, enum TimeFrequencyData::PhaseRepresentation phase);
 		
 		Gtk::SeparatorToolItem _separator1, _separator2, _separator3, _separator4, _separator5, _separator6;

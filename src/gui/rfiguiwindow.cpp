@@ -140,6 +140,7 @@ RFIGuiWindow::~RFIGuiWindow()
 	}
 	if(_spatialMetaData != 0)
 		delete _spatialMetaData;
+	delete _controller;
 }
 
 void RFIGuiWindow::onActionDirectoryOpen()
@@ -261,6 +262,14 @@ void RFIGuiWindow::onToggleFlags()
 	_controller->SetShowAlternativeFlags(_altFlagsButton->get_active());
 }
 
+void RFIGuiWindow::onTogglePolarizations()
+{
+	_controller->SetShowPP(_showPPButton->get_active());
+	_controller->SetShowPQ(_showPQButton->get_active());
+	_controller->SetShowQP(_showQPButton->get_active());
+	_controller->SetShowQQ(_showQQButton->get_active());
+}
+
 void RFIGuiWindow::loadCurrentTFData()
 {
 	if(_imageSet != 0) {
@@ -350,8 +359,7 @@ void RFIGuiWindow::onEditStrategyPressed()
 
 void RFIGuiWindow::onExecuteStrategyPressed()
 {
-	if(_progressWindow != 0)
-		delete _progressWindow;
+	delete _progressWindow;
 
 	ProgressWindow *window = new ProgressWindow(*this);
 	_progressWindow = window;
@@ -402,14 +410,12 @@ void RFIGuiWindow::onExecuteStrategyFinished()
 		bool update = false;
 		if(!artifacts->RevisedData().IsEmpty())
 		{
-			std::cout << "Updating revised data..." << std::endl;
 			_timeFrequencyWidget.SetRevisedData(artifacts->RevisedData());
 			update = true;
 		}
 
 		if(!artifacts->ContaminatedData().IsEmpty())
 		{
-			std::cout << "Updating contaminated data..." << std::endl;
 			_timeFrequencyWidget.SetContaminatedData(artifacts->ContaminatedData());
 			update = true;
 		}
@@ -440,6 +446,11 @@ void RFIGuiWindow::onExecuteStrategyFinished()
 		delete artifacts->BaselineSelectionInfo();
 		delete artifacts->IterationsPlot();
 		delete artifacts;
+	}
+	if(_closeExecuteFrameButton->get_active())
+	{
+		delete _progressWindow;
+		_progressWindow = 0;
 	}
 }
 
@@ -618,6 +629,8 @@ void RFIGuiWindow::createToolbar()
 	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrum", "Plot _power spectrum"),
 		Gtk::AccelKey("<alt>W"),
 		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotFrequencyScatter", "Plot _frequency scatter"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotFrequencyScatterPressed) );
 	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrumComparison", "Power _spectrum"),
 		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumComparisonPressed) );
 	_actionGroup->add( Gtk::Action::create("PlotRMSSpectrum", "Plot _rms spectrum"),
@@ -703,6 +716,9 @@ void RFIGuiWindow::createToolbar()
 	action->set_icon_name("system-run");
 	_actionGroup->add(action, Gtk::AccelKey("F9"),
 			sigc::mem_fun(*this, &RFIGuiWindow::onExecuteStrategyPressed));
+	_closeExecuteFrameButton = Gtk::ToggleAction::create("CloseExecuteFrame", "Close execute frame");
+	_actionGroup->add(_closeExecuteFrameButton);
+	_closeExecuteFrameButton->set_active(true); 
 	_actionGroup->add(Gtk::Action::create("ShowStats", "Show _stats"),
 		Gtk::AccelKey("F2"),
 		sigc::mem_fun(*this, &RFIGuiWindow::onShowStats) );
@@ -736,22 +752,51 @@ void RFIGuiWindow::createToolbar()
 		sigc::mem_fun(*this, &RFIGuiWindow::onLoadShortestBaselinePressed) );
 	
   _originalFlagsButton = Gtk::ToggleAction::create("OriginalFlags", "Or flags");
-	_originalFlagsButton->set_active(true);
+	_originalFlagsButton->set_active(_controller->AreOriginalFlagsShown());
 	_originalFlagsButton->set_icon_name("showoriginalflags");
 	_originalFlagsButton->set_tooltip("Display the first flag mask on top of the visibilities. These flags are displayed in purple and indicate the flags as they originally were stored in the measurement set.");
+	_toggleConnections.push_back(_originalFlagsButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onToggleFlags)));
 	_actionGroup->add(_originalFlagsButton,
-			Gtk::AccelKey("F3"),
-			sigc::mem_fun(*this, &RFIGuiWindow::onToggleFlags));
+			Gtk::AccelKey("F3"));
+	
   _altFlagsButton = Gtk::ToggleAction::create("AlternativeFlags", "Alt flags");
-	_altFlagsButton->set_active(true); 
+	_altFlagsButton->set_active(_controller->AreAlternativeFlagsShown()); 
 	_altFlagsButton->set_icon_name("showalternativeflags");
 	_altFlagsButton->set_tooltip("Display the second flag mask on top of the visibilities. These flags are displayed in yellow and indicate flags found by running the strategy.");
+	_toggleConnections.push_back(_altFlagsButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onToggleFlags)));
 	_actionGroup->add(_altFlagsButton,
-			Gtk::AccelKey("F4"),
-			sigc::mem_fun(*this, &RFIGuiWindow::onToggleFlags));
+			Gtk::AccelKey("F4"));
 	_actionGroup->add( Gtk::Action::create("ClearAltFlags", "Clear alt flags"),
   sigc::mem_fun(*this, &RFIGuiWindow::onClearAltFlagsPressed) );
 
+  _showPPButton = Gtk::ToggleAction::create("DisplayPP", "PP");
+	_showPPButton->set_active(_controller->IsPPShown());
+	_showPPButton->set_icon_name("showpp");
+	_showPPButton->set_tooltip("Display the PP polarization. Depending on the polarization configuration of the measurement set, this will show XX or RR");
+	_toggleConnections.push_back(_showPPButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
+	_actionGroup->add(_showPPButton);
+	
+  _showPQButton = Gtk::ToggleAction::create("DisplayPQ", "PQ");
+	_showPQButton->set_active(_controller->IsPQShown());
+	_showPQButton->set_icon_name("showpq");
+	_showPQButton->set_tooltip("Display the PQ polarization. Depending on the polarization configuration of the measurement set, this will show XY or RL");
+	_toggleConnections.push_back(_showPQButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
+	_actionGroup->add(_showPQButton);
+	
+  _showQPButton = Gtk::ToggleAction::create("DisplayQP", "QP");
+	_showQPButton->set_active(_controller->IsQPShown());
+	_showQPButton->set_icon_name("showqp");
+	_showQPButton->set_tooltip("Display the QP polarization. Depending on the polarization configuration of the measurement set, this will show YX or LR");
+	_toggleConnections.push_back(_showQPButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
+	_actionGroup->add(_showQPButton);
+	
+  _showQQButton = Gtk::ToggleAction::create("DisplayQQ", "QQ");
+	_showQQButton->set_active(_controller->IsQQShown());
+	_showQQButton->set_icon_name("showqq");
+	_showQQButton->set_tooltip("Display the QQ polarization. Depending on the polarization configuration of the measurement set, this will show YY or LL");
+	_toggleConnections.push_back(_showQQButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
+	_actionGroup->add(_showQQButton);
+	
 	Gtk::RadioButtonGroup imageGroup;
 	_originalImageButton = Gtk::RadioAction::create(imageGroup, "ImageOriginal", "Original");
 	_originalImageButton->set_active(true);
@@ -778,39 +823,50 @@ void RFIGuiWindow::createToolbar()
 	_actionGroup->add( Gtk::Action::create("BackToOriginal", "Background->Original"),
   sigc::mem_fun(*this, &RFIGuiWindow::onBackgroundToOriginalPressed) );
 
-	_actionGroup->add( Gtk::Action::create("ShowReal", "Keep _real part"),
+	_actionGroup->add( Gtk::Action::create("KeepReal", "Keep _real part"),
 		Gtk::AccelKey("<control>,"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowRealPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowImaginary", "Keep _imaginary part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepRealPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepImaginary", "Keep _imaginary part"),
 		Gtk::AccelKey("<control>."),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowImaginaryPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowPhase", "Keep _phase part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepImaginaryPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepPhase", "Keep _phase part"),
 		Gtk::AccelKey("<control>1"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowPhasePressed) );
-	_actionGroup->add( Gtk::Action::create("ShowStokesI", "Keep _stokesI part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowStokesIPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowStokesQ", "Keep stokes_Q part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowStokesQPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowStokesU", "Keep stokes_U part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowStokesUPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowStokesV", "Keep stokes_V part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowStokesVPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowAutoPol", "Keep xx+yy part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowAutoDipolePressed) );
-	_actionGroup->add( Gtk::Action::create("ShowCrossPol", "Keep xy+yx part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowCrossDipolePressed) );
-	_actionGroup->add( Gtk::Action::create("ShowXX", "Keep _xx part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepPhasePressed) );
+	_actionGroup->add( Gtk::Action::create("KeepStokesI", "Keep _stokesI part"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesIPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepStokesQ", "Keep stokes_Q part"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesQPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepStokesU", "Keep stokes_U part"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesUPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepStokesV", "Keep stokes_V part"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesVPressed) );
+	//_actionGroup->add( Gtk::Action::create("KeepAutoPol", "Keep xx+yy part"),
+  //sigc::mem_fun(*this, &RFIGuiWindow::onKeepAutoDipolePressed) );
+	//_actionGroup->add( Gtk::Action::create("KeepCrossPol", "Keep xy+yx part"),
+  //sigc::mem_fun(*this, &RFIGuiWindow::onKeepCrossDipolePressed) );
+	_actionGroup->add( Gtk::Action::create("KeepRR", "Keep _rr part"),
+		Gtk::AccelKey("<control>R"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepRRPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepRL", "Keep rl part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepRLPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepLR", "Keep lr part"),
+		Gtk::AccelKey("<control><alt>L"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepLRPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepLL", "Keep _ll part"),
+		Gtk::AccelKey("<control>L"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepLLPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepXX", "Keep _xx part"),
 		Gtk::AccelKey("<control>X"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowXXPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowXY", "Keep xy part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepXXPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepXY", "Keep xy part"),
 		Gtk::AccelKey("<control><alt>X"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowXYPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowYX", "Keep yx part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepXYPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepYX", "Keep yx part"),
 		Gtk::AccelKey("<control><alt>Y"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowYXPressed) );
-	_actionGroup->add( Gtk::Action::create("ShowYY", "Keep _yy part"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepYXPressed) );
+	_actionGroup->add( Gtk::Action::create("KeepYY", "Keep _yy part"),
 		Gtk::AccelKey("<control>Y"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowYYPressed) );
+		sigc::mem_fun(*this, &RFIGuiWindow::onKeepYYPressed) );
 	_actionGroup->add( Gtk::Action::create("UnrollPhase", "_Unroll phase"),
 	sigc::mem_fun(*this, &RFIGuiWindow::onUnrollPhaseButtonPressed) );
 
@@ -826,7 +882,7 @@ void RFIGuiWindow::createToolbar()
 		Gtk::AccelKey("<control>M"),
   sigc::mem_fun(*this, &RFIGuiWindow::onStoreData) );
 	_actionGroup->add( Gtk::Action::create("RecallData", "Recall"),
-		Gtk::AccelKey("<control>R"),
+		Gtk::AccelKey("<control><alt>R"),
 		sigc::mem_fun(*this, &RFIGuiWindow::onRecallData) );
 	_actionGroup->add( Gtk::Action::create("SubtractDataFromMem", "Subtract from mem"),
   sigc::mem_fun(*this, &RFIGuiWindow::onSubtractDataFromMem) );
@@ -935,6 +991,7 @@ void RFIGuiWindow::createToolbar()
     "      <menuitem action='PlotMeanSpectrum'/>"
     "      <menuitem action='PlotSumSpectrum'/>"
     "      <menuitem action='PlotPowerSpectrum'/>"
+    "      <menuitem action='PlotFrequencyScatter'/>"
     "      <menuitem action='PlotRMSSpectrum'/>"
     "      <menuitem action='PlotSNRSpectrum'/>"
     "      <menuitem action='PlotPowerTime'/>"
@@ -973,22 +1030,27 @@ void RFIGuiWindow::createToolbar()
     "      <menuitem action='DiffToOriginal'/>"
     "      <menuitem action='BackToOriginal'/>"
     "      <separator/>"
-    "      <menuitem action='ShowReal'/>"
-    "      <menuitem action='ShowImaginary'/>"
-    "      <menuitem action='ShowPhase'/>"
-    "      <separator/>"
-    "      <menuitem action='ShowStokesI'/>"
-    "      <menuitem action='ShowStokesQ'/>"
-    "      <menuitem action='ShowStokesU'/>"
-    "      <menuitem action='ShowStokesV'/>"
-    "      <separator/>"
-    "      <menuitem action='ShowXX'/>"
-    "      <menuitem action='ShowXY'/>"
-    "      <menuitem action='ShowYX'/>"
-    "      <menuitem action='ShowYY'/>"
-    "      <menuitem action='ShowAutoPol'/>"
-    "      <menuitem action='ShowCrossPol'/>"
+    "      <menuitem action='KeepReal'/>"
+    "      <menuitem action='KeepImaginary'/>"
+    "      <menuitem action='KeepPhase'/>"
     "      <menuitem action='UnrollPhase'/>"
+    "      <separator/>"
+    "      <menuitem action='KeepStokesI'/>"
+    "      <menuitem action='KeepStokesQ'/>"
+    "      <menuitem action='KeepStokesU'/>"
+    "      <menuitem action='KeepStokesV'/>"
+    "      <separator/>"
+    "      <menuitem action='KeepRR'/>"
+    "      <menuitem action='KeepRL'/>"
+    "      <menuitem action='KeepLR'/>"
+    "      <menuitem action='KeepLL'/>"
+    "      <separator/>"
+    "      <menuitem action='KeepXX'/>"
+    "      <menuitem action='KeepXY'/>"
+    "      <menuitem action='KeepYX'/>"
+    "      <menuitem action='KeepYY'/>"
+//    "      <menuitem action='ShowAutoPol'/>"
+//    "      <menuitem action='ShowCrossPol'/>"
     "      <separator/>"
     "      <menuitem action='StoreData'/>"
     "      <menuitem action='RecallData'/>"
@@ -998,6 +1060,7 @@ void RFIGuiWindow::createToolbar()
 	  "    <menu action='MenuActions'>"
     "      <menuitem action='EditStrategy'/>"
     "      <menuitem action='ExecuteStrategy'/>"
+    "      <menuitem action='CloseExecuteFrame'/>"
     "      <separator/>"
     "      <menuitem action='Segment'/>"
     "      <menuitem action='Cluster'/>"
@@ -1023,13 +1086,17 @@ void RFIGuiWindow::createToolbar()
     "    <toolitem action='OriginalFlags'/>"
     "    <toolitem action='AlternativeFlags'/>"
     "    <separator/>"
-    "    <toolitem action='ZoomFit'/>"
-    "    <toolitem action='ZoomIn'/>"
-    "    <toolitem action='ZoomOut'/>"
-    "    <separator/>"
     "    <toolitem action='Previous'/>"
     "    <toolitem action='Reload'/>"
     "    <toolitem action='Next'/>"
+    "    <separator/>"
+    "    <toolitem action='ZoomFit'/>"
+    "    <toolitem action='ZoomIn'/>"
+    "    <toolitem action='ZoomOut'/>"
+    "    <toolitem action='DisplayPP'/>"
+    "    <toolitem action='DisplayPQ'/>"
+    "    <toolitem action='DisplayQP'/>"
+    "    <toolitem action='DisplayQQ'/>"
     "    <separator/>"
     "    <toolitem action='ImageOriginal'/>"
     "    <toolitem action='ImageBackground'/>"
@@ -1056,10 +1123,9 @@ void RFIGuiWindow::createToolbar()
 
 void RFIGuiWindow::onClearAltFlagsPressed()
 {
-	TimeFrequencyData data = GetActiveData();
-	_timeFrequencyWidget.SetAlternativeMask(
-		Mask2D::CreateSetMaskPtr<false>(data.ImageWidth(), data.ImageHeight())
-	);
+	TimeFrequencyData& data = _timeFrequencyWidget.ContaminatedData();
+	data.SetMasksToValue<false>();
+	_timeFrequencyWidget.SetContaminatedData(data);
 	_timeFrequencyWidget.Update();
 }
 
@@ -1138,13 +1204,13 @@ void RFIGuiWindow::onSetToOne()
 {
 	try {
 		TimeFrequencyData data(GetActiveData());
-		std::pair<Image2DCPtr, Image2DCPtr> images = data.GetSingleComplexImage();
+		std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
 		Image2DPtr
-			real = Image2D::CreateCopy(images.first),
-			imaginary = Image2D::CreateCopy(images.first);
+			real = Image2D::CreateCopy(images[0]),
+			imaginary = Image2D::CreateCopy(images[0]);
 		real->SetAll(1.0);
 		imaginary->SetAll(0.0);
-		TimeFrequencyData newData(data.Polarisation(), real, imaginary);
+		TimeFrequencyData newData(data.GetPolarisation(0), real, imaginary);
 		newData.SetMask(data);
 		_timeFrequencyWidget.SetNewData(newData, _timeFrequencyWidget.GetSelectedMetaData());
 		_timeFrequencyWidget.Update();
@@ -1158,13 +1224,13 @@ void RFIGuiWindow::onSetToI()
 {
 	try {
 		TimeFrequencyData data(GetActiveData());
-		std::pair<Image2DCPtr, Image2DCPtr> images = data.GetSingleComplexImage();
+		std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
 		Image2DPtr
-			real = Image2D::CreateCopy(images.first),
-			imaginary = Image2D::CreateCopy(images.first);
+			real = Image2D::CreateCopy(images[0]),
+			imaginary = Image2D::CreateCopy(images[0]);
 		real->SetAll(0.0);
 		imaginary->SetAll(1.0);
-		TimeFrequencyData newData(data.Polarisation(), real, imaginary);
+		TimeFrequencyData newData(data.GetPolarisation(0), real, imaginary);
 		newData.SetMask(data);
 		_timeFrequencyWidget.SetNewData(newData, _timeFrequencyWidget.GetSelectedMetaData());
 		_timeFrequencyWidget.Update();
@@ -1178,13 +1244,13 @@ void RFIGuiWindow::onSetToOnePlusI()
 {
 	try {
 		TimeFrequencyData data(GetActiveData());
-		std::pair<Image2DCPtr, Image2DCPtr> images = data.GetSingleComplexImage();
+		std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
 		Image2DPtr
-			real = Image2D::CreateCopy(images.first),
-			imaginary = Image2D::CreateCopy(images.first);
+			real = Image2D::CreateCopy(images[0]),
+			imaginary = Image2D::CreateCopy(images[0]);
 		real->SetAll(1.0);
 		imaginary->SetAll(1.0);
-		TimeFrequencyData newData(data.Polarisation(), real, imaginary);
+		TimeFrequencyData newData(data.GetPolarisation(0), real, imaginary);
 		newData.SetMask(data);
 		_timeFrequencyWidget.SetNewData(newData, _timeFrequencyWidget.GetSelectedMetaData());
 		_timeFrequencyWidget.Update();
@@ -1274,6 +1340,11 @@ void RFIGuiWindow::onPlotPowerSpectrumComparisonPressed()
 	_controller->PlotPowerSpectrumComparison();
 }
 
+void RFIGuiWindow::onPlotFrequencyScatterPressed()
+{
+	_controller->PlotFrequencyScatter();
+}
+
 void RFIGuiWindow::onPlotPowerRMSPressed()
 {
 	_controller->PlotPowerRMS();
@@ -1336,7 +1407,7 @@ void RFIGuiWindow::onPlotSumSpectrumPressed()
 	_controller->PlotSumSpectrum();
 }
 
-void RFIGuiWindow::showPhasePart(enum TimeFrequencyData::PhaseRepresentation phaseRepresentation)
+void RFIGuiWindow::keepPhasePart(enum TimeFrequencyData::PhaseRepresentation phaseRepresentation)
 {
 	if(HasImage())
 	{
@@ -1363,7 +1434,7 @@ void RFIGuiWindow::showPhasePart(enum TimeFrequencyData::PhaseRepresentation pha
 	}
 }
 
-void RFIGuiWindow::showPolarisation(enum PolarisationType polarisation)
+void RFIGuiWindow::keepPolarisation(PolarizationEnum polarisation)
 {
 	if(HasImage())
 	{
@@ -1547,7 +1618,7 @@ void RFIGuiWindow::onAddToImagePlane()
 			TimeFrequencyData activeData = GetActiveData();
 			if(activeData.PolarisationCount() != 1)
 			{
-				TimeFrequencyData *singlePolarization = activeData.CreateTFData(StokesIPolarisation);
+				TimeFrequencyData *singlePolarization = activeData.CreateTFData(Polarization::StokesI);
 				activeData = *singlePolarization;
 				delete singlePolarization;
 			}
@@ -1909,11 +1980,23 @@ void RFIGuiWindow::SetStrategy(rfiStrategy::Strategy* newStrategy)
 
 void RFIGuiWindow::onControllerStateChange()
 {
+	for(sigc::connection& connection : _toggleConnections)
+		connection.block();
+	
 	_originalFlagsButton->set_active(_controller->AreOriginalFlagsShown());
 	_timeFrequencyWidget.SetShowOriginalMask(_controller->AreOriginalFlagsShown());
 	
 	_altFlagsButton->set_active(_controller->AreAlternativeFlagsShown());
 	_timeFrequencyWidget.SetShowAlternativeMask(_controller->AreAlternativeFlagsShown());
+	
+	_showPPButton->set_active(_controller->IsPPShown());
+	_showPQButton->set_active(_controller->IsPQShown());
+	_showQPButton->set_active(_controller->IsQPShown());
+	_showQQButton->set_active(_controller->IsQQShown());
+	_timeFrequencyWidget.SetVisualizedPolarization(_controller->IsPPShown(), _controller->IsPQShown(), _controller->IsQPShown(), _controller->IsQQShown());
+	
+	for(sigc::connection& connection : _toggleConnections)
+		connection.unblock();
 	
 	_timeFrequencyWidget.Update();
 }

@@ -61,6 +61,7 @@ GrayScalePlotPage::~GrayScalePlotPage()
 
 void GrayScalePlotPage::InitializeToolbar(Gtk::Toolbar& toolbar)
 {
+	toolbar.set_toolbar_style(Gtk::TOOLBAR_TEXT);
 	initStatisticKinds(toolbar);
 	initPolarizations(toolbar);
 	initPhaseButtons(toolbar);
@@ -72,24 +73,31 @@ void GrayScalePlotPage::initStatisticKinds(Gtk::Toolbar& toolbar)
 	toolbar.append(_separator1);
 	
 	_countButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectCount));
+	_countButton.set_tooltip_text("Visibility count");
 	toolbar.append(_countButton);
 	
 	_meanButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectMean));
+	_meanButton.set_tooltip_text("Mean value");
 	toolbar.append(_meanButton);
 	
 	_stdDevButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectStdDev));
+	_stdDevButton.set_tooltip_text("Standard deviation");
 	toolbar.append(_stdDevButton);
 	
-	_dCountButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectDCount));
-	toolbar.append(_dCountButton);
+	//_dCountButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectDCount));
+	//_dCountButton.set_tooltip_text("Visibility count in differential statistics");
+	//toolbar.append(_dCountButton);
 	
 	_dMeanButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectDMean));
+	_dMeanButton.set_tooltip_text("Frequency-differential (difference between channels) mean value");
 	toolbar.append(_dMeanButton);
 	
 	_dStdDevButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectDStdDev));
+	_dStdDevButton.set_tooltip_text("Frequency-differential (difference between channels) standard deviation");
 	toolbar.append(_dStdDevButton);
 	
 	_rfiPercentageButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectRFIPercentage));
+	_rfiPercentageButton.set_tooltip_text("Flagged percentage");
 	toolbar.append(_rfiPercentageButton);
 	
 	_stdDevButton.set_active();
@@ -100,18 +108,23 @@ void GrayScalePlotPage::initPolarizations(Gtk::Toolbar& toolbar)
 	toolbar.append(_separator2);
 	
 	_polXXButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_polXXButton.set_tooltip_text("XX polarization");
 	toolbar.append(_polXXButton);
 	
 	_polXYButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_polXYButton.set_tooltip_text("XY polarization");
 	toolbar.append(_polXYButton);
 
 	_polYXButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_polYXButton.set_tooltip_text("YX polarization");
 	toolbar.append(_polYXButton);
 
 	_polYYButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_polYYButton.set_tooltip_text("YY polarization");
 	toolbar.append(_polYYButton);
 
 	_polIButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_polIButton.set_tooltip_text("Stokes I polarization");
 	toolbar.append(_polIButton);
 
 	_polIButton.set_active();
@@ -122,15 +135,19 @@ void GrayScalePlotPage::initPhaseButtons(Gtk::Toolbar& toolbar)
 	toolbar.append(_separator3);
 	
 	_amplitudePhaseButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_amplitudePhaseButton.set_tooltip_text("Amplitude");
 	toolbar.append(_amplitudePhaseButton);
 	
 	_phasePhaseButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_phasePhaseButton.set_tooltip_text("Phase");
 	toolbar.append(_phasePhaseButton);
 	
 	_realPhaseButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_realPhaseButton.set_tooltip_text("Real value");
 	toolbar.append(_realPhaseButton);
 	
 	_imaginaryPhaseButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
+	_imaginaryPhaseButton.set_tooltip_text("Imaginary value");
 	toolbar.append(_imaginaryPhaseButton);
 	
 	_amplitudePhaseButton.set_active();
@@ -176,7 +193,7 @@ void GrayScalePlotPage::initPlotOptions(Gtk::Toolbar& toolbar)
 	toolbar.append(_plotPropertiesButton);
 }
 
-void GrayScalePlotPage::updateImageImpl(QualityTablesFormatter::StatisticKind statisticKind, PolarisationType polarisation, enum TimeFrequencyData::PhaseRepresentation phase)
+void GrayScalePlotPage::updateImageImpl(QualityTablesFormatter::StatisticKind statisticKind, PolarizationEnum polarisation, enum TimeFrequencyData::PhaseRepresentation phase)
 {
 	if(_ready)
 	{
@@ -211,20 +228,20 @@ void GrayScalePlotPage::updateImage()
 	updateImageImpl(getSelectedStatisticKind(), getSelectedPolarization(), getSelectedPhase());
 }
 
-PolarisationType GrayScalePlotPage::getSelectedPolarization() const
+PolarizationEnum GrayScalePlotPage::getSelectedPolarization() const
 {
 	if(_polXXButton.get_active())
-		return XXPolarisation;
+		return Polarization::XX;
 	else if(_polXYButton.get_active())
-		return XYPolarisation;
+		return Polarization::XY;
 	else if(_polYXButton.get_active())
-		return YXPolarisation;
+		return Polarization::YX;
 	else if(_polYYButton.get_active())
-		return YYPolarisation;
-	else if(_polIButton.get_active())
-		return AutoDipolePolarisation;
+		return Polarization::YY;
+	//else if(_polIButton.get_active())
+	//	return StokesIPolarisation;
 	else
-		return AutoDipolePolarisation;
+		return Polarization::StokesI;
 }
 
 enum TimeFrequencyData::PhaseRepresentation GrayScalePlotPage::getSelectedPhase() const
@@ -241,11 +258,11 @@ enum TimeFrequencyData::PhaseRepresentation GrayScalePlotPage::getSelectedPhase(
 		return TimeFrequencyData::AmplitudePart;
 }
 
-void GrayScalePlotPage::setToPolarization(TimeFrequencyData &data, PolarisationType polarisation)
+void GrayScalePlotPage::setToPolarization(TimeFrequencyData &data, PolarizationEnum polarisation)
 {
 	try {
 		TimeFrequencyData* newData = data.CreateTFData(polarisation);
-		if(polarisation == AutoDipolePolarisation)
+		if(polarisation == Polarization::StokesI)
 			newData->MultiplyImages(0.5);
 		data = *newData;
 		delete newData;

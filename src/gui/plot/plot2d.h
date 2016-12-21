@@ -50,6 +50,14 @@ class Plot2D : public Plotable {
 		Plot2DPointSet &GetPointSet(size_t index) { return *_pointSets[index]; }
 		const Plot2DPointSet &GetPointSet(size_t index) const { return *_pointSets[index]; }
 		virtual void Render(Gtk::DrawingArea &drawingArea);
+		void SetLogarithmicXAxis(bool logarithmicXAxis)
+		{
+			_logarithmicXAxis = logarithmicXAxis;
+		}
+		bool LogarithmicXAxis() const
+		{
+			return _logarithmicXAxis;
+		}
 		void SetIncludeZeroYAxis(bool includeZeroAxis)
 		{
 			_system.SetIncludeZeroYAxis(includeZeroAxis);
@@ -94,6 +102,15 @@ class Plot2D : public Plotable {
 			else
 				return _system.XRangeMax(**_pointSets.begin());
 		}
+		double MaxPositiveX() const
+		{
+			if(_hRangeDetermination == SpecifiedRange)
+				return _specifiedMaxX;
+			else if(_pointSets.empty())
+				return 1.0;
+			else
+				return _system.XRangePositiveMax(**_pointSets.begin());
+		}
 		void SetMinX(double minX)
 		{
 			_hRangeDetermination = SpecifiedRange;
@@ -104,9 +121,18 @@ class Plot2D : public Plotable {
 			if(_hRangeDetermination == SpecifiedRange)
 				return _specifiedMinX;
 			else if(_pointSets.empty())
-				return 1.0;
+				return 0.1;
 			else
 				return _system.XRangeMin(**_pointSets.begin());
+		}
+		double MinPositiveX() const
+		{
+			if(_hRangeDetermination == SpecifiedRange)
+				return _specifiedMinX;
+			else if(_pointSets.empty())
+				return 0.1;
+			else
+				return _system.XRangePositiveMin(**_pointSets.begin());
 		}
 		void SetMaxY(double maxY)
 		{
@@ -186,7 +212,7 @@ class Plot2D : public Plotable {
 		int _width, _height;
 		double _topMargin;
 		System _system;
-		bool _logarithmicYAxis, _showAxes, _showAxisDescriptions;
+		bool _logarithmicXAxis, _logarithmicYAxis, _showAxes, _showAxisDescriptions;
 		double _specifiedMinX, _specifiedMaxX, _specifiedMinY, _specifiedMaxY;
 		enum RangeDetermination _hRangeDetermination, _vRangeDetermination;
 		std::string _title, _customHAxisDescription, _customVAxisDescription;

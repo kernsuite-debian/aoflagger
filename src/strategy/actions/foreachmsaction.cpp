@@ -74,22 +74,22 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 					timeResolution,
 					frequencyResolution
 				);
-				
-				if(_threadCount != 0)
-					rfiStrategy::Strategy::SetThreadCount(*this, _threadCount);
-				
-				if(!_fields.empty() || !_bands.empty())
-				{
-					std::vector<Action*> fobActions = DefaultStrategy::FindActions(*this, ForEachBaselineActionType);
-					for(std::vector<Action*>::iterator i=fobActions.begin(); i!=fobActions.end(); ++i)
-					{
-						ForEachBaselineAction* fobAction = static_cast<ForEachBaselineAction*>(*i);
-						fobAction->Bands() = _bands;
-						fobAction->Fields() = _fields;
-					}
-				}
 			}
 			
+			if(_threadCount != 0)
+				rfiStrategy::Strategy::SetThreadCount(*this, _threadCount);
+			
+			if(!_fields.empty() || !_bands.empty())
+			{
+				std::vector<Action*> fobActions = DefaultStrategy::FindActions(*this, ForEachBaselineActionType);
+				for(std::vector<Action*>::iterator i=fobActions.begin(); i!=fobActions.end(); ++i)
+				{
+					ForEachBaselineAction* fobAction = static_cast<ForEachBaselineAction*>(*i);
+					fobAction->Bands() = _bands;
+					fobAction->Fields() = _fields;
+				}
+			}
+				
 			std::unique_ptr<ImageSetIndex> index(imageSet->StartIndex());
 			artifacts.SetImageSet(&*imageSet);
 			artifacts.SetImageSetIndex(&*index);

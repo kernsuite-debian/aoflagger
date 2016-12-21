@@ -120,7 +120,7 @@ void DirectBaselineReader::PerformReadRequests()
 		addRequestRows(_readRequests[i], i, rows);
 	std::sort(rows.begin(), rows.end());
 	
-	AOLogger::Debug << "Reading " << _readRequests.size() << " requests with " << rows.size() << " rows total, flags=" << ReadFlags() << ", " << PolarizationCount() << " polarizations.\n";
+	AOLogger::Debug << "Reading " << _readRequests.size() << " requests with " << rows.size() << " rows total, flags=" << ReadFlags() << ", " << Polarizations().size() << " polarizations.\n";
 	
 	_results.clear();
 	for(size_t i=0;i<_readRequests.size();++i)
@@ -145,7 +145,7 @@ void DirectBaselineReader::PerformReadRequests()
 		}
 
 		size_t width = endIndex-startIndex;
-		for(size_t p=0;p<PolarizationCount();++p)
+		for(size_t p=0;p<Polarizations().size();++p)
 		{
 			if(ReadData()) {
 				_results[i]._realImages.push_back(Image2D::CreateZeroImagePtr(width, channelCount));
@@ -317,7 +317,7 @@ void DirectBaselineReader::PerformFlagWriteRequests()
 			casacore::Array<bool> flag = flagColumn(rowIndex);
 			casacore::Array<bool>::iterator j = flag.begin();
 			for(size_t f=0;f<(size_t) Set().FrequencyCount(request.spectralWindow);++f) {
-				for(size_t p=0;p<PolarizationCount();++p)
+				for(size_t p=0;p<Polarizations().size();++p)
 				{
 					*j = request.flags[p]->Value(timeIndex - request.startIndex, f);
 					++j;
@@ -339,7 +339,7 @@ void DirectBaselineReader::readTimeData(size_t requestIndex, size_t xOffset, int
 	if(DataKind() == ResidualData)
 		m = model->begin();
 
-	size_t polarizationCount = PolarizationCount();
+	size_t polarizationCount = Polarizations().size();
 
 	for(size_t f=0;f<(size_t) frequencyCount;++f) {
 		num_t rv,iv;
@@ -369,7 +369,7 @@ void DirectBaselineReader::readTimeData(size_t requestIndex, size_t xOffset, int
 
 void DirectBaselineReader::readTimeFlags(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<bool> flag)
 {
-	size_t polarizationCount = PolarizationCount();
+	size_t polarizationCount = Polarizations().size();
 
 	casacore::Array<bool>::const_iterator j = flag.begin();
 	for(size_t f=0;f<(size_t) frequencyCount;++f) {
@@ -384,7 +384,7 @@ void DirectBaselineReader::readTimeFlags(size_t requestIndex, size_t xOffset, in
 
 void DirectBaselineReader::readWeights(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<float> weight)
 {
-	size_t polarizationCount = PolarizationCount();
+	size_t polarizationCount = Polarizations().size();
 
 	casacore::Array<float>::const_iterator j = weight.begin();
 	std::vector<float> values(polarizationCount);

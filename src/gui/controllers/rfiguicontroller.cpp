@@ -23,6 +23,8 @@
 #include <gtkmm/messagedialog.h>
 
 RFIGuiController::RFIGuiController(RFIGuiWindow& rfiGuiWindow, StrategyController* strategyController) :
+	_showOriginalFlags(true), _showAlternativeFlags(true),
+	_showPP(true), _showPQ(false), _showQP(false), _showQQ(true),
 	_rfiGuiWindow(rfiGuiWindow), _strategyController(strategyController)
 {
 	_plotManager = new class PlotManager();
@@ -182,6 +184,17 @@ void RFIGuiController::PlotPowerSpectrumComparison()
 	}
 }
 
+void RFIGuiController::PlotFrequencyScatter()
+{
+	if(IsImageLoaded())
+	{
+		MultiPlot plot(_plotManager->NewPlot2D("Frequency scatter"), 4);
+		RFIPlots::MakeFrequencyScatterPlot(plot, ActiveData(), SelectedMetaData());
+		plot.Finish();
+		_plotManager->Update();
+	}
+}
+
 void RFIGuiController::PlotPowerRMS()
 {
 	if(IsImageLoaded())
@@ -298,7 +311,7 @@ void RFIGuiController::PlotTimeScatter()
 	if(IsImageLoaded())
 	{
 		MultiPlot plot(_plotManager->NewPlot2D("Time scatter"), 4);
-		RFIPlots::MakeScatterPlot(plot, ActiveData(), SelectedMetaData());
+		RFIPlots::MakeTimeScatterPlot(plot, ActiveData(), SelectedMetaData());
 		plot.Finish();
 		_plotManager->Update();
 	}
@@ -309,8 +322,8 @@ void RFIGuiController::PlotTimeScatterComparison()
 	if(IsImageLoaded())
 	{
 		MultiPlot plot(_plotManager->NewPlot2D("Time scatter comparison"), 8);
-		RFIPlots::MakeScatterPlot(plot, OriginalData(), SelectedMetaData(), 0);
-		RFIPlots::MakeScatterPlot(plot, ContaminatedData(), SelectedMetaData(), 4);
+		RFIPlots::MakeTimeScatterPlot(plot, OriginalData(), SelectedMetaData(), 0);
+		RFIPlots::MakeTimeScatterPlot(plot, ContaminatedData(), SelectedMetaData(), 4);
 		plot.Finish();
 		_plotManager->Update();
 	}
@@ -388,7 +401,7 @@ void RFIGuiController::OpenTestSet(unsigned index, bool gaussianTestSets)
 	Mask2DPtr rfi = Mask2D::CreateSetMaskPtr<false>(width, height);
 	Image2DPtr testSetReal(MitigationTester::CreateTestSet(index, rfi, width, height, gaussianTestSets));
 	Image2DPtr testSetImaginary(MitigationTester::CreateTestSet(2, rfi, width, height, gaussianTestSets));
-	TimeFrequencyData data(SinglePolarisation, testSetReal, testSetImaginary);
+	TimeFrequencyData data(Polarization::StokesI, testSetReal, testSetImaginary);
 	data.SetGlobalMask(rfi);
 	
 	_rfiGuiWindow.GetTimeFrequencyWidget().SetNewData(data, SelectedMetaData());

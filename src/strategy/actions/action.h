@@ -11,7 +11,7 @@ namespace rfiStrategy {
 	{
 		AbsThresholdActionType,
 		ActionBlockType,
-		AdapterType,
+		//AdapterType,
 		AddStatisticsActionType,
 		BaselineSelectionActionType,
 		CalibratePassbandActionType,

@@ -73,6 +73,10 @@ void ProgressWindow::UpdateProgress()
 		lock.lock();
 	}
 
+	std::stringstream timeStr;
+	timeStr << (boost::posix_time::microsec_clock::local_time() - _startTime);
+	_timeElapsedLabel.set_text(timeStr.str());
+	
 	if(_tasks.size() == 0)
 	{
 		// The task has completed
@@ -82,6 +86,8 @@ void ProgressWindow::UpdateProgress()
 		_currentTaskLabel.set_text("-");
 		_timeEstimatedLabel.set_text("-");
 		_progressBar.set_fraction(1.0);
+		
+		// Parent might delete this window in this call -- don't do anything after.
 		_parentWindow.onExecuteStrategyFinished();
 	} else
 	{
@@ -108,10 +114,6 @@ void ProgressWindow::UpdateProgress()
 			_timeEstimatedLabel.set_text(estimatedTimeStr.str());
 		}
 	}
-
-	std::stringstream timeStr;
-	timeStr << (boost::posix_time::microsec_clock::local_time() - _startTime);
-	_timeElapsedLabel.set_text(timeStr.str());
 }
 
 void ProgressWindow::OnStartTask(const rfiStrategy::Action &action, size_t taskNo, size_t taskCount, const std::string &description, size_t weight)

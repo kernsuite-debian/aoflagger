@@ -79,23 +79,17 @@ void ImageWidget::Clear()
 		_highlightConfig = new ThresholdConfig();
 		_highlightConfig->InitializeLengthsSingleSample();
 		_segmentedImage.reset();
+		_image.reset();
 	}
-	if(_horiScale != 0) {
-		delete _horiScale;
-		_horiScale = 0;
-	}
-	if(_vertScale != 0) {
-		delete _vertScale;
-		_vertScale = 0;
-	}
-	if(_colorScale != 0) {
-		delete _colorScale;
-		_colorScale = 0;
-	}
-	if(_plotTitle != 0) {
-		delete _plotTitle;
-		_plotTitle = 0;
-	}
+	delete _horiScale;
+	_horiScale = 0;
+	delete _vertScale;
+	_vertScale = 0;
+	delete _colorScale;
+	_colorScale = 0;
+	delete _plotTitle;
+	_plotTitle = 0;
+	_isInitialized = false;
 }
 
 bool ImageWidget::onDraw(const Cairo::RefPtr<Cairo::Context>& cr)
@@ -194,13 +188,16 @@ void ImageWidget::ZoomOut()
 
 void ImageWidget::Update()
 {
-  if(HasImage())
+	Glib::RefPtr<Gdk::Window> window = get_window();
+	if(window && get_width() > 0 && get_height() > 0)
 	{
-		Glib::RefPtr<Gdk::Window> window = get_window();
-		if(window != 0 && get_width() > 0 && get_height() > 0)
+		if(HasImage())
 		{
 			update(window->create_cairo_context(), get_width(), get_height());
 			window->invalidate(false);
+		}
+		else {
+			redrawWithoutChanges(window->create_cairo_context(), get_width(), get_height());
 		}
 	}
 }
@@ -493,6 +490,13 @@ void ImageWidget::update(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, un
 	const bool
 		originalActive = _showOriginalMask && originalMask != 0,
 		altActive = _showAlternativeMask && alternativeMask != 0;
+	int orMaskR=255, orMaskG=0, orMaskB=255;
+	int altMaskR=255, altMaskG=255, altMaskB=0;
+	if(_colorMap == ViridisMap)
+	{
+		orMaskR=0; orMaskG=0; orMaskB=0;
+		altMaskR=255; altMaskG=255; altMaskB=255;
+	}
 	for(unsigned long y=startY;y<endY;++y) {
 		guint8* rowpointer = data + rowStride * (endY - y - 1);
 		for(unsigned long x=startX;x<endX;++x) {
@@ -501,9 +505,9 @@ void ImageWidget::update(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, un
 			if(_highlighting && highlightMask->Value(x, y) != 0) {
 				r = 255; g = 0; b = 0; a = 255;
 			} else if(originalActive && originalMask->Value(x, y)) {
-				r = 255; g = 0; b = 255; a = 255;
+				r = orMaskR; g = orMaskG; b = orMaskB; a = 255;
 			} else if(altActive && alternativeMask->Value(x, y)) {
-				r = 255; g = 255; b = 0; a = 255;
+				r = altMaskR; g = altMaskG; b = altMaskB; a = 255;
 			} else {
 				num_t val = image->Value(x, y);
 				if(val > max) val = max;
@@ -648,12 +652,12 @@ void ImageWidget::findMinMax(Image2DCPtr image, Mask2DCPtr mask, num_t &min, num
 
 void ImageWidget::redrawWithoutChanges(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height)
 {
-	if(_isInitialized) {
-		cairo->set_source_rgb(1.0, 1.0, 1.0);
-		cairo->set_line_width(1.0);
-		cairo->rectangle(0, 0, width, height);
-		cairo->fill();
+	cairo->set_source_rgb(1.0, 1.0, 1.0);
+	cairo->set_line_width(1.0);
+	cairo->rectangle(0, 0, width, height);
+	cairo->fill();
 		
+	if(_isInitialized) {
 		int
 			destWidth = width - (int) floor(_leftBorderSize + _rightBorderSize),
 			destHeight = height - (int) floor(_topBorderSize + _bottomBorderSize),

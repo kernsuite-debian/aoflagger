@@ -34,9 +34,17 @@ class System {
 		{
 			return _dimensions.find(pointSet.YUnits())->second->XRangeMin();
 		}
+		double XRangePositiveMin(class Plot2DPointSet &pointSet) const
+		{
+			return _dimensions.find(pointSet.YUnits())->second->XRangePositiveMin();
+		}
 		double XRangeMax(class Plot2DPointSet &pointSet) const
 		{
 			return _dimensions.find(pointSet.YUnits())->second->XRangeMax();
+		}
+		double XRangePositiveMax(class Plot2DPointSet &pointSet) const
+		{
+			return _dimensions.find(pointSet.YUnits())->second->XRangePositiveMax();
 		}
 		double YRangeMin(class Plot2DPointSet &pointSet) const
 		{

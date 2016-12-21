@@ -128,15 +128,15 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex, bool fringeStop
 	TimeFrequencyData data;
 	if(_polarizationCount == 4)
 	{
-		data = TimeFrequencyData(realImages[0], imagImages[0], realImages[1], imagImages[1], realImages[2], imagImages[2], realImages[3], imagImages[3]);
+		data = TimeFrequencyData::FromLinear(realImages[0], imagImages[0], realImages[1], imagImages[1], realImages[2], imagImages[2], realImages[3], imagImages[3]);
 		data.SetIndividualPolarisationMasks(masks[0], masks[1], masks[2], masks[3]);
 	} else if(_polarizationCount == 2)
 	{
-		data = TimeFrequencyData(AutoDipolePolarisation, realImages[0], imagImages[0], realImages[1], imagImages[1]);
+		data = TimeFrequencyData(Polarization::XX, realImages[0], imagImages[0], Polarization::YY, realImages[1], imagImages[1]);
 		data.SetIndividualPolarisationMasks(masks[0], masks[1]);
 	} else if(_polarizationCount == 1)
 	{
-		data = TimeFrequencyData(SinglePolarisation, realImages[0], imagImages[0]);
+		data = TimeFrequencyData(Polarization::StokesI, realImages[0], imagImages[0]);
 		data.SetGlobalMask(masks[0]);
 	} else {
 		throw std::runtime_error("Unknown number of polarizations!");
