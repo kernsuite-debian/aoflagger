@@ -7,6 +7,10 @@
 #include "../../structures/image2d.h"
 #include "../../structures/mask2d.h"
 
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
 class ThresholdMitigater{
 	public:
 		//static void Threshold(class Image2D &image, num_t threshold);
@@ -20,6 +24,7 @@ class ThresholdMitigater{
 		template<size_t Length>
 		static void HorizontalSumThresholdLarge(Image2DCPtr input, Mask2DPtr mask, num_t threshold);
 
+#ifdef USE_INTRINSICS
 		template<size_t Length>
 		static void VerticalSumThresholdLargeSSE(Image2DCPtr input, Mask2DPtr mask, num_t threshold);
 		
@@ -29,7 +34,8 @@ class ThresholdMitigater{
 		static void HorizontalSumThresholdLargeSSE(Image2DCPtr input, Mask2DPtr mask, num_t threshold);
 		
 		static void HorizontalSumThresholdLargeSSE(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold);
-
+#endif
+		
 		template<size_t Length>
 		static void VerticalSumThresholdLargeCompare(Image2DCPtr input, Mask2DPtr mask, num_t threshold);
 
@@ -45,12 +51,11 @@ class ThresholdMitigater{
 		
 		static void VerticalSumThresholdLarge(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold)
 		{
+#ifdef USE_INTRINSICS
 			VerticalSumThresholdLargeSSE(input, mask, length, threshold);
-			
-			// We could/should check maybe availability of SSE here. If no SSE is
-			// available, we should call:
-			
-			// VerticalSumThresholdLargeReference(input, mask, length, threshold);
+#else
+			VerticalSumThresholdLargeReference(input, mask, length, threshold);
+#endif
 		}
 		
 		static void VerticalSumThresholdLargeReference(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold);
@@ -59,7 +64,11 @@ class ThresholdMitigater{
 		
 		static void HorizontalSumThresholdLarge(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold)
 		{
+#ifdef USE_INTRINSICS
 			HorizontalSumThresholdLargeSSE(input, mask, length, threshold);
+#else
+			HorizontalSumThresholdLargeReference(input, mask, length, threshold);
+#endif
 		}
 
 		static void VarThreshold(Image2DCPtr input, Mask2DPtr mask, size_t length, num_t threshold);
@@ -70,5 +79,7 @@ class ThresholdMitigater{
 	private:
 		ThresholdMitigater() { }
 };
+
+#undef USE_INSTRINSICS
 
 #endif

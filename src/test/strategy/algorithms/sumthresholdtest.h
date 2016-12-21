@@ -17,12 +17,15 @@ class SumThresholdTest : public UnitTest {
 	public:
 		SumThresholdTest() : UnitTest("Sumthreshold")
 		{
+#ifdef __SSE__
 			AddTest(VerticalSumThresholdSSE(), "SumThreshold optimized SSE version (vertical)");
 			AddTest(HorizontalSumThresholdSSE(), "SumThreshold optimized SSE version (horizontal)");
 			AddTest(Stability(), "SumThreshold stability");
+#endif
 		}
 		
 	private:
+#ifdef __SSE__
 		struct VerticalSumThresholdSSE : public Asserter
 		{
 			void operator()();
@@ -35,8 +38,10 @@ class SumThresholdTest : public UnitTest {
 		{
 			void operator()();
 		};
+#endif
 };
 
+#ifdef __SSE__
 void SumThresholdTest::VerticalSumThresholdSSE::operator()()
 {
 	const unsigned
@@ -48,7 +53,7 @@ void SumThresholdTest::VerticalSumThresholdSSE::operator()()
 	Image2DPtr
 		real = MitigationTester::CreateTestSet(26, mask1, width, height),
 		imag = MitigationTester::CreateTestSet(26, mask2, width, height);
-	TimeFrequencyData data(XXPolarisation, real, imag);
+	TimeFrequencyData data(Polarization::XX, real, imag);
 	Image2DCPtr image = data.GetSingleImage();
 	
 	ThresholdConfig config;
@@ -91,7 +96,7 @@ void SumThresholdTest::HorizontalSumThresholdSSE::operator()()
 	real->SwapXY();
 	imag->SwapXY();
 		
-	TimeFrequencyData data(XXPolarisation, real, imag);
+	TimeFrequencyData data(Polarization::XX, real, imag);
 	Image2DCPtr image = data.GetSingleImage();
 
 	ThresholdConfig config;
@@ -144,5 +149,6 @@ void SumThresholdTest::Stability::operator()()
 		ThresholdMitigater::VerticalSumThresholdLargeSSE(realA, maskD, length, 1.0);
 	}
 }
+#endif // __SSE__
 
 #endif

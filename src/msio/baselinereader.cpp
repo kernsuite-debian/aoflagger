@@ -17,7 +17,7 @@
 
 BaselineReader::BaselineReader(const std::string &msFile)
 	: _measurementSet(msFile), _table(0), _dataColumnName("DATA"), _subtractModel(false), _readData(true), _readFlags(true),
-	_polarizationCount(0)
+	_polarizations()
 {
 	try {
 		_table = new casacore::MeasurementSet(_measurementSet.Path(), casacore::MeasurementSet::Update);
@@ -62,37 +62,16 @@ void BaselineReader::AddReadRequest(size_t antenna1, size_t antenna2, size_t spe
 	addReadRequest(antenna1, antenna2, spectralWindow, sequenceId, 0, _observationTimes[sequenceId].size());
 }
 
-TimeFrequencyData BaselineReader::GetNextResult(std::vector<class UVW> &uvw)
+TimeFrequencyData BaselineReader::GetNextResult(std::vector<class UVW>& uvw)
 {
 	size_t requestIndex = 0;
 	TimeFrequencyData data;
-	if(_polarizationCount == 4)
-	{
-		data = TimeFrequencyData(
-			_results[requestIndex]._realImages[0], _results[requestIndex]._imaginaryImages[0],
-			_results[requestIndex]._realImages[1], _results[requestIndex]._imaginaryImages[1],
-			_results[requestIndex]._realImages[2], _results[requestIndex]._imaginaryImages[2],
-			_results[requestIndex]._realImages[3], _results[requestIndex]._imaginaryImages[3]
-			);
-		data.SetIndividualPolarisationMasks(
-			_results[requestIndex]._flags[0],
-			_results[requestIndex]._flags[1],
-			_results[requestIndex]._flags[2],
-			_results[requestIndex]._flags[3]);
-	} else if(_polarizationCount == 2)
-	{
-		data = TimeFrequencyData(AutoDipolePolarisation,
-			_results[requestIndex]._realImages[0], _results[requestIndex]._imaginaryImages[0],
-			_results[requestIndex]._realImages[1], _results[requestIndex]._imaginaryImages[1]);
-		data.SetIndividualPolarisationMasks(
-			_results[requestIndex]._flags[0],
-			_results[requestIndex]._flags[1]);
-	} else if(_polarizationCount == 1)
-	{
-		data = TimeFrequencyData(StokesIPolarisation,
-			_results[requestIndex]._realImages[0], _results[requestIndex]._imaginaryImages[0]);
-		data.SetGlobalMask(_results[requestIndex]._flags[0]);
-	}
+	data = TimeFrequencyData(
+		_polarizations.data(),
+		_polarizations.size(),
+		_results[requestIndex]._realImages.data(),
+		_results[requestIndex]._imaginaryImages.data());
+	data.SetIndividualPolarisationMasks(_results[requestIndex]._flags.data());
 	uvw = _results[0]._uvw;
 	
 	_results.erase(_results.begin() + requestIndex);
@@ -102,37 +81,30 @@ TimeFrequencyData BaselineReader::GetNextResult(std::vector<class UVW> &uvw)
 
 void BaselineReader::initializePolarizations()
 {
-	if(_polarizationCount == 0)
+	if(_polarizations.empty())
 	{
 		casacore::MeasurementSet ms(_measurementSet.Path());
+		
+		casacore::MSDataDescription ddTable = ms.dataDescription();
+		if(ddTable.nrow() == 0)
+			throw std::runtime_error("DataDescription table is empty");
+		casacore::ROScalarColumn<int> polIdColumn(ddTable, casacore::MSDataDescription::columnName(casacore::MSDataDescription::POLARIZATION_ID));
+		int polarizationId = polIdColumn(0);
+		for(size_t row=0; row!=ddTable.nrow(); ++row)
+		{
+			if(polIdColumn(row) != polarizationId)
+				throw std::runtime_error("This measurement set has different polarizations listed in the datadescription table. This is non-standard, and AOFlagger cannot handle it.");
+		}
+		
 		casacore::Table polTable = ms.polarization();
 		casacore::ROArrayColumn<int> corTypeColumn(polTable, "CORR_TYPE"); 
-		casacore::Array<int> corType = corTypeColumn(0);
+		casacore::Array<int> corType = corTypeColumn(polarizationId);
 		casacore::Array<int>::iterator iterend(corType.end());
-		int polarizationCount = 0;
 		for (casacore::Array<int>::iterator iter=corType.begin(); iter!=iterend; ++iter)
 		{
-			switch(*iter) {
-				case 1: //_stokesIIndex = polarizationCount; break;
-				case 5:
-				case 9: //_xxIndex = polarizationCount; break;
-				case 6:
-				case 10:// _xyIndex = polarizationCount; break;
-				case 7:
-				case 11:// _yxIndex = polarizationCount; break;
-				case 8:
-				case 12: //_yyIndex = polarizationCount; break;
-				break;
-				default:
-				{
-					std::stringstream s;
-					s << "There is a polarization in the measurement set that I can not handle (" << *iter << ", polarization index " << polarizationCount << ").";
-					throw std::runtime_error(s.str());
-				}
-			}
-			++polarizationCount;
+			PolarizationEnum polarization = Polarization::AipsIndexToEnum(*iter);
+			_polarizations.push_back(polarization);
 		}
-		_polarizationCount = polarizationCount;
 	}
 }
 

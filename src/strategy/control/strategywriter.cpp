@@ -1,7 +1,6 @@
 #include "strategywriter.h"
 
 #include "../actions/absthresholdaction.h"
-#include "../actions/adapter.h"
 #include "../actions/addstatisticsaction.h"
 #include "../actions/baselineselectionaction.h"
 #include "../actions/calibratepassbandaction.h"
@@ -86,9 +85,9 @@ namespace rfiStrategy {
 				break;
 			case ActionBlockType:
 				throw std::runtime_error("Can not store action blocks");
-			case AdapterType:
-				writeAdapter(static_cast<const Adapter&>(action));
-				break;
+			//case AdapterType:
+			//	writeAdapter(static_cast<const Adapter&>(action));
+			//	break;
 			case AddStatisticsActionType:
 				writeAddStatisticsAction(static_cast<const AddStatisticsAction&>(action));
 				break;
@@ -219,13 +218,6 @@ namespace rfiStrategy {
 		Write<num_t>("threshold", action.Threshold());
 	}
 	
-	void StrategyWriter::writeAdapter(const Adapter &action)
-	{
-		Attribute("type", "Adapter");
-		Write<bool>("restore-originals", action.RestoreOriginals());
-		writeContainerItems(action);
-	}
-
 	void StrategyWriter::writeAddStatisticsAction(const AddStatisticsAction &action)
 	{
 		Attribute("type", "AddStatisticsAction");
@@ -337,10 +329,10 @@ namespace rfiStrategy {
 	void StrategyWriter::writeForEachPolarisationBlock(const ForEachPolarisationBlock &action)
 	{
 		Attribute("type", "ForEachPolarisationBlock");
-		Write<bool>("on-xx", action.OnXX());
-		Write<bool>("on-xy", action.OnXY());
-		Write<bool>("on-yx", action.OnYX());
-		Write<bool>("on-yy", action.OnYY());
+		Write<bool>("on-xx", action.OnPP());
+		Write<bool>("on-xy", action.OnPQ());
+		Write<bool>("on-yx", action.OnQP());
+		Write<bool>("on-yy", action.OnQQ());
 		Write<bool>("on-stokes-i", action.OnStokesI());
 		Write<bool>("on-stokes-q", action.OnStokesQ());
 		Write<bool>("on-stokes-u", action.OnStokesU());

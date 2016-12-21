@@ -96,6 +96,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onLoadPrevious();
 		void onLoadNext();
 		void onToggleFlags();
+		void onTogglePolarizations();
 		void onToggleImage();
 		void onQuit() { hide(); }
 		void onActionFileOpen();
@@ -126,21 +127,23 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onDifferenceToOriginalPressed();
 		void onBackgroundToOriginalPressed();
 		void onHightlightPressed();
-		void showPhasePart(enum TimeFrequencyData::PhaseRepresentation phaseRepresentation);
-		void onShowRealPressed() { showPhasePart(TimeFrequencyData::RealPart); }
-		void onShowImaginaryPressed() { showPhasePart(TimeFrequencyData::ImaginaryPart); }
-		void onShowPhasePressed() { showPhasePart(TimeFrequencyData::PhasePart); }
-		void showPolarisation(enum PolarisationType polarisation);
-		void onShowStokesIPressed() { showPolarisation(StokesIPolarisation); }
-		void onShowStokesQPressed() { showPolarisation(StokesQPolarisation); }
-		void onShowStokesUPressed() { showPolarisation(StokesUPolarisation); }
-		void onShowStokesVPressed() { showPolarisation(StokesVPolarisation); }
-		void onShowAutoDipolePressed() { showPolarisation(AutoDipolePolarisation); }
-		void onShowCrossDipolePressed() { showPolarisation(CrossDipolePolarisation); }
-		void onShowXXPressed() { showPolarisation(XXPolarisation); }
-		void onShowXYPressed() { showPolarisation(XYPolarisation); }
-		void onShowYXPressed() { showPolarisation(YXPolarisation); }
-		void onShowYYPressed() { showPolarisation(YYPolarisation); }
+		void keepPhasePart(enum TimeFrequencyData::PhaseRepresentation phaseRepresentation);
+		void onKeepRealPressed() { keepPhasePart(TimeFrequencyData::RealPart); }
+		void onKeepImaginaryPressed() { keepPhasePart(TimeFrequencyData::ImaginaryPart); }
+		void onKeepPhasePressed() { keepPhasePart(TimeFrequencyData::PhasePart); }
+		void keepPolarisation(PolarizationEnum polarisation);
+		void onKeepStokesIPressed() { keepPolarisation(Polarization::StokesI); }
+		void onKeepStokesQPressed() { keepPolarisation(Polarization::StokesQ); }
+		void onKeepStokesUPressed() { keepPolarisation(Polarization::StokesU); }
+		void onKeepStokesVPressed() { keepPolarisation(Polarization::StokesV); }
+		void onKeepRRPressed() { keepPolarisation(Polarization::RR); }
+		void onKeepRLPressed() { keepPolarisation(Polarization::RL); }
+		void onKeepLRPressed() { keepPolarisation(Polarization::LR); }
+		void onKeepLLPressed() { keepPolarisation(Polarization::LL); }
+		void onKeepXXPressed() { keepPolarisation(Polarization::XX); }
+		void onKeepXYPressed() { keepPolarisation(Polarization::XY); }
+		void onKeepYXPressed() { keepPolarisation(Polarization::YX); }
+		void onKeepYYPressed() { keepPolarisation(Polarization::YY); }
 		void onImagePropertiesPressed();
 		void onOpenTestSetNoise() { openTestSet(2); }
 		void onOpenTestSetA() { openTestSet(3); }
@@ -181,6 +184,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onPlotSumSpectrumPressed();
 		void onPlotPowerSpectrumPressed();
 		void onPlotPowerSpectrumComparisonPressed();
+		void onPlotFrequencyScatterPressed();
 		void onPlotPowerRMSPressed();
 		void onPlotPowerSNRPressed();
 		void onPlotPowerTimePressed();
@@ -251,8 +255,12 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 			_zoomToFitButton, _zoomInButton, _zoomOutButton;
 		Glib::RefPtr<Gtk::ToggleAction>
 			_originalFlagsButton, _altFlagsButton,
+			_showPPButton, _showPQButton,
+			_showQPButton, _showQQButton,
 			_originalImageButton, _backgroundImageButton, _diffImageButton,
-			_timeGraphButton, _simFixBandwidthButton;
+			_timeGraphButton, _simFixBandwidthButton,
+			_closeExecuteFrameButton;
+		std::vector<sigc::connection> _toggleConnections;
 		Glib::RefPtr<Gtk::RadioAction>
 			_gaussianTestSetsButton, _rayleighTestSetsButton, _zeroTestSetsButton,
 			_ncpSetButton, _b1834SetButton, _emptySetButton,

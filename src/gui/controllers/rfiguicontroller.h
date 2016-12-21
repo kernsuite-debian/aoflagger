@@ -30,6 +30,74 @@ class RFIGuiController
 			}
 		}
 		
+		bool IsPPShown() const { return _showPP; }
+		bool IsPQShown() const { return _showPQ; }
+		bool IsQPShown() const { return _showQP; }
+		bool IsQQShown() const { return _showQQ; }
+		void SetShowPP(bool showPP)
+		{
+			if(showPP != _showPP)
+			{
+				if(showPP || _showPQ || _showQP || _showQQ)
+				{
+					_showPP = showPP;
+					if(_showPP)
+					{
+						_showPQ = false;
+						_showQP = false;
+					}
+				}
+				_signalStateChange();
+			}
+		}
+		void SetShowPQ(bool showPQ)
+		{
+			if(showPQ != _showPQ)
+			{
+				if(showPQ || _showPP || _showQP || _showQQ)
+				{
+					_showPQ = showPQ;
+					if(_showPQ)
+					{
+						_showPP = false;
+						_showQQ = false;
+					}
+				}
+				_signalStateChange();
+			}
+		}
+		void SetShowQP(bool showQP)
+		{
+			if(showQP != _showQP)
+			{
+				if(showQP || _showPP || _showPQ || _showQQ)
+				{
+					_showQP = showQP;
+					if(_showQP)
+					{
+						_showPP = false;
+						_showQQ = false;
+					}
+				}
+				_signalStateChange();
+			}
+		}
+		void SetShowQQ(bool showQQ)
+		{
+			if(showQQ != _showQQ)
+			{
+				if(showQQ || _showPP || _showPQ || _showQP)
+				{
+					_showQQ = showQQ;
+					if(_showQQ)
+					{
+						_showPQ = false;
+						_showQP = false;
+					}
+				}
+				_signalStateChange();
+			}
+		}
 		sigc::signal<void> &SignalStateChange()
 		{ return _signalStateChange; }
 		
@@ -40,6 +108,7 @@ class RFIGuiController
 		void PlotSumSpectrum() { plotMeanSpectrum(true); }
 		void PlotPowerSpectrum();
 		void PlotPowerSpectrumComparison();
+		void PlotFrequencyScatter();
 		void PlotPowerRMS();
 		void PlotPowerSNR();
 		void PlotPowerTime();
@@ -66,6 +135,7 @@ class RFIGuiController
 		void plotMeanSpectrum(bool weight);
 		
 		bool _showOriginalFlags, _showAlternativeFlags;
+		bool _showPP, _showPQ, _showQP, _showQQ;
 		
 		sigc::signal<void> _signalStateChange;
 		class RFIGuiWindow &_rfiGuiWindow;

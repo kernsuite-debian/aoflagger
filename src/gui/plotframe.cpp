@@ -25,23 +25,23 @@ void PlotFrame::plot()
 
 	bool drawn = false;
 	if(_data.HasXX()) {
-		plotTimeGraph(_data, "XX", XXPolarisation);
+		plotTimeGraph(_data, "XX", Polarization::XX);
 		drawn = true;
 	}
 	if(_data.HasXY()) {
-		plotTimeGraph(_data, "XY", XYPolarisation);
+		plotTimeGraph(_data, "XY", Polarization::XY);
 		drawn = true;
 	}
 	if(_data.HasYX()) {
-		plotTimeGraph(_data, "YX", YXPolarisation);
+		plotTimeGraph(_data, "YX", Polarization::YX);
 		drawn = true;
 	}
 	if(_data.HasYY()) {
-		plotTimeGraph(_data, "YY", YYPolarisation);
+		plotTimeGraph(_data, "YY", Polarization::YY);
 		drawn = true;
 	}
 
-	if(_data.Polarisation() == StokesIPolarisation)
+	if(_data.PolarisationCount()>0 && _data.GetPolarisation(0) == Polarization::StokesI)
 	{
 		plotTimeGraph(_data, "Stokes I");
 		drawn = true;
@@ -52,7 +52,7 @@ void PlotFrame::plot()
 	_plot.SetPlot(*_plotData);
 }
 
-void PlotFrame::plotTimeGraph(const TimeFrequencyData &data, const std::string &label, enum PolarisationType polarisation)
+void PlotFrame::plotTimeGraph(const TimeFrequencyData &data, const std::string &label, PolarizationEnum polarisation)
 {
 	TimeFrequencyData *convertedData = data.CreateTFData(polarisation);
 	plotTimeGraph(*convertedData, label);

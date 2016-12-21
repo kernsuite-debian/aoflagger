@@ -22,16 +22,14 @@ class PolarizationStatistics {
 			unsigned polarizationCount = data.PolarisationCount();
 			if(_flaggedCounts.size() == 0)
 			{
-				_polarizationType = data.Polarisation();
+				_polarizations = data.Polarisations();
 				for(unsigned i=0;i<polarizationCount;++i)
 				{
 					_flaggedCounts.push_back(0);
 					_totalCounts.push_back(0);
-					TimeFrequencyData *polData = data.CreateTFDataFromPolarisationIndex(i);
-					_names.push_back(TimeFrequencyData::GetPolarisationName(polData->Polarisation()));
-					delete polData;
+					_names.push_back(Polarization::TypeToFullString(_polarizations[i]));
 				}
-			} else if(_polarizationType != data.Polarisation())
+			} else if(_polarizations != data.Polarisations())
 			{
 				throw std::runtime_error("Adding differently polarized data to statistics");
 			}
@@ -80,7 +78,7 @@ class PolarizationStatistics {
 
 		std::vector<long unsigned> _flaggedCounts, _totalCounts;
 		std::vector<std::string> _names;
-		enum PolarisationType _polarizationType;
+		std::vector<PolarizationEnum> _polarizations;
 };
 
 #endif

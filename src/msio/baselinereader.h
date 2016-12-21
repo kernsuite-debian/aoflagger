@@ -11,6 +11,7 @@
 #include "../structures/image2d.h"
 #include "../structures/mask2d.h"
 #include "../structures/measurementset.h"
+#include "../structures/polarization.h"
 
 typedef boost::shared_ptr<class BaselineReader> BaselineReaderPtr;
 typedef boost::shared_ptr<const class BaselineReader> BaselineReaderCPtr;
@@ -32,10 +33,10 @@ class BaselineReader {
 		bool SubtractModel() const { return _subtractModel; }
 		void SetSubtractModel(bool subtractModel) { _subtractModel = subtractModel; }
 
-		size_t PolarizationCount()
+		const std::vector<PolarizationEnum>& Polarizations()
 		{
 			initializePolarizations();
-			return _polarizationCount;
+			return _polarizations;
 		}
 
 		class casacore::MeasurementSet *Table() const { return _table; }
@@ -63,10 +64,10 @@ class BaselineReader {
 		void AddWriteTask(std::vector<Mask2DCPtr> flags, int antenna1, int antenna2, int spectralWindow, unsigned sequenceId)
 		{
 			initializePolarizations();
-			if(flags.size() != _polarizationCount)
+			if(flags.size() != _polarizations.size())
 			{
 				std::stringstream s;
-				s << "Trying to write image with " << flags.size() << " polarizations to a measurement set with " << _polarizationCount;
+				s << "Trying to write image with " << flags.size() << " polarizations to a measurement set with " << _polarizations.size();
 				throw std::runtime_error(s.str());
 			}
 			FlagWriteRequest task;
@@ -190,7 +191,7 @@ class BaselineReader {
 		
 		std::vector<std::map<double,size_t> > _observationTimes;
 		std::vector<double> _observationTimesVector;
-		size_t _polarizationCount;
+		std::vector<PolarizationEnum> _polarizations;
 };
 
 #endif // BASELINEREADER_H

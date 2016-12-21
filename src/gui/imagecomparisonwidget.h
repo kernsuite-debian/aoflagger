@@ -22,7 +22,7 @@ class ImageComparisonWidget : public ImageWidget {
 		TimeFrequencyData GetActiveData() const
 		{
 			TimeFrequencyData data(getActiveDataWithOriginalFlags());
-			data.SetGlobalMask(GetActiveMask());
+			setActiveMask(data);
 			if(StartHorizontal() != 0.0 || EndHorizontal() != 1.0 || StartVertical() != 0.0 || EndVertical() != 1.0)
 			   data.Trim(round(StartHorizontal() * data.ImageWidth()), round(StartVertical() * data.ImageHeight()),
 									 round(EndHorizontal() * data.ImageWidth()), round(EndVertical() * data.ImageHeight())); 
@@ -50,8 +50,22 @@ class ImageComparisonWidget : public ImageWidget {
 		} 
 		void SetVisualizedImage(TFImage visualizedImage)
 		{
-		  _visualizedImage = visualizedImage;
-		  updateVisualizedImage();
+			if(_visualizedImage != visualizedImage)
+			{
+				_visualizedImage = visualizedImage;
+				updateVisualizedImage();
+			}
+		}
+		void SetVisualizedPolarization(bool pp, bool pq, bool qp, bool qq)
+		{
+			if(_showPP != pp || _showPQ != pq || _showQP != qp || _showQQ != qq)
+			{
+				_showPP = pp;
+				_showPQ = pq;
+				_showQP = qp;
+				_showQQ = qq;
+				updateVisualizedImage();
+			}
 		}
 		void ClearBackground();
 	private:
@@ -69,7 +83,24 @@ class ImageComparisonWidget : public ImageWidget {
 					return _contaminated;
 			}
 		}
+		void setActiveMask(TimeFrequencyData& data) const
+		{
+			bool orActive = ShowOriginalMask() && _original.MaskCount()!=0;
+			bool altActive = ShowAlternativeMask() && _contaminated.MaskCount()!=0;
+			if(orActive && altActive)
+			{
+				data.SetMask(_original);
+				data.JoinMask(_contaminated);
+			}
+			else if(orActive)
+				data.SetMask(_original);
+			else if(altActive)
+				data.SetMask(_contaminated);
+			else
+				data.SetMasksToValue<false>();
+		}
 		enum TFImage _visualizedImage;
+		bool _showPP, _showPQ, _showQP, _showQQ;
 		TimeFrequencyData _original, _revised, _contaminated;
 		TimeFrequencyMetaDataCPtr _metaData;
 };

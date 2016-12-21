@@ -79,7 +79,7 @@ inline void HighPassFilterExperiment::TimeFitting::operator()()
 	Initialize(image, mask);
 	
 	LocalFitMethod fitMethod;
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, StokesIPolarisation, image);
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, image);
 	fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
 	fitMethod.Initialize(data);
 	Stopwatch watch(true);
@@ -111,7 +111,7 @@ inline void HighPassFilterExperiment::TimeFlaggedFitting::operator()()
 	InitializeFlagged(image, mask);
 	
 	LocalFitMethod fitMethod;
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, StokesIPolarisation, image);
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, image);
 	fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
 	fitMethod.Initialize(data);
 	Stopwatch watch(true);

@@ -20,7 +20,7 @@ namespace rfiStrategy {
 		TimeFrequencyMetaDataCPtr metaData = artifacts.MetaData();
 		if(data.PolarisationCount() > 1)
 		{
-			TimeFrequencyData *tmp = data.CreateTFData(StokesIPolarisation);
+			TimeFrequencyData *tmp = data.CreateTFData(Polarization::StokesI);
 			data = *tmp;
 			delete tmp;
 		}

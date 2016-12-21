@@ -47,7 +47,9 @@ class DefaultStrategySpeedTest : public UnitTest {
 			AddTest(TimeSlidingWindowFit(), "Timing sliding window fit");
 			AddTest(TimeHighPassFilter(), "Timing high-pass filter");
 			AddTest(TimeStrategy(), "Timing strategy");
+#ifdef __SSE__
 			AddTest(TimeSSEHighPassFilterStrategy(), "Timing SSE high-pass filter strategy");
+#endif
 		}
 		
 		DefaultStrategySpeedTest(const std::string &) : UnitTest("Default strategy speed test")
@@ -88,10 +90,12 @@ class DefaultStrategySpeedTest : public UnitTest {
 		{
 			void operator()();
 		};
+#ifdef __SSE__
 		struct TimeSSEHighPassFilterStrategy : public Asserter
 		{
 			void operator()();
 		};
+#endif
 		
 		static void prepareStrategy(rfiStrategy::ArtifactSet &artifacts);
 };
@@ -111,7 +115,7 @@ inline void DefaultStrategySpeedTest::prepareStrategy(rfiStrategy::ArtifactSet &
 		yxImag = MitigationTester::CreateTestSet(26, rfi, width, height),
 		yyReal = MitigationTester::CreateTestSet(26, rfi, width, height),
 		yyImag = MitigationTester::CreateTestSet(26, rfi, width, height);
-	TimeFrequencyData data(
+	TimeFrequencyData data = TimeFrequencyData::FromLinear(
 		xxReal, xxImag, xyReal, xyImag,
 		yxReal, yxImag, yyReal, yyImag);
 	artifacts.SetOriginalData(data);
@@ -360,20 +364,24 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 		ThresholdMitigater::HorizontalSumThresholdLargeReference(input, maskA, length, threshold);
 		AOLogger::Info << "Horizontal, length " << length << ": " << watchA.ToString() << '\n';
 		
+#ifdef __SSE__
 		Mask2DPtr maskC = Mask2D::CreateCopy(artifacts.OriginalData().GetSingleMask());
 		Stopwatch watchC(true);
 		ThresholdMitigater::HorizontalSumThresholdLargeSSE(input, maskC, length, threshold);
 		AOLogger::Info << "Horizontal SSE, length " << length << ": " << watchC.ToString() << '\n';
+#endif
 		
 		Mask2DPtr maskB = Mask2D::CreateCopy(artifacts.OriginalData().GetSingleMask());
 		Stopwatch watchB(true);
 		ThresholdMitigater::VerticalSumThresholdLargeReference(input, maskB, length, threshold);
 		AOLogger::Info << "Vertical, length " << length << ": " << watchB.ToString() << '\n';
 		
+#ifdef __SSE__
 		Mask2DPtr maskD = Mask2D::CreateCopy(artifacts.OriginalData().GetSingleMask());
 		Stopwatch watchD(true);
 		ThresholdMitigater::VerticalSumThresholdLargeSSE(input, maskD, length, threshold);
 		AOLogger::Info << "SSE Vertical, length " << length << ": " << watchD.ToString() << '\n';
+#endif
 	}
 }
 
@@ -407,6 +415,7 @@ inline void DefaultStrategySpeedTest::TimeRankOperator::operator()()
 		<< ", " << ( operatorTime * 100.0 / totalTime) << "%\n";
 }
 
+#ifdef __SSE__
 inline void DefaultStrategySpeedTest::TimeSSEHighPassFilterStrategy::operator()()
 {
 	rfiStrategy::Strategy *strategy = new rfiStrategy::Strategy();
@@ -493,5 +502,6 @@ inline void DefaultStrategySpeedTest::TimeSSEHighPassFilterStrategy::operator()(
 	AOLogger::Info << "Default strategy took: " << watch.ToString() << '\n';
 	delete strategy;
 }
+#endif // __SSE__
 
 #endif

@@ -1,7 +1,6 @@
 #include "defaultstrategy.h"
 #include "strategyiterator.h"
 
-#include "../actions/adapter.h"
 #include "../actions/baselineselectionaction.h"
 #include "../actions/calibratepassbandaction.h"
 #include "../actions/changeresolutionaction.h"
@@ -180,10 +179,10 @@ namespace rfiStrategy {
 		ForEachPolarisationBlock *fepBlock = new ForEachPolarisationBlock();
 		if(onStokesIQ)
 		{
-			fepBlock->SetOnXX(false);
-			fepBlock->SetOnXY(false);
-			fepBlock->SetOnYX(false);
-			fepBlock->SetOnYY(false);
+			fepBlock->SetOnPP(false);
+			fepBlock->SetOnPQ(false);
+			fepBlock->SetOnQP(false);
+			fepBlock->SetOnQQ(false);
 			fepBlock->SetOnStokesI(true);
 			fepBlock->SetOnStokesQ(true);
 		}
@@ -281,11 +280,17 @@ namespace rfiStrategy {
 			CombineFlagResults *cfr2 = new CombineFlagResults();
 			block.Add(cfr2);
 			cfr2->Add(new FrequencySelectionAction());
-			if(!keepTransients)
-				cfr2->Add(new TimeSelectionAction());
+			if(!keepTransients) {
+				TimeSelectionAction* tsAction = new TimeSelectionAction();
+				tsAction->SetThreshold(4.0);
+				cfr2->Add(tsAction);
+			}
 		} else {
-			if(!keepTransients)
-				block.Add(new TimeSelectionAction());
+			if(!keepTransients) {
+				TimeSelectionAction* tsAction = new TimeSelectionAction();
+				tsAction->SetThreshold(4.0);
+				block.Add(tsAction);
+			}
 		}
 
 		if(assembleStatistics && hasBaselines)

@@ -1,10 +1,16 @@
-#include <xmmintrin.h>
-
-#include <cmath>
-
 #include "highpassfilter.h"
 
 #include "../../util/rng.h"
+
+#include <cmath>
+
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
+#ifdef USE_INTRINSICS
+#include <xmmintrin.h>
+#endif
 
 HighPassFilter::~HighPassFilter()
 {
@@ -12,7 +18,7 @@ HighPassFilter::~HighPassFilter()
 	delete[] _vKernel;
 }
 
-void HighPassFilter::applyLowPass(const Image2DPtr &image)
+void HighPassFilter::applyLowPassSimple(const Image2DPtr &image)
 {
 	// Guassian convolution can be separated in two 1D convolution
 	// because of properties of the 2D Gaussian function.
@@ -22,7 +28,7 @@ void HighPassFilter::applyLowPass(const Image2DPtr &image)
 		const num_t kernelValue = _hKernel[i];
 		const size_t
 			xStart = (i >= hKernelMid) ? 0 : (hKernelMid-i),
-			xEnd = (i <= hKernelMid) ? image->Width() : image->Width()-i+hKernelMid;
+			xEnd = (i <= hKernelMid) ? image->Width() : (image->Width()+hKernelMid > i ? (image->Width()-i+hKernelMid) : 0);
 		for(unsigned y=0;y<image->Height();++y) {
 			for(unsigned x=xStart;x<xEnd;++x)	
 				temp->AddValue(x, y, image->Value(x+i-hKernelMid, y)*kernelValue);
@@ -35,7 +41,7 @@ void HighPassFilter::applyLowPass(const Image2DPtr &image)
 		const num_t kernelValue = _vKernel[i];
 		const size_t
 			yStart = (i >= vKernelMid) ? 0 : (vKernelMid-i),
-			yEnd = (i <= vKernelMid) ? image->Height() : image->Height()-i+vKernelMid;
+			yEnd = (i <= vKernelMid) ? image->Height() : ((image->Height()+vKernelMid>i) ? (image->Height()-i+vKernelMid) : 0);
 		for(unsigned y=yStart;y<yEnd;++y) {
 			for(unsigned x=0;x<image->Width();++x)
 				image->AddValue(x, y, temp->Value(x, y+i-vKernelMid)*kernelValue);
@@ -45,6 +51,7 @@ void HighPassFilter::applyLowPass(const Image2DPtr &image)
 
 void HighPassFilter::applyLowPassSSE(const Image2DPtr &image)
 {
+#ifdef USE_INTRINSICS
 	Image2DPtr temp = Image2D::CreateZeroImagePtr(image->Width(), image->Height());
 	unsigned hKernelMid = _hWindowSize/2;
 	for(unsigned i=0; i<_hWindowSize; ++i) {
@@ -115,6 +122,9 @@ void HighPassFilter::applyLowPassSSE(const Image2DPtr &image)
 			}
 		}
 	}
+#else
+	throw std::runtime_error("SSE function called without SSE available");
+#endif
 }
 
 Image2DPtr HighPassFilter::ApplyHighPass(const Image2DCPtr &image, const Mask2DCPtr &mask)
@@ -130,10 +140,10 @@ Image2DPtr HighPassFilter::ApplyLowPass(const Image2DCPtr &image, const Mask2DCP
 	Image2DPtr
 		outputImage = Image2D::CreateUnsetImagePtr(image->Width(), image->Height()),
 		weights = Image2D::CreateUnsetImagePtr(image->Width(), image->Height());
-	setFlaggedValuesToZeroAndMakeWeightsSSE(image, outputImage, mask, weights);
-	applyLowPassSSE(outputImage);
-	applyLowPassSSE(weights);
-	elementWiseDivideSSE(outputImage, weights);
+	setFlaggedValuesToZeroAndMakeWeights(image, outputImage, mask, weights);
+	applyLowPass(outputImage);
+	applyLowPass(weights);
+	elementWiseDivide(outputImage, weights);
 	weights.reset();
 	return outputImage;
 }
@@ -157,7 +167,7 @@ void HighPassFilter::initializeKernel()
 	}
 }
 
-void HighPassFilter::setFlaggedValuesToZeroAndMakeWeights(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput)
+void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSimple(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput)
 {
 	const size_t width = inputImage->Width();
 	for(size_t y=0;y<inputImage->Height();++y)
@@ -178,6 +188,7 @@ void HighPassFilter::setFlaggedValuesToZeroAndMakeWeights(const Image2DCPtr &inp
 
 void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSSE(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput)
 {
+#ifdef USE_INTRINSICS
 	const size_t width = inputImage->Width();
 	const __m128i zero4i = _mm_set_epi32(0, 0, 0, 0);
 	const __m128 zero4 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);
@@ -214,9 +225,12 @@ void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSSE(const Image2DCPtr &
 			weightsPtr += 4;
 		}
 	}
+#else
+	throw std::runtime_error("SSE function called without SSE available");
+#endif
 }
 
-void HighPassFilter::elementWiseDivide(const Image2DPtr &leftHand, const Image2DCPtr &rightHand)
+void HighPassFilter::elementWiseDivideSimple(const Image2DPtr &leftHand, const Image2DCPtr &rightHand)
 {
 	for(unsigned y=0;y<leftHand->Height();++y) {
 		for(unsigned x=0;x<leftHand->Width();++x) {
@@ -230,6 +244,7 @@ void HighPassFilter::elementWiseDivide(const Image2DPtr &leftHand, const Image2D
 
 void HighPassFilter::elementWiseDivideSSE(const Image2DPtr &leftHand, const Image2DCPtr &rightHand)
 {
+#ifdef USE_INTRINSICS
 	const __m128 zero4 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);
 	
 	for(unsigned y=0;y<leftHand->Height();++y) {
@@ -250,5 +265,8 @@ void HighPassFilter::elementWiseDivideSSE(const Image2DPtr &leftHand, const Imag
 			rightHandPtr += 4;
 		}
 	}
+#else
+	throw std::runtime_error("SSE function called without SSE available");
+#endif
 }
 

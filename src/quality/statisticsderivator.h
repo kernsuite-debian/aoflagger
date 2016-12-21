@@ -136,7 +136,7 @@ class StatisticsDerivator
 					}
 				}
 			}
-			TimeFrequencyData data = TimeFrequencyData::CreateComplexTFData(pCount, (Image2DCPtr*) &(realImage[0]), (Image2DCPtr*) &(imagImage[0]));
+			TimeFrequencyData data = TimeFrequencyData::FromLinear(pCount, (Image2DCPtr*) &(realImage[0]), (Image2DCPtr*) &(imagImage[0]));
 			data.SetGlobalMask(mask);
 			TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
 			metaData->SetObservationTimes(observationTimes);

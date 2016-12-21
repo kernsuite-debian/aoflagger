@@ -4,6 +4,10 @@
 #include "../../structures/image2d.h"
 #include "../../structures/mask2d.h"
 
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
 /**
  * This class is able to perform a Gaussian high pass filter on an
  * Image2D . 
@@ -142,15 +146,39 @@ class HighPassFilter
 		 * Applies the low-pass convolution. Kernel has to be initialized
 		 * before calling.
 		 */
-		void applyLowPass(const Image2DPtr &image);
+		void applyLowPass(const Image2DPtr &image)
+		{
+#ifdef USE_INTRINSICS
+			applyLowPassSSE(image);
+#else
+			applyLowPassSimple(image);
+#endif
+		}
+		void applyLowPassSimple(const Image2DPtr &image);
 		void applyLowPassSSE(const Image2DPtr &image);
 		
 		void initializeKernel();
 		
-		void setFlaggedValuesToZeroAndMakeWeights(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput);
+		void setFlaggedValuesToZeroAndMakeWeights(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput)
+		{
+#ifdef USE_INTRINSICS
+			setFlaggedValuesToZeroAndMakeWeightsSSE(inputImage, outputImage, inputMask, weightsOutput);
+#else
+			setFlaggedValuesToZeroAndMakeWeightsSimple(inputImage, outputImage, inputMask, weightsOutput);
+#endif
+		}
+		void setFlaggedValuesToZeroAndMakeWeightsSimple(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput);
 		void setFlaggedValuesToZeroAndMakeWeightsSSE(const Image2DCPtr &inputImage, const Image2DPtr &outputImage, const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput);
 		
-		void elementWiseDivide(const Image2DPtr &leftHand, const Image2DCPtr &rightHand);
+		void elementWiseDivide(const Image2DPtr &leftHand, const Image2DCPtr &rightHand)
+		{
+#ifdef USE_INTRINSICS
+			elementWiseDivideSSE(leftHand, rightHand);
+#else
+			elementWiseDivideSimple(leftHand, rightHand);
+#endif
+		}
+		void elementWiseDivideSimple(const Image2DPtr &leftHand, const Image2DCPtr &rightHand);
 		void elementWiseDivideSSE(const Image2DPtr &leftHand, const Image2DCPtr &rightHand);
 		
 		/**
@@ -186,5 +214,7 @@ class HighPassFilter
 		 */
 		double _vKernelSigmaSq;
 };
+
+#undef USE_INTRINSICS
 
 #endif // HIGHPASS_FILTER_H

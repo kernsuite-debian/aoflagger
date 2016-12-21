@@ -8,10 +8,17 @@
 #include <iostream>
 #include <limits>
 
-#include <xmmintrin.h>
 #include <string.h>
 
 #include <boost/numeric/conversion/bounds.hpp>
+
+#ifdef __SSE__
+#define USE_INTRINSICS
+#endif
+
+#ifdef USE_INTRINSICS
+#include <xmmintrin.h>
+#endif
 
 Image2D::Image2D(size_t width, size_t height) :
 	_width(width),
@@ -139,11 +146,17 @@ Image2D *Image2D::CreateFromDiff(const Image2D &imageA, const Image2D &imageB)
 	const float *end = lhsPtr + imageA._stride * imageA._height;
 	while(lhsPtr < end)
 	{
-		// (*destPtr) = (*lhsPtr) - (*rhsPtr);
+#ifdef USE_INTRINSICS
 		_mm_store_ps(destPtr, _mm_sub_ps(_mm_load_ps(lhsPtr), _mm_load_ps(rhsPtr)));
 		lhsPtr += 4;
 		rhsPtr += 4;
 		destPtr += 4;
+#else
+		(*destPtr) = (*lhsPtr) - (*rhsPtr);
+		lhsPtr++;
+		rhsPtr++;
+		destPtr++;
+#endif
 	}
 	return image;
 }
@@ -166,13 +179,9 @@ void Image2D::SetValues(const Image2D &source)
 
 void Image2D::SetAll(num_t value)
 {
-	const __m128 value4 = _mm_set_ps(value, value, value, value);
-	float *ptr = &_dataConsecutive[0];
-	const float *end = ptr + _stride * _height;
-	while(ptr < end) {
-		_mm_store_ps(ptr, value4);
-		ptr += 4;
-	}
+	float* ptr = &_dataConsecutive[0];
+	float *end = ptr + _stride * _height;
+	std::fill(ptr, end, value);
 }
 
 num_t Image2D::GetAverage() const {
@@ -440,6 +449,7 @@ void Image2D::SubtractAsRHS(const Image2DCPtr &lhs)
 	float *thisPtr = &_dataConsecutive[0];
 	const float *otherPtr = &(lhs->_dataConsecutive[0]);
 	float *end = thisPtr + _stride * _height;
+#ifdef USE_INTRINSICS
 /* #ifdef __AVX__
 	while(thisPtr < end)
 	{
@@ -457,6 +467,14 @@ void Image2D::SubtractAsRHS(const Image2DCPtr &lhs)
 		thisPtr += 4;
 		otherPtr += 4;
 	}
+#else
+	while(thisPtr < end)
+	{
+		(*thisPtr) = (*otherPtr) - (*thisPtr);
+		thisPtr++;
+		otherPtr++;
+	}
+#endif
 }
 
 Image2DPtr Image2D::ShrinkHorizontally(size_t factor) const

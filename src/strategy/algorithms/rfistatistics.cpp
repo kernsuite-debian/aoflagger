@@ -66,7 +66,7 @@ void RFIStatistics::addSingleBaseline(const TimeFrequencyData &data, TimeFrequen
 		addFeatures(_autoAmplitudes, image, mask, metaData, segmentedMask);
 		segmentedMask.reset();
 		addAmplitudes(_autoAmplitudes, image, mask, metaData, classifiedMask);
-		if(data.Polarisation() == DipolePolarisation && _polarizationAmplitudeStatistics)
+		if(data.PolarisationCount() == 4 && _polarizationAmplitudeStatistics)
 		{
 			addStokes(_autoAmplitudes, data, metaData);
 			addPolarisations(_autoAmplitudes, data, metaData);
@@ -98,7 +98,7 @@ void RFIStatistics::addSingleBaseline(const TimeFrequencyData &data, TimeFrequen
 		addFeatures(_crossAmplitudes, image, mask, metaData, segmentedMask);
 		segmentedMask.reset();
 		addAmplitudes(_crossAmplitudes, image, mask, metaData, classifiedMask);
-		if(data.Polarisation() == DipolePolarisation && _polarizationAmplitudeStatistics)
+		if(data.PolarisationCount() == 4 && _polarizationAmplitudeStatistics)
 		{
 			addStokes(_crossAmplitudes, data, metaData);
 			addPolarisations(_crossAmplitudes, data, metaData);
@@ -474,9 +474,9 @@ void RFIStatistics::addStokes(std::map<double, class AmplitudeBin> &amplitudes, 
 		TimeFrequencyData *stokes;
 		switch(i)
 		{
-			case 0: stokes = data.CreateTFData(StokesQPolarisation); break;
-			case 1: stokes = data.CreateTFData(StokesUPolarisation); break;
-			case 2: stokes = data.CreateTFData(StokesVPolarisation); break;
+			case 0: stokes = data.CreateTFData(Polarization::StokesQ); break;
+			case 1: stokes = data.CreateTFData(Polarization::StokesU); break;
+			case 2: stokes = data.CreateTFData(Polarization::StokesV); break;
 			default: stokes = 0; break;
 		}
 		Image2DCPtr image = stokes->GetSingleImage();

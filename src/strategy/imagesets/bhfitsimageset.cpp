@@ -141,7 +141,7 @@ namespace rfiStrategy {
 				++bufferPtr;
 			}
 		}
-		data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, SinglePolarisation, image);
+		data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, image);
 
 		try {
 			FitsFile flagFile(flagFilePath());

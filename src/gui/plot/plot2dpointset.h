@@ -136,9 +136,30 @@ class Plot2DPointSet{
 			else
 				return _points.begin()->x;
 		}
+		double XRangePositiveMin() const
+		{
+			if(_points.empty())
+				return 1.0;
+			else {
+				std::vector<Point2D>::const_iterator iter = std::upper_bound(_points.begin(), _points.end(), Point2D(0.0,0.0));
+				if(iter == _points.end() || iter->x < 0.0 || !std::isfinite(iter->x))
+					return 1.0;
+				else
+					return iter->x;
+			}
+		}
 		double XRangeMax() const
 		{
 			if(_points.empty())
+				return 1.0;
+			else
+				return _points.rbegin()->x;
+		}
+		double XRangePositiveMax() const
+		{
+			if(_points.empty())
+				return 1.0;
+			else if(_points.rbegin()->x < 0.0 || !std::isfinite(_points.rbegin()->x))
 				return 1.0;
 			else
 				return _points.rbegin()->x;

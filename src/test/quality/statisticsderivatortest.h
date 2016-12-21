@@ -38,22 +38,22 @@ void StatisticsDerivatorTest::TestStatistics::operator()()
 	statistics.sum[0] = std::complex<long double>(6.0, 18.0);
 	statistics.sumP2[0] = std::complex<long double>(14.0, 116.0);
 	val = StatisticsDerivator::GetComplexStatistic(QualityTablesFormatter::CountStatistic, statistics, 0);
-	AssertEquals(val.real(), 3.0);
+	AssertAlmostEqual(val.real(), 3.0);
 	val = StatisticsDerivator::GetComplexStatistic(QualityTablesFormatter::SumStatistic, statistics, 0);
-	AssertEquals(val.real(), 6.0);
-	AssertEquals(val.imag(), 18.0);
+	AssertAlmostEqual(val.real(), 6.0);
+	AssertAlmostEqual(val.imag(), 18.0);
 	val = StatisticsDerivator::GetComplexStatistic(QualityTablesFormatter::SumP2Statistic, statistics, 0);
-	AssertEquals(val.real(), 14.0);
-	AssertEquals(val.imag(), 116.0);
+	AssertAlmostEqual(val.real(), 14.0);
+	AssertAlmostEqual(val.imag(), 116.0);
 	val = StatisticsDerivator::GetComplexStatistic(QualityTablesFormatter::MeanStatistic, statistics, 0);
-	AssertEquals(val.real(), 6.0 / 3.0);
-	AssertEquals(val.imag(), 18.0 / 3.0);
+	AssertAlmostEqual(val.real(), 6.0 / 3.0);
+	AssertAlmostEqual(val.imag(), 18.0 / 3.0);
 	val = StatisticsDerivator::GetComplexStatistic(QualityTablesFormatter::VarianceStatistic, statistics, 0);
-	AssertEquals(val.real(), 1.0); // (1 + 0 + 1) / (n-1) = 1.0
-	AssertEquals(val.imag(), 4.0); // (4 + 0 + 4) / (n-1) = 4.0
+	AssertAlmostEqual(val.real(), 1.0); // (1 + 0 + 1) / (n-1) = 1.0
+	AssertAlmostEqual(val.imag(), 4.0); // (4 + 0 + 4) / (n-1) = 4.0
 	val = StatisticsDerivator::GetComplexStatistic(QualityTablesFormatter::StandardDeviationStatistic, statistics, 0);
-	AssertEquals(val.real(), sqrt(2.0/3.0)); // sqrt((1 + 0 + 1) / n) = sqrt(2/3)
-	AssertEquals(val.imag(), sqrt(8.0/3.0)); // sqrt((4 + 0 + 4) / n) = sqrt(8/3)
+	AssertAlmostEqual(val.real(), sqrt(2.0/3.0)); // sqrt((1 + 0 + 1) / n) = sqrt(2/3)
+	AssertAlmostEqual(val.imag(), sqrt(8.0/3.0)); // sqrt((4 + 0 + 4) / n) = sqrt(8/3)
 	
 	statistics.dCount[0] = statistics.count[0];
 	statistics.dSum[0] = statistics.sum[0];

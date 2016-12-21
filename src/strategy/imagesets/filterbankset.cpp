@@ -114,7 +114,7 @@ BaselineData* FilterBankSet::GetNextRequested()
 			mask->SetValue(x, y, !std::isfinite(buffer[y]));
 		}
 	}
-	TimeFrequencyData tfData(TimeFrequencyData::AmplitudePart, StokesIPolarisation, image);
+	TimeFrequencyData tfData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, image);
 	tfData.SetGlobalMask(mask);
 	TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
 	AntennaInfo antenna;

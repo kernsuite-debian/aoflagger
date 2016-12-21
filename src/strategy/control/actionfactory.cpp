@@ -2,7 +2,6 @@
 
 #include "../actions/absthresholdaction.h"
 #include "../actions/action.h"
-#include "../actions/adapter.h"
 #include "../actions/addstatisticsaction.h"
 #include "../actions/baselineselectionaction.h"
 #include "../actions/calibratepassbandaction.h"
@@ -136,8 +135,8 @@ Action *ActionFactory::CreateAction(const std::string &action)
 		return new IterationBlock();
 	else if(action == "Normalize variance")
 		return new NormalizeVarianceAction();
-	else if(action == "Phase adapter")
-		return new Adapter();
+	//else if(action == "Phase adapter")
+	//	return new Adapter();
 	else if(action == "Plot")
 		return new PlotAction();
 	else if(action == "Quickly calibrate")
@@ -176,12 +175,6 @@ const char *ActionFactory::GetDescription(ActionType action)
 {
 	switch(action)
 	{
-		case AdapterType:
-			return
-				"The adapter calculates the amplitude from the complex value. Most algorithmic "
-				"actions like the SumThreshold method work only on single values, not on complex "
-				"values, hence the need for this action. This should normally not be changed. It "
-				"has currently no parameters.";
 		case ChangeResolutionActionType:
 			return
 				"Changes the resolution of the time frequency data currently in memory. This is "

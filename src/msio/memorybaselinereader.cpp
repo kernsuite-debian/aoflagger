@@ -73,7 +73,7 @@ void MemoryBaselineReader::readSet()
 		
 		size_t
 			antennaCount = Set().AntennaCount(),
-			polarizationCount = PolarizationCount();
+			polarizationCount = Polarizations().size();
 			
 		size_t bandCount = Set().BandCount();
 		size_t sequenceCount = Set().SequenceCount();
@@ -269,7 +269,7 @@ void MemoryBaselineReader::writeFlags()
 	std::vector<size_t> dataIdToSpw;
 	Set().GetDataDescToBandVector(dataIdToSpw);
 	
-	size_t polarizationCount = PolarizationCount();
+	const size_t polarizationCount = Polarizations().size();
 		
 	AOLogger::Debug << "Flags have changed, writing them back to the set...\n";
 	

@@ -643,7 +643,7 @@ namespace aoflagger {
 			 * @param input The data to run the flagger on.
 			 * @return The flags identifying bad (RFI contaminated) data.
 			 */
-			FlagMask Run(Strategy& strategy, ImageSet& input);
+			FlagMask Run(Strategy& strategy, const ImageSet& input);
 			
 			/** @brief Create a new object for collecting statistics.
 			 * 

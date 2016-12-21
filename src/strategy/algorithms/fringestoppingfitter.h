@@ -41,7 +41,7 @@ class FringeStoppingFitter : public SurfaceFitMethod {
 		void PerformFringeStop();
 		virtual class TimeFrequencyData Background()
 		{
-			return TimeFrequencyData(SinglePolarisation, _realBackground, _imaginaryBackground);
+			return TimeFrequencyData(Polarization::StokesI, _realBackground, _imaginaryBackground);
 		}
 		virtual enum TimeFrequencyData::PhaseRepresentation PhaseRepresentation() const
 		{

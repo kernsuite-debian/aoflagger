@@ -406,6 +406,9 @@ class Image2D {
 		
 		void SetTrim(size_t startX, size_t startY, size_t endX, size_t endY);
 		
+		/**
+		 * Copies source onto this image at the given position
+		 */
 		void CopyFrom(const Image2DCPtr &source, size_t destX, size_t destY)
 		{
 			size_t

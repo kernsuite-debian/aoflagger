@@ -25,7 +25,7 @@ paths can be specified by separating them with a colon ':'.
 -- License --
 
 This file is part of the AOFlagger package.
-Copyright 2008-2013 A. R. Offringa
+Copyright 2008-2017 A. R. Offringa
 
 The AOFlagger package is free software: you can redistribute it
 and/or modify it under the terms of the GNU General Public License

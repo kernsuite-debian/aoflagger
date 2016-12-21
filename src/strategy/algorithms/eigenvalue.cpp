@@ -130,7 +130,7 @@ void Eigenvalue::Remove(Image2DPtr real, Image2DPtr imaginary, bool debug)
 	if(debug) 
 	{
 		AOLogger::Debug << "Eigenvalues: ";
-		for(unsigned i=0;i<n;++i)
+		for(long int i=0;i<n;++i)
 			AOLogger::Debug << w[i] << ' ';
 		AOLogger::Debug << '\n';
 	}

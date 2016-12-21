@@ -150,35 +150,35 @@ namespace rfiStrategy {
 
 				ActionBlock::Perform(artifacts, listener);
 
-				if(_restoreFromAmplitude)
+				if(contaminatedPhase == TimeFrequencyData::ComplexRepresentation)
 				{
-					if(contaminatedPhase == TimeFrequencyData::ComplexRepresentation)
-					{
-						TimeFrequencyData *newContaminatedData =
-							TimeFrequencyData::CreateTFDataFromComplexCombination(artifacts.ContaminatedData(), artifacts.ContaminatedData());
+					TimeFrequencyData *newContaminatedData =
+						TimeFrequencyData::CreateTFDataFromComplexCombination(artifacts.ContaminatedData(), artifacts.ContaminatedData());
+					if(_restoreFromAmplitude)
 						newContaminatedData->MultiplyImages(1.0L/M_SQRT2);
-						newContaminatedData->SetMask(artifacts.ContaminatedData());
-						artifacts.SetContaminatedData(*newContaminatedData);
-						delete newContaminatedData;
-					}
-					if(revisedPhase == TimeFrequencyData::ComplexRepresentation)
-					{
-						TimeFrequencyData *newRevisedData =
-							TimeFrequencyData::CreateTFDataFromComplexCombination(artifacts.RevisedData(), artifacts.RevisedData());
+					newContaminatedData->SetMask(artifacts.ContaminatedData());
+					artifacts.SetContaminatedData(*newContaminatedData);
+					delete newContaminatedData;
+				}
+				if(revisedPhase == TimeFrequencyData::ComplexRepresentation)
+				{
+					TimeFrequencyData *newRevisedData =
+						TimeFrequencyData::CreateTFDataFromComplexCombination(artifacts.RevisedData(), artifacts.RevisedData());
+					if(_restoreFromAmplitude)
 						newRevisedData->MultiplyImages(1.0L/M_SQRT2);
-						newRevisedData->SetMask(artifacts.RevisedData());
-						artifacts.SetRevisedData(*newRevisedData);
-						delete newRevisedData;
-					}
-					if(originalPhase == TimeFrequencyData::ComplexRepresentation)
-					{
-						TimeFrequencyData *newOriginalData =
-							TimeFrequencyData::CreateTFDataFromComplexCombination(artifacts.OriginalData(), artifacts.OriginalData());
+					newRevisedData->SetMask(artifacts.RevisedData());
+					artifacts.SetRevisedData(*newRevisedData);
+					delete newRevisedData;
+				}
+				if(originalPhase == TimeFrequencyData::ComplexRepresentation)
+				{
+					TimeFrequencyData *newOriginalData =
+						TimeFrequencyData::CreateTFDataFromComplexCombination(artifacts.OriginalData(), artifacts.OriginalData());
+					if(_restoreFromAmplitude)
 						newOriginalData->MultiplyImages(1.0L/M_SQRT2);
-						newOriginalData->SetMask(artifacts.OriginalData());
-						artifacts.SetOriginalData(*newOriginalData);
-						delete newOriginalData;
-					}
+					newOriginalData->SetMask(artifacts.OriginalData());
+					artifacts.SetOriginalData(*newOriginalData);
+					delete newOriginalData;
 				}
 			}
 			

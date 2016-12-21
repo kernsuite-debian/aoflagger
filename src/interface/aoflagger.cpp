@@ -379,7 +379,7 @@ namespace aoflagger {
 		StatusListener *_destination;
 	};
 	
-	FlagMask AOFlagger::Run(Strategy& strategy, ImageSet& input)
+	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input)
 	{
 		boost::mutex mutex;
 		rfiStrategy::ArtifactSet artifacts(&mutex);
@@ -395,35 +395,37 @@ namespace aoflagger {
 		switch(input.ImageCount())
 		{
 			case 1:
-				inputData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, SinglePolarisation, input._data->images[0]);
+				inputData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, input._data->images[0]);
 				inputData.SetGlobalMask(mask);
-				revisedData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, SinglePolarisation, zeroImage);
+				revisedData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, zeroImage);
 				revisedData.SetGlobalMask(mask);
 				break;
 			case 2:
-				inputData = TimeFrequencyData(TimeFrequencyData::ComplexRepresentation, SinglePolarisation, input._data->images[0], input._data->images[1]);
+				inputData = TimeFrequencyData(Polarization::StokesI, input._data->images[0], input._data->images[1]);
 				inputData.SetGlobalMask(mask);
-				revisedData = TimeFrequencyData(TimeFrequencyData::ComplexRepresentation, SinglePolarisation, zeroImage, zeroImage);
+				revisedData = TimeFrequencyData(Polarization::StokesI, zeroImage, zeroImage);
 				revisedData.SetGlobalMask(mask);
 				break;
 			case 4:
-				inputData = TimeFrequencyData(AutoDipolePolarisation,
-					input._data->images[0], input._data->images[1],
-					input._data->images[2], input._data->images[3]
+				inputData = TimeFrequencyData(
+					Polarization::XX, input._data->images[0], input._data->images[1],
+					Polarization::YY, input._data->images[2], input._data->images[3]
 				);
 				inputData.SetIndividualPolarisationMasks(mask, mask);
-				revisedData = TimeFrequencyData(AutoDipolePolarisation, zeroImage, zeroImage, zeroImage, zeroImage);
+				revisedData = TimeFrequencyData(
+					Polarization::XX, zeroImage, zeroImage,
+					Polarization::YY, zeroImage, zeroImage);
 				revisedData.SetIndividualPolarisationMasks(mask, mask);
 				break;
 			case 8:
-				inputData = TimeFrequencyData(
+				inputData = TimeFrequencyData::FromLinear(
 					input._data->images[0], input._data->images[1],
 					input._data->images[2], input._data->images[3],
 					input._data->images[4], input._data->images[5],
 					input._data->images[6], input._data->images[7]
 				);
 				inputData.SetIndividualPolarisationMasks(mask, mask, mask, mask);
-				revisedData = TimeFrequencyData(
+				revisedData = TimeFrequencyData::FromLinear(
 					zeroImage, zeroImage, zeroImage, zeroImage,
 					zeroImage, zeroImage, zeroImage, zeroImage);
 				revisedData.SetIndividualPolarisationMasks(mask, mask, mask, mask);
