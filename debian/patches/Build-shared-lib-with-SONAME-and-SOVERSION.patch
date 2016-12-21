@@ -3,14 +3,14 @@ Date: Thu, 29 Sep 2016 20:35:34 +0200
 Subject: Build shared lib with SONAME and SOVERSION
 
 ---
- src/CMakeLists.txt | 29 +++++++++++++++++++----------
- 1 file changed, 19 insertions(+), 10 deletions(-)
+ src/CMakeLists.txt | 30 +++++++++++++++++++-----------
+ 1 file changed, 19 insertions(+), 11 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 6db670e..34d8b7c 100644
+index cdc5984..f8f4aa9 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -228,15 +228,10 @@ else()
+@@ -223,15 +223,10 @@ else()
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND)
  
  set(ALL_LIBRARIES
@@ -27,11 +27,12 @@ index 6db670e..34d8b7c 100644
  	${CMAKE_THREAD_LIBS_INIT})
  
  if(GTKMM_FOUND AND GLIBMM_FOUND)
-@@ -253,10 +248,23 @@ if(SIGCXX_FOUND)
+@@ -248,11 +243,23 @@ if(SIGCXX_FOUND)
    set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
  endif(SIGCXX_FOUND)
  
--add_library(aoflagger ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
+-add_library(aoflagger SHARED ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
+-SET_TARGET_PROPERTIES(aoflagger PROPERTIES SOVERSION 0)
 -target_link_libraries(aoflagger ${ALL_LIBRARIES})
 +add_library(aoflagger-lib STATIC ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
 +set_target_properties(aoflagger-lib PROPERTIES OUTPUT_NAME aoflagger)
@@ -54,7 +55,7 @@ index 6db670e..34d8b7c 100644
  
  add_library(aoflaggerremote OBJECT ${REMOTE_FILES})
  set(AOFLAGGERREMOTE_OBJECT $<TARGET_OBJECTS:aoflaggerremote>)
-@@ -311,5 +319,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
+@@ -307,5 +314,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  	install (TARGETS aoquality aoremoteclient DESTINATION bin)
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  
