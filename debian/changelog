@@ -1,3 +1,9 @@
+aoflagger (2.9.0-1kern1) xenial; urgency=medium
+
+  * KERN upload
+
+ -- Gijs Molenaar (launchpad ppa build key) <gijs@pythonic.nl>  Tue, 31 Jan 2017 10:27:55 +0200
+
 aoflagger (2.9.0-1) unstable; urgency=low
 
   * New upstream version 2.9.0
