@@ -1,3 +1,9 @@
+aoflagger (2.9.0-1kern2) xenial; urgency=medium
+
+  * version bump to trigger rebuild against casacore 2.4.0
+
+ -- KERN packaging <packaging@kernsuite.info>  Mon, 06 Nov 2017 16:18:33 +0200
+
 aoflagger (2.9.0-1kern1) xenial; urgency=medium
 
   * KERN upload
