@@ -7,12 +7,12 @@ Subject: Disable special RPATH handling
  1 file changed, 18 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 29805d9..712966e 100644
+index 41475df..f14a1a8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -48,24 +48,6 @@ if(GSL_INCLUDE_DIR)
- 	include_directories(${GSL_INCLUDE_DIR})
+@@ -49,24 +49,6 @@ if(GSL_INCLUDE_DIR)
  endif(GSL_INCLUDE_DIR)
+ include_directories(${PYTHON_INCLUDE_DIRS})
  
 -# The following stuff will set the "rpath" correctly, so that
 -# LD_LIBRARY_PATH doesn't have to be set.
