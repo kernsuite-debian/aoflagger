@@ -1,7 +1,7 @@
 #include "morphology.h"
 #include "statisticalflagger.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 #include <stack>
 #include <iostream>
@@ -11,7 +11,7 @@ size_t
 	Morphology::LINE_SEGMENT = 2,
 	Morphology::BLOB_SEGMENT = 3;
 
-void Morphology::SegmentByMaxLength(Mask2DCPtr mask, SegmentedImagePtr output)
+void Morphology::SegmentByMaxLength(const Mask2D* mask, SegmentedImagePtr output)
 {
 	int **lengthWidthValues = new int*[mask->Height()];
 	for(size_t y=0;y<mask->Height();++y)
@@ -40,9 +40,9 @@ void Morphology::SegmentByMaxLength(Mask2DCPtr mask, SegmentedImagePtr output)
 	delete[] lengthWidthValues;
 }
 
-void Morphology::SegmentByLengthRatio(Mask2DCPtr mask, SegmentedImagePtr output)
+void Morphology::SegmentByLengthRatio(const Mask2D* mask, SegmentedImagePtr output)
 {
-	Mask2DPtr maskCopy = Mask2D::CreateCopy(mask);
+	Mask2DPtr maskCopy(new Mask2D(*mask));
 	//StatisticalFlagger::EnlargeFlags(maskCopy, 2, 2);
 	
 	Mask2DPtr matrices[3];
@@ -59,10 +59,10 @@ void Morphology::SegmentByLengthRatio(Mask2DCPtr mask, SegmentedImagePtr output)
 	}
 	
 	// Calculate convolved counts
-	calculateHorizontalCounts(maskCopy, hCounts);
-	calculateVerticalCounts(maskCopy, vCounts);
+	calculateHorizontalCounts(maskCopy.get(), hCounts);
+	calculateVerticalCounts(maskCopy.get(), vCounts);
 	
-	calculateOpenings(maskCopy, matrices, hCounts, vCounts);
+	calculateOpenings(maskCopy.get(), matrices, hCounts, vCounts);
 
 
 	for(size_t y=0;y<mask->Height();++y)
@@ -70,14 +70,14 @@ void Morphology::SegmentByLengthRatio(Mask2DCPtr mask, SegmentedImagePtr output)
 		for(size_t x=0;x<mask->Width();++x)
 			output->SetValue(x, y, 0);
 	}
-	StatisticalFlagger::EnlargeFlags(matrices[0], _hLineEnlarging, 0);
-	StatisticalFlagger::EnlargeFlags(matrices[2], 0, _vLineEnlarging);
-	StatisticalFlagger::DensityTimeFlagger(matrices[0], _hDensityEnlargeRatio);
-	StatisticalFlagger::DensityFrequencyFlagger(matrices[2], _vDensityEnlargeRatio);
+	StatisticalFlagger::DilateFlags(matrices[0].get(), _hLineEnlarging, 0);
+	StatisticalFlagger::DilateFlags(matrices[2].get(), 0, _vLineEnlarging);
+	StatisticalFlagger::DensityTimeFlagger(matrices[0].get(), _hDensityEnlargeRatio);
+	StatisticalFlagger::DensityFrequencyFlagger(matrices[2].get(), _vDensityEnlargeRatio);
 
 	// Calculate counts again with new matrices
-	calculateHorizontalCounts(matrices[0], hCounts);
-	calculateVerticalCounts(matrices[2], vCounts);
+	calculateHorizontalCounts(matrices[0].get(), hCounts);
+	calculateVerticalCounts(matrices[2].get(), vCounts);
 
 	for(size_t z=0;z<3;z+=2)
 	{
@@ -102,7 +102,7 @@ void Morphology::SegmentByLengthRatio(Mask2DCPtr mask, SegmentedImagePtr output)
 	delete[] vCounts;
 }
 
-void Morphology::calculateHorizontalCounts(Mask2DCPtr mask, int **values)
+void Morphology::calculateHorizontalCounts(const Mask2D* mask, int **values)
 {
 	for(size_t y=0;y<mask->Height();++y)
 	{
@@ -131,7 +131,7 @@ void Morphology::calculateHorizontalCounts(Mask2DCPtr mask, int **values)
 	}
 }
 
-void Morphology::calculateVerticalCounts(Mask2DCPtr mask, int **values)
+void Morphology::calculateVerticalCounts(const Mask2D* mask, int **values)
 {
 	for(size_t x=0;x<mask->Width();++x)
 	{
@@ -160,7 +160,7 @@ void Morphology::calculateVerticalCounts(Mask2DCPtr mask, int **values)
 	}
 }
 
-void Morphology::calculateOpenings(Mask2DCPtr mask, int **values)
+void Morphology::calculateOpenings(const Mask2D* mask, int **values)
 {
 	for(size_t y=0;y<mask->Height();++y)
 	{
@@ -218,7 +218,7 @@ void Morphology::calculateOpenings(Mask2DCPtr mask, int **values)
 	}
 }
 
-void Morphology::calculateOpenings(Mask2DCPtr mask, Mask2DPtr *values, int **hCounts, int **vCounts)
+void Morphology::calculateOpenings(const Mask2D* mask, Mask2DPtr *values, int **hCounts, int **vCounts)
 {
 	//const int zThreshold = 5;
 	
@@ -238,7 +238,7 @@ void Morphology::calculateOpenings(Mask2DCPtr mask, Mask2DPtr *values, int **hCo
 struct MorphologyPoint2D { size_t x, y; };
 struct MorphologyPoint3D { size_t x, y, z; };
 
-void Morphology::floodFill(Mask2DCPtr mask, SegmentedImagePtr output, const int *const *lengthWidthValues, size_t x, size_t y, size_t value)
+void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output, const int *const *lengthWidthValues, size_t x, size_t y, size_t value)
 {
 	std::stack<MorphologyPoint2D> points;
 	MorphologyPoint2D startPoint;
@@ -293,7 +293,7 @@ void Morphology::floodFill(Mask2DCPtr mask, SegmentedImagePtr output, const int 
 	} while(points.size() != 0);
 }
 
-void Morphology::floodFill(Mask2DCPtr mask, SegmentedImagePtr output, Mask2DPtr *matrices, size_t x, size_t y, size_t z, size_t value, int **hCounts, int **vCounts)
+void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output, Mask2DPtr *matrices, size_t x, size_t y, size_t z, size_t value, int **hCounts, int **vCounts)
 {
 	std::stack<MorphologyPoint3D> points;
 	MorphologyPoint3D startPoint;
@@ -332,7 +332,7 @@ void Morphology::floodFill(Mask2DCPtr mask, SegmentedImagePtr output, Mask2DPtr 
 		if(p.x < mask->Width()-1 && matrix->Value(p.x+1,p.y))
 		{
 			MorphologyPoint3D newP;
-			newP.x = p.x+1; newP.y = p.y; newP.z = p.z; newP.z = p.z;
+			newP.x = p.x+1; newP.y = p.y; newP.z = p.z;
 			points.push(newP);
 		}
 		if(p.y > 0 && matrix->Value(p.x,p.y-1))
@@ -353,7 +353,7 @@ void Morphology::floodFill(Mask2DCPtr mask, SegmentedImagePtr output, Mask2DPtr 
 void Morphology::Cluster(SegmentedImagePtr segmentedImage)
 {
 	std::map<size_t,SegmentInfo> segments = createSegmentMap(segmentedImage);
-	AOLogger::Debug << "Segments before clustering: " << segments.size();
+	Logger::Debug << "Segments before clustering: " << segments.size();
 
 	for(std::map<size_t,SegmentInfo>::iterator i=segments.begin();i!=segments.end();++i)
 	{
@@ -479,7 +479,7 @@ void Morphology::RemoveSmallSegments(SegmentedImagePtr segmentedImage, size_t th
 			segmentedImage->RemoveSegment(segment.segment, segment.left, segment.right, segment.top, segment.bottom);
 		}
 	}
-	AOLogger::Debug << "Removed " << removedSegments << " segments of size " << thresholdLevel << " or smaller.\n";
+	Logger::Debug << "Removed " << removedSegments << " segments of size " << thresholdLevel << " or smaller.\n";
 }
 
 void Morphology::Classify(SegmentedImagePtr segmentedImage)

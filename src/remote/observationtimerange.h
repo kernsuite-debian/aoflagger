@@ -17,7 +17,7 @@ namespace aoRemote {
 class ObservationTimerange
 {
 	public:
-		ObservationTimerange(const ClusteredObservation &observation) :
+		explicit ObservationTimerange(const ClusteredObservation &observation) :
 			_observation(observation),
 			_bands(observation.Size()),
 			_bandStartLookup(observation.Size()),
@@ -274,7 +274,7 @@ class ObservationTimerange
 		double *_u, *_v, *_w;
 		unsigned *_antenna1, *_antenna2;
 		
-		void operator=(const ObservationTimerange &source) { }
+		void operator=(const ObservationTimerange &source) = delete;
 		
 		void allocate()
 		{

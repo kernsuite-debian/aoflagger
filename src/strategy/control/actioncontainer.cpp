@@ -6,42 +6,40 @@
 
 namespace rfiStrategy {
 
-	ActionContainer::~ActionContainer()
-	{
-		for(std::vector<class Action*>::iterator i=_childActions.begin();i!=_childActions.end();++i)
-			delete *i;
-	}
-
 	void ActionContainer::RemoveAll()
 	{
-		for(std::vector<class Action*>::iterator i=_childActions.begin();i!=_childActions.end();++i)
-			delete *i;
 		_childActions.clear();
 	}
 
-	void ActionContainer::Add(class Action *newAction)
+	void ActionContainer::Add(std::unique_ptr<Action> newAction)
 	{
-		_childActions.push_back(newAction);
 		newAction->_parent = this;
+		_childActions.emplace_back(std::move(newAction));
 	}
 
-	void ActionContainer::RemoveWithoutDelete(class Action *action)
+	std::unique_ptr<Action> ActionContainer::RemoveAndAcquire(class Action *action)
 	{
-		for(std::vector<class Action*>::iterator i=_childActions.begin();i!=_childActions.end();++i)
-			if(*i == action) {
+		std::unique_ptr<Action> a;
+		for(iterator i=_childActions.begin();i!=_childActions.end();++i)
+		{
+			if(i->get() == action) {
+				a = std::move(*i);
 				_childActions.erase(i);
 				break;
 			}
+		}
+		return a;
 	}
 
 	void ActionContainer::RemoveAndDelete(class Action *action)
 	{
-		for(std::vector<class Action*>::iterator i=_childActions.begin();i!=_childActions.end();++i)
-			if(*i == action) {
+		for(iterator i=_childActions.begin();i!=_childActions.end();++i)
+		{
+			if(i->get() == action) {
 				_childActions.erase(i);
-				delete action;
 				break;
 			}
+		}
 	}
 
 	void ActionContainer::InitializeAll()

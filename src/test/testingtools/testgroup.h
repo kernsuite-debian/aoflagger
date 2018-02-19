@@ -8,7 +8,7 @@
 
 class TestGroup : public TestItem {
 	public:
-		TestGroup(const std::string &name) : _name(name), _successes(0), _failures(0)
+		explicit TestGroup(const std::string &name) : _name(name), _successes(0), _failures(0)
 		{
 		}
 		

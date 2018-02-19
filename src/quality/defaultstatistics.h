@@ -9,7 +9,7 @@
 class DefaultStatistics : public Serializable
 {
 	public:
-		DefaultStatistics(unsigned polarizationCount) :
+		explicit DefaultStatistics(unsigned polarizationCount) :
 			_polarizationCount(polarizationCount)
 		{
 			initialize();
@@ -123,7 +123,7 @@ class DefaultStatistics : public Serializable
 			return singlePol;
 		}
 		
-		virtual void Serialize(std::ostream &stream) const
+		virtual void Serialize(std::ostream &stream) const final override
 		{
 			SerializeToUInt32(stream, _polarizationCount);
 			
@@ -139,7 +139,7 @@ class DefaultStatistics : public Serializable
 			}
 		}
 		
-		virtual void Unserialize(std::istream &stream)
+		virtual void Unserialize(std::istream &stream) final override
 		{
 			uint32_t pCount = UnserializeUInt32(stream);
 			if(pCount != _polarizationCount)

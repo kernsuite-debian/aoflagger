@@ -9,7 +9,7 @@
 #include "scalarcolumniterator.h"
 #include "date.h"
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 
 #include "../strategy/control/strategywriter.h"
 
@@ -183,7 +183,7 @@ void MeasurementSet::initializeMainTableData()
 {
 	if(!_isMainTableDataInitialized)
 	{
-		AOLogger::Debug << "Initializing ms cache data...\n"; 
+		Logger::Debug << "Initializing ms cache data...\n"; 
 		// we use a ptr to last, for faster insertion
 		std::set<double>::iterator obsTimePos = _observationTimes.end();
 		MSIterator iterator(*this, false);
@@ -246,7 +246,7 @@ size_t MeasurementSet::PolarizationCount(const std::string &filename)
 	return polarizationCount;
 }
 
-bool MeasurementSet::HasRFIConsoleHistory()
+bool MeasurementSet::HasAOFlaggerHistory()
 {
 	casacore::MeasurementSet ms(_path);
 	casacore::Table histtab(ms.history());

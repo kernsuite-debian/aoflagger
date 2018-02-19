@@ -8,39 +8,16 @@
 class MSRowDataExt : public Serializable
 {
 	public:
-		MSRowDataExt()
-		: _data()
-		{
-		}
+		MSRowDataExt() = default;
 		
-		MSRowDataExt(unsigned polarizationCount, unsigned channelCount)
-		: _data(polarizationCount, channelCount)
+		MSRowDataExt(unsigned polarizationCount, unsigned channelCount) :
+			_data(polarizationCount, channelCount),
+			_antenna1(),
+			_antenna2(),
+			_timeOffsetIndex(),
+			_u(), _v(), _w(),
+			_time()
 		{
-		}
-		
-		MSRowDataExt(const MSRowDataExt &source) :
-		_data(source._data),
-		_antenna1(source._antenna1),
-		_antenna2(source._antenna2),
-		_timeOffsetIndex(source._timeOffsetIndex),
-		_u(source._u),
-		_v(source._v),
-		_w(source._w),
-		_time(source._time)
-		{
-		}
-		
-		MSRowDataExt &operator=(const MSRowDataExt &source)
-		{
-			_data = source._data;
-			_antenna1 = source._antenna1;
-			_antenna2 = source._antenna2;
-			_timeOffsetIndex = source._timeOffsetIndex;
-			_u = source._u;
-			_v = source._v;
-			_w = source._w;
-			_time = source._time;
-			return *this;
 		}
 		
 		const MSRowData &Data() const { return _data; }
@@ -61,7 +38,7 @@ class MSRowDataExt : public Serializable
 		void SetTime(double time) { _time = time; }
 		void SetTimeOffsetIndex(size_t timeOffsetIndex) { _timeOffsetIndex = timeOffsetIndex; }
 		
-		virtual void Serialize(std::ostream &stream) const
+		virtual void Serialize(std::ostream &stream) const final override
 		{
 			_data.Serialize(stream);
 			SerializeToUInt32(stream, _antenna1);
@@ -73,7 +50,7 @@ class MSRowDataExt : public Serializable
 			SerializeToDouble(stream, _time);
 		}
 		
-		virtual void Unserialize(std::istream &stream)
+		virtual void Unserialize(std::istream &stream) final override
 		{
 			_data.Unserialize(stream);
 			_antenna1 = UnserializeUInt32(stream);

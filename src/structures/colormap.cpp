@@ -1,49 +1,42 @@
 #include "colormap.h"
 
-ColorMap::ColorMap()
+std::unique_ptr<ColorMap> ColorMap::CreateColorMap(const std::string& type)
 {
-}
-
-ColorMap::~ColorMap()
-{
-}
-
-ColorMap *ColorMap::CreateColorMap(const std::string &type) throw()
-{
+	using UC=std::unique_ptr<ColorMap>;
 	if(type == "monochrome" || type == "bw")
-		return new MonochromeMap();
+		return UC(new MonochromeMap());
 	else if(type == "inverted" || type == "wb")
-		return new InvertedMap();
+		return UC(new InvertedMap());
 	else if(type == "coldhot")
-		return new ColdHotMap();
+		return UC(new ColdHotMap());
 	else if(type == "redblue")
-		return new RedBlueMap();
+		return UC(new RedBlueMap());
 	else if(type == "redwhiteblue")
-		return new RedWhiteBlueMap();
+		return UC(new RedWhiteBlueMap());
 	else if(type=="redyellowblue")
-		return new RedYellowBlueMap();
+		return UC(new RedYellowBlueMap());
 	else if(type=="fire")
-		return new FireMap();
+		return UC(new FireMap());
 	else if(type == "positive")
-		return new PositiveMap();
+		return UC(new PositiveMap());
 	else if(type == "invpositive")
-		return new InvPositiveMap();
+		return UC(new InvPositiveMap());
 	else if(type == "contrast")
-		return new ContrastMap("monochrome");
+		return UC(new ContrastMap("monochrome"));
 	else if(type == "redbluecontrast")
-		return new ContrastMap("redblue");
+		return UC(new ContrastMap("redblue"));
 	else if(type == "redyellowbluecontrast")
-		return new ContrastMap("redyellowblue");
+		return UC(new ContrastMap("redyellowblue"));
 	else if(type == "coldhotcontrast")
-		return new ContrastMap("coldhot");
+		return UC(new ContrastMap("coldhot"));
 	else if(type == "positivecontrast")
-		return new ContrastMap("positive");
+		return UC(new ContrastMap("positive"));
 	else if(type == "invpositivecontrast")
-		return new ContrastMap("invpositive");
+		return UC(new ContrastMap("invpositive"));
 	else if(type == "viridis")
-		return new ViridisMap();
+		return UC(new ViridisMap());
 	else
-		return new MonochromeMap();
+		return UC(new MonochromeMap());
 }
 
 const std::string ColorMap::_colorMapsString("monochrome, coldhot, redblue, redyellowblue, fire, contrast, coldhotcontrast, redbluecontrast, redyellowbluecontrast, positive, invpositive, positivecontrast, invpositivecontrast, viridis");

@@ -11,22 +11,17 @@ namespace rfiStrategy {
 	{
 		AbsThresholdActionType,
 		ActionBlockType,
-		//AdapterType,
-		AddStatisticsActionType,
 		BaselineSelectionActionType,
 		CalibratePassbandActionType,
 		ChangeResolutionActionType,
 		CombineFlagResultsType,
 		CutAreaActionType,
-		DirectionProfileActionType,
-		DirectionalCleanActionType,
 		EigenValueVerticalActionType,
 		ForEachBaselineActionType,
 		ForEachComplexComponentActionType,
 		ForEachMSActionType,
 		ForEachPolarisationBlockType,
 		ForEachSimulatedBaselineActionType,
-		FourierTransformActionType,
 		FrequencyConvolutionActionType,
 		FrequencySelectionActionType,
 		FringeStopActionType,
@@ -37,17 +32,16 @@ namespace rfiStrategy {
 		PlotActionType,
 		QuickCalibrateActionType,
 		ResamplingActionType,
+		SaveHeatMapActionType,
 		SetFlaggingActionType,
 		SetImageActionType,
 		SlidingWindowFitActionType,
-		SpatialCompositionActionType,
 		StatisticalFlagActionType,
 		StrategyType,
 		SumThresholdActionType,
 		SVDActionType,
 		TimeConvolutionActionType,
 		TimeSelectionActionType,
-		UVProjectActionType,
 		WriteDataActionType,
 		WriteFlagsActionType
 	};
@@ -83,8 +77,8 @@ namespace rfiStrategy {
 
 	ActionContainer *Action::GetRoot() const
 	{
-		if(_parent == 0)
-			return static_cast<ActionContainer*>(_parent);
+		if(_parent == nullptr)
+			return _parent;
 		else
 		{
 			ActionContainer *iter = _parent;

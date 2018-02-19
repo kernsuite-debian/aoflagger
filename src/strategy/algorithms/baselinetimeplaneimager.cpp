@@ -1,6 +1,6 @@
 #include "baselinetimeplaneimager.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 #include <cmath>
 
@@ -52,7 +52,7 @@ void BaselineTimePlaneImager<NumType>::Image(NumType uTimesLambda, NumType vTime
 		++data;
 	}
 	
-	//AOLogger::Debug << "FFT...\n";
+	//Logger::Debug << "FFT...\n";
 	fftw_execute(plan);
 	fftw_free(fftInp);
 	
@@ -63,7 +63,7 @@ void BaselineTimePlaneImager<NumType>::Image(NumType uTimesLambda, NumType vTime
 		fftOut[i] *= fftFactor;
 	}
 	
-	AOLogger::Debug << "phi=" << phi << ",imgSize=" << imgSize << ",minLambda=" << minLambda << ",fftSize=" << fftSize << ",uvOnlyDist=" << uvDist << ",sampleDist=" << sampleDist << '\n';
+	Logger::Debug << "phi=" << phi << ",imgSize=" << imgSize << ",minLambda=" << minLambda << ",fftSize=" << fftSize << ",uvOnlyDist=" << uvDist << ",sampleDist=" << sampleDist << '\n';
 	
 	size_t fftCentre = fftSize / 2;
 	NumType cosPhi = cos(phi), sinPhi = sin(phi);
@@ -96,7 +96,7 @@ void BaselineTimePlaneImager<NumType>::Image(NumType uTimesLambda, NumType vTime
 			++destPtr;
 			//else
 			//	output.SetValue(x, y, 0.0);
-			//if(x==0 && y==0) AOLogger::Debug << "srcX=" << srcX << '\n';
+			//if(x==0 && y==0) Logger::Debug << "srcX=" << srcX << '\n';
 		}
 	}
 	

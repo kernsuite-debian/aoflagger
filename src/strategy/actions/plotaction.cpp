@@ -1,4 +1,4 @@
-#include <boost/thread.hpp>
+#include <mutex>
 
 #include "plotaction.h"
 
@@ -17,7 +17,7 @@ namespace rfiStrategy {
 	
 	void PlotAction::Perform(ArtifactSet &artifacts, ProgressListener &)
 	{
-		boost::mutex::scoped_lock lock(_plotMutex);
+		std::lock_guard<std::mutex> lock(_plotMutex);
 		switch(_plotKind)
 		{
 			case AntennaFlagCountPlot:
@@ -52,102 +52,85 @@ namespace rfiStrategy {
 
 	void PlotAction::plotAntennaFlagCounts(ArtifactSet &artifacts)
 	{
-		if(artifacts.AntennaFlagCountPlot() == 0)
+		if(!artifacts.HasAntennaFlagCountPlot())
 			throw BadUsageException("No antenna flag count plot in the artifact set");
 		
 		if(artifacts.HasMetaData() && artifacts.MetaData()->HasAntenna1() && artifacts.MetaData()->HasAntenna2())
 		{
 			TimeFrequencyData &data = artifacts.ContaminatedData();
 			TimeFrequencyMetaDataCPtr meta = artifacts.MetaData();
-			artifacts.AntennaFlagCountPlot()->Add(data, meta);
+			artifacts.AntennaFlagCountPlot().Add(data, meta);
 		} else {
-			AOLogger::Warn << "The strategy contains an action that makes an antenna plot, but the image set did not provide meta data.\n"
+			Logger::Warn << "The strategy contains an action that makes an antenna plot, but the image set did not provide meta data.\n"
 				"Plot will not be made.\n";
 		}
 	}
 
 	void PlotAction::plotFrequencyFlagCounts(ArtifactSet &artifacts)
 	{
-		if(artifacts.FrequencyFlagCountPlot() == 0)
+		if(!artifacts.HasAntennaFlagCountPlot())
 			throw BadUsageException("No frequency flag count plot in the artifact set");
 
 		TimeFrequencyData &data = artifacts.ContaminatedData();
 		TimeFrequencyMetaDataCPtr meta = artifacts.MetaData();
-		artifacts.FrequencyFlagCountPlot()->Add(data, meta);
+		artifacts.FrequencyFlagCountPlot().Add(data, meta);
 	}
 
 	void PlotAction::plotFrequencyPower(ArtifactSet &artifacts)
 	{
-		if(artifacts.FrequencyPowerPlot() == 0)
-			throw BadUsageException("No frequency power plot in the artifact set");
-
 		TimeFrequencyData &data = artifacts.ContaminatedData();
 		TimeFrequencyMetaDataCPtr meta = artifacts.MetaData();
-		artifacts.FrequencyPowerPlot()->Add(data, meta);
+		artifacts.FrequencyPowerPlot().Add(data, meta);
 	}
 
 	void PlotAction::plotTimeFlagCounts(ArtifactSet &artifacts)
 	{
-		if(artifacts.TimeFlagCountPlot() == 0)
-			throw BadUsageException("No time flag count plot in the artifact set");
-
 		TimeFrequencyData &data = artifacts.ContaminatedData();
 		TimeFrequencyMetaDataCPtr meta = artifacts.MetaData();
-		artifacts.TimeFlagCountPlot()->Add(data, meta);
+		artifacts.TimeFlagCountPlot().Add(data, meta);
 	}
 
 	void PlotAction::plotSpectrumPerBaseline(ArtifactSet &artifacts)
 	{
-		if(artifacts.FrequencyPowerPlot() == 0)
-			throw BadUsageException("No frequency power plot in the artifact set");
-
 		TimeFrequencyData &data = artifacts.ContaminatedData();
 		TimeFrequencyMetaDataCPtr meta = artifacts.MetaData();
-		artifacts.FrequencyPowerPlot()->SetLogYAxis(_logYAxis);
-		artifacts.FrequencyPowerPlot()->StartNewLine(meta->Antenna1().name + " x " + meta->Antenna2().name);
-		artifacts.FrequencyPowerPlot()->Add(data, meta);
+		artifacts.FrequencyPowerPlot().SetLogYAxis(_logYAxis);
+		artifacts.FrequencyPowerPlot().StartNewLine(meta->Antenna1().name + " x " + meta->Antenna2().name);
+		artifacts.FrequencyPowerPlot().Add(data, meta);
 	}
 
 	void PlotAction::plotPolarizationFlagCounts(ArtifactSet &artifacts)
 	{
-		if(artifacts.PolarizationStatistics() == 0)
-			throw BadUsageException("No polarization statistics in the artifact set");
-
 		TimeFrequencyData &data = artifacts.ContaminatedData();
-		artifacts.PolarizationStatistics()->Add(data);
+		artifacts.PolarizationStatistics().Add(data);
 	}
 
 	void PlotAction::plotBaselineRMS(ArtifactSet &artifacts)
 	{
-		if(artifacts.PolarizationStatistics() == 0)
-			throw BadUsageException("No polarization statistics in the artifact set");
-
 		TimeFrequencyData &data = artifacts.ContaminatedData();
 		TimeFrequencyMetaDataCPtr metaData = artifacts.MetaData();
 		double rms = 0.0;
-		for(unsigned i=0;i<data.PolarisationCount();++i)
+		for(unsigned i=0;i<data.PolarizationCount();++i)
 		{
-			TimeFrequencyData *polarisation = data.CreateTFDataFromPolarisationIndex(i);
-			Mask2DCPtr mask = polarisation->GetSingleMask();
-			for(unsigned j=0;j<polarisation->ImageCount();++j)
+			TimeFrequencyData polarisation(data.MakeFromPolarizationIndex(i));
+			Mask2DCPtr mask = polarisation.GetSingleMask();
+			for(unsigned j=0;j<polarisation.ImageCount();++j)
 			{
-				Image2DCPtr image = polarisation->GetImage(j);
-				rms += ThresholdTools::RMS(image, mask);
+				Image2DCPtr image = polarisation.GetImage(j);
+				rms += ThresholdTools::RMS(image.get(), mask.get());
 			}
-			delete polarisation;
 		}
-		rms /= data.PolarisationCount();
+		rms /= data.PolarizationCount();
 		;
-		AOLogger::Info << "RMS of " << metaData->Antenna1().name << " x " << metaData->Antenna2().name << ": "
+		Logger::Info << "RMS of " << metaData->Antenna1().name << " x " << metaData->Antenna2().name << ": "
 			<< rms << '\n';
 	}
 	
 	void PlotAction::plotIterations(class ArtifactSet &artifacts)
 	{
-		class IterationsPlot *plot = artifacts.IterationsPlot();
-		if(plot != 0)
+		if(artifacts.HasIterationsPlot())
 		{
-			plot->Add(artifacts.ContaminatedData(), artifacts.MetaData());
+			artifacts.IterationsPlot().Add(artifacts.ContaminatedData(), artifacts.MetaData());
 		}
 	}
 

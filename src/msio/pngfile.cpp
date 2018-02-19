@@ -11,7 +11,7 @@ PngFile::~PngFile()
 {
 }
 
-void PngFile::BeginWrite() throw(IOException)
+void PngFile::BeginWrite()
 {
 	_fp = fopen(_filename.c_str(), "wb");
 	if(!_fp)
@@ -63,7 +63,7 @@ void PngFile::Close() {
 	fclose(_fp);
 }
 
-void PngFile::Clear(int colorR, int colorG, int colorB, int colorA) throw()
+void PngFile::Clear(int colorR, int colorG, int colorB, int colorA)
 {
 	for(unsigned y=0;y<_height;y++) {
 		int xa = 0;
@@ -76,7 +76,7 @@ void PngFile::Clear(int colorR, int colorG, int colorB, int colorA) throw()
 	}
 }
 
-void PngFile::PlotDatapoint(unsigned x, unsigned y, int colorR, int colorG, int colorB, int colorA) throw()
+void PngFile::PlotDatapoint(unsigned x, unsigned y, int colorR, int colorG, int colorB, int colorA)
 {
 	int width = 3;
 	for(int xi=(signed) x-width/2;xi<=(signed) x+(width-1)/2;xi++) {
@@ -97,7 +97,7 @@ void PngFile::PlotDatapoint(unsigned x, unsigned y, int colorR, int colorG, int 
 	}
 }
 
-void PngFile::SetFromImage(const class Image2D &image, const class ColorMap &colorMap, long double normalizeFactor, long double zeroLevel) throw(IOException)
+void PngFile::SetFromImage(const class Image2D &image, const class ColorMap &colorMap, long double normalizeFactor, long double zeroLevel)
 {
 	png_bytep *row_pointers = RowPointers();
 	for(unsigned long y=0;y<image.Height();y++) {
@@ -111,19 +111,18 @@ void PngFile::SetFromImage(const class Image2D &image, const class ColorMap &col
 	}
 }
 
-void PngFile::Save(const Image2D &image, const std::string &filename) throw(IOException)
+void PngFile::Save(const Image2D &image, const std::string &filename)
 {
-	ColorMap *colorMap = ColorMap::CreateColorMap("monochrome");
+	std::unique_ptr<ColorMap> colorMap(ColorMap::CreateColorMap("monochrome"));
 	Save(image, filename, *colorMap);
-	delete colorMap;
 }
 
-void PngFile::Save(const Image2D &image, const std::string &filename, const ColorMap &colorMap) throw(IOException)
+void PngFile::Save(const Image2D &image, const std::string &filename, const ColorMap &colorMap)
 {
 	Save(image, filename, colorMap, image.GetMaxMinNormalizationFactor());
 }
 
-void PngFile::Save(const Image2D &image, const std::string &filename, const ColorMap &colorMap, long double normalizeFactor, long double zeroLevel) throw(IOException)
+void PngFile::Save(const Image2D &image, const std::string &filename, const ColorMap &colorMap, long double normalizeFactor, long double zeroLevel)
 {
 	PngFile pngFile(filename, image.Width(), image.Height());
 	pngFile.BeginWrite();
@@ -131,7 +130,7 @@ void PngFile::Save(const Image2D &image, const std::string &filename, const Colo
 	pngFile.Close();
 }
 
-void PngFile::Save(const Image2D &image, const ColorMap &colorMap) throw(IOException)
+void PngFile::Save(const Image2D &image, const ColorMap &colorMap)
 {
 	long double normalizeFactor = image.GetMaxMinNormalizationFactor();
 	

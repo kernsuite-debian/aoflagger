@@ -5,7 +5,7 @@
 
 #include "../../quality/qualitytablesformatter.h"
 #include "../../quality/statisticsderivator.h"
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
@@ -19,7 +19,7 @@ namespace rfiStrategy
 class QualityStatImageSet : public SingleImageSet
 {
 public:
-	QualityStatImageSet(const std::string& filename) :
+	explicit QualityStatImageSet(const std::string& filename) :
 		_filename(filename),
 		_statisticKind(QualityTablesFormatter::StandardDeviationStatistic)
 	{
@@ -30,12 +30,12 @@ public:
 			_filename = p.parent_path().string();
 	}
 	
-	virtual std::string Name()
+	virtual std::string Name() final override
 	{ return File(); }
-	virtual std::string File()
+	virtual std::string File() final override
 	{ return _filename; }
 	
-	virtual BaselineData *Read()
+	std::unique_ptr<BaselineData> Read() final override
 	{
 		QualityTablesFormatter formatter(_filename);
 		StatisticsCollection statCollection;
@@ -59,19 +59,18 @@ public:
 		}
 		tfData.SetGlobalMask(mask);
 
-		BaselineData* baselineData = new BaselineData(tfData, metaData);
-		return baselineData;
+		return std::unique_ptr<BaselineData>(new BaselineData(tfData, metaData));
 	}
 	
-	virtual ImageSet *Copy()
+	virtual std::unique_ptr<ImageSet> Clone() final override
 	{
-		return new QualityStatImageSet(_filename);
+		return std::unique_ptr<ImageSet>(new QualityStatImageSet(_filename));
 	}
 	
-	virtual void Initialize()
+	virtual void Initialize() final override
 	{ }
 	
-	virtual void Write(const std::vector<Mask2DCPtr>& flags)
+	virtual void Write(const std::vector<Mask2DCPtr>& flags) final override
 	{
 		std::vector<Mask2DCPtr> flagsCopy(flags);
 		casacore::MeasurementSet ms(_filename, casacore::Table::Update);
@@ -83,7 +82,7 @@ public:
 			const size_t
 				polCount = flagArray.shape()[0],
 				channelCount = flagArray.shape()[1];
-			AOLogger::Debug << "Saving flags to measurement set (" << channelCount << " ch x " << polCount << " pol)...\n";
+			Logger::Debug << "Saving flags to measurement set (" << channelCount << " ch x " << polCount << " pol)...\n";
 			if(flagsCopy.size() == 1 && polCount>1)
 			{
 				do { flagsCopy.push_back(flagsCopy[0]);
@@ -99,7 +98,7 @@ public:
 			}
 			size_t timeIndex = size_t(-1);
 			double time = -1.0;
-			bool* timestepFlags = new bool[channelCount*polCount];
+			std::unique_ptr<bool[]> timestepFlags(new bool[channelCount*polCount]);
 			for(size_t row=0; row!=ms.nrow(); ++row)
 			{
 				if(time != timeColumn(row))
@@ -107,7 +106,7 @@ public:
 					time = timeColumn(row);
 					timeIndex++;
 					
-					bool* iter = timestepFlags;
+					bool* iter = timestepFlags.get();
 					for(size_t ch=0; ch!=channelCount; ++ch)
 					{
 						for(size_t p=0; p!=polCount; ++p)
@@ -126,7 +125,7 @@ public:
 				}
 				flagColumn.put(row, flagArray);
 			}
-			delete[] timestepFlags;
+			timestepFlags.reset();
 		}
 	}
 	

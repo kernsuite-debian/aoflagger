@@ -8,12 +8,12 @@
 #include "../../structures/samplerow.h"
 #include "../../structures/timefrequencymetadata.h"
 
-class FringeStoppingFitter : public SurfaceFitMethod {
+class FringeStoppingFitter final : public SurfaceFitMethod {
 	public:
 		FringeStoppingFitter();
 		virtual ~FringeStoppingFitter();
 
-		virtual void SetMetaData(TimeFrequencyMetaDataCPtr metaData)
+		void SetMetaData(TimeFrequencyMetaDataCPtr metaData)
 		{
 			_metaData = metaData;
 			_fieldInfo = &metaData->Field();
@@ -22,7 +22,7 @@ class FringeStoppingFitter : public SurfaceFitMethod {
 			_antenna2Info = &metaData->Antenna2();
 			_observationTimes = &metaData->ObservationTimes();
 		}
-		virtual void Initialize(const TimeFrequencyData &input) throw()
+		virtual void Initialize(const TimeFrequencyData &input) final override
 		{
 			_originalData=&input;
 			_realBackground =
@@ -32,20 +32,16 @@ class FringeStoppingFitter : public SurfaceFitMethod {
 			_originalMask =
 				input.GetSingleMask();
 		}
-		virtual unsigned int TaskCount()
+		unsigned int TaskCount() const
 		{
 			return _fringeFit ? _originalData->ImageHeight() : _originalData->ImageWidth();
 		}
-		virtual void PerformFit(unsigned taskNumber);
-		virtual void PerformStaticFrequencyFitOnOneChannel(unsigned y);
+		virtual void PerformFit(unsigned taskNumber) final override;
+		void PerformStaticFrequencyFitOnOneChannel(unsigned y);
 		void PerformFringeStop();
-		virtual class TimeFrequencyData Background()
+		class TimeFrequencyData Background() const
 		{
 			return TimeFrequencyData(Polarization::StokesI, _realBackground, _imaginaryBackground);
-		}
-		virtual enum TimeFrequencyData::PhaseRepresentation PhaseRepresentation() const
-		{
-			return TimeFrequencyData::ComplexRepresentation;
 		}
 		void SetFringesToConsider(long double fringesToConsider)
 		{
@@ -92,11 +88,11 @@ class FringeStoppingFitter : public SurfaceFitMethod {
 		num_t GetFringeFrequency(size_t x, size_t y);
 
 		void GetRFIValue(num_t &r, num_t &i, int x, int y, num_t rfiPhase, num_t rfiStrength);
-		void GetMeanValue(num_t &rMean, num_t &iMean, num_t phase, num_t amplitude, SampleRowCPtr real, SampleRowCPtr imaginary, unsigned xStart, unsigned xEnd, unsigned y);
-		void MinimizeRFIFitError(num_t &phase, num_t &amplitude, SampleRowCPtr real, SampleRowCPtr imaginary, unsigned xStart, unsigned xEnd, unsigned y) const throw();
+		void GetMeanValue(num_t &rMean, num_t &iMean, num_t phase, num_t amplitude, const SampleRow& real, const SampleRow& imaginary, unsigned xStart, unsigned xEnd, unsigned y);
+		void MinimizeRFIFitError(num_t &phase, num_t &amplitude, const SampleRow& real, const SampleRow& imaginary, unsigned xStart, unsigned xEnd, unsigned y) const throw();
 		
-		void PerformDynamicFrequencyFitOnOneRow(SampleRowCPtr real, SampleRowCPtr imaginary, unsigned y);
-		void PerformDynamicFrequencyFitOnOneRow(SampleRowCPtr real, SampleRowCPtr imaginary, unsigned y, unsigned windowSize);
+		void PerformDynamicFrequencyFitOnOneRow(const SampleRow& real, const SampleRow& imaginary, unsigned y);
+		void PerformDynamicFrequencyFitOnOneRow(const SampleRow& real, const SampleRow& imaginary, unsigned y, unsigned windowSize);
 
 		Mask2DCPtr _originalMask;
 		const class TimeFrequencyData *_originalData;

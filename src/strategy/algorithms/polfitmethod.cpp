@@ -213,7 +213,7 @@ int PolFitMethod::LinErrorDiff(const gsl_vector *coefs, void *data, gsl_matrix *
 
 long double PolFitMethod::FitBackground(unsigned x, unsigned y, ThreadLocal &local)
 {
-	long double *coefficients = new long double[6];
+	std::vector<long double> coefficients(6);
 
 	boost::mutex::scoped_lock lock(_mutex);
 	if(_previousCoefficients) {
@@ -295,7 +295,6 @@ long double PolFitMethod::FitBackground(unsigned x, unsigned y, ThreadLocal &loc
 	gsl_multifit_fdfsolver_free(solver);
 
 	long double evaluation = Evaluate(x, y, coefficients);
-	delete[] coefficients;
 	return evaluation;
 }
 

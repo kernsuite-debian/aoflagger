@@ -8,9 +8,8 @@
 
 #include <stack>
 #include <set>
-
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
+#include <mutex>
+#include <condition_variable>
 
 #include "../../util/progresslistener.h"
 
@@ -18,20 +17,34 @@ namespace rfiStrategy {
 
 	class ForEachBaselineAction : public ActionBlock {
 		public:
-			ForEachBaselineAction() : _threadCount(4), _selection(CrossCorrelations), _resultSet(0), _exceptionOccured(false),  _hasInitAntennae(false)
+			ForEachBaselineAction() :
+				_baselineCount(0),
+				_nextIndex(0),
+				_threadCount(4),
+				_selection(CrossCorrelations),
+				_loopIndex(nullptr),
+				_artifacts(nullptr),
+				_resultSet(nullptr),
+				_finishedBaselines(false),
+				_progressTaskNo(nullptr),
+				_progressTaskCount(nullptr),
+				_exceptionOccured(false),
+				_baselineProgress(0),
+				_hasInitAntennae(false),
+				_initPartIndex(0)
 			{
 			}
 			virtual ~ForEachBaselineAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "For each baseline";
 			}
-			virtual void Initialize()
+			virtual void Initialize() final override
 			{
 			}
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress);
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override;
 
 			enum BaselineSelection Selection() const throw() { return _selection; }
 			void SetSelection(enum BaselineSelection selection) throw() { _selection = selection; }
@@ -39,7 +52,7 @@ namespace rfiStrategy {
 			size_t ThreadCount() const throw() { return _threadCount; }
 			void SetThreadCount(size_t threadCount) throw() { _threadCount = threadCount; }
 			
-			virtual ActionType Type() const { return ForEachBaselineActionType; }
+			virtual ActionType Type() const final override { return ForEachBaselineActionType; }
 
 			std::set<size_t> &AntennaeToSkip() { return _antennaeToSkip; }
 			const std::set<size_t> &AntennaeToSkip() const { return _antennaeToSkip; }
@@ -54,12 +67,12 @@ namespace rfiStrategy {
 			const std::set<size_t>& Bands() const { return _bands; }
 		private:
 			bool IsBaselineSelected(ImageSetIndex &index);
-			class ImageSetIndex *GetNextIndex();
+			std::unique_ptr<class ImageSetIndex> GetNextIndex();
 			static std::string memToStr(double memSize);
 			
 			void SetExceptionOccured();
 			void SetFinishedBaselines();
-			void SetProgress(ProgressListener &progress, int no, int count, std::string taskName, int threadId);
+			void SetProgress(ProgressListener &progress, int no, int count, const std::string& taskName, int threadId);
 			size_t mathThreadCount() const
 			{
 				// Since IO also takes some CPU, and IO should not be
@@ -73,32 +86,32 @@ namespace rfiStrategy {
 
 			size_t BaselineProgress()
 			{
-				boost::mutex::scoped_lock lock(_mutex);
+				std::lock_guard<std::mutex> lock(_mutex);
 				return _baselineProgress;
 			}
 			void IncBaselineProgress()
 			{
-				boost::mutex::scoped_lock lock(_mutex);
+				std::lock_guard<std::mutex> lock(_mutex);
 				++_baselineProgress;
 			}
 			
 			void WaitForBufferAvailable(size_t maxSize)
 			{
-				boost::mutex::scoped_lock lock(_mutex);
+				std::unique_lock<std::mutex> lock(_mutex);
 				while(_baselineBuffer.size() > maxSize && !_exceptionOccured)
 					_dataProcessed.wait(lock);
 			}
 			
-			class BaselineData *GetNextBaseline()
+			std::unique_ptr<BaselineData> GetNextBaseline()
 			{
-				boost::mutex::scoped_lock lock(_mutex);
+				std::unique_lock<std::mutex> lock(_mutex);
 				while(_baselineBuffer.size() == 0 && !_exceptionOccured && !_finishedBaselines)
 					_dataAvailable.wait(lock);
 				if((_finishedBaselines && _baselineBuffer.size() == 0) || _exceptionOccured)
-					return 0;
+					return nullptr;
 				else
 				{
-					BaselineData *next = _baselineBuffer.top();
+					std::unique_ptr<BaselineData> next = std::move(_baselineBuffer.top());
 					_baselineBuffer.pop();
 					_dataProcessed.notify_one();
 					return next;
@@ -107,7 +120,7 @@ namespace rfiStrategy {
 
 			size_t GetBaselinesInBufferCount()
 			{
-				boost::mutex::scoped_lock lock(_mutex);
+				std::lock_guard<std::mutex> lock(_mutex);
 				return _baselineBuffer.size();
 			}
 			
@@ -125,15 +138,15 @@ namespace rfiStrategy {
 				ProgressListener &_progress;
 				size_t _threadIndex;
 				void operator()();
-				virtual void OnStartTask(const Action &action, size_t taskNo, size_t taskCount, const std::string &description, size_t weight=1);
-				virtual void OnEndTask(const Action &action);
-				virtual void OnProgress(const Action &action, size_t progres, size_t maxProgress);
-				virtual void OnException(const Action &action, std::exception &thrownException);
+				virtual void OnStartTask(const Action &action, size_t taskNo, size_t taskCount, const std::string &description, size_t weight=1) final override;
+				virtual void OnEndTask(const Action &action) final override;
+				virtual void OnProgress(const Action &action, size_t progres, size_t maxProgress) final override;
+				virtual void OnException(const Action &action, std::exception &thrownException) final override;
 			};
 			
 			struct ReaderFunction
 			{
-				ReaderFunction(ForEachBaselineAction &action)
+				explicit ReaderFunction(ForEachBaselineAction &action)
 				  : _action(action)
 				{
 				}
@@ -146,12 +159,12 @@ namespace rfiStrategy {
 			size_t _threadCount;
 			BaselineSelection _selection;
 
-			ImageSetIndex *_loopIndex;
+			std::unique_ptr<ImageSetIndex> _loopIndex;
 			ArtifactSet *_artifacts, *_resultSet;
 			
-			boost::mutex _mutex;
-			boost::condition _dataAvailable, _dataProcessed;
-			std::stack<BaselineData*> _baselineBuffer;
+			std::mutex _mutex;
+			std::condition_variable _dataAvailable, _dataProcessed;
+			std::stack<std::unique_ptr<BaselineData>> _baselineBuffer;
 			bool _finishedBaselines;
 
 			int *_progressTaskNo, *_progressTaskCount;

@@ -2,21 +2,17 @@
 
 #include "../actions/absthresholdaction.h"
 #include "../actions/action.h"
-#include "../actions/addstatisticsaction.h"
 #include "../actions/baselineselectionaction.h"
 #include "../actions/calibratepassbandaction.h"
 #include "../actions/changeresolutionaction.h"
 #include "../actions/combineflagresultsaction.h"
 #include "../actions/cutareaaction.h"
-#include "../actions/directionalcleanaction.h"
-#include "../actions/directionprofileaction.h"
 #include "../actions/eigenvalueverticalaction.h"
 #include "../actions/foreachbaselineaction.h"
 #include "../actions/foreachcomplexcomponentaction.h"
 #include "../actions/foreachpolarisationaction.h"
 #include "../actions/foreachsimulatedbaselineaction.h"
 #include "../actions/foreachmsaction.h"
-#include "../actions/fouriertransformaction.h"
 #include "../actions/frequencyconvolutionaction.h"
 #include "../actions/frequencyselectionaction.h"
 #include "../actions/fringestopaction.h"
@@ -27,16 +23,15 @@
 #include "../actions/plotaction.h"
 #include "../actions/quickcalibrateaction.h"
 #include "../actions/resamplingaction.h"
+#include "../actions/saveheatmapaction.h"
 #include "../actions/setflaggingaction.h"
 #include "../actions/setimageaction.h"
 #include "../actions/slidingwindowfitaction.h"
-#include "../actions/spatialcompositionaction.h"
 #include "../actions/statisticalflagaction.h"
 #include "../actions/svdaction.h"
 #include "../actions/sumthresholdaction.h"
 #include "../actions/timeconvolutionaction.h"
 #include "../actions/timeselectionaction.h"
-#include "../actions/uvprojectaction.h"
 #include "../actions/writedataaction.h"
 #include "../actions/writeflagsaction.h"
 
@@ -46,21 +41,17 @@ const std::vector<std::string> ActionFactory::GetActionList()
 {
 	std::vector<std::string> list;
 	list.push_back("Absolute threshold");
-	list.push_back("Add to statistics");
 	list.push_back("Baseline selection");
 	list.push_back("Calibrate passband");
 	list.push_back("Change resolution");
 	list.push_back("Combine flag results");
 	list.push_back("Cut area");
-	list.push_back("Directional CLEAN");
-	list.push_back("Direction profile");
 	list.push_back("Eigen value decompisition (vertical)");
 	list.push_back("For each baseline");
 	list.push_back("For each complex component");
 	list.push_back("For each polarisation");
 	list.push_back("For each simulated baseline");
 	list.push_back("For each measurement set");
-	list.push_back("Fourier transformation");
 	list.push_back("Frequency convolution");
 	list.push_back("Frequency selection");
 	list.push_back("Fringe stopping recovery");
@@ -72,101 +63,88 @@ const std::vector<std::string> ActionFactory::GetActionList()
 	list.push_back("Plot");
 	list.push_back("Quickly calibrate");
 	list.push_back("Resample");
+	list.push_back("Save heat map");
 	list.push_back("Set flagging");
 	list.push_back("Set image");
 	list.push_back("Singular value decomposition");
 	list.push_back("Sliding window fit");
-	list.push_back("Spatial composition");
 	list.push_back("Statistical flagging");
 	list.push_back("SumThreshold");
 	list.push_back("Time convolution");
 	list.push_back("Time selection");
-	list.push_back("UV-projection");
 	list.push_back("Write data");
 	list.push_back("Write flags");
 	return list;
 }
 
-Action *ActionFactory::CreateAction(const std::string &action)
+std::unique_ptr<Action> ActionFactory::CreateAction(const std::string &action)
 {
 	if(action == "Absolute threshold")
-		return new AbsThresholdAction();
-	else if(action == "Add to statistics")
-		return new AddStatisticsAction();
+		return make<AbsThresholdAction>();
 	else if(action == "Baseline selection")
-		return new BaselineSelectionAction();
+		return make<BaselineSelectionAction>();
 	else if(action == "Calibrate passband")
-		return new CalibratePassbandAction();
+		return make<CalibratePassbandAction>();
 	else if(action == "Change resolution")
-		return new ChangeResolutionAction();
+		return make<ChangeResolutionAction>();
 	else if(action == "Combine flag results")
-		return new CombineFlagResults();
+		return make<CombineFlagResults>();
 	else if(action == "Cut area")
-		return new CutAreaAction();
-	else if(action == "Directional CLEAN")
-		return new DirectionalCleanAction();
-	else if(action == "Direction profile")
-		return new DirectionProfileAction();
+		return make<CutAreaAction>();
 	else if(action == "Eigen value decompisition (vertical)")
-		return new EigenValueVerticalAction();
+		return make<EigenValueVerticalAction>();
 	else if(action == "For each baseline")
-		return new ForEachBaselineAction();
+		return make<ForEachBaselineAction>();
 	else if(action == "For each complex component")
-		return new ForEachComplexComponentAction();
+		return make<ForEachComplexComponentAction>();
 	else if(action == "For each measurement set")
-		return new ForEachMSAction();
+		return make<ForEachMSAction>();
 	else if(action == "For each polarisation")
-		return new ForEachPolarisationBlock();
+		return make<ForEachPolarisationBlock>();
 	else if(action == "For each simulated baseline")
-		return new ForEachSimulatedBaselineAction();
+		return make<ForEachSimulatedBaselineAction>();
 	else if(action == "Frequency convolution")
-		return new FrequencyConvolutionAction();
+		return make<FrequencyConvolutionAction>();
 	else if(action == "Frequency selection")
-		return new FrequencySelectionAction();
+		return make<FrequencySelectionAction>();
 	else if(action == "Fringe stopping recovery")
-		return new FringeStopAction();
-	else if(action == "Fourier transformation")
-		return new FourierTransformAction();
+		return make<FringeStopAction>();
 	else if(action == "High-pass filter")
-		return new HighPassFilterAction();
+		return make<HighPassFilterAction>();
 	else if(action == "Image")
-		return new ImagerAction();
+		return make<ImagerAction>();
 	else if(action == "Iteration")
-		return new IterationBlock();
+		return make<IterationBlock>();
 	else if(action == "Normalize variance")
-		return new NormalizeVarianceAction();
-	//else if(action == "Phase adapter")
-	//	return new Adapter();
+		return make<NormalizeVarianceAction>();
 	else if(action == "Plot")
-		return new PlotAction();
+		return make<PlotAction>();
 	else if(action == "Quickly calibrate")
-		return new QuickCalibrateAction();
+		return make<QuickCalibrateAction>();
 	else if(action == "Resample")
-		return new ResamplingAction();
+		return make<ResamplingAction>();
+	else if(action == "Save heat map")
+		return make<SaveHeatMapAction>();
 	else if(action == "Set flagging")
-		return new SetFlaggingAction();
+		return make<SetFlaggingAction>();
 	else if(action == "Set image")
-		return new SetImageAction();
+		return make<SetImageAction>();
 	else if(action == "Singular value decomposition")
-		return new SVDAction();
+		return make<SVDAction>();
 	else if(action == "Sliding window fit")
-		return new SlidingWindowFitAction();
-	else if(action == "Spatial composition")
-		return new SpatialCompositionAction();
+		return make<SlidingWindowFitAction>();
 	else if(action == "Statistical flagging")
-		return new StatisticalFlagAction();
+		return make<StatisticalFlagAction>();
 	else if(action == "SumThreshold")
-		return new SumThresholdAction();
+		return make<SumThresholdAction>();
 	else if(action == "Time convolution")
-		return new TimeConvolutionAction();
+		return make<TimeConvolutionAction>();
 	else if(action == "Time selection")
-		return new TimeSelectionAction();
-	else if(action == "UV-projection")
-		return new UVProjectAction();
+		return make<TimeSelectionAction>();
 	else if(action == "Write data")
-		return new WriteDataAction();
+		return make<WriteDataAction>();
 	else if(action == "Write flags")
-		return new WriteFlagsAction();
+		return make<WriteFlagsAction>();
 	else
 		throw BadUsageException(std::string("Trying to create unknown action \"") + action + "\"");
 }

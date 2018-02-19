@@ -15,16 +15,16 @@ namespace rfiStrategy {
 				_steps(48)
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Calibrate passband";
 			}
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress)
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override
 			{
 				calibrate(artifacts.ContaminatedData());
 			}
 
-			virtual ActionType Type() const { return CalibratePassbandActionType; }
+			virtual ActionType Type() const final override { return CalibratePassbandActionType; }
 
 			size_t Steps() const { return _steps; }
 			void SetSteps(size_t steps) { _steps = steps; }

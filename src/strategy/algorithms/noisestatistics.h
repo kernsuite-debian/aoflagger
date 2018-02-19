@@ -19,7 +19,7 @@ class NoiseStatistics {
 		{
 		}
 		
-		NoiseStatistics(const Array &samples)
+		explicit NoiseStatistics(const Array &samples)
 		: _sum(0.0), _sum2(0.0), _sum3(0.0), _sum4(0.0), _count(0)
 		{
 			Add(samples);

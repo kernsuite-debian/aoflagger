@@ -15,7 +15,7 @@ namespace rfiStrategy {
 			~ChangeResolutionAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Change resolution";
 			}
@@ -26,8 +26,12 @@ namespace rfiStrategy {
 			void SetFrequencyDecreaseFactor(int newFactor) { _frequencyDecreaseFactor = newFactor; }
 			int FrequencyDecreaseFactor() const { return _frequencyDecreaseFactor; }
 
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener);
-			virtual ActionType Type() const { return ChangeResolutionActionType; }
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override;
+			
+			virtual ActionType Type() const final override
+			{
+				return ChangeResolutionActionType;
+			}
 
 			bool RestoreRevised() const { return _restoreRevised; }
 			void SetRestoreRevised(bool restoreRevised) { _restoreRevised = restoreRevised; }

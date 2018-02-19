@@ -4,7 +4,9 @@
 #include "test/experiments/experimentstestgroup.h"
 #include "test/msio/msiotestgroup.h"
 #include "test/quality/qualitytestgroup.h"
+#include "test/structures/structurestestgroup.h"
 #include "test/util/utiltestgroup.h"
+#include "test/msio/msiotestgroup.h"
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +40,11 @@ int main(int argc, char *argv[])
 		utilGroup.Run();
 		successes += utilGroup.Successes();
 		failures += utilGroup.Failures();
+		
+		StructuresTestGroup structGroup;
+		structGroup.Run();
+		successes += structGroup.Successes();
+		failures += structGroup.Failures();
 	}
 	
 	if(argc > 1 && (std::string(argv[1])=="all" || std::string(argv[1])=="only"))

@@ -2,8 +2,7 @@
 #define LocalFitMethod_H
 
 #include <string>
-
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 #include "../../structures/image2d.h"
 #include "../../structures/mask2d.h"
@@ -11,7 +10,7 @@
 
 #include "surfacefitmethod.h"
 
-class LocalFitMethod : public SurfaceFitMethod {
+class LocalFitMethod final : public SurfaceFitMethod {
 	public:
 		enum Method { None, Average, GaussianWeightedAverage, FastGaussianWeightedAverage, Median, Minimum };
 		LocalFitMethod();
@@ -58,14 +57,11 @@ class LocalFitMethod : public SurfaceFitMethod {
 			_vSquareSize = vSquareSize;
 			_method = method;
 		}
-		virtual void Initialize(const TimeFrequencyData &input);
-		virtual unsigned TaskCount();
-		virtual void PerformFit(unsigned taskNumber);
-		virtual TimeFrequencyData Background() { return *_background; }
-		virtual enum TimeFrequencyData::PhaseRepresentation PhaseRepresentation() const
-		{
-			return TimeFrequencyData::AmplitudePart;
-		}
+		virtual void Initialize(const TimeFrequencyData &input) final override;
+		//[[ deprecated("Trying to make surfacemethod go away") ]]
+		unsigned TaskCount();
+		virtual void PerformFit(unsigned taskNumber) final override;
+		TimeFrequencyData Background() const { return _background; }
 	private:
 		struct ThreadLocal {
 			LocalFitMethod *image;
@@ -87,13 +83,12 @@ class LocalFitMethod : public SurfaceFitMethod {
 		void ElementWiseDivide(Image2DPtr leftHand, Image2DCPtr rightHand);
 
 		Image2DCPtr _original;
-		class TimeFrequencyData *_background;
+		TimeFrequencyData _background;
 		Image2DPtr _background2D;
 		Mask2DCPtr _mask;
 		unsigned _hSquareSize, _vSquareSize;
 		num_t **_weights;
 		long double _hKernelSize, _vKernelSize;
-		boost::mutex _mutex;
 		enum Method _method;
 };
 

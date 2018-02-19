@@ -10,9 +10,10 @@
 #include "../control/defaultstrategy.h"
 
 #include "../imagesets/imageset.h"
+#include "../imagesets/joinedspwset.h"
 #include "../imagesets/msimageset.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/progresslistener.h"
 
 #include <memory>
@@ -39,23 +40,31 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 		if(_skipIfAlreadyProcessed)
 		{
 			MeasurementSet set(filename);
-			if(set.HasRFIConsoleHistory())
+			if(set.HasAOFlaggerHistory())
 			{
 				skip = true;
-				AOLogger::Info << "Skipping " << filename << ",\n"
+				Logger::Info << "Skipping " << filename << ",\n"
 					"because the set contains AOFlagger history and -skip-flagged was given.\n";
 			}
 		}
 		
 		if(!skip)
 		{
-			std::unique_ptr<ImageSet> imageSet(ImageSet::Create(filename, _baselineIOMode, _readUVW));
+			std::unique_ptr<ImageSet> imageSet(ImageSet::Create(filename, _baselineIOMode));
 			bool isMS = dynamic_cast<MSImageSet*>(&*imageSet) != 0;
 			if(isMS)
 			{ 
-				MSImageSet *msImageSet = static_cast<MSImageSet*>(&*imageSet);
+				MSImageSet* msImageSet = static_cast<MSImageSet*>(imageSet.get());
 				msImageSet->SetDataColumnName(_dataColumnName);
 				msImageSet->SetSubtractModel(_subtractModel);
+				msImageSet->SetReadUVW(_readUVW);
+				if(_combineSPWs)
+				{
+					msImageSet->Initialize();
+					imageSet.release();
+					std::unique_ptr<MSImageSet> msImageSetPtr(msImageSet);
+					imageSet.reset(new JoinedSPWSet(std::move(msImageSetPtr)));
+				}
 			}
 			imageSet->Initialize();
 			
@@ -91,8 +100,8 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 			}
 				
 			std::unique_ptr<ImageSetIndex> index(imageSet->StartIndex());
-			artifacts.SetImageSet(&*imageSet);
-			artifacts.SetImageSetIndex(&*index);
+			artifacts.SetImageSet(std::move(imageSet));
+			artifacts.SetImageSetIndex(std::move(index));
 
 			InitializeAll();
 			
@@ -101,8 +110,6 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 			FinishAll();
 			
 			artifacts.SetNoImageSet();
-			index.reset();
-			imageSet.reset();
 
 			if(isMS)
 				writeHistory(*i);
@@ -144,17 +151,17 @@ void ForEachMSAction::writeHistory(const std::string &filename)
 			if(dynamic_cast<const Strategy*>(root) != 0)
 				strategy = static_cast<const Strategy*>(root);
 		}
-		AOLogger::Debug << "Adding strategy to history table of MS...\n";
+		Logger::Debug << "Adding strategy to history table of MS...\n";
 		if(strategy != 0) {
 			try {
 				ms.AddAOFlaggerHistory(*strategy, _commandLineForHistory);
 			} catch(std::exception &e)
 			{
-				AOLogger::Warn << "Failed to write history to MS: " << e.what() << '\n';
+				Logger::Warn << "Failed to write history to MS: " << e.what() << '\n';
 			}
 		}
 		else
-			AOLogger::Error << "Could not find root strategy to write to Measurement Set history table!\n";
+			Logger::Error << "Could not find root strategy to write to Measurement Set history table!\n";
 	}
 }
 

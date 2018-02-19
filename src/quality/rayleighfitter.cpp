@@ -17,7 +17,7 @@ static int fit_f(const gsl_vector *xvec, void *data, gsl_vector *f)
 	const double n = gsl_vector_get(xvec, 1);
 	
 	size_t t = 0;
-	RayleighFitter &fitter = *(RayleighFitter *) data;
+	RayleighFitter &fitter = *static_cast<RayleighFitter*>(data);
 	const LogHistogram &hist = *fitter._hist;
 	const double minVal = fitter._minVal;
 	const double maxVal = fitter._maxVal;
@@ -50,7 +50,7 @@ int fit_df(const gsl_vector *xvec, void *data, gsl_matrix *J)
 	const double n = gsl_vector_get(xvec, 1);
 	
 	size_t t = 0;
-	RayleighFitter &fitter = *(RayleighFitter *) data;
+	RayleighFitter &fitter = *static_cast<RayleighFitter*>(data);
 	const LogHistogram &hist = *fitter._hist;
 	const double minVal = fitter._minVal;
 	const double maxVal = fitter._maxVal;

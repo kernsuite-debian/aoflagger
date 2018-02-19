@@ -17,9 +17,9 @@ class DirectBaselineReader : public BaselineReader {
 		explicit DirectBaselineReader(const std::string &msFile);
 		~DirectBaselineReader();
 
-		virtual void PerformReadRequests();
-		virtual void PerformFlagWriteRequests();
-		virtual void PerformDataWriteTask(std::vector<Image2DCPtr> /*_realImages*/, std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/, int /*antenna2*/, int /*spectralWindow*/, unsigned /*sequenceId*/)
+		virtual void PerformReadRequests() final override;
+		virtual void PerformFlagWriteRequests() final override;
+		virtual void PerformDataWriteTask(std::vector<Image2DCPtr> /*_realImages*/, std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/, int /*antenna2*/, int /*spectralWindow*/, unsigned /*sequenceId*/) final override
 		{
 			throw std::runtime_error("The direct baseline reader can not write data back to file: use the indirect reader");
 		}
@@ -35,12 +35,13 @@ class DirectBaselineReader : public BaselineReader {
 				spectralWindow(source.spectralWindow), sequenceId(source.sequenceId)
 			{
 			}
-			void operator=(const BaselineCacheIndex &source)
+			BaselineCacheIndex& operator=(const BaselineCacheIndex &source)
 			{
 				antenna1 = source.antenna1;
 				antenna2 = source.antenna2;
 				spectralWindow = source.spectralWindow;
 				sequenceId = source.sequenceId;
+				return *this;
 			}
 			bool operator==(const BaselineCacheIndex &rhs) const
 			{
@@ -78,9 +79,10 @@ class DirectBaselineReader : public BaselineReader {
 			{ }
 			BaselineCacheValue(const BaselineCacheValue &source) : rows(source.rows)
 			{ }
-			void operator=(const BaselineCacheValue &source)
+			BaselineCacheValue& operator=(const BaselineCacheValue &source)
 			{
 				rows = source.rows;
+				return *this;
 			}
 		};
 		

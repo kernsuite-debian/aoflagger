@@ -1,31 +1,31 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -DNDEBUG -funroll-loops -O3 -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror=vla -DNDEBUG -funroll-loops -O3 -std=c++11")
 
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists) 
 include(CheckCXXSymbolExists)
 include(CheckIncludeFileCXX)
 
-CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-CHECK_CXX_COMPILER_FLAG("-pedantic -Wno-long-long -Werror=vla" COMPILER_SUPPORTS_PEDANTIC)
 CHECK_SYMBOL_EXISTS(posix_fallocate "fcntl.h" HAVE_POSIX_FALLOCATE) 
 CHECK_CXX_SYMBOL_EXISTS(exp10 "cmath" HAVE_EXP10)
 
 # -march=native speeds up the flagger with about 6% - 7%, but is not supported prior gcc 4.2.
 # Hence, only enable it if it is supported.
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
-	if(NOT PORTABLE)
+if(PORTABLE)
+  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance")
+else()	
+	CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+	if(COMPILER_SUPPORTS_MARCH_NATIVE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 	else()
-	  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance")
-	endif(NOT PORTABLE)
-else()
-  message(STATUS " CXX compiler does not support -march=native : your code will not be optimized with -march=native.")
-  message(STATUS " This probably means your gcc is old ( < 4.2).")
-endif(COMPILER_SUPPORTS_MARCH_NATIVE)
+		message(STATUS " CXX compiler does not support -march=native : your code will not be optimized with -march=native.")
+		message(STATUS " This probably means your compiler is old (e.g. gcc < 4.2).")
+	endif(COMPILER_SUPPORTS_MARCH_NATIVE)
+endif(PORTABLE)
 
-if(COMPILER_SUPPORTS_PEDANTIC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wno-long-long -Werror=vla")
-endif(COMPILER_SUPPORTS_PEDANTIC)
+CHECK_CXX_COMPILER_FLAG("-Wsuggest-override" COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
+if(COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
+endif(COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
 
 if(HAVE_POSIX_FALLOCATE)
   add_definitions(-DHAVE_POSIX_FALLOCATE)
@@ -53,40 +53,50 @@ endif(GSL_LIB AND GSL_CBLAS_LIB AND GSL_INCLUDE_DIR)
 
 add_executable(rficonsole rficonsole.cpp)
 
-set(GUI_QUALITY_FILES
-  gui/quality/aoqplotwindow.cpp
-  gui/quality/baselineplotpage.cpp
-  gui/quality/datawindow.cpp
-  gui/quality/grayscaleplotpage.cpp
-  gui/quality/histogrampage.cpp
-  gui/quality/timefrequencyplotpage.cpp
-  gui/quality/twodimensionalplotpage.cpp)
+set(AOQPLOT_FILES
+  aoqplot/aoqplotwindow.cpp
+  aoqplot/baselineplotpage.cpp
+  aoqplot/datawindow.cpp
+  aoqplot/grayscaleplotpage.cpp
+  aoqplot/histogrampage.cpp
+  aoqplot/timefrequencyplotpage.cpp
+  aoqplot/twodimensionalplotpage.cpp
+  aoqplot/controllers/aoqplotcontroller.cpp
+  aoqplot/controllers/aoqplotpagecontroller.cpp
+  aoqplot/controllers/baselinepagecontroller.cpp
+  aoqplot/controllers/heatmappagecontroller.cpp
+  aoqplot/controllers/histogrampagecontroller.cpp
+  aoqplot/controllers/tfpagecontroller.cpp)
 
-set(GUI_PLOT_FILES
-  gui/plot/colorscale.cpp
-  gui/plot/horizontalplotscale.cpp
-  gui/plot/plot2d.cpp
-  gui/plot/plotpropertieswindow.cpp
-  gui/plot/title.cpp
-  gui/plot/verticalplotscale.cpp)
+set(PLOT_FILES
+  plot/colorscale.cpp
+  plot/heatmapplot.cpp
+  plot/horizontalplotscale.cpp
+  plot/plot2d.cpp
+  plot/plotpropertieswindow.cpp
+  plot/title.cpp
+  plot/verticalplotscale.cpp)
 
 set(GUI_FILES
-  gui/controllers/rfiguicontroller.cpp
-  gui/complexplaneplotwindow.cpp
-  gui/editstrategywindow.cpp
-  gui/gotowindow
-  gui/highlightwindow.cpp
-  gui/imagecomparisonwidget.cpp
-  gui/imageplanewindow
-  gui/imagepropertieswindow.cpp
-  gui/imagewidget.cpp
-  gui/msoptionwindow.cpp
-  gui/plotframe.cpp
-  gui/plotwindow.cpp
-  gui/progresswindow.cpp
-  gui/rfiguiwindow.cpp
-  gui/strategywizardwindow.cpp
-  ${GUI_PLOT_FILES} ${GUI_QUALITY_FILES})
+  rfigui/controllers/imagecomparisoncontroller.cpp
+  rfigui/controllers/rfiguicontroller.cpp
+  rfigui/complexplaneplotwindow.cpp
+  rfigui/editstrategywindow.cpp
+  rfigui/gotowindow
+  rfigui/highlightwindow.cpp
+  rfigui/imagecomparisonwidget.cpp
+  rfigui/imageplanewindow
+  rfigui/imagepropertieswindow.cpp
+  rfigui/heatmapwidget.cpp
+  rfigui/msoptionwindow.cpp
+  rfigui/plotframe.cpp
+  rfigui/plotwindow.cpp
+  rfigui/progresswindow.cpp
+  rfigui/rfiguiwindow.cpp
+  rfigui/strategywizardwindow.cpp
+  strategy/plots/rfiplots.cpp
+  util/multiplot.cpp
+  ${PLOT_FILES} ${AOQPLOT_FILES})
 
 set(IMAGING_FILES
   imaging/uvimager.cpp
@@ -134,8 +144,8 @@ set(STRATEGY_ACTION_FILES
   strategy/actions/imageraction.cpp
   strategy/actions/normalizevarianceaction.cpp
   strategy/actions/plotaction.cpp
+  strategy/actions/saveheatmapaction.cpp
   strategy/actions/slidingwindowfitaction.cpp
-  strategy/actions/spatialcompositionaction.cpp
   strategy/actions/statisticalflagaction.cpp
   strategy/actions/strategy.cpp
   strategy/actions/svdaction.cpp
@@ -146,41 +156,36 @@ set(STRATEGY_ACTION_FILES
 set(STRATEGY_ALGORITHMS_FILES
   strategy/algorithms/baselineselector.cpp
 	strategy/algorithms/baselinetimeplaneimager.cpp
+  strategy/algorithms/combinatorialthresholder.cpp
   strategy/algorithms/eigenvalue.cpp
   strategy/algorithms/fringestoppingfitter.cpp
   strategy/algorithms/fringetestcreater.cpp
 	strategy/algorithms/highpassfilter.cpp
   strategy/algorithms/localfitmethod.cpp
-  strategy/algorithms/mitigationtester.cpp
   strategy/algorithms/morphology.cpp
-  strategy/algorithms/rfistatistics.cpp
   strategy/algorithms/sinusfitter.cpp
   strategy/algorithms/statisticalflagger.cpp
   strategy/algorithms/sumthreshold.cpp
   strategy/algorithms/svdmitigater.cpp
+  strategy/algorithms/testsetgenerator.cpp
   strategy/algorithms/thresholdconfig.cpp
-  strategy/algorithms/thresholdmitigater.cpp
   strategy/algorithms/thresholdtools.cpp
   strategy/algorithms/timefrequencystatistics.cpp
   strategy/plots/antennaflagcountplot.cpp
   strategy/plots/frequencyflagcountplot.cpp)
 
-if(GTKMM_FOUND)
 set(STRATEGY_PLOTS_FILES
   strategy/plots/frequencypowerplot.cpp
   strategy/plots/iterationsplot.cpp
-  strategy/plots/rfiplots.cpp
-  strategy/plots/timeflagcountplot.cpp
-  util/multiplot.cpp)
-else()
- set(STRATEGY_PLOTS_FILES)
-endif(GTKMM_FOUND)
+  strategy/plots/timeflagcountplot.cpp)
 
 set(STRATEGY_CONTROL_FILES
   strategy/control/actionblock.cpp
   strategy/control/actioncontainer.cpp
   strategy/control/actionfactory.cpp
+  strategy/control/artifactset.cpp
   strategy/control/defaultstrategy.cpp
+  strategy/control/pythonstrategy.cpp
   strategy/control/strategyreader.cpp
   strategy/control/strategywriter.cpp)
 
@@ -201,7 +206,7 @@ set(STRATEGY_FILES
   ${STRATEGY_PLOTS_FILES})
 
 set(UTIL_FILES
-  util/aologger.cpp
+  util/logger.cpp
   util/ffttools.cpp
   util/integerdomain.cpp
   util/plot.cpp
@@ -222,24 +227,25 @@ else()
 		remote/vdsfile.cpp)
 endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND)
 
+set(PYTHON_FILES
+	python/functions.cpp)
+
 set(ALL_LIBRARIES
 	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
-	${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY}
-	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_SIGNALS_LIBRARY}
+	${Boost_SYSTEM_LIBRARY}
+	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON_LIBRARIES} ${Boost_SIGNALS_LIBRARY}
 	${FFTW3_LIB}
 	${CASACORE_LIBRARIES}
 	${LAPACK_lapack_LIBRARY}
 	${CFITSIO_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT}
 	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
-	${CMAKE_THREAD_LIBS_INIT})
+	${PYTHON_LIBRARY})
 
-if(GTKMM_FOUND AND GLIBMM_FOUND)
-  message(STATUS "GTKMM found.") 
-  include_directories(${GTKMM_INCLUDE_DIRS} ${GLIBMM_INCLUDE_DIRS})
-  link_directories(${GTKMM_LIBDIR} ${GLIBMM_LIBDIR})
-  set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GTKMM_LIBRARIES} ${GLIBMM_LIBRARIES})
-endif(GTKMM_FOUND AND GLIBMM_FOUND)
+message(STATUS "GTKMM found.") 
+include_directories(${GTKMM_INCLUDE_DIRS} ${GLIBMM_INCLUDE_DIRS})
+link_directories(${GTKMM_LIBDIR} ${GLIBMM_LIBDIR})
+set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GTKMM_LIBRARIES} ${GLIBMM_LIBRARIES})
 
 if(SIGCXX_FOUND)
   message(STATUS "SIGCXX found.") 
@@ -248,11 +254,20 @@ if(SIGCXX_FOUND)
   set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
 endif(SIGCXX_FOUND)
 
-add_library(aoflagger SHARED ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES})
-SET_TARGET_PROPERTIES(aoflagger PROPERTIES SOVERSION 0)
+if(GTKMM_FOUND)
+	set(AOFLAGGER_PLOT_FILES ${PLOT_FILES})
+endif(GTKMM_FOUND)
+add_library(aoflagger SHARED ${AOFLAGGER_PLOT_FILES} ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES} ${PYTHON_FILES})
+set_target_properties(aoflagger PROPERTIES SOVERSION 0)
 target_link_libraries(aoflagger ${ALL_LIBRARIES})
 
 link_libraries(aoflagger)
+
+add_library(python_aoflagger SHARED python/pyinterface.cpp)
+set_target_properties(python_aoflagger PROPERTIES SOVERSION 0)
+set_target_properties(python_aoflagger PROPERTIES OUTPUT_NAME "aoflagger")
+set_target_properties(python_aoflagger PROPERTIES PREFIX "")
+target_link_libraries(python_aoflagger ${ALL_LIBRARIES} )
 
 add_library(aoflaggerremote OBJECT ${REMOTE_FILES})
 set(AOFLAGGERREMOTE_OBJECT $<TARGET_OBJECTS:aoflaggerremote>)

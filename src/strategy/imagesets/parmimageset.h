@@ -24,22 +24,23 @@ namespace rfiStrategy {
 			virtual ~ParmImageSetIndex()
 			{
 			}
-			inline virtual void Previous();
+			inline virtual void Previous() final override;
 			
-			inline virtual void Next();
+			inline virtual void Next() final override;
 			
-			inline virtual std::string Description() const;
+			inline virtual std::string Description() const final override;
 			
-			virtual bool IsValid() const { return _valid; }
+			virtual bool IsValid() const final override { return _valid; }
 			
-			virtual ParmImageSetIndex *Copy() const
+			virtual std::unique_ptr<ImageSetIndex> Clone() const final override
 			{
-				ParmImageSetIndex *index = new ParmImageSetIndex(imageSet());
+				std::unique_ptr<ParmImageSetIndex> index( new ParmImageSetIndex(imageSet()) );
 				index->_antennaIndex = _antennaIndex;
-				return index;
+				return std::move(index);
 			}
 			
 			unsigned AntennaIndex() const { return _antennaIndex; }
+			
 		private:
 			inline ParmImageSet &ParmSet() const;
 			bool _valid;
@@ -48,42 +49,42 @@ namespace rfiStrategy {
 	
 	class ParmImageSet : public ImageSet {
 		public:
-			ParmImageSet(const std::string &path) : _path(path), _parmTable(0)
+			ParmImageSet(const std::string &path) : _path(path), _parmTable(nullptr)
 			{
 			}
-			virtual ~ParmImageSet();
-			virtual ParmImageSet *Copy()
+			virtual ~ParmImageSet() override;
+			virtual std::unique_ptr<ImageSet> Clone() final override
 			{
-				throw std::runtime_error("Can not copy set");
+				throw std::runtime_error("Cannot copy set");
 			}
-			virtual ParmImageSetIndex *StartIndex()
+			virtual std::unique_ptr<ImageSetIndex> StartIndex() final override
 			{
-				return new ParmImageSetIndex(*this);
+				return std::unique_ptr<ImageSetIndex>(new ParmImageSetIndex(*this));
 			}
-			virtual void Initialize();
+			virtual void Initialize() final override;
 			
-			virtual std::string Name() { return "Parmdb"; }
+			virtual std::string Name() final override { return "Parmdb"; }
 			
-			virtual std::string File() { return _path; }
+			virtual std::string File() final override { return _path; }
 			
-			virtual TimeFrequencyData *LoadData(const ImageSetIndex &index);
+			TimeFrequencyData *LoadData(const ImageSetIndex &index);
 			
-			virtual void AddReadRequest(const ImageSetIndex &index)
+			virtual void AddReadRequest(const ImageSetIndex &index) final override
 			{
 				TimeFrequencyData *data = LoadData(index);
 				BaselineData *baseline = new BaselineData(*data, TimeFrequencyMetaDataCPtr(), index);
 				delete data;
 				_baselineBuffer.push_back(baseline);
 			}
-			virtual void PerformReadRequests()
+			virtual void PerformReadRequests() final override
 			{
 			}
 			
-			virtual BaselineData *GetNextRequested()
+			virtual std::unique_ptr<BaselineData> GetNextRequested() final override
 			{
-				BaselineData *baseline = _baselineBuffer.front();
+				std::unique_ptr<BaselineData> baseline(std::move(_baselineBuffer.front()));
 				_baselineBuffer.pop_front();
-				return baseline;
+				return std::move(baseline);
 			}
 
 			unsigned AntennaCount() const
@@ -100,21 +101,21 @@ namespace rfiStrategy {
 
 	void ParmImageSetIndex::Previous()
 	{
-		++_antennaIndex;
-		if(_antennaIndex >= ParmSet().AntennaCount())
+		if(_antennaIndex > 0)
+			--_antennaIndex;
+		else
 		{
-			_antennaIndex = 0;
+			_antennaIndex = ParmSet().AntennaCount() - 1;
 			_valid = false;
 		}
 	}
 	
 	void ParmImageSetIndex::Next()
 	{
-		if(_antennaIndex > 0)
-			--_antennaIndex;
-		else
+		++_antennaIndex;
+		if(_antennaIndex >= ParmSet().AntennaCount())
 		{
-			_antennaIndex = ParmSet().AntennaCount() - 1;
+			_antennaIndex = 0;
 			_valid = false;
 		}
 	}

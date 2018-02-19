@@ -5,14 +5,11 @@
 
 #include "observatorium.h"
 #include "../util/rng.h"
+#include "../util/logger.h"
 
 #include <iostream>
 
 Model::Model() : _noiseSigma(1.0), _sourceSigma(0.0), _integrationTime(15.0)
-{
-}
-
-Model::~Model()
 {
 }
 
@@ -56,7 +53,7 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservatio
 	tfOutputter._real = Image2D::CreateZeroImagePtr((size_t) (12*60*60/_integrationTime), channelCount);
 	tfOutputter._imaginary = Image2D::CreateZeroImagePtr((size_t) (12*60*60/_integrationTime), channelCount);
 	
-	TimeFrequencyMetaData *metaData = new TimeFrequencyMetaData();
+	TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
 	metaData->SetAntenna1(observatorium.GetAntenna(a1));
 	metaData->SetAntenna2(observatorium.GetAntenna(a2));
 	metaData->SetBand(observatorium.BandInfo());
@@ -96,7 +93,8 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservatio
 	field.delayDirectionRA = delayDirectionRA;
 	metaData->SetField(field);
 
-	return std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr>(TimeFrequencyData(Polarization::StokesI, tfOutputter._real, tfOutputter._imaginary), TimeFrequencyMetaDataPtr(metaData));
+	TimeFrequencyData tfData(Polarization::StokesI, tfOutputter._real, tfOutputter._imaginary);
+	return std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr>(tfData, metaData);
 }
 
 template<typename T>

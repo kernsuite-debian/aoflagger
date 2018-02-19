@@ -23,7 +23,7 @@ class HistogramTablesFormatter {
 			RFIHistogram
 		};
 	
-		HistogramTablesFormatter(const std::string &measurementSetName) :
+		explicit HistogramTablesFormatter(const std::string &measurementSetName) :
 			_measurementSet(0),
 			_measurementSetName(measurementSetName),
 			_typeTable(0),
@@ -152,8 +152,8 @@ class HistogramTablesFormatter {
 			RemoveTable(HistogramTypeTable);
 		}
 	private:
-		HistogramTablesFormatter(const HistogramTablesFormatter &) { } // don't allow copies
-		void operator=(const HistogramTablesFormatter &) { } // don't allow assignment
+		HistogramTablesFormatter(const HistogramTablesFormatter &) = delete; // don't allow copies
+		void operator=(const HistogramTablesFormatter &) = delete; // don't allow assignment
 		
 		const static std::string ColumnNameType;
 		const static std::string ColumnNameName;

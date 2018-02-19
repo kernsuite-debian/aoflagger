@@ -11,7 +11,7 @@
 #include "../structures/scalarcolumniterator.h"
 #include "../structures/timefrequencydata.h"
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 #include "../util/stopwatch.h"
 
 DirectBaselineReader::DirectBaselineReader(const std::string &msFile) : BaselineReader(msFile)
@@ -29,7 +29,7 @@ void DirectBaselineReader::initBaselineCache()
 	// the baselines.
 	if(_baselineCache.empty())
 	{
-		AOLogger::Debug << "Determining sequence positions within file for direct baseline reader...\n";
+		Logger::Debug << "Determining sequence positions within file for direct baseline reader...\n";
 		std::vector<size_t> dataIdToSpw;
 		Set().GetDataDescToBandVector(dataIdToSpw);
 		
@@ -120,7 +120,7 @@ void DirectBaselineReader::PerformReadRequests()
 		addRequestRows(_readRequests[i], i, rows);
 	std::sort(rows.begin(), rows.end());
 	
-	AOLogger::Debug << "Reading " << _readRequests.size() << " requests with " << rows.size() << " rows total, flags=" << ReadFlags() << ", " << Polarizations().size() << " polarizations.\n";
+	Logger::Debug << "Reading " << _readRequests.size() << " requests with " << rows.size() << " rows total, flags=" << ReadFlags() << ", " << Polarizations().size() << " polarizations.\n";
 	
 	_results.clear();
 	for(size_t i=0;i<_readRequests.size();++i)
@@ -136,12 +136,12 @@ void DirectBaselineReader::PerformReadRequests()
 			
 		if(startIndex > timeCount)
 		{
-			AOLogger::Warn << "startIndex > timeCount\n";
+			Logger::Warn << "startIndex > timeCount\n";
 		}
 		if(endIndex > timeCount)
 		{
 			endIndex = timeCount;
-			AOLogger::Warn << "endIndex (" << endIndex << ") > timeCount (" << timeCount << ")\n";
+			Logger::Warn << "endIndex (" << endIndex << ") > timeCount (" << timeCount << ")\n";
 		}
 
 		size_t width = endIndex-startIndex;
@@ -167,17 +167,13 @@ void DirectBaselineReader::PerformReadRequests()
 	casacore::ROArrayColumn<float> weightColumn(table, "WEIGHT");
 	casacore::ROArrayColumn<double> uvwColumn(table, "UVW");
 	casacore::ROArrayColumn<bool> flagColumn(table, "FLAG");
-	casacore::ROArrayColumn<casacore::Complex> *modelColumn;
-
-	casacore::ROArrayColumn<casacore::Complex> *dataColumn = 0;
+	std::unique_ptr<casacore::ROArrayColumn<casacore::Complex>> modelColumn, dataColumn;
+	
 	if(ReadData())
-		dataColumn = new casacore::ROArrayColumn<casacore::Complex>(table, DataColumnName());
+		dataColumn.reset( new casacore::ROArrayColumn<casacore::Complex>(table, DataColumnName()) );
 
-	if(SubtractModel()) {
-		modelColumn = new casacore::ROArrayColumn<casacore::Complex>(table, "MODEL_DATA");
-	} else {
-		modelColumn = 0;
-	}
+	if(SubtractModel())
+		modelColumn.reset( new casacore::ROArrayColumn<casacore::Complex>(table, "MODEL_DATA") );
 
 	for(std::vector<std::pair<size_t, size_t> >::const_iterator i=rows.begin();i!=rows.end();++i) {
 		size_t rowIndex = i->first;
@@ -214,10 +210,8 @@ void DirectBaselineReader::PerformReadRequests()
 			_results[requestIndex]._uvw[timeIndex-startIndex].w = *i;
 		}
 	}
-	if(dataColumn != 0)
-		delete dataColumn;
 	
-	AOLogger::Debug << "Time of ReadRequests(): " << stopwatch.ToString() << '\n';
+	Logger::Debug << "Time of ReadRequests(): " << stopwatch.ToString() << '\n';
 
 	_readRequests.clear();
 }
@@ -269,7 +263,7 @@ std::vector<UVW> DirectBaselineReader::ReadUVW(unsigned antenna1, unsigned anten
 		uvw.w = *j;
 	}
 	
-	AOLogger::Debug << "Read of UVW took: " << stopwatch.ToString() << '\n';
+	Logger::Debug << "Read of UVW took: " << stopwatch.ToString() << '\n';
 	return uvws;
 }
 
@@ -329,7 +323,7 @@ void DirectBaselineReader::PerformFlagWriteRequests()
 	}
 	_writeRequests.clear();
 	
-	AOLogger::Debug << rowsWritten << "/" << rows.size() << " rows written in " << stopwatch.ToString() << '\n';
+	Logger::Debug << rowsWritten << "/" << rows.size() << " rows written in " << stopwatch.ToString() << '\n';
 }
 
 void DirectBaselineReader::readTimeData(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<casacore::Complex> data, const casacore::Array<casacore::Complex> *model)
@@ -407,7 +401,7 @@ void DirectBaselineReader::ShowStatistics()
 		casacore::ROTiledStManAccessor accessor(*Table(), "LofarStMan");
 		std::stringstream s;
 		accessor.showCacheStatistics(s);
-		AOLogger::Debug << s.str();
+		Logger::Debug << s.str();
 	} catch(std::exception &e)
 	{
 	}

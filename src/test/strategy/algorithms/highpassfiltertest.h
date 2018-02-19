@@ -56,16 +56,16 @@ inline void HighPassFilterTest::TestFilter::operator()()
 	
 	// Fitting
 	LocalFitMethod fitMethod;
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, Image2D::CreateCopy(testImage));
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, Image2DCPtr(new Image2D(*testImage)));
 	fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
 	fitMethod.Initialize(data);
 	for(size_t i=0;i<fitMethod.TaskCount();++i)
 		fitMethod.PerformFit(i);
-	Image2DCPtr fitResult = Image2D::CreateFromDiff(testImage, fitMethod.Background().GetSingleImage());
+	Image2DPtr fitResult(new Image2D(Image2D::MakeFromDiff(*testImage, *fitMethod.Background().GetSingleImage())));
 	
 	// High-pass filter
 	HighPassFilter filter;
-	Image2DPtr filterResult = Image2D::CreateCopy(testImage);
+	Image2DPtr filterResult(new Image2D(*testImage));
 	filter.SetHWindowSize(21);
 	filter.SetVWindowSize(41);
 	filter.SetHKernelSigmaSq(2.5);
@@ -83,16 +83,16 @@ inline void HighPassFilterTest::TestSmallImageFilter::operator()()
 	
 	// Fitting
 	LocalFitMethod fitMethod;
-	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, Image2D::CreateCopy(testImage));
+	TimeFrequencyData data(TimeFrequencyData::AmplitudePart, Polarization::StokesI, Image2DPtr(new Image2D(*testImage)));
 	fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
 	fitMethod.Initialize(data);
 	for(size_t i=0;i<fitMethod.TaskCount();++i)
 		fitMethod.PerformFit(i);
-	Image2DCPtr fitResult = Image2D::CreateFromDiff(testImage, fitMethod.Background().GetSingleImage());
+	Image2DCPtr fitResult(new Image2D(Image2D::MakeFromDiff(*testImage, *fitMethod.Background().GetSingleImage())));
 	
 	// High-pass filter
 	HighPassFilter filter;
-	Image2DPtr filterResult = Image2D::CreateCopy(testImage);
+	Image2DPtr filterResult(new Image2D(*testImage));
 	filter.SetHWindowSize(21);
 	filter.SetVWindowSize(41);
 	filter.SetHKernelSigmaSq(2.5);

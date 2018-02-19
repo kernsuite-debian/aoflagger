@@ -1,11 +1,11 @@
 #ifndef RFISTRATEGYIMAGERACTION_H
 #define RFISTRATEGYIMAGERACTION_H
 
-#include <boost/thread.hpp>
-
 #include "action.h"
 
 #include "../control/artifactset.h"
+
+#include <mutex>
 
 namespace rfiStrategy {
 
@@ -21,7 +21,7 @@ namespace rfiStrategy {
 			virtual ~ImagerAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				switch(_type)
 				{
@@ -34,15 +34,15 @@ namespace rfiStrategy {
 					return "Image (subtract)";
 				}
 			}
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress);
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override;
 
-			virtual ActionType Type() const { return ImagerActionType; }
+			virtual ActionType Type() const final override { return ImagerActionType; }
 			enum ImagingType ImagingType() const { return _type; }
 			void SetImagingType(enum ImagingType type) throw() { _type = type; }
 
 		private:
 			enum ImagingType _type;
-			boost::mutex _imagerMutex;
+			std::mutex _imagerMutex;
 	};
 
 }

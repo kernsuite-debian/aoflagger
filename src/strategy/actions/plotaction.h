@@ -15,7 +15,7 @@ namespace rfiStrategy {
 
 			PlotAction() : _plotKind(FrequencyPowerPlot), _logYAxis(false) { }
 			virtual ~PlotAction() { }
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				switch(_plotKind)
 				{
@@ -39,8 +39,8 @@ namespace rfiStrategy {
 					return "Unknown plot action";
 				}
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener);
-			virtual ActionType Type() const { return PlotActionType; }
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override;
+			virtual ActionType Type() const final override { return PlotActionType; }
 
 			enum PlotKind PlotKind() const { return _plotKind; }
 			void SetPlotKind(enum PlotKind plotKind) { _plotKind = plotKind; }
@@ -50,7 +50,7 @@ namespace rfiStrategy {
 		private:
 			enum PlotKind _plotKind;
 			bool _logYAxis;
-			boost::mutex _plotMutex;
+			std::mutex _plotMutex;
 
 			void plotAntennaFlagCounts(class ArtifactSet &artifacts);
 			void plotFrequencyFlagCounts(class ArtifactSet &artifacts);

@@ -94,14 +94,14 @@ class QualityTablesFormatter {
 			double frequency;
 		};
 		
-		QualityTablesFormatter(const std::string &measurementSetName) :
-			_measurementSet(0),
+		explicit QualityTablesFormatter(const std::string &measurementSetName) :
+			_measurementSet(),
 			_measurementSetName(measurementSetName),
-			_kindNameTable(0),
-			_timeTable(0),
-			_frequencyTable(0),
-			_baselineTable(0),
-			_baselineTimeTable(0)
+			_kindNameTable(),
+			_timeTable(),
+			_frequencyTable(),
+			_baselineTable(),
+			_baselineTimeTable()
 		{
 		}
 		
@@ -112,23 +112,13 @@ class QualityTablesFormatter {
 		
 		void Close()
 		{
-			if(_kindNameTable != 0)
-				delete _kindNameTable;
-			_kindNameTable = 0;
-			if(_timeTable != 0)
-				delete _timeTable;
-			_timeTable = 0;
-			if(_frequencyTable != 0)
-				delete _frequencyTable;
-			_frequencyTable = 0;
-			if(_baselineTable != 0)
-				delete _baselineTable;
-			_baselineTable = 0;
-			if(_baselineTimeTable != 0)
-				delete _baselineTimeTable;
-			_baselineTimeTable = 0;
+			_kindNameTable.reset();
+			_timeTable.reset();
+			_frequencyTable.reset();
+			_baselineTable.reset();
+			_baselineTimeTable.reset();
 			
-			closeMainTable();
+			_measurementSet.reset();
 		}
 		
 		bool TableExists(enum QualityTable table) const
@@ -245,8 +235,8 @@ class QualityTablesFormatter {
 		
 		unsigned GetPolarizationCount();
 	private:
-		QualityTablesFormatter(const QualityTablesFormatter &) { } // don't allow copies
-		void operator=(const QualityTablesFormatter &) { } // don't allow assignment
+		QualityTablesFormatter(const QualityTablesFormatter &) = delete; // don't allow copies
+		void operator=(const QualityTablesFormatter &) = delete; // don't allow assignment
 		
 		const static std::string _kindToNameTable[];
 		const static std::string _tableToNameTable[];
@@ -260,14 +250,14 @@ class QualityTablesFormatter {
 		const static std::string ColumnNameTime;
 		const static std::string ColumnNameValue;
 		
-		casacore::Table *_measurementSet;
+		std::unique_ptr<casacore::Table> _measurementSet;
 		const std::string _measurementSetName;
 		
-		casacore::Table *_kindNameTable;
-		casacore::Table *_timeTable;
-		casacore::Table *_frequencyTable;
-		casacore::Table *_baselineTable;
-		casacore::Table *_baselineTimeTable;
+		std::unique_ptr<casacore::Table> _kindNameTable;
+		std::unique_ptr<casacore::Table> _timeTable;
+		std::unique_ptr<casacore::Table> _frequencyTable;
+		std::unique_ptr<casacore::Table> _baselineTable;
+		std::unique_ptr<casacore::Table> _baselineTimeTable;
 		
 		bool hasOneEntry(enum QualityTable table, unsigned kindIndex);
 		void removeStatisticFromStatTable(enum QualityTable table, enum StatisticKind kind);
@@ -342,37 +332,31 @@ class QualityTablesFormatter {
 		unsigned findFreeKindIndex(casacore::Table &kindTable);
 		
 		void openMainTable(bool needWrite);
-		void closeMainTable()
-		{
-			if(_measurementSet != 0)
-				delete _measurementSet;
-			_measurementSet = 0;
-		}
 		
-		void openTable(QualityTable table, bool needWrite, casacore::Table **tablePtr);
+		void openTable(QualityTable table, bool needWrite, std::unique_ptr<casacore::Table>& tablePtr);
 		void openKindNameTable(bool needWrite)
 		{
-			openTable(KindNameTable, needWrite, &_kindNameTable);
+			openTable(KindNameTable, needWrite, _kindNameTable);
 		}
 		void openTimeTable(bool needWrite)
 		{
-			openTable(TimeStatisticTable, needWrite, &_timeTable);
+			openTable(TimeStatisticTable, needWrite, _timeTable);
 		}
 		void openFrequencyTable(bool needWrite)
 		{
-			openTable(FrequencyStatisticTable, needWrite, &_frequencyTable);
+			openTable(FrequencyStatisticTable, needWrite, _frequencyTable);
 		}
 		void openBaselineTable(bool needWrite)
 		{
-			openTable(BaselineStatisticTable, needWrite, &_baselineTable);
+			openTable(BaselineStatisticTable, needWrite, _baselineTable);
 		}
 		void openBaselineTimeTable(bool needWrite)
 		{
-			openTable(BaselineTimeStatisticTable, needWrite, &_baselineTimeTable);
+			openTable(BaselineTimeStatisticTable, needWrite, _baselineTimeTable);
 		}
 		casacore::Table &getTable(QualityTable table, bool needWrite)
 		{
-			casacore::Table **tablePtr = 0;
+			std::unique_ptr<casacore::Table>* tablePtr = nullptr;
 			switch(table)
 			{
 				case KindNameTable: tablePtr = &_kindNameTable; break;
@@ -381,7 +365,7 @@ class QualityTablesFormatter {
 				case BaselineStatisticTable: tablePtr = &_baselineTable; break;
 				case BaselineTimeStatisticTable: tablePtr = &_baselineTimeTable; break;
 			}
-			openTable(table, needWrite, tablePtr);
+			openTable(table, needWrite, *tablePtr);
 			return **tablePtr;
 		}
 };

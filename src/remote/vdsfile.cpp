@@ -39,7 +39,7 @@ std::string VdsFile::trim(const std::string &str, bool lower)
 	std::ostringstream s;
 	std::string::const_iterator i=str.begin();
 	size_t index = 0, lastNonWhite = 0;
-	while(*i == ' ' && i!=str.end()) ++i;
+	while(i!=str.end() && *i == ' ') ++i;
 	while(i!=str.end())
 	{
 		if(*i >= 'A' && *i <= 'Z' && lower)

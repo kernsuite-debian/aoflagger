@@ -3,20 +3,22 @@
 #ifndef RFIACTIONCONTAINER_H
 #define RFIACTIONCONTAINER_H 
 
+#include <memory>
 #include <vector>
 
 namespace rfiStrategy {
 
+	class Action;
+	
 	class ActionContainer : public Action
 	{
 		public:
-			typedef std::vector<class Action*>::const_iterator const_iterator;
-			typedef std::vector<class Action*>::iterator iterator;
+			typedef std::vector<std::unique_ptr<Action>>::const_iterator const_iterator;
+			typedef std::vector<std::unique_ptr<Action>>::iterator iterator;
 
-			virtual ~ActionContainer();
-			void Add(class Action *newAction);
+			void Add(std::unique_ptr<Action> newAction);
+			std::unique_ptr<Action> RemoveAndAcquire(class Action *action);
 			void RemoveAndDelete(class Action *action);
-			void RemoveWithoutDelete(class Action *action);
 			void RemoveAll();
 			size_t GetChildCount() const throw() { return _childActions.size(); }
 			Action &GetChild(size_t index) const { return *_childActions[index]; }
@@ -26,18 +28,14 @@ namespace rfiStrategy {
 			{
 				if(childIndex > 0)
 				{
-					class Action *movedAction = _childActions[childIndex];
-					_childActions[childIndex] = _childActions[childIndex-1];
-					_childActions[childIndex-1] = movedAction;
+					std::swap(_childActions[childIndex], _childActions[childIndex-1]);
 				}
 			}
 			void MoveChildDown(size_t childIndex)
 			{
 				if(childIndex < _childActions.size()-1)
 				{
-					class Action *movedAction = _childActions[childIndex];
-					_childActions[childIndex] = _childActions[childIndex+1];
-					_childActions[childIndex+1] = movedAction;
+					std::swap(_childActions[childIndex], _childActions[childIndex+1]);
 				}
 			}
 			void InitializeAll();
@@ -48,7 +46,7 @@ namespace rfiStrategy {
 			const_iterator begin() const { return _childActions.begin(); }
 			const_iterator end() const { return _childActions.end(); }
 		private:
-			std::vector<class Action*> _childActions;
+			std::vector<std::unique_ptr<Action>> _childActions;
 	};
 }
 

@@ -11,7 +11,7 @@
 #include <boost/algorithm/string.hpp>
 
 namespace rfiStrategy {
-	ImageSet *ImageSet::Create(const std::string &file, BaselineIOMode ioMode, bool readUVW)
+	ImageSet *ImageSet::Create(const std::string &file, BaselineIOMode ioMode)
 	{
 		if(IsFitsFile(file))
 			return new FitsImageSet(file);
@@ -31,11 +31,8 @@ namespace rfiStrategy {
 			return new FilterBankSet(file);
 		else if(IsQualityStatSet(file))
 			return new QualityStatImageSet(file);
-		else {
-			MSImageSet *set = new MSImageSet(file, ioMode);
-			set->SetReadUVW(readUVW);
-			return set;
-		}
+		else
+			return new MSImageSet(file, ioMode);
 	}
 	
 	bool ImageSet::IsBHFitsFile(const std::string &file)

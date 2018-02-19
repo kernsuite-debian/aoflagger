@@ -1,7 +1,7 @@
 #ifndef WRITEDATAACTION_H
 #define WRITEDATAACTION_H
 
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 #include "action.h"
 
@@ -13,27 +13,19 @@ namespace rfiStrategy {
 
 	class WriteDataAction : public Action {
 		public:
-			WriteDataAction()
-			{
-			}
-
-			virtual ~WriteDataAction()
-			{
-			}
-
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Write data to file";
 			}
 
-			virtual void Perform(class ArtifactSet &artifacts, ProgressListener &)
+			virtual void Perform(class ArtifactSet &artifacts, ProgressListener &) final override
 			{
-				boost::mutex::scoped_lock lock(artifacts.IOMutex());
-				ImageSet &set = *artifacts.ImageSet();
-				set.PerformWriteDataTask(*artifacts.ImageSetIndex(), artifacts.RevisedData());
+				std::unique_lock<std::mutex> lock(artifacts.IOMutex());
+				ImageSet& set = artifacts.ImageSet();
+				set.PerformWriteDataTask(artifacts.ImageSetIndex(), artifacts.RevisedData());
 			}
 
-			virtual ActionType Type() const
+			virtual ActionType Type() const final override
 			{
 				return WriteDataActionType;
 			}

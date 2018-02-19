@@ -130,7 +130,7 @@ class SIROperator
 		 * @param [in] eta The η parameter that specifies the minimum number of good data
 		 * that any subsequence should have.
 		 */
-		static void OperateHorizontally(Mask2DPtr &mask, num_t eta)
+		static void OperateHorizontally(Mask2D* mask, num_t eta)
 		{
 			operateHorizontally<Mask2D>(*mask, eta);
 		}
@@ -142,7 +142,7 @@ class SIROperator
 		 * @param [in] eta The η parameter that specifies the minimum number of good data
 		 * that any subsequence should have.
 		 */
-		static void OperateVertically(Mask2DPtr mask, num_t eta)
+		static void OperateVertically(Mask2D* mask, num_t eta)
 		{
 			XYSwappedMask2D swappedMask(*mask);
 			operateHorizontally<XYSwappedMask2D>(swappedMask, eta);

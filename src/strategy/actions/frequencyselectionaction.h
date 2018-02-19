@@ -15,12 +15,12 @@ namespace rfiStrategy {
 			~FrequencySelectionAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Frequency selection";
 			}
-			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener);
-			virtual ActionType Type() const { return FrequencySelectionActionType; }
+			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener) final override;
+			virtual ActionType Type() const final override { return FrequencySelectionActionType; }
 
 			num_t Threshold() const { return _threshold; }
 			void SetThreshold(num_t threshold) { _threshold = threshold; }

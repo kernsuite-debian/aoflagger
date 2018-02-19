@@ -26,7 +26,7 @@ namespace rfiStrategy {
 	{
 		JoinThread();
 		_threadFunc = new PerformFunc(this, new ArtifactSet(artifacts), &progress);
-		_thread = new boost::thread(*_threadFunc);
+		_thread = new std::thread(*_threadFunc);
 	}
 
 	void Strategy::PerformFunc::operator()()

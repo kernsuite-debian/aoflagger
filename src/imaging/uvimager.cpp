@@ -9,7 +9,7 @@
 #include "../util/stopwatch.h"
 #include "../util/ffttools.h"
 
-UVImager::UVImager(unsigned long xRes, unsigned long yRes, ImageKind imageKind) : _xRes(xRes), _yRes(yRes), _xResFT(xRes), _yResFT(yRes), _uvReal(0), _uvImaginary(0), _uvWeights(0), _uvFTReal(0), _uvFTImaginary(0), _antennas(0), _fields(0), _imageKind(imageKind), _invertFlagging(false), _directFT(false), _ignoreBoundWarnings(false)
+UVImager::UVImager(unsigned long xRes, unsigned long yRes, ImageKind imageKind) : _xRes(xRes), _yRes(yRes), _xResFT(xRes), _yResFT(yRes), _uvReal(), _uvImaginary(), _uvWeights(), _uvFTReal(), _uvFTImaginary(), _antennas(0), _fields(0), _imageKind(imageKind), _invertFlagging(false), _directFT(false), _ignoreBoundWarnings(false)
 {
 	_uvScaling = 0.0001L; // testing
 	Empty();
@@ -23,14 +23,6 @@ UVImager::~UVImager()
 
 void UVImager::Clear()
 {
-	if(_uvReal != 0) {
-		delete _uvReal;
-		delete _uvImaginary;
-		delete _uvWeights;
-		_uvReal = 0;
-		_uvImaginary = 0;
-		_uvWeights = 0;
-	}
 	if(_antennas != 0) {
 		delete[] _antennas;
 		_antennas = 0;
@@ -39,22 +31,16 @@ void UVImager::Clear()
 		delete [] _fields;
 		_fields = 0;
 	}
-	if(_uvFTReal != 0) {
-		delete _uvFTReal;
-		delete _uvFTImaginary;
-		_uvFTReal = 0;
-		_uvFTImaginary = 0;
-	}
 }
 
 void UVImager::Empty()
 {
 	Clear();
-	_uvReal = Image2D::CreateZeroImage(_xRes, _yRes);
-	_uvImaginary = Image2D::CreateZeroImage(_xRes, _yRes);
-	_uvWeights = Image2D::CreateZeroImage(_xRes, _yRes);
-	_uvFTReal = Image2D::CreateZeroImage(_xRes, _yRes);
-	_uvFTImaginary = Image2D::CreateZeroImage(_xRes, _yRes);
+	_uvReal = Image2D::MakeZeroImage(_xRes, _yRes);
+	_uvImaginary = Image2D::MakeZeroImage(_xRes, _yRes);
+	_uvWeights = Image2D::MakeZeroImage(_xRes, _yRes);
+	_uvFTReal = Image2D::MakeZeroImage(_xRes, _yRes);
+	_uvFTImaginary = Image2D::MakeZeroImage(_xRes, _yRes);
 }
 
 void UVImager::Image(class MeasurementSet &measurementSet, unsigned band)
@@ -235,7 +221,7 @@ void UVImager::Image(unsigned frequencyIndex, AntennaInfo &antenna1, AntennaInfo
 
 void UVImager::Image(const class TimeFrequencyData &data, class SpatialMatrixMetaData *metaData)
 {
-	if(_uvReal == 0)
+	if(!_uvReal.Empty())
 		Empty();
 	Image2DCPtr
 		real = data.GetRealPart(),
@@ -261,7 +247,7 @@ void UVImager::Image(const class TimeFrequencyData &data, class SpatialMatrixMet
 
 void UVImager::Image(const TimeFrequencyData &data, TimeFrequencyMetaDataCPtr metaData, unsigned frequencyIndex)
 {
-	if(_uvReal == 0)
+	if(!_uvReal.Empty())
 		Empty();
 
 	Image2DCPtr
@@ -301,24 +287,20 @@ void UVImager::Image(const TimeFrequencyData &data, TimeFrequencyMetaDataCPtr me
 
 void UVImager::ApplyWeightsToUV()
 {
-	double normFactor = _uvWeights->Sum() / ((num_t) _uvReal->Height() * _uvReal->Width());
-	for(size_t y=0;y<_uvReal->Height();++y) {
-		for(size_t x=0;x<_uvReal->Width();++x) {
-			num_t weight = _uvWeights->Value(x, y);
+	double normFactor = _uvWeights.Sum() / ((num_t) _uvReal.Height() * _uvReal.Width());
+	for(size_t y=0;y<_uvReal.Height();++y) {
+		for(size_t x=0;x<_uvReal.Width();++x) {
+			num_t weight = _uvWeights.Value(x, y);
 			if(weight != 0.0)
 			{
-				_uvReal->SetValue(x, y, _uvReal->Value(x, y) * normFactor / weight);
-				_uvImaginary->SetValue(x, y, _uvImaginary->Value(x, y) * normFactor / weight);
-				_uvWeights->SetValue(x, y, 1.0);
+				_uvReal.SetValue(x, y, _uvReal.Value(x, y) * normFactor / weight);
+				_uvImaginary.SetValue(x, y, _uvImaginary.Value(x, y) * normFactor / weight);
+				_uvWeights.SetValue(x, y, 1.0);
 			} 
 		}
 	}
-	if(_uvFTReal != 0) {
-		delete _uvFTReal;
-		delete _uvFTImaginary;
-		_uvFTReal = 0;
-		_uvFTImaginary = 0;
-	}
+	_uvFTReal = Image2D();
+	_uvFTImaginary = Image2D();
 }
 
 void UVImager::SetUVValue(num_t u, num_t v, num_t r, num_t i, num_t weight)
@@ -327,9 +309,9 @@ void UVImager::SetUVValue(num_t u, num_t v, num_t r, num_t i, num_t weight)
 	long uPos = (long) floorn(u*_uvScaling*_xRes+0.5) + (_xRes/2);
 	long vPos = (long) floorn(v*_uvScaling*_yRes+0.5) + (_yRes/2);
 	if(uPos>=0 && uPos<(long) _xRes && vPos>=0 && vPos<(long) _yRes) {
-		_uvReal->AddValue(uPos, vPos, r);
-		_uvImaginary->AddValue(uPos, vPos, i);
-		_uvWeights->AddValue(uPos, vPos, weight);
+		_uvReal.AddValue(uPos, vPos, r);
+		_uvImaginary.AddValue(uPos, vPos, i);
+		_uvWeights.AddValue(uPos, vPos, weight);
 	} else {
 		if(!_ignoreBoundWarnings)
 		{
@@ -347,9 +329,9 @@ void UVImager::SetUVValue(num_t u, num_t v, num_t r, num_t i, num_t weight)
 		long double distance = sqrtn(dx*dx + dy*dy);
 		if(distance > 1.0) distance = 1.0;
 		weight *= distance;
-		_uvReal->AddValue(uPos, vPos, r*weight);
-		_uvImaginary->AddValue(uPos, vPos, i*weight);
-		_uvWeights->AddValue(uPos, vPos, weight);
+		_uvReal.AddValue(uPos, vPos, r*weight);
+		_uvImaginary.AddValue(uPos, vPos, i*weight);
+		_uvWeights.AddValue(uPos, vPos, weight);
 	} else {
 		std::cout << "Warning! Baseline outside uv window (" << uPos << "," << vPos << ")." << std::endl;
 	}*/
@@ -361,13 +343,13 @@ void UVImager::SetUVFTValue(num_t u, num_t v, num_t r, num_t i, num_t weight)
 	{
 		for(size_t ix=0;ix<_xResFT;++ix)
 		{
-			num_t x = ((num_t) ix - (_xResFT/2)) / _uvScaling * _uvFTReal->Width();
-			num_t y = ((num_t) iy - (_yResFT/2)) / _uvScaling * _uvFTReal->Height();
+			num_t x = ((num_t) ix - (_xResFT/2)) / _uvScaling * _uvFTReal.Width();
+			num_t y = ((num_t) iy - (_yResFT/2)) / _uvScaling * _uvFTReal.Height();
 			// Calculate F(x,y) += f(u, v) e ^ {i 2 pi (x u + y v) } 
 			num_t fftRotation = (u * x + v * y) * -2.0L * M_PIn;
 			num_t fftCos = cosn(fftRotation), fftSin = sinn(fftRotation);
-			_uvFTReal->AddValue(ix, iy, (fftCos * r - fftSin * i) * weight);
-			_uvFTImaginary->AddValue(ix, iy, (fftSin * r + fftCos * i) * weight);
+			_uvFTReal.AddValue(ix, iy, (fftCos * r - fftSin * i) * weight);
+			_uvFTImaginary.AddValue(ix, iy, (fftSin * r + fftCos * i) * weight);
 		}
 	}
 
@@ -375,12 +357,12 @@ void UVImager::SetUVFTValue(num_t u, num_t v, num_t r, num_t i, num_t weight)
 
 void UVImager::PerformFFT()
 {
-	if(_uvFTReal == 0)
+	if(!_uvFTReal.Empty())
 	{
-		_uvFTReal = Image2D::CreateZeroImage(_xRes, _yRes);
-		_uvFTImaginary = Image2D::CreateZeroImage(_xRes, _yRes);
+		_uvFTReal = Image2D::MakeZeroImage(_xRes, _yRes);
+		_uvFTImaginary = Image2D::MakeZeroImage(_xRes, _yRes);
 	}
-	FFTTools::CreateFFTImage(*_uvReal, *_uvImaginary, *_uvFTReal, *_uvFTImaginary);
+	FFTTools::CreateFFTImage(_uvReal, _uvImaginary, _uvFTReal, _uvFTImaginary);
 }
 
 void UVImager::GetUVPosition(num_t &u, num_t &v, size_t timeIndex, size_t frequencyIndex, TimeFrequencyMetaDataCPtr metaData)
@@ -388,57 +370,6 @@ void UVImager::GetUVPosition(num_t &u, num_t &v, size_t timeIndex, size_t freque
 	num_t frequency = metaData->Band().channels[frequencyIndex].frequencyHz;
 	u = metaData->UVW()[timeIndex].u * frequency / SpeedOfLight();
 	v = metaData->UVW()[timeIndex].v * frequency / SpeedOfLight();
-	return;
-	const Baseline &baseline = metaData->Baseline();
-	num_t delayDirectionRA = metaData->Field().delayDirectionRA;
-	num_t delayDirectionDec = metaData->Field().delayDirectionDec;
-	double time = metaData->ObservationTimes()[timeIndex];
-
-	num_t pointingLattitude = delayDirectionRA;
-	num_t earthLattitudeAngle = Date::JDToHourOfDay(Date::AipsMJDToJD(time))*M_PIn/12.0L;
-
-	// Rotate baseline plane towards source, first rotate around x axis, then around z axis
-	num_t raRotation = earthLattitudeAngle - pointingLattitude + M_PIn*0.5L;
-	num_t raCos = cosn(-raRotation);
-	num_t raSin = sinn(-raRotation);
-
-	num_t dx = baseline.antenna1.x - baseline.antenna2.x;
-	num_t dy = baseline.antenna1.y - baseline.antenna2.y;
-	num_t dz = baseline.antenna1.z - baseline.antenna2.z;
-
-	num_t decCos = cosn(delayDirectionDec);
-	num_t decSin = sinn(delayDirectionDec);
-
-	num_t
-		du = -dx * raCos * decSin - dy * raSin - dz * raCos * decCos,
-		dv = -dx * raSin * decSin + dy * raCos - dz * raSin * decCos;
-
-  /*
-	num_t dxProjected = tmpCos*dx - tmpSin*dy;
-	num_t tmpdy = tmpSin*dx + tmpCos*dy;
-
-	num_t dyProjected = tmpCos*tmpdy - tmpSin*dz;*/
-
-	// du = dx*cosn(ra) - dy*sinn(ra)
-	// dv = ( dx*sinn(ra) + dy*cosn(ra) ) * cosn(-dec) - dz * sinn(-dec)
-	// Now, the newly projected positive z axis of the baseline points to the field
-	num_t baselineLength = sqrtn(du*du + dv*dv);
-
-	num_t baselineAngle;
-	if(baselineLength == 0.0)
-		baselineAngle = 0.0;
-	else {
-		baselineLength *= frequency / SpeedOfLight();
-		if(du > 0.0L)
-			baselineAngle = atann(du/dv);
-		else
-			baselineAngle = M_PIn - atann(du/-dv);
-	}
-	u = cosn(baselineAngle)*baselineLength;
-	v = -sinn(baselineAngle)*baselineLength;
-
-	std::cout << "Calced: " << u << "," << v
-		<< ", ori: " << metaData->UVW()[timeIndex].u << "," << metaData->UVW()[timeIndex].v << "(," << metaData->UVW()[timeIndex].w << ")\n";
 }
 
 void UVImager::GetUVPosition(num_t &u, num_t &v, const SingleFrequencySingleBaselineData &data, const AntennaCache &cache)
@@ -509,7 +440,7 @@ num_t UVImager::GetFringeCount(size_t timeIndexStart, size_t timeIndexEnd, unsig
 
 void UVImager::InverseImage(class MeasurementSet &prototype, unsigned band, const Image2D &/*uvReal*/, const Image2D &/*uvImaginary*/, unsigned antenna1Index, unsigned antenna2Index)
 {
-	_timeFreq = Image2D::CreateZeroImage(prototype.TimestepCount(), prototype.FrequencyCount(band));
+	_timeFreq = Image2D::MakeZeroImage(prototype.TimestepCount(), prototype.FrequencyCount(band));
 	AntennaInfo antenna1, antenna2;
 	antenna1 = prototype.GetAntennaInfo(antenna1Index);
 	antenna2 = prototype.GetAntennaInfo(antenna2Index);

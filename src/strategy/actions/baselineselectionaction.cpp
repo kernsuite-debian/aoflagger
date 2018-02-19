@@ -1,6 +1,7 @@
 #include "baselineselectionaction.h"
 
 #include <iostream>
+#include <mutex>
 
 #include "../../util/plot.h"
 
@@ -17,46 +18,40 @@ namespace rfiStrategy {
 	
 	void BaselineSelectionAction::prepare(class ArtifactSet &artifacts, class ProgressListener &)
 	{
-		if(artifacts.BaselineSelectionInfo() == 0)
-			throw BadUsageException("ArtifactSet does not have baseline selection info");
-		if(artifacts.MetaData() == 0)
+		if(artifacts.MetaData() == nullptr)
 		{
-			//AOLogger::Warn << "BaselineSelectionAction is used, but ArtifactSet does not have meta data\n";
 			return;
 		}
 		if(!artifacts.MetaData()->HasBaseline())
 		{
-			//AOLogger::Warn << "BaselineSelectionAction is used, but ArtifactSet does not have baseline meta data\n";
 			return;
 		}
 
 		Mask2DCPtr mask = artifacts.ContaminatedData().GetSingleMask();
 
-		BaselineSelector &info = *artifacts.BaselineSelectionInfo();
-		boost::mutex::scoped_lock lock(info.Mutex());
+		BaselineSelector &info = artifacts.BaselineSelectionInfo();
+		std::lock_guard<std::mutex> lock(info.Mutex());
 		info.Add(mask, artifacts.MetaData());
 	}
 	
 	void BaselineSelectionAction::mark(class ArtifactSet &artifacts, class ProgressListener &)
 	{
-		if(artifacts.BaselineSelectionInfo() == 0)
-			throw BadUsageException("ArtifactSet does not have baseline selection info");
-		BaselineSelector &info = *artifacts.BaselineSelectionInfo();
+		BaselineSelector& info = artifacts.BaselineSelectionInfo();
 		if(info.BaselineCount() == 0)
 		{
-			AOLogger::Warn <<
+			Logger::Warn <<
 			"BaselineSelectionAction wrongly used: trying to mark baselines, but baselines have\n"
 			"not been prepared previously (you need to add a BaselineSelectionAction within a for\n"
 			"each baseline block, that calculates the statistics and prepares selection)\n";
 		} else {
 
-			AOLogger::Debug << "Searching for bad baselines...\n";
+			Logger::Debug << "Searching for bad baselines...\n";
 
 			Strategy::SyncAll(*GetRoot());
 
-			boost::mutex::scoped_lock lock(info.Mutex());
+			std::lock_guard<std::mutex> lock(info.Mutex());
 
-			BaselineSelector &selector = *artifacts.BaselineSelectionInfo();
+			BaselineSelector& selector = artifacts.BaselineSelectionInfo();
 			selector.SetAbsThreshold(_absThreshold);
 			selector.SetSmoothingSigma(_smoothingSigma);
 			selector.SetThreshold(_threshold);
@@ -66,19 +61,19 @@ namespace rfiStrategy {
 			
 			if(markedBaselines.size() > 0)
 			{
-				AOLogger::Info << "Found " << markedBaselines.size() << "/" << (markedBaselines.size()+selector.BaselineCount()) << " bad baselines: ";
+				Logger::Info << "Found " << markedBaselines.size() << "/" << (markedBaselines.size()+selector.BaselineCount()) << " bad baselines: ";
 				
 				std::vector<BaselineSelector::SingleBaselineInfo>::const_iterator badBaselineIter = markedBaselines.begin();
-				AOLogger::Info << badBaselineIter->antenna1Name << "x" << badBaselineIter->antenna2Name;
+				Logger::Info << badBaselineIter->antenna1Name << "x" << badBaselineIter->antenna2Name;
 				++badBaselineIter;
 				while(badBaselineIter!=markedBaselines.end())
 				{
-					AOLogger::Info << ", " << badBaselineIter->antenna1Name << "x" << badBaselineIter->antenna2Name;
+					Logger::Info << ", " << badBaselineIter->antenna1Name << "x" << badBaselineIter->antenna2Name;
 					++badBaselineIter;
 				}
-				AOLogger::Info << '\n';
+				Logger::Info << '\n';
 			} else {
-				AOLogger::Info << "No bad baselines found.\n";
+				Logger::Info << "No bad baselines found.\n";
 			}
 			
 			if(_flagBadBaselines)
@@ -86,7 +81,7 @@ namespace rfiStrategy {
 				flagBaselines(artifacts, markedBaselines);
 			} else {
 				if(markedBaselines.size() > 0)
-					AOLogger::Info <<
+					Logger::Info <<
 						"Bad baseline finding is still experimental, please check the results.\n"
 						"These baselines have therefore NOT been flagged yet. Writing flags to\n"
 						"these baselines can be enabled by setting the flag-bad-baselines\n"
@@ -98,10 +93,10 @@ namespace rfiStrategy {
 
 	void BaselineSelectionAction::flagBaselines(ArtifactSet &artifacts, const std::vector<BaselineSelector::SingleBaselineInfo> &baselines)
 	{
-		boost::mutex::scoped_lock lock(artifacts.IOMutex());
+		std::lock_guard<std::mutex> lock(artifacts.IOMutex());
 
-		ImageSet *imageSet = artifacts.ImageSet();
-		BaselineReaderPtr reader = dynamic_cast<MSImageSet&>(*imageSet).Reader();
+		ImageSet& imageSet = artifacts.ImageSet();
+		BaselineReaderPtr reader = dynamic_cast<MSImageSet&>(imageSet).Reader();
 
 		size_t scans = reader->Set().GetObservationTimesSet().size();
 

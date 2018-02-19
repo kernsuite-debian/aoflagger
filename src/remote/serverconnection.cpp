@@ -101,9 +101,9 @@ void ServerConnection::ReadQualityTables(const std::string &msFilename, Statisti
 		boost::bind(&ServerConnection::onReceiveQualityTablesResponseHeader, shared_from_this()));
 }
 
-void ServerConnection::ReadAntennaTables(const std::string &msFilename, boost::shared_ptr<std::vector<AntennaInfo> > antennas)
+void ServerConnection::ReadAntennaTables(const std::string &msFilename, std::shared_ptr<std::vector<AntennaInfo> > antennas)
 {
-	_antennas = antennas;
+	_antennas = std::move(antennas);
 	
 	std::stringstream reqBuffer;
 	
@@ -336,7 +336,7 @@ void ServerConnection::onReceiveAntennaTablesResponseData(size_t dataSize)
 	size_t count = Serializable::UnserializeUInt32(stream);
 	for(size_t i=0;i<count;++i)
 	{
-		_antennas->push_back(AntennaInfo());
+		_antennas->emplace_back();
 		_antennas->rbegin()->Unserialize(stream);
 	}
 

@@ -1,13 +1,11 @@
 #ifndef MULTIPLOT_H
 #define MULTIPLOT_H
 
-#include "plot.h"
-
 #include "../structures/types.h"
 
 #include <vector>
 
-#include "../gui/plot/plotmanager.h"
+#include "../plot/plotmanager.h"
 
 class MultiPlot {
 	public:
@@ -24,15 +22,17 @@ class MultiPlot {
 		}
 		void Finish();
 		Plot2D &Plot() { return _plot; }
-		void SetXAxisText(const std::string text)
+		void SetXAxisText(const std::string& text)
 		{
 			_xAxisText = text;
 		}
-		void SetYAxisText(const std::string text)
+		void SetYAxisText(const std::string& text)
 		{
 			_yAxisText = text;
 		}
 	private:
+		MultiPlot(const MultiPlot&) = delete;
+		MultiPlot& operator=(const MultiPlot&) = delete;
 		struct Point {
 			Point(num_t _x, num_t _y) : x(_x), y(_y) { } 
 			num_t x, y;

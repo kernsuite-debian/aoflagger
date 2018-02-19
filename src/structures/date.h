@@ -7,13 +7,13 @@
 
 class Date {
 	public:
-		static double JDToYears(double jd) {
+		static double JDToYears(double jd) noexcept {
 			return jd / 365.25L - 4712.0L;
 		}
-		static double JDToMonth(double jd) {
+		static double JDToMonth(double jd) noexcept {
 			return ((int) floor((jd / (365.25L)- 4712.0L)/12.0L))%12;
 		}
-		static int JDToDayOfYear(double jd) {
+		static int JDToDayOfYear(double jd) noexcept {
 			//return floor(jd - floor(jd / (365.25L))*365.25L);
 			double x2 = (jd-1721119.5); // number of days since year 0
 			int c2 = (int) ((8.0*x2 + 7.0)/292194.0);
@@ -22,7 +22,7 @@ class Date {
 			double x0 = x1 - floor(36525.0*c1/100.0);
 			return (int) x0;
 		}
-		static void JDToDate(double jd, int &dayOfMonth, int &month, int &year)
+		static void JDToDate(double jd, int &dayOfMonth, int &month, int &year) noexcept
 		{
 			double x2 = (jd-1721119.5); // number of days since year 0
 			int c2 = (int) ((8.0*x2 + 7.0)/292194.0);
@@ -38,25 +38,25 @@ class Date {
 				++year;
 			}
 		}
-		static double JDToHourOfDay(double jd) {
+		static double JDToHourOfDay(double jd) noexcept {
 			return fmodl(jd+0.5, 1.0) * 24.0;
 		}
-		static double MJDToJD(double mjd) {
+		static double MJDToJD(double mjd) noexcept {
 			return mjd + 2400000.5;
 		}
-		static double JDToMJD(double jd) {
+		static double JDToMJD(double jd) noexcept {
 			return jd - 2400000.5;
 		}
-		static double JDToAipsMJD(double jd) {
+		static double JDToAipsMJD(double jd) noexcept {
 			return JDToMJD(jd) * (60.0*60.0*24.0);
 		} 
-		static double MJDToAipsMJD(double jd) {
+		static double MJDToAipsMJD(double jd) noexcept {
 			return jd * (60.0*60.0*24.0);
 		} 
-		static double AipsMJDToJD(double aipsMjd) {
+		static double AipsMJDToJD(double aipsMjd) noexcept {
 			return MJDToJD(aipsMjd / (60.0*60.0*24.0));
 		}
-		static double AipsMJDToYears(double aipsMjd) {
+		static double AipsMJDToYears(double aipsMjd) noexcept {
 			return JDToYears(AipsMJDToJD(aipsMjd));
 		}
 		static std::string ToString(double time, int dayOfMonth, int month, int year)

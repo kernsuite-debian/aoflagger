@@ -5,6 +5,8 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <memory>
+#include <mutex>
 
 #include "clusteredobservation.h"
 #include "nodecommandmap.h"
@@ -22,7 +24,7 @@ class ObservationTimerange;
 class ProcessCommander
 {
 	public:
-		ProcessCommander(const ClusteredObservation &observation);
+		explicit ProcessCommander(const ClusteredObservation &observation);
 		~ProcessCommander();
 		
 		void Run(bool finishConnections = true);
@@ -103,7 +105,7 @@ class ProcessCommander
 		void onConnectionCreated(ServerConnectionPtr serverConnection, bool &acceptConnection);
 		void onConnectionAwaitingCommand(ServerConnectionPtr serverConnection);
 		void onConnectionFinishReadQualityTables(ServerConnectionPtr serverConnection, StatisticsCollection &statisticsCollection, HistogramCollection &histogramCollection);
-		void onConnectionFinishReadAntennaTables(ServerConnectionPtr serverConnection, boost::shared_ptr<std::vector<AntennaInfo> > antennas, size_t polarizationCount);
+		void onConnectionFinishReadAntennaTables(ServerConnectionPtr serverConnection, std::shared_ptr<std::vector<AntennaInfo> > antennas, size_t polarizationCount);
 		void onConnectionFinishReadBandTable(ServerConnectionPtr serverConnection, BandInfo &band);
 		void onConnectionFinishReadDataRows(ServerConnectionPtr serverConnection, MSRowDataExt *rowData, size_t rowCount);
 		void onConnectionFinishWriteDataRows(ServerConnectionPtr serverConnection);
@@ -138,7 +140,7 @@ class ProcessCommander
 		 * their thread, locking is required for accessing data that might be
 		 * accessed by the processes.
 		 */
-		boost::mutex _mutex;
+		std::mutex _mutex;
 		
 		Task currentTask() const {
 			if(!_tasks.empty()) return _tasks.front();

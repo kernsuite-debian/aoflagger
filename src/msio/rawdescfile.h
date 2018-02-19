@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 
 class RawDescFile
 {

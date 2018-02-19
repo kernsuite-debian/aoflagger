@@ -16,7 +16,7 @@
 #include "../structures/timefrequencydata.h"
 #include "../structures/system.h"
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 #include "../util/stopwatch.h"
 
 #include "reorderedfilebuffer.h"
@@ -46,7 +46,7 @@ void IndirectBaselineReader::PerformReadRequests()
 	if(!_msIsReordered) reorderedMS();
 
 	_results.clear();
-	AOLogger::Debug << "Performing " << _readRequests.size() << " read requests...\n";
+	Logger::Debug << "Performing " << _readRequests.size() << " read requests...\n";
 	for(size_t i=0;i<_readRequests.size();++i)
 	{
 		const ReadRequest request = _readRequests[i];
@@ -102,7 +102,7 @@ void IndirectBaselineReader::PerformReadRequests()
 			}
 		}
 	}
-	AOLogger::Debug << "Done reading.\n";
+	Logger::Debug << "Done reading.\n";
 
 	_readRequests.clear();
 }
@@ -129,7 +129,7 @@ void IndirectBaselineReader::reorderedMS()
 		std::getline(str, name);
 		if(boost::filesystem::equivalent(boost::filesystem::path(name), Set().Path()))
 		{
-			AOLogger::Debug << "Measurement set has already been reordered; using old temporary files.\n";
+			Logger::Debug << "Measurement set has already been reordered; using old temporary files.\n";
 			reorderRequired = false;
 			_msIsReordered = true;
 			_removeReorderedFiles = false;
@@ -174,7 +174,7 @@ void IndirectBaselineReader::makeLookupTables(size_t &fileSize)
 
 void IndirectBaselineReader::preAllocate(const char *filename, size_t fileSize)
 {
-	AOLogger::Debug << "Pre-allocating " << (fileSize/(1024*1024)) << " MB...\n";
+	Logger::Debug << "Pre-allocating " << (fileSize/(1024*1024)) << " MB...\n";
 	int fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, S_IWUSR | S_IRUSR);
 	if(fd < 0)
 	{
@@ -187,14 +187,14 @@ void IndirectBaselineReader::preAllocate(const char *filename, size_t fileSize)
 	close(fd);
 	if(allocResult != 0)
 	{
-		AOLogger::Warn <<
+		Logger::Warn <<
 			"Could not allocate temporary file '" << filename << "': posix_fallocate returned " << allocResult << ".\n"
 			"Tried to allocate " << (fileSize/(1024*1024)) << " MB.\n"
 			"Disk could be full or filesystem could not support fallocate.\n";
 	}
 #else
 	close(fd);
-	AOLogger::Warn << "Compiled without posix_fallocate() support: skipping pre-allocation.\n";
+	Logger::Warn << "Compiled without posix_fallocate() support: skipping pre-allocation.\n";
 #endif
 }
 
@@ -215,7 +215,7 @@ void IndirectBaselineReader::reorderFull()
 	if(rowCount == 0)
 		throw std::runtime_error("Measurement set is empty (zero rows)");
 
-	casacore::ROArrayColumn<casacore::Complex> *dataColumn = new casacore::ROArrayColumn<casacore::Complex>(table, DataColumnName());
+	std::unique_ptr<casacore::ROArrayColumn<casacore::Complex>> dataColumn( new casacore::ROArrayColumn<casacore::Complex>(table, DataColumnName()) );
 
 	std::vector<size_t> dataIdToSpw;
 	Set().GetDataDescToBandVector(dataIdToSpw);
@@ -223,7 +223,7 @@ void IndirectBaselineReader::reorderFull()
 	size_t fileSize;
 	makeLookupTables(fileSize);
 	
-	AOLogger::Debug << "Opening temporary files.\n";
+	Logger::Debug << "Opening temporary files.\n";
 	ReorderInfo reorderInfo;
 	preAllocate(DataFilename(), fileSize*sizeof(float)*2);
 	reorderInfo.dataFile.reset(new std::ofstream(DataFilename(), std::ofstream::binary | std::ios_base::in | std::ios_base::out));
@@ -235,7 +235,7 @@ void IndirectBaselineReader::reorderFull()
 	if(reorderInfo.flagFile->fail())
 		throw std::runtime_error("Error: failed to open temporary data files for writing! Check access rights and free disk space.");
 
-	AOLogger::Debug << "Reordering data set...\n";
+	Logger::Debug << "Reordering data set...\n";
 	
 	size_t bufferMem = std::min<size_t>(System::TotalMemory()/10, 1024l*1024l*1024l);
 	ReorderedFileBuffer dataFile(reorderInfo.dataFile.get(), bufferMem);
@@ -253,9 +253,9 @@ void IndirectBaselineReader::reorderFull()
 		{
 			progress = rowIndex*1000/rowCount;
 			if(progress%10 == 0)
-				AOLogger::Debug << "\nReorder progress: ";
-			AOLogger::Debug << progress/10.0 << "% ";
-			AOLogger::Debug.Flush();
+				Logger::Debug << "\nReorder progress: ";
+			Logger::Debug << progress/10.0 << "% ";
+			Logger::Debug.Flush();
 		}
 		size_t fieldId = fieldIdColumn(rowIndex);
 		if(fieldId != prevFieldId)
@@ -307,10 +307,8 @@ void IndirectBaselineReader::reorderFull()
 		filePos += sampleCount;
 	}
 	
-	delete dataColumn;
-
 	uint64_t dataSetSize = (uint64_t) fileSize * (uint64_t) (sizeof(float)*2 + sizeof(bool));
-	AOLogger::Debug << "Done reordering data set of " << dataSetSize/(1024*1024) << " MB in " << watch.Seconds() << " s (" << (long double) dataSetSize/(1024.0L*1024.0L*watch.Seconds()) << " MB/s)\n";
+	Logger::Debug << "Done reordering data set of " << dataSetSize/(1024*1024) << " MB in " << watch.Seconds() << " s (" << (long double) dataSetSize/(1024.0L*1024.0L*watch.Seconds()) << " MB/s)\n";
 	_msIsReordered = true;
 	_removeReorderedFiles = true;
 	_reorderedDataFilesHaveChanged = false;
@@ -324,7 +322,7 @@ void IndirectBaselineReader::removeTemporaryFiles()
 		boost::filesystem::remove(MetaFilename());
 		boost::filesystem::remove(DataFilename());
 		boost::filesystem::remove(FlagFilename());
-		AOLogger::Debug << "Temporary files removed.\n";
+		Logger::Debug << "Temporary files removed.\n";
 	}
 	_msIsReordered = false;
 	_removeReorderedFiles = false;
@@ -336,7 +334,7 @@ void IndirectBaselineReader::PerformDataWriteTask(std::vector<Image2DCPtr> _real
 {
 	initializeMeta();
 
-	AOLogger::Debug << "Performing data write task with indirect baseline reader...\n";
+	Logger::Debug << "Performing data write task with indirect baseline reader...\n";
 
 	const size_t polarizationCount = Polarizations().size();
 	
@@ -380,7 +378,7 @@ void IndirectBaselineReader::PerformDataWriteTask(std::vector<Image2DCPtr> _real
 	
 	_reorderedDataFilesHaveChanged = true;
 	
-	AOLogger::Debug << "Done writing.\n";
+	Logger::Debug << "Done writing.\n";
 }
 
 void IndirectBaselineReader::performFlagWriteTask(std::vector<Mask2DCPtr> flags, unsigned antenna1, unsigned antenna2, unsigned spw, unsigned sequenceId)
@@ -408,7 +406,7 @@ void IndirectBaselineReader::performFlagWriteTask(std::vector<Mask2DCPtr> flags,
 	size_t filePos = _filePositions[index];
 	flagFile.seekp(filePos*(sizeof(bool)), std::ios_base::beg);
 	
-	bool *flagBuffer = new bool[bufferSize];
+	std::unique_ptr<bool[]> flagBuffer( new bool[bufferSize] );
 	for(size_t x=0;x<width;++x)
 	{
 		size_t flagBufferPtr = 0;
@@ -420,11 +418,10 @@ void IndirectBaselineReader::performFlagWriteTask(std::vector<Mask2DCPtr> flags,
 			}
 		}
 
-		flagFile.write(reinterpret_cast<char*>(flagBuffer), bufferSize * sizeof(bool));
+		flagFile.write(reinterpret_cast<char*>(flagBuffer.get()), bufferSize * sizeof(bool));
 		if(flagFile.bad())
 			throw std::runtime_error("Error: failed to update temporary flag files! Check access rights and free disk space.");
 	}
-	delete[] flagBuffer;
 	
 	_reorderedFlagFilesHaveChanged = true;
 }
@@ -440,7 +437,7 @@ void IndirectBaselineReader::updateOriginalMS()
 	casacore::ROScalarColumn<int> fieldIdColumn(table, "FIELD_ID");
 	casacore::ROScalarColumn<int> dataDescIdColumn(table, "DATA_DESC_ID");
 	casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
-	casacore::ArrayColumn<casacore::Complex> *dataColumn = new casacore::ArrayColumn<casacore::Complex>(table, DataColumnName());
+	std::unique_ptr<casacore::ArrayColumn<casacore::Complex>> dataColumn ( new casacore::ArrayColumn<casacore::Complex>(table, DataColumnName()) );
 
 	int rowCount = table.nrow();
 
@@ -450,7 +447,7 @@ void IndirectBaselineReader::updateOriginalMS()
 	
 	size_t polarizationCount = Polarizations().size();
 
-	AOLogger::Debug << "Opening updated files\n";
+	Logger::Debug << "Opening updated files\n";
 	UpdateInfo updateInfo;
 	
 	if(UpdateData)
@@ -533,23 +530,21 @@ void IndirectBaselineReader::updateOriginalMS()
 		filePos += sampleCount;
 	}
 	
-	AOLogger::Debug << "Freeing the data\n";
+	Logger::Debug << "Freeing the data\n";
 	
 	// Close the files
 	updateInfo.dataFile.reset();
 	updateInfo.flagFile.reset();
 
-	delete dataColumn;
-	
 	if(UpdateData)
-		AOLogger::Debug << "Done updating measurement set data\n";
+		Logger::Debug << "Done updating measurement set data\n";
 	if(UpdateFlags)
-		AOLogger::Debug << "Done updating measurement set flags\n";
+		Logger::Debug << "Done updating measurement set flags\n";
 }
 
 void IndirectBaselineReader::updateOriginalMSData()
 {
-	AOLogger::Debug << "Data was changed, need to update the original MS...\n";
+	Logger::Debug << "Data was changed, need to update the original MS...\n";
 	updateOriginalMS<true, false>();
 	_reorderedDataFilesHaveChanged = false;
 }
@@ -557,8 +552,8 @@ void IndirectBaselineReader::updateOriginalMSData()
 void IndirectBaselineReader::updateOriginalMSFlags()
 {
 	Stopwatch watch(true);
-	AOLogger::Debug << "Flags were changed, need to update the original MS...\n";
+	Logger::Debug << "Flags were changed, need to update the original MS...\n";
 	updateOriginalMS<false, true>();
 	_reorderedFlagFilesHaveChanged = false;
-	AOLogger::Debug << "Storing flags toke: " << watch.ToString() << '\n';
+	Logger::Debug << "Storing flags toke: " << watch.ToString() << '\n';
 }

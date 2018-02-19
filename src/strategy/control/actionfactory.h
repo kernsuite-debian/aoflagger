@@ -11,11 +11,16 @@ namespace rfiStrategy {
 	class ActionFactory {
 		public:
 			static const std::vector<std::string> GetActionList();
-			static class Action *CreateAction(const std::string &action);
+			static std::unique_ptr<class Action> CreateAction(const std::string &action);
 			static const char *GetDescription(ActionType actionType);
 		private:
-			ActionFactory();
-			~ActionFactory();
+			template<typename T> static std::unique_ptr<T> make()
+			{
+				return std::unique_ptr<T>(new T());
+			}
+			
+			ActionFactory() = delete;
+			~ActionFactory() = delete;
 	};
 }
 

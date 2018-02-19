@@ -11,7 +11,7 @@ class QualityTestGroup : public TestGroup {
 	public:
 		QualityTestGroup() : TestGroup("Quality statistic tools") { }
 		
-		virtual void Initialize()
+		virtual void Initialize() override
 		{
 			Add(new QualityTablesFormatterTest());
 			Add(new StatisticsCollectionTest());

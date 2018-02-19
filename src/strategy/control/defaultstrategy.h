@@ -2,6 +2,7 @@
 #define DEFAULTSTRATEGYSET_H
 
 #include <string>
+#include <memory>
 
 #include "../actions/action.h"
 
@@ -55,13 +56,13 @@ namespace rfiStrategy {
 			FLAG_HIGH_TIME_RESOLUTION;
 				
 		/** @TODO Not all flags are implemented yet. */
-		static Strategy *CreateStrategy(enum TelescopeId telescopeId, unsigned flags, double frequency=0.0, double timeRes=0.0, double frequencyRes=0.0);
+		static std::unique_ptr<Strategy> CreateStrategy(enum TelescopeId telescopeId, unsigned flags, double frequency=0.0, double timeRes=0.0, double frequencyRes=0.0);
 		
 		static void LoadStrategy(ActionBlock &strategy, enum TelescopeId telescopeId, unsigned flags, double frequency=0.0, double timeRes=0.0, double frequencyRes=0.0);
 		
 		static void LoadFullStrategy(ActionBlock &destination, enum TelescopeId telescopeId, unsigned flags, double frequency=0.0, double timeRes=0.0, double frequencyRes=0.0);
 		
-		static void EncapsulateSingleStrategy(ActionBlock& destination, ActionBlock* singleStrategy, enum TelescopeId telescopeId);
+		static void EncapsulateSingleStrategy(ActionBlock& destination, std::unique_ptr<ActionBlock> singleStrategy, enum TelescopeId telescopeId);
 		
 		static void LoadSingleStrategy(ActionBlock &destination, int iterationCount, bool keepTransients, bool changeResVertically, bool calPassband, bool channelSelection, bool clearFlags, bool resetContaminated, double sumThresholdSensitivity, bool onStokesIQ, bool includePolStatistics, double verticalSmoothing, bool hasBaselines, bool highTimeResolution);
 

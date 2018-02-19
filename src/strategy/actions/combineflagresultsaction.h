@@ -11,12 +11,12 @@ namespace rfiStrategy {
 	class CombineFlagResults : public ActionContainer
 	{
 			public:
-				virtual std::string Description()
+				virtual std::string Description() final override
 				{
 					return "Combine flag results";
 				}
-				virtual ActionType Type() const { return CombineFlagResultsType; }
-				virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener)
+				virtual ActionType Type() const final override { return CombineFlagResultsType; }
+				virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener) final override
 				{
 					if(GetChildCount() == 1)
 					{
@@ -28,7 +28,7 @@ namespace rfiStrategy {
 						for(const_iterator i=begin();i!=end();++i)
 						{
 							artifacts.SetContaminatedData(originalFlags);
-							Action *action = *i;
+							Action *action = i->get();
 							listener.OnStartTask(*this, nr, GetChildCount(), action->Description());
 							action->Perform(artifacts, listener);
 							listener.OnEndTask(*this);

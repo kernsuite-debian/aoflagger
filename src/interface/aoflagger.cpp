@@ -21,10 +21,8 @@
 
 #include <vector>
 #include <typeinfo>
-
-#include <boost/shared_ptr.hpp>
-
-#include <boost/thread/mutex.hpp>
+#include <memory>
+#include <mutex>
 
 namespace aoflagger {
 	
@@ -47,18 +45,8 @@ namespace aoflagger {
 	
 	class ImageSetData {
 		public:
-			ImageSetData(size_t initialSize) : images(initialSize)
+			explicit ImageSetData(size_t initialSize) : images(initialSize)
 			{
-			}
-			
-			ImageSetData(const ImageSetData &source) :
-				images(source.images)
-			{
-			}
-			
-			void operator=(const ImageSetData &source)
-			{
-				images = source.images;
 			}
 			
 			std::vector<Image2DPtr> images;
@@ -101,6 +89,11 @@ namespace aoflagger {
 	{
 	}
 	
+	ImageSet::ImageSet::ImageSet(aoflagger::ImageSet&& sourceImageSet) :
+		_data(new ImageSetData(std::move(*sourceImageSet._data)))
+	{
+	}
+	
 	ImageSet::~ImageSet()
 	{
 		delete _data;
@@ -109,6 +102,12 @@ namespace aoflagger {
 	ImageSet &ImageSet::operator=(const ImageSet& sourceImageSet)
 	{
 		*_data = *sourceImageSet._data;
+		return *this;
+	}
+	
+	ImageSet &ImageSet::operator=(ImageSet&& sourceImageSet)
+	{
+		*_data = std::move(*sourceImageSet._data);
 		return *this;
 	}
 	
@@ -166,31 +165,19 @@ namespace aoflagger {
 	
 	class FlagMaskData {
 		public:
-			FlagMaskData(Mask2DPtr theMask) : mask(theMask)
+			explicit FlagMaskData(Mask2DPtr theMask) : mask(theMask)
 			{
-			}
-			
-			FlagMaskData(const FlagMaskData &source) :
-				mask(source.mask)
-			{
-			}
-			
-			void operator=(const FlagMaskData &source)
-			{
-				mask = source.mask;
 			}
 			
 			Mask2DPtr mask;
 	};
 	
 	FlagMask::FlagMask() : _data(0)
-	{
-	}
+	{ }
 	
 	FlagMask::FlagMask(size_t width, size_t height) : _data(new FlagMaskData(
 		Mask2D::CreateUnsetMaskPtr(width, height)	))
-	{
-	}
+	{ }
 	
 	FlagMask::FlagMask(size_t width, size_t height, bool initialValue) : _data(new FlagMaskData(
 		Mask2D::CreateUnsetMaskPtr(width, height)	))
@@ -203,9 +190,24 @@ namespace aoflagger {
 	
 	FlagMask::FlagMask(const FlagMask& sourceMask) :
 		_data(new FlagMaskData(*sourceMask._data))
-	{
-	}
+	{ }
 			
+	FlagMask::FlagMask(FlagMask&& sourceMask) :
+		_data(new FlagMaskData(std::move(*sourceMask._data)))
+	{ }
+	
+	FlagMask& FlagMask::operator=(const FlagMask& flagMask)
+	{
+		*_data = *flagMask._data;
+		return *this;
+	}
+	
+	FlagMask& FlagMask::operator=(FlagMask&& flagMask)
+	{
+		*_data = std::move(*flagMask._data);
+		return *this;
+	}
+	
 	FlagMask::~FlagMask()
 	{
 		// _data might be 0, but it's fine to delete 0; (by standard)
@@ -237,25 +239,13 @@ namespace aoflagger {
 		return _data->mask->ValuePtr(0, 0);
 	}
 	
-	
 	class StrategyData {
 		public:
-			StrategyData(rfiStrategy::Strategy *strategy)
-			: strategyPtr(strategy)
-			{
-			}
+			explicit StrategyData(std::unique_ptr<rfiStrategy::Strategy> strategy)
+			: strategyPtr(std::move(strategy))
+			{ }
 			
-			StrategyData(const StrategyData& source)
-			: strategyPtr(source.strategyPtr)
-			{
-			}
-			
-			void operator=(const StrategyData& source)
-			{
-				strategyPtr = source.strategyPtr;
-			}
-			
-			boost::shared_ptr<rfiStrategy::Strategy> strategyPtr;
+			std::shared_ptr<rfiStrategy::Strategy> strategyPtr;
 	};
 	
 	Strategy::Strategy(enum TelescopeId telescopeId, unsigned strategyFlags, double frequency, double timeRes, double frequencyRes) :
@@ -279,6 +269,11 @@ namespace aoflagger {
 	{
 	}
 	
+	Strategy::Strategy(Strategy&& sourceStrategy) :
+		_data(new StrategyData(std::move(*sourceStrategy._data)))
+	{
+	}
+	
 	Strategy::~Strategy()
 	{
 		delete _data;
@@ -290,6 +285,11 @@ namespace aoflagger {
 		return *this;
 	}
 
+	Strategy &Strategy::operator=(Strategy&& sourceStrategy)
+	{
+		*_data = std::move(*sourceStrategy._data);
+		return *this;
+	}
 	
 	class QualityStatisticsDataImp
 	{
@@ -314,11 +314,11 @@ namespace aoflagger {
 				_implementation(new QualityStatisticsDataImp(_scanTimes, nScans, nPolarizations, computeHistograms))
 			{
 			}
-			QualityStatisticsData(boost::shared_ptr<QualityStatisticsDataImp> implementation) :
+			explicit QualityStatisticsData(std::shared_ptr<QualityStatisticsDataImp> implementation) :
 				_implementation(implementation)
 			{
 			}
-			boost::shared_ptr<QualityStatisticsDataImp> _implementation;
+			std::shared_ptr<QualityStatisticsDataImp> _implementation;
 	};
 
 	QualityStatistics::QualityStatistics(const double* scanTimes, size_t nScans, const double* channelFrequencies, size_t nChannels, size_t nPolarizations, bool computeHistograms) :
@@ -329,6 +329,11 @@ namespace aoflagger {
 	
 	QualityStatistics::QualityStatistics(const QualityStatistics& sourceQS) :
 		_data(new QualityStatisticsData(sourceQS._data->_implementation))
+	{
+	}
+	
+	QualityStatistics::QualityStatistics(QualityStatistics&& sourceQS) :
+		_data(new QualityStatisticsData(std::move(sourceQS._data->_implementation)))
 	{
 	}
 	
@@ -343,6 +348,12 @@ namespace aoflagger {
 		return *this;
 	}
 	
+	QualityStatistics& QualityStatistics::operator=(QualityStatistics&& sourceQS)
+	{
+		_data->_implementation = std::move(sourceQS._data->_implementation);
+		return *this;
+	}
+	
 	QualityStatistics& QualityStatistics::operator+=(const QualityStatistics& rhs)
 	{
 		_data->_implementation->statistics.Add(rhs._data->_implementation->statistics);
@@ -351,10 +362,10 @@ namespace aoflagger {
 	}
 	
 	class ErrorListener : public ProgressListener {
-		virtual void OnStartTask(const rfiStrategy::Action &, size_t, size_t, const std::string &, size_t = 1) {}
-		virtual void OnEndTask(const rfiStrategy::Action &) {}
-		virtual void OnProgress(const rfiStrategy::Action &, size_t, size_t) {}
-		virtual void OnException(const rfiStrategy::Action &, std::exception &e)
+		virtual void OnStartTask(const rfiStrategy::Action &, size_t, size_t, const std::string &, size_t = 1) final override {}
+		virtual void OnEndTask(const rfiStrategy::Action &) final override {}
+		virtual void OnProgress(const rfiStrategy::Action &, size_t, size_t) final override {}
+		virtual void OnException(const rfiStrategy::Action &, std::exception &e) final override
 		{
 			std::cerr <<
 				"*** EXCEPTION OCCURED IN THE AOFLAGGER ***\n"
@@ -365,15 +376,15 @@ namespace aoflagger {
 	
 	class ForwardingListener : public ProgressListener {
 	public:
-		ForwardingListener(StatusListener* destination) : _destination(destination)
+		explicit ForwardingListener(StatusListener* destination) : _destination(destination)
 		{ }
-		virtual void OnStartTask(const rfiStrategy::Action &, size_t taskNo, size_t taskCount, const std::string &description, size_t weight) {
+		virtual void OnStartTask(const rfiStrategy::Action &, size_t taskNo, size_t taskCount, const std::string &description, size_t weight) final override {
 			_destination->OnStartTask(taskNo, taskCount, description); }
-		virtual void OnEndTask(const rfiStrategy::Action &) {
+		virtual void OnEndTask(const rfiStrategy::Action &) final override {
 			_destination->OnEndTask(); }
-		virtual void OnProgress(const rfiStrategy::Action &, size_t progress, size_t maxProgress) {
+		virtual void OnProgress(const rfiStrategy::Action &, size_t progress, size_t maxProgress) final override {
 			_destination->OnProgress(progress, maxProgress); }
-		virtual void OnException(const rfiStrategy::Action &, std::exception &thrownException) {
+		virtual void OnException(const rfiStrategy::Action &, std::exception &thrownException) final override {
 			_destination->OnException(thrownException); }
 	private:
 		StatusListener *_destination;
@@ -381,13 +392,13 @@ namespace aoflagger {
 	
 	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input)
 	{
-		boost::mutex mutex;
+		std::mutex mutex;
 		rfiStrategy::ArtifactSet artifacts(&mutex);
-		ProgressListener* listener;
+		std::unique_ptr<ProgressListener> listener;
 		if(_statusListener == 0)
-			listener = new ErrorListener();
+			listener.reset(new ErrorListener());
 		else
-			listener = new ForwardingListener(_statusListener);
+			listener.reset(new ForwardingListener(_statusListener));
 		
 		Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(input.Width(), input.Height());
 		TimeFrequencyData inputData, revisedData;
@@ -411,11 +422,11 @@ namespace aoflagger {
 					Polarization::XX, input._data->images[0], input._data->images[1],
 					Polarization::YY, input._data->images[2], input._data->images[3]
 				);
-				inputData.SetIndividualPolarisationMasks(mask, mask);
+				inputData.SetIndividualPolarizationMasks(mask, mask);
 				revisedData = TimeFrequencyData(
 					Polarization::XX, zeroImage, zeroImage,
 					Polarization::YY, zeroImage, zeroImage);
-				revisedData.SetIndividualPolarisationMasks(mask, mask);
+				revisedData.SetIndividualPolarizationMasks(mask, mask);
 				break;
 			case 8:
 				inputData = TimeFrequencyData::FromLinear(
@@ -424,27 +435,27 @@ namespace aoflagger {
 					input._data->images[4], input._data->images[5],
 					input._data->images[6], input._data->images[7]
 				);
-				inputData.SetIndividualPolarisationMasks(mask, mask, mask, mask);
+				inputData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
 				revisedData = TimeFrequencyData::FromLinear(
 					zeroImage, zeroImage, zeroImage, zeroImage,
 					zeroImage, zeroImage, zeroImage, zeroImage);
-				revisedData.SetIndividualPolarisationMasks(mask, mask, mask, mask);
+				revisedData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
 				break;
 		}
 		artifacts.SetOriginalData(inputData);
 		artifacts.SetContaminatedData(inputData);
 		artifacts.SetRevisedData(revisedData);
-		artifacts.SetPolarizationStatistics(new PolarizationStatistics());
-		artifacts.SetBaselineSelectionInfo(new rfiStrategy::BaselineSelector());
+		artifacts.SetPolarizationStatistics(std::unique_ptr<PolarizationStatistics>(new PolarizationStatistics()));
+		artifacts.SetBaselineSelectionInfo(std::unique_ptr<rfiStrategy::BaselineSelector>(new rfiStrategy::BaselineSelector()));
 		
 		strategy._data->strategyPtr->Perform(artifacts, *listener);
 		
-		delete artifacts.BaselineSelectionInfo();
-		delete artifacts.PolarizationStatistics();
-		delete listener;
+		listener.reset();
 		
 		FlagMask flagMask;
-		flagMask._data = new FlagMaskData(Mask2D::CreateCopy(artifacts.ContaminatedData().GetSingleMask()));
+		mask.reset(new Mask2D(*artifacts.ContaminatedData().GetSingleMask()));
+		flagMask._data = 
+			new FlagMaskData(std::move(mask));
 		return flagMask;
 	}
 	

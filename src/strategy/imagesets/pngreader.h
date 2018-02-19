@@ -11,36 +11,36 @@
 
 #include "singleimageset.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 namespace rfiStrategy {
 
 	class PngReader : public SingleImageSet {
 		public:
-			PngReader(const std::string &path) : SingleImageSet(), _path(path)
+			explicit PngReader(const std::string &path) : SingleImageSet(), _path(path)
 			{
 			}
 
-			virtual ImageSet *Copy()
+			virtual std::unique_ptr<ImageSet> Clone() final override
 			{
-				return 0;
+				return nullptr;
 			}
 
-			virtual void Initialize()
+			virtual void Initialize() final override
 			{
 			}
 
-			virtual std::string Name()
+			virtual std::string Name() final override
 			{
 				return "Png format";
 			}
 			
-			virtual std::string File()
+			virtual std::string File() final override
 			{
 				return _path;
 			}
 			
-			virtual BaselineData *Read();
+			virtual std::unique_ptr<BaselineData> Read() final override;
 
 		private:
 			std::string _path;

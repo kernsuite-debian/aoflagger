@@ -283,17 +283,17 @@ unsigned QualityTablesFormatter::findFreeKindIndex(casacore::Table &kindTable)
 	return maxIndex + 1;
 }
 
-void QualityTablesFormatter::openTable(QualityTable table, bool needWrite, casacore::Table **tablePtr)
+void QualityTablesFormatter::openTable(QualityTable table, bool needWrite, std::unique_ptr<casacore::Table>& tablePtr)
 {
-	if(*tablePtr == 0)
+	if(tablePtr == nullptr)
 	{
 		openMainTable(false);
-		*tablePtr = new casacore::Table(_measurementSet->keywordSet().asTable(TableToName(table)));
+		tablePtr.reset(new casacore::Table(_measurementSet->keywordSet().asTable(TableToName(table))));
 		if(needWrite)
-			(*tablePtr)->reopenRW();
+			tablePtr->reopenRW();
 	} else {
-		if(needWrite && !(*tablePtr)->isWritable())
-			(*tablePtr)->reopenRW();
+		if(needWrite && !tablePtr->isWritable())
+			tablePtr->reopenRW();
 	}
 }
 
@@ -559,12 +559,12 @@ void QualityTablesFormatter::QueryBaselineStatistic(unsigned kindIndex, std::vec
 
 void QualityTablesFormatter::openMainTable(bool needWrite)
 {
-	if(_measurementSet == 0)
+	if(_measurementSet == nullptr)
 	{
 		if(needWrite)
-			_measurementSet = new casacore::Table(_measurementSetName, casacore::Table::Update);
+			_measurementSet.reset(new casacore::Table(_measurementSetName, casacore::Table::Update));
 		else
-			_measurementSet = new casacore::Table(_measurementSetName);
+			_measurementSet.reset(new casacore::Table(_measurementSetName));
 	}
 	else if(needWrite)
 	{

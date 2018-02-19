@@ -81,14 +81,14 @@ void FFTTools::CreateFFTImage(const Image2D &real, const Image2D &imaginary, Ima
 	bool centerBefore = true;
 	if(centerBefore) {
 		Image2D *tmp = CreateShiftedImageFromFFT(real);
-		realOut.SetValues(*tmp);
+		realOut = *tmp;
 		delete tmp;
 		tmp = CreateShiftedImageFromFFT(imaginary);
-		imaginaryOut.SetValues(*tmp);
+		imaginaryOut = *tmp;
 		delete tmp;
 	} else {
-		realOut.SetValues(real);
-		imaginaryOut.SetValues(imaginary);
+		realOut = real;
+		imaginaryOut = imaginary;
 	}
 
 	unsigned long ptr = 0;
@@ -121,10 +121,10 @@ void FFTTools::CreateFFTImage(const Image2D &real, const Image2D &imaginary, Ima
 	fftw_free(out);
 	if(centerAfter) {
 		Image2D *tmp = CreateShiftedImageFromFFT(realOut);
-		realOut.SetValues(*tmp);
+		realOut = *tmp;
 		delete tmp;
 		tmp = CreateShiftedImageFromFFT(imaginaryOut);
-		imaginaryOut.SetValues(*tmp);
+		imaginaryOut = *tmp;
 		delete tmp;
 	}
 }
@@ -176,22 +176,17 @@ Image2DPtr FFTTools::CreatePhaseImage(Image2DCPtr real, Image2DCPtr imaginary)
 void FFTTools::FFTConvolve(const Image2D &realIn, const Image2D &imaginaryIn, const Image2D &realKernel, const Image2D &imaginaryKernel, Image2D &outReal, Image2D &outImaginary)
 {
 	Image2D
-		*realFFTIn = Image2D::CreateUnsetImage(realIn.Width(), realIn.Height()),
-		*imaginaryFFTIn = Image2D::CreateUnsetImage(imaginaryIn.Width(), imaginaryIn.Height());
-	CreateFFTImage(realIn, imaginaryIn, *realFFTIn, *imaginaryFFTIn); 
+		realFFTIn = Image2D::MakeUnsetImage(realIn.Width(), realIn.Height()),
+		imaginaryFFTIn = Image2D::MakeUnsetImage(imaginaryIn.Width(), imaginaryIn.Height());
+	CreateFFTImage(realIn, imaginaryIn, realFFTIn, imaginaryFFTIn); 
 	Image2D
-		*realFFTKernel = Image2D::CreateUnsetImage(realKernel.Width(), realKernel.Height()),
-		*imaginaryFFTKernel = Image2D::CreateUnsetImage(imaginaryKernel.Width(), imaginaryKernel.Height());
-	CreateFFTImage(realKernel, imaginaryKernel, *realFFTKernel, *imaginaryFFTKernel);
+		realFFTKernel = Image2D::MakeUnsetImage(realKernel.Width(), realKernel.Height()),
+		imaginaryFFTKernel = Image2D::MakeUnsetImage(imaginaryKernel.Width(), imaginaryKernel.Height());
+	CreateFFTImage(realKernel, imaginaryKernel, realFFTKernel, imaginaryFFTKernel);
 
-	Multiply(*realFFTIn, *imaginaryFFTIn, *realFFTKernel, *imaginaryFFTKernel);
+	Multiply(realFFTIn, imaginaryFFTIn, realFFTKernel, imaginaryFFTKernel);
 
-	CreateFFTImage(*realFFTIn, *imaginaryFFTIn, outReal, outImaginary, true, true);
-	
-	delete imaginaryFFTKernel;
-	delete realFFTKernel;
-	delete imaginaryFFTIn;
-	delete realFFTIn;
+	CreateFFTImage(realFFTIn, imaginaryFFTIn, outReal, outImaginary, true, true);
 }
 
 /*void FFTTools::FFTConvolve(num_t *realValues, num_t *imagValues, num_t *realKernel, num_t *imagKernel, size_t count)
@@ -319,13 +314,13 @@ void FFTTools::CreateDynamicHorizontalFFTImage(Image2DPtr real, Image2DPtr imagi
 {
 	const size_t width = real->Width();
 	if(real->Height() == 0 || width == 0) return;
-	SampleRowPtr
-		realRow = SampleRow::CreateFromRowSum(real, 0, real->Height()),
-		imaginaryRow = SampleRow::CreateFromRowSum(imaginary, 0, imaginary->Height());
+	SampleRow
+		realRow = SampleRow::MakeFromRowSum(real.get(), 0, real->Height()),
+		imaginaryRow = SampleRow::MakeFromRowSum(imaginary.get(), 0, imaginary->Height());
 
-	Image2DPtr
-		destReal = Image2D::CreateUnsetImagePtr(real->Width(), real->Height()),
-		destImag = Image2D::CreateUnsetImagePtr(real->Width(), real->Height());
+	Image2D
+		destReal = Image2D::MakeUnsetImage(real->Width(), real->Height()),
+		destImag = Image2D::MakeUnsetImage(real->Width(), real->Height());
 	
 	unsigned long n_in = width;
 	fftw_complex *in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n_in);
@@ -342,8 +337,8 @@ void FFTTools::CreateDynamicHorizontalFFTImage(Image2DPtr real, Image2DPtr imagi
 			secEnd = width * (sec + 2) / (sections + 1);
 
 		for(unsigned x=secStart;x<secEnd;++x) {
-			in[x-secStart][0] = realRow->Value(x);
-			in[x-secStart][1] = imaginaryRow->Value(x);
+			in[x-secStart][0] = realRow.Value(x);
+			in[x-secStart][1] = imaginaryRow.Value(x);
 		}
 
 		fftw_plan plan = fftw_plan_dft_1d(secEnd - secStart, in, out, sign, FFTW_ESTIMATE);
@@ -351,24 +346,24 @@ void FFTTools::CreateDynamicHorizontalFFTImage(Image2DPtr real, Image2DPtr imagi
 		fftw_destroy_plan(plan);
 
 		size_t maxF = secEnd - secStart;
-		if(maxF > destReal->Height()) maxF = destReal->Height();
+		if(maxF > destReal.Height()) maxF = destReal.Height();
 		unsigned xEnd = width*(sec+1)/sections;
 		for(unsigned long x=width*sec/sections;x<xEnd;++x) {
 			for(unsigned long y=0;y<maxF;++y) {
-					destReal->SetValue(x, y, out[y][0]);
-					destImag->SetValue(x, y, out[y][1]);
+					destReal.SetValue(x, y, out[y][0]);
+					destImag.SetValue(x, y, out[y][1]);
 				}
-			for(unsigned long y=maxF;y<destReal->Height();++y)
+			for(unsigned long y=maxF;y<destReal.Height();++y)
 			{
-				destReal->SetValue(x, y, 0.0);
-				destImag->SetValue(x, y, 0.0);
+				destReal.SetValue(x, y, 0.0);
+				destImag.SetValue(x, y, 0.0);
 			}
 		}
 	}
 	fftw_free(out);
 	fftw_free(in);
-	real->SetValues(destReal);
-	imaginary->SetValues(destImag);
+	*real = destReal;
+	*imaginary = destImag;
 }
 
 Image2DPtr FFTTools::AngularTransform(Image2DCPtr image)
@@ -397,24 +392,24 @@ Image2DPtr FFTTools::AngularTransform(Image2DCPtr image)
 	return Image2DPtr(transformedImage);
 }
 
-void FFTTools::FFT(SampleRowPtr realRow, SampleRowPtr imaginaryRow)
+void FFTTools::FFT(SampleRow& realRow, SampleRow& imaginaryRow)
 {
-	size_t n = realRow->Size();
+	size_t n = realRow.Size();
 	fftw_complex
 		*in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n),
 		*out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
 	for(unsigned i=0;i<n;++i)
 	{
-		in[i][0] = realRow->Value(i);
-		in[i][1] = imaginaryRow->Value(i);
+		in[i][0] = realRow.Value(i);
+		in[i][1] = imaginaryRow.Value(i);
 	}
 	fftw_plan p = fftw_plan_dft_1d(n, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 	fftw_execute(p);
 	fftw_destroy_plan(p);
 	for(unsigned i=0;i<n;++i)
 	{
-		realRow->SetValue(i, out[i][0]);
-		imaginaryRow->SetValue(i, out[i][0]);
+		realRow.SetValue(i, out[i][0]);
+		imaginaryRow.SetValue(i, out[i][0]);
 	}
 	fftw_free(in);
 	fftw_free(out);

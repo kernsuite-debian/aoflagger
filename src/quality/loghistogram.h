@@ -47,11 +47,11 @@ class LogHistogram : public Serializable
 				return *this;
 			}
 			
-			virtual void Serialize(std::ostream &stream) const
+			virtual void Serialize(std::ostream &stream) const final override
 			{
 				SerializeToUInt64(stream, count);
 			}
-			virtual void Unserialize(std::istream &stream)
+			virtual void Unserialize(std::istream &stream) final override
 			{
 				count = UnserializeUInt64(stream);
 			}
@@ -441,7 +441,7 @@ class LogHistogram : public Serializable
 			return const_iterator(*this, _amplitudes.end());
 		}
 		
-		virtual void Serialize(std::ostream &stream) const
+		virtual void Serialize(std::ostream &stream) const final override
 		{
 			SerializeToUInt64(stream, _amplitudes.size());
 			for(std::map<double, AmplitudeBin>::const_iterator i=_amplitudes.begin();i!=_amplitudes.end();++i)
@@ -451,7 +451,7 @@ class LogHistogram : public Serializable
 			}
 		}
 		
-		virtual void Unserialize(std::istream &stream)
+		virtual void Unserialize(std::istream &stream) final override
 		{
 			_amplitudes.clear();
 			size_t mapSize = UnserializeUInt64(stream);

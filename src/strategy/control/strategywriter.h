@@ -15,7 +15,7 @@ namespace rfiStrategy {
 	class StrategyWriterError : public std::runtime_error
 	{
 		public:
-			StrategyWriterError(const std::string &arg) : std::runtime_error(arg) { }
+			explicit StrategyWriterError(const std::string &arg) : std::runtime_error(arg) { }
 	};
 
 	class StrategyWriter : private XmlWriter {
@@ -56,8 +56,6 @@ namespace rfiStrategy {
 			void writeChangeResolutionAction(const class ChangeResolutionAction &action);
 			void writeCombineFlagResults(const class CombineFlagResults &action);
 			void writeCutAreaAction(const class CutAreaAction &action);
-			void writeDirectionalCleanAction(const class DirectionalCleanAction &action);
-			void writeDirectionProfileAction(const class DirectionProfileAction &action);
 			void writeEigenValueVerticalAction(const class EigenValueVerticalAction &action);
 			void writeForEachBaselineAction(const class ForEachBaselineAction &action);
 			void writeForEachComplexComponentAction(const class ForEachComplexComponentAction &action);
@@ -83,7 +81,6 @@ namespace rfiStrategy {
 			void writeSumThresholdAction(const class SumThresholdAction &action);
 			void writeTimeConvolutionAction(const class TimeConvolutionAction &action);
 			void writeTimeSelectionAction(const class TimeSelectionAction &action);
-			void writeUVProjectAction(const class UVProjectAction &action);
 			void writeWriteDataAction(const class WriteDataAction &action);
 			void writeWriteFlagsAction(const class WriteFlagsAction &action);
 

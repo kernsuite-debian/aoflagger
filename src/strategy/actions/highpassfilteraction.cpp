@@ -7,7 +7,7 @@ namespace rfiStrategy {
 void HighPassFilterAction::Perform(ArtifactSet &artifacts, ProgressListener &progress)
 {
 	TimeFrequencyData &data = artifacts.ContaminatedData();
-	if(data.PolarisationCount() != 1)
+	if(data.PolarizationCount() != 1)
 		throw std::runtime_error("High-pass filtering needs single polarization");
 	HighPassFilter filter;
 	filter.SetHKernelSigmaSq(_hKernelSigmaSq);

@@ -93,19 +93,7 @@ public:
 class AntennaInfo {
 public:
 	AntennaInfo() { }
-	AntennaInfo(const AntennaInfo &source)
-		: id(source.id), position(source.position), name(source.name), diameter(source.diameter), mount(source.mount), station(source.station)
-	{
-	}
-	void operator=(const AntennaInfo &source)
-	{
-		id = source.id;
-		position = source.position;
-		name = source.name;
-		diameter = source.diameter;
-		mount = source.mount;
-		station = source.station;
-	}
+
 	unsigned id;
 	EarthPosition position;
 	std::string name;
@@ -171,16 +159,7 @@ public:
 	std::vector<ChannelInfo> channels;
 
 	BandInfo() : windowIndex(0) { }
-	BandInfo(const BandInfo &source) :
-		windowIndex(source.windowIndex),
-		channels(source.channels)
-	{
-	}
-	void operator=(const BandInfo &source)
-	{
-		windowIndex = source.windowIndex;
-		channels = source.channels;
-	}
+
 	num_t CenterFrequencyHz() const
 	{
 		num_t total = 0.0;
@@ -227,8 +206,6 @@ public:
 	unsigned fieldId;
 	num_t delayDirectionRA;
 	num_t delayDirectionDec;
-	//num_t delayDirectionDecNegSin;
-	//num_t delayDirectionDecNegCos;
 	std::string name;
 };
 
@@ -237,9 +214,9 @@ public:
 	EarthPosition antenna1, antenna2;
 	Baseline()
 		: antenna1(), antenna2() { }
-	Baseline(const AntennaInfo &_antenna1, const AntennaInfo &_antenna2)
+	Baseline(const AntennaInfo& _antenna1, const AntennaInfo &_antenna2)
 		: antenna1(_antenna1.position), antenna2(_antenna2.position) { }
-	Baseline(EarthPosition _antenna1, EarthPosition _antenna2)
+	Baseline(const EarthPosition& _antenna1, const EarthPosition& _antenna2)
 		: antenna1(_antenna1), antenna2(_antenna2) { }
 
 	num_t Distance() const {

@@ -19,22 +19,22 @@ namespace rfiStrategy {
 			~EigenValueVerticalAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Eigen value decomposition (vertical)";
 			}
 
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &)
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &) final override
 			{
 				TimeFrequencyData &data = artifacts.ContaminatedData();
-				if(data.PolarisationCount()!=1)
+				if(data.PolarizationCount()!=1)
 				{
 					throw std::runtime_error("Eigen value decompisition requires one polarization");
 				}
 				VertEVD::Perform(data, _timeIntegrated);
 			}
 
-			virtual ActionType Type() const { return EigenValueVerticalActionType; }
+			virtual ActionType Type() const final override { return EigenValueVerticalActionType; }
 		private:
 			bool _timeIntegrated;
 	};

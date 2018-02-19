@@ -4,20 +4,21 @@
 #include "../../structures/image2d.h"
 #include "../../structures/timefrequencydata.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 namespace rfiStrategy {
 	
 	BHFitsImageSet::BHFitsImageSet(const std::string &file) :
 		ImageSet(),
-		_file(new FitsFile(file))
+		_file(new FitsFile(file)),
+		_width(0), _height(0)
 	{
-		AOLogger::Debug << "Opening bhfits file: '" << file << "'\n";
+		Logger::Debug << "Opening bhfits file: '" << file << "'\n";
 		try {
 			_file->Open(FitsFile::ReadWriteMode);
 		} catch(FitsIOException& exception)
 		{
-			AOLogger::Error << "CFitsio failed to open file in RW mode with the following error:\n" << exception.what()
+			Logger::Error << "CFitsio failed to open file in RW mode with the following error:\n" << exception.what()
 			<< "\nTrying reopening in read-only mode. Writing to file won't be possible.\n\n";
 			_file->Open(FitsFile::ReadOnlyMode);
 		}
@@ -37,9 +38,9 @@ namespace rfiStrategy {
 	{
 	}
 	
-	BHFitsImageSet *BHFitsImageSet::Copy()
+	std::unique_ptr<ImageSet> BHFitsImageSet::Clone()
 	{
-		return new BHFitsImageSet(*this);
+		return std::unique_ptr<BHFitsImageSet>(new BHFitsImageSet(*this));
 	}
 
 	void BHFitsImageSet::Initialize()
@@ -47,14 +48,14 @@ namespace rfiStrategy {
 		_file->MoveToHDU(1);
 		/*for(int i=1;i<=_file->GetKeywordCount();++i)
 			{
-				AOLogger::Debug << _file->GetKeyword(i) << " = " << _file->GetKeywordValue(i) << '\n';
+				Logger::Debug << _file->GetKeyword(i) << " = " << _file->GetKeywordValue(i) << '\n';
 			}*/
 		if(_file->GetCurrentHDUType() != FitsFile::ImageHDUType)
 			throw std::runtime_error("Error in Bighorns fits files: first HDU was not an image HDU");
 		if(_file->GetCurrentImageDimensionCount() != 2)
 			throw std::runtime_error("Fits image was not two dimensional");
 		_width =_file->GetCurrentImageSize(2), _height = _file->GetCurrentImageSize(1);
-		AOLogger::Debug << "Image of " << _width << " x " << _height << '\n';
+		Logger::Debug << "Image of " << _width << " x " << _height << '\n';
 
 		_timeRanges.clear();
 		size_t keyIndex = 0;
@@ -98,7 +99,7 @@ namespace rfiStrategy {
 			}
 			++keyIndex;
 		} while(searchOn);
-		AOLogger::Debug << "This file has " << _timeRanges.size() << " time ranges.\n";
+		Logger::Debug << "This file has " << _timeRanges.size() << " time ranges.\n";
 		
 		if( _timeRanges.empty()) {
 		   // if no states found in the header - just assume all are antenna 
@@ -108,7 +109,7 @@ namespace rfiStrategy {
 			timeRange.end = _file->GetCurrentImageSize(2);
 			timeRange.name = "ANT";
 			_timeRanges.push_back(timeRange);		                                                  
-			AOLogger::Warn << "No states specified in the fits header assuming all (1-" << timeRange.end << ") integrations are " << timeRange.name << "\n";
+			Logger::Warn << "No states specified in the fits header assuming all (1-" << timeRange.end << ") integrations are " << timeRange.name << "\n";
 		}
 	}
 
@@ -224,7 +225,7 @@ namespace rfiStrategy {
 		if(flags.size() != 1)
 			throw std::runtime_error("BHFitsImageSet::AddWriteFlagsTask() called with multiple flags");
 		std::string flagFilename = flagFilePath();
-		AOLogger::Debug << "Writing to " << flagFilename << '\n';
+		Logger::Debug << "Writing to " << flagFilename << '\n';
 		FitsFile flagFile(flagFilename);
 		bool newFile = true;
 		std::vector<num_t> buffer(_width * _height);
@@ -232,7 +233,7 @@ namespace rfiStrategy {
 			flagFile.Open(FitsFile::ReadWriteMode);
 			newFile = false;
 		} catch(std::exception &) {
-			AOLogger::Debug << "File did not exist yet, creating new.\n";
+			Logger::Debug << "File did not exist yet, creating new.\n";
 			flagFile.Create();
 			flagFile.AppendImageHUD(FitsFile::Float32ImageType, _height, _width);
 		}

@@ -13,7 +13,7 @@
 
 #include "../structures/timefrequencydata.h"
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 
 BaselineReader::BaselineReader(const std::string &msFile)
 	: _measurementSet(msFile), _table(0), _dataColumnName("DATA"), _subtractModel(false), _readData(true), _readFlags(true),
@@ -23,9 +23,9 @@ BaselineReader::BaselineReader(const std::string &msFile)
 		_table = new casacore::MeasurementSet(_measurementSet.Path(), casacore::MeasurementSet::Update);
 	} catch(std::exception &e)
 	{
-		AOLogger::Warn << "Read-write opening of file " << msFile << " failed, trying read-only...\n";
+		Logger::Warn << "Read-write opening of file " << msFile << " failed, trying read-only...\n";
 		_table = new casacore::MeasurementSet(_measurementSet.Path());
-		AOLogger::Warn << "Table opened in read-only: writing not possible.\n";
+		Logger::Warn << "Table opened in read-only: writing not possible.\n";
 	}
 }
 
@@ -38,7 +38,7 @@ void BaselineReader::initObservationTimes()
 {
 	if(_observationTimes.size() == 0)
 	{
-		AOLogger::Debug << "Initializing observation times...\n";
+		Logger::Debug << "Initializing observation times...\n";
 		size_t sequenceCount = _measurementSet.SequenceCount();
 		_observationTimes.resize(sequenceCount);
 		for(size_t sequenceId=0; sequenceId!=sequenceCount; ++sequenceId)
@@ -71,7 +71,7 @@ TimeFrequencyData BaselineReader::GetNextResult(std::vector<class UVW>& uvw)
 		_polarizations.size(),
 		_results[requestIndex]._realImages.data(),
 		_results[requestIndex]._imaginaryImages.data());
-	data.SetIndividualPolarisationMasks(_results[requestIndex]._flags.data());
+	data.SetIndividualPolarizationMasks(_results[requestIndex]._flags.data());
 	uvw = _results[0]._uvw;
 	
 	_results.erase(_results.begin() + requestIndex);

@@ -16,7 +16,7 @@ namespace rfiStrategy {
 			ResamplingAction() : Action(), _operation(Average), _sizeX(5), _sizeY(5)
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				switch(_operation)
 				{
@@ -31,8 +31,8 @@ namespace rfiStrategy {
 						break;
 				}
 			}
-			virtual ActionType Type() const { return ResamplingActionType; }
-			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &)
+			virtual ActionType Type() const final override { return ResamplingActionType; }
+			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &) final override
 			{
 				TimeFrequencyData &contaminated = artifacts.ContaminatedData();
 				

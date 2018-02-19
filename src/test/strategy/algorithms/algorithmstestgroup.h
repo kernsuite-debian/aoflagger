@@ -17,7 +17,7 @@ class AlgorithmsTestGroup : public TestGroup {
 	public:
 		AlgorithmsTestGroup() : TestGroup("Algorithms") { }
 		
-		virtual void Initialize()
+		virtual void Initialize() override
 		{
 			Add(new ConvolutionsTest());
 			Add(new DilationTest());

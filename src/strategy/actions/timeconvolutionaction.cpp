@@ -1,5 +1,7 @@
 #include "timeconvolutionaction.h"
 
+#include <mutex>
+
 #include <fftw3.h>
 
 namespace rfiStrategy {
@@ -11,7 +13,7 @@ void TimeConvolutionAction::PerformFFTSincOperation(ArtifactSet &artifacts, Imag
 		*fftOut = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * real->Width());
 	
 	// FFTW plan routines are not thread safe, so lock.
-	boost::mutex::scoped_lock lock(artifacts.IOMutex());
+	std::unique_lock<std::mutex> lock(artifacts.IOMutex());
 	fftw_plan
 		fftPlanForward = fftw_plan_dft_1d(real->Width(), fftIn, fftOut, FFTW_FORWARD, FFTW_MEASURE),
 		fftPlanBackward = fftw_plan_dft_1d(real->Width(), fftIn, fftOut, FFTW_BACKWARD, FFTW_MEASURE);
@@ -26,7 +28,7 @@ void TimeConvolutionAction::PerformFFTSincOperation(ArtifactSet &artifacts, Imag
 		const numl_t limitFrequency = (numl_t) width / sincScale;
 		if(y == real->Height()/2)
 		{
-			AOLogger::Debug << "Horizontal sinc scale: " << sincScale << " (filter scale: " << Angle::ToString(ActualSincScaleAsRaDecDist(artifacts, band.channels[y].frequencyHz)) << ")\n";
+			Logger::Debug << "Horizontal sinc scale: " << sincScale << " (filter scale: " << Angle::ToString(ActualSincScaleAsRaDecDist(artifacts, band.channels[y].frequencyHz)) << ")\n";
 		}
 		if(sincScale > 1.0)
 		{

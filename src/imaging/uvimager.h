@@ -30,9 +30,9 @@ class UVImager {
 		}
 		void Image(const class TimeFrequencyData &data, class SpatialMatrixMetaData *metaData);
 		void InverseImage(class MeasurementSet &prototype, unsigned band, const class Image2D &uvReal, const class Image2D &uvImaginary, unsigned antenna1, unsigned antenna2);
-		const class Image2D &WeightImage() const { return *_uvWeights; }
-		const class Image2D &RealUVImage() const { return *_uvReal; }
-		const class Image2D &ImaginaryUVImage() const { return *_uvImaginary; }
+		const class Image2D &WeightImage() const { return _uvWeights; }
+		const class Image2D &RealUVImage() const { return _uvReal; }
+		const class Image2D &ImaginaryUVImage() const { return _uvImaginary; }
 		void SetInvertFlagging(bool newValue) { _invertFlagging = newValue; }
 		void SetDirectFT(bool directFT) { _directFT = directFT; }
 
@@ -74,12 +74,12 @@ class UVImager {
 		
 		void Empty();
 		void PerformFFT();
-		bool HasUV() const { return _uvReal != 0; }
-		bool HasFFT() const { return _uvFTReal != 0; }
-		const class Image2D &FTReal() const { return *_uvFTReal; }
-		const class Image2D &FTImaginary() const { return *_uvFTImaginary; }
-		class Image2D &FTReal() { return *_uvFTReal; }
-		class Image2D &FTImaginary() { return *_uvFTImaginary; }
+		bool HasUV() const { return !_uvReal.Empty(); }
+		bool HasFFT() const { return !_uvFTReal.Empty(); }
+		const class Image2D &FTReal() const { return _uvFTReal; }
+		const class Image2D &FTImaginary() const { return _uvFTImaginary; }
+		class Image2D &FTReal() { return _uvFTReal; }
+		class Image2D &FTImaginary() { return _uvFTImaginary; }
 		void SetUVScaling(num_t newScale)
 		{
 			_uvScaling = newScale;
@@ -154,9 +154,9 @@ class UVImager {
 		unsigned long _xRes, _yRes;
 		unsigned long _xResFT, _yResFT;
 		num_t _uvScaling;
-		class Image2D *_uvReal, *_uvImaginary, *_uvWeights;
-		class Image2D *_uvFTReal, *_uvFTImaginary;
-		class Image2D *_timeFreq;
+		class Image2D _uvReal, _uvImaginary, _uvWeights;
+		class Image2D _uvFTReal, _uvFTImaginary;
+		class Image2D _timeFreq;
 		MeasurementSet *_measurementSet;
 		unsigned _antennaCount, _fieldCount;
 		AntennaInfo *_antennas;

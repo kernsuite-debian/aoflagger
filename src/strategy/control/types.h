@@ -64,12 +64,14 @@ class Observatorium;
 // 3.5 : Added the AbsThresholdAction
 // 3.6 : Added the DirectionProfileAction and the EigenValueVerticalAction.
 // 3.7 : Added the NormalizeVarianceAction
-#define STRATEGY_FILE_FORMAT_VERSION 3.7
+// 3.8 : Added attributes min-available-*-ratio to StatisticalFlagging, removed old
+//       max-contaminated*-ratio.
+#define STRATEGY_FILE_FORMAT_VERSION 3.8
 
 // The earliest format version which can be read by this version of the software
 #define STRATEGY_FILE_FORMAT_VERSION_REQUIRED 3.4
 
 // The earliest software version which is required to read the written files
-#define STRATEGY_FILE_READER_VERSION_REQUIRED 3.4
+#define STRATEGY_FILE_READER_VERSION_REQUIRED 3.8
 
 #endif // RFI_STRATEGY_TYPES

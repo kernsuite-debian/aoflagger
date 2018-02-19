@@ -5,17 +5,18 @@
 
 class StatisticalValue {
 	public:
-		StatisticalValue(unsigned _polarizationCount) :
+		explicit StatisticalValue(unsigned _polarizationCount) :
 			_polarizationCount(_polarizationCount),
+			_kindIndex(0),
 			_values(new std::complex<float>[_polarizationCount])
 		{
 		}
 		
 		StatisticalValue(const StatisticalValue &source) :
 			_polarizationCount(source._polarizationCount),
+			_kindIndex(source._kindIndex),
 			_values(new std::complex<float>[source._polarizationCount])
 		{
-			_kindIndex = source._kindIndex;
 			for(unsigned i=0;i<_polarizationCount;++i)
 				_values[i] = source._values[i];
 		}
@@ -25,7 +26,7 @@ class StatisticalValue {
 			delete[] _values;
 		}
 		
-		StatisticalValue &operator=(const StatisticalValue &source)
+		StatisticalValue& operator=(const StatisticalValue &source)
 		{
 			if(_polarizationCount != source._polarizationCount)
 			{

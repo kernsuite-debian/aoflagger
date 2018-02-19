@@ -52,17 +52,17 @@ class Model {
 	};
 	struct StablePointSource : public Source {
 		long double dec, ra, fluxIntensity, sqrtFluxIntensity;
-		virtual numl_t Dec(num_t) const { return dec; }
-		virtual numl_t Ra(num_t) const { return ra; }
-		virtual numl_t FluxIntensity(num_t) const { return fluxIntensity; }
-		virtual numl_t SqrtFluxIntensity(num_t) const { return sqrtFluxIntensity; }
+		virtual numl_t Dec(num_t) const final override { return dec; }
+		virtual numl_t Ra(num_t) const final override { return ra; }
+		virtual numl_t FluxIntensity(num_t) const final override { return fluxIntensity; }
+		virtual numl_t SqrtFluxIntensity(num_t) const final override { return sqrtFluxIntensity; }
 	};
 	struct VariablePointSource : public Source {
 		long double dec, ra, fluxIntensity;
 		double peakTime, oneOverSigmaSq;
-		virtual numl_t Dec(num_t) const { return dec; }
-		virtual numl_t Ra(num_t) const { return ra; }
-		virtual numl_t FluxIntensity(num_t t) const
+		virtual numl_t Dec(num_t) const final override { return dec; }
+		virtual numl_t Ra(num_t) const final override { return ra; }
+		virtual numl_t FluxIntensity(num_t t) const final override
 		{
 			numl_t mu = fmodnl(fabsnl(t-peakTime), 1.0);
 			if(mu > 0.5) mu = 1.0 - mu;
@@ -72,7 +72,6 @@ class Model {
 	
 	public:
 		Model();
-		~Model();
 		void AddSource(long double dec, long double ra, long double fluxIntensity)
 		{
 			StablePointSource *source = new StablePointSource();

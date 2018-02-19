@@ -8,7 +8,7 @@
 class TimeFrequencyStatistics
 {
 	public:
-		TimeFrequencyStatistics(const TimeFrequencyData &data);
+		explicit TimeFrequencyStatistics(const TimeFrequencyData &data);
 
 		num_t GetFlaggedRatio();
 

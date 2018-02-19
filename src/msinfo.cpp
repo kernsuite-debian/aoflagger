@@ -12,8 +12,6 @@
 
 using namespace std;
 
-void AddLengths(Mask2DCPtr mask, int *counts, int countSize);
-
 std::string BoolToStr(bool val)
 {
 	if(val)
@@ -137,90 +135,6 @@ int main(int argc, char *argv[])
 			cout << "Field " << i << ":\n\tdelay direction=" << fieldInfo.delayDirectionDec << " dec, " << fieldInfo.delayDirectionRA << "ra.\n\tdelay direction (in degrees)=" << (fieldInfo.delayDirectionDec/M_PIn*180.0L) << " dec," << (fieldInfo.delayDirectionRA/M_PIn*180.0L) << " ra." << endl;
 		}
 
-		/*
-		long unsigned flaggedCount = 0;
-		long unsigned sampleCount = 0;
-		for(unsigned b=0;b<=set.MaxSpectralBandIndex();++b) {
-			cout << "Processing band " << b << "..." << endl;
-			int lengthsSize = set.MaxScanIndex()+1;
-			int *lengthCounts = new int[lengthsSize];
-			for(int i=0;i<lengthsSize;++i)
-				lengthCounts[i] = 0;
-			MeasurementSet set(measurementFile);
-			TimeFrequencyImager imager(set);
-			for(unsigned a1=0;a1<set.AntennaCount();++a1) {
-				for(unsigned a2=a1;a2<set.AntennaCount();++a2) {
-					//std::cout << "A" << a1 << " vs A" << a2 << endl;
-					imager.SetReadData(false);
-					imager.SetReadFlags(true);
-					try {
-						imager.Image(a1, a2, b);
-					} catch(std::exception &e) {
-						std::cerr << "Error reading baseline " << a1 << " x " << a2 << ": " << e.what() << std::endl;
-					}
-					if(imager.HasFlags()) {
-						long unsigned thisCount;
-						long unsigned thisSamples;
-
-						thisCount = imager.FlagXX()->GetCount<true>();
-						thisSamples = imager.FlagXX()->Width()*imager.FlagXX()->Height();
-
-						thisCount += imager.FlagXY()->GetCount<true>();
-						thisSamples += imager.FlagXY()->Width()*imager.FlagXY()->Height();
-
-						thisCount += imager.FlagYX()->GetCount<true>();
-						thisSamples += imager.FlagYX()->Width()*imager.FlagYX()->Height();
-
-						thisCount += imager.FlagYY()->GetCount<true>();
-						thisSamples += imager.FlagYY()->Width()*imager.FlagYY()->Height();
-
-					if(thisCount == 0 || round(1000.0L * (long double) thisCount / thisSamples)*0.1L == 100.0L) {
-							//cout << " (ignored)";
-						} else {
-							
-							cout << "Flagging for antenna " << set.GetAntennaInfo(a1).name
-								<< " x " << set.GetAntennaInfo(a2).name << ": "
-								<< 0.1L * round(1000.0L * (long double) thisCount / thisSamples) << "%" << endl;
-							flaggedCount += thisCount;
-							sampleCount += thisSamples;
-							if(saveFlagLength)
-							{
-								AddLengths(imager.FlagXX(), lengthCounts, lengthsSize);
-								AddLengths(imager.FlagXY(), lengthCounts, lengthsSize);
-								AddLengths(imager.FlagYX(), lengthCounts, lengthsSize);
-								AddLengths(imager.FlagYY(), lengthCounts, lengthsSize);
-							}
-						}
-					}
-				}
-			}
-			cout << "Total percentage RFI in this band: " << round(flaggedCount*1000.0/sampleCount)/10.0 << "% "
-					<< "(" << flaggedCount << " / " << sampleCount << ")" << endl;
-			
-			if(saveFlagLength) {
-				num_t *data = new num_t[lengthsSize];
-				for(int i=0;i<lengthsSize;++i)
-					data[i] = lengthCounts[i];
-				if(set.FrequencyCount() < (set.MaxScanIndex()+1) && set.FrequencyCount()>2 && data[set.FrequencyCount()-1] > data[set.FrequencyCount()-2])
-					data[set.FrequencyCount()-1] = data[set.FrequencyCount()-2];
-				ThresholdTools::OneDimensionalGausConvolution(data, lengthsSize, 200.0);
-				ofstream f(flagLengthFile.c_str());
-				for(int i = 0; i<lengthsSize;++i) {
-					f << (i+1) << "\t" << lengthCounts[i] << "\t" << data[i] << endl;
-				}
-				f.close();
-			}
-			delete[] lengthCounts;
-		}*/
 		return EXIT_SUCCESS;
 	}
-}
-
-void AddLengths(Mask2DCPtr mask, int *counts, int countSize)
-{
-	int *countTmp = new int[countSize];
-	ThresholdTools::CountMaskLengths(mask, countTmp, countSize);
-	for(int i=0;i<countSize;++i)
-		counts[i] += countTmp[i];
-	delete[] countTmp; 
 }

@@ -2,11 +2,10 @@
 #define SEGMENTEDIMAGE_H
 
 #include <cstring>
+#include <memory>
 
-#include <boost/shared_ptr.hpp>
-
-typedef boost::shared_ptr<class SegmentedImage> SegmentedImagePtr;
-typedef boost::shared_ptr<const class SegmentedImage> SegmentedImageCPtr;
+typedef std::shared_ptr<class SegmentedImage> SegmentedImagePtr;
+typedef std::shared_ptr<const class SegmentedImage> SegmentedImageCPtr;
 
 class SegmentedImage{
 	public:
@@ -105,6 +104,8 @@ class SegmentedImage{
 			for(size_t y=0;y<height;++y)
 				_data[y] = new size_t[width];
 		}
+		SegmentedImage(const SegmentedImage&) = delete;
+		SegmentedImage& operator=(const SegmentedImage&) = delete;
 		
 		size_t _width, _height;
 		size_t **_data;

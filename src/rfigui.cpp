@@ -1,10 +1,11 @@
 #include "version.h"
 
-#include "gui/rfiguiwindow.h"
+#include "rfigui/rfiguiwindow.h"
 
-#include "gui/controllers/rfiguicontroller.h"
+#include "rfigui/controllers/imagecomparisoncontroller.h"
+#include "rfigui/controllers/rfiguicontroller.h"
 
-#include "util/aologger.h"
+#include "util/logger.h"
 
 #include "strategy/imagesets/msimageset.h"
 
@@ -52,7 +53,7 @@ static void run(int argc, char *argv[])
 				p = &argv[argi][1];
 			if(p == "h" || p == "help" || p == "?")
 			{
-				AOLogger::Info
+				Logger::Info
 					<< "The RFIGui is a program to analyze the time-frequency information in radio astronomical observations.\n"
 					<< "It is written by André Offringa (offringa@gmail.com) and published under the GPL 3.\n"
 					<< "This program is part of AOFlagger " << AOFLAGGER_VERSION_STR << " (" << AOFLAGGER_VERSION_DATE_STR << ")\n\n"
@@ -64,6 +65,8 @@ static void run(int argc, char *argv[])
 					<< "    Display this help message and exit.\n"
 					<< " -version\n"
 					<< "    Display AOFlagger version and exit.\n"
+					<< " -v\n"
+					<< "    Verbose logging.\n"
 					<< " -save-baseline <filename> <antenna1> <antenna2> <band> <sequence index>\n"
 					<< "    Save the selected baseline to the given filename. The parameter can be specified\n"
 					<< "    multiple times to save multiple baselines in one run. When this parameter is specified,\n"
@@ -74,7 +77,7 @@ static void run(int argc, char *argv[])
 			}
 			else if(p == "version")
 			{
-				AOLogger::Info << "AOFlagger " << AOFLAGGER_VERSION_STR << " (" << AOFLAGGER_VERSION_DATE_STR << ")\n";
+				Logger::Info << "AOFlagger " << AOFLAGGER_VERSION_STR << " (" << AOFLAGGER_VERSION_DATE_STR << ")\n";
 				return;
 			}
 			else if(p == "save-baseline")
@@ -94,8 +97,12 @@ static void run(int argc, char *argv[])
 				++argi;
 				dataColumnName = argv[argi];
 			}
+			else if(p == "v")
+			{
+				Logger::SetVerbosity(Logger::VerboseVerbosity);
+			}
 			else {
-				AOLogger::Error << "Unknown parameter " << argv[argi] << " specified on command line.\n";
+				Logger::Error << "Unknown parameter " << argv[argi] << " specified on command line.\n";
 				return;
 			}
 		}
@@ -107,10 +114,15 @@ static void run(int argc, char *argv[])
 	
 	// We have to 'lie' about argc to create(..), because of a bug in older gtkmms.
 	int altArgc = 1;
-	Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(altArgc, argv, "", Gio::APPLICATION_HANDLES_OPEN);
-	RFIGuiWindow window;
+	RFIGuiController controller;
+	Glib::RefPtr<Gtk::Application> app;
+	std::unique_ptr<RFIGuiWindow> window;
 	if(interactive)
-		window.present();
+	{
+		app = Gtk::Application::create(altArgc, argv, "", Gio::APPLICATION_HANDLES_OPEN);
+		window.reset(new RFIGuiWindow(&controller));
+		window->present();
+	}
 	
 	try {
 		
@@ -119,32 +131,34 @@ static void run(int argc, char *argv[])
 			if(filenames.size() > 1)
 				throw std::runtime_error("Error: multiple input paths specified; RFIGui can only handle one path.\n");
 			if(interactive)
-				window.OpenPath(filenames[0]);
+				window->OpenPath(filenames[0]);
 			else
-				window.Controller().Open(filenames[0], DirectReadMode, true, dataColumnName, false, 4, false, true);
+				controller.Open(filenames[0], DirectReadMode, true, dataColumnName, false, 4, true, false);
 		}
 		
 		if(!savedBaselines.empty())
 		{
-			rfiStrategy::MSImageSet* imageSet =
-				dynamic_cast<rfiStrategy::MSImageSet*>(&window.GetImageSet());
-			if(imageSet == 0)
+			rfiStrategy::IndexableSet* imageSet =
+				dynamic_cast<rfiStrategy::IndexableSet*>(&controller.GetImageSet());
+			if(imageSet == nullptr)
 				throw std::runtime_error("Option -save-baseline can only be used for measurement sets.\n");
-			window.GetTimeFrequencyWidget().SetShowXAxisDescription(true);
-			window.GetTimeFrequencyWidget().SetShowYAxisDescription(true);
-			window.GetTimeFrequencyWidget().SetShowZAxisDescription(true);
-			for(std::set<SavedBaseline>::const_iterator i=savedBaselines.begin(); i!=savedBaselines.end(); ++i)
+			HeatMapPlot& plot = controller.TFController().Plot();
+			plot.SetShowXAxisDescription(true);
+			plot.SetShowYAxisDescription(true);
+			plot.SetShowZAxisDescription(true);
+			for(const SavedBaseline& b : savedBaselines)
 			{
-				window.SetImageSetIndex(imageSet->Index(i->a1Index, i->a2Index, i->bandIndex, i->sequenceIndex));
-				window.GetTimeFrequencyWidget().SaveByExtension(i->filename, 800, 480);
+				controller.SetImageSetIndex(std::unique_ptr<rfiStrategy::ImageSetIndex>(
+					imageSet->Index(b.a1Index, b.a2Index, b.bandIndex, b.sequenceIndex)));
+				plot.SaveByExtension(b.filename, 800, 480);
 			}
 		}
 		
 		if(interactive)
-			app->run(window);
+			app->run(*window);
 	} catch(const std::exception& e)
 	{
-		AOLogger::Error <<
+		Logger::Error <<
 			"\n"
 			"==========\n"
 			"An unhandled exception occured while executing RFIGui. The error is:\n" <<
@@ -154,8 +168,6 @@ static void run(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	AOLogger::Init(basename(argv[0]), false, true);
-	
 	run(argc, argv);
 	
 	Glib::Error::register_cleanup();
