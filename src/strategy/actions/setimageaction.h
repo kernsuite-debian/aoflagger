@@ -17,7 +17,7 @@ namespace rfiStrategy {
 
 			SetImageAction() : _newImage(FromOriginal), _add(false) { }
 
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				if(_add)
 				{
@@ -53,7 +53,7 @@ namespace rfiStrategy {
 					}
 				}
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener)
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override
 			{
 				if(_add)
 					PerformAdd(artifacts, listener);
@@ -70,7 +70,7 @@ namespace rfiStrategy {
 			{
 				_add = add;
 			}
-			virtual ActionType Type() const { return SetImageActionType; }
+			virtual ActionType Type() const final override { return SetImageActionType; }
 		private:
 			void PerformSet(class ArtifactSet &artifacts, class ProgressListener &)
 			{
@@ -110,11 +110,11 @@ namespace rfiStrategy {
 						const TimeFrequencyData
 							revisedData = artifacts.RevisedData(),
 							originalData = artifacts.OriginalData();
-						if(contaminatedData.PolarisationCount() != 1)
+						if(contaminatedData.PolarizationCount() != 1)
 							throw BadUsageException("Can not replace flagged values for multiple polarizations: use a For Each Polarisation action");
-						if(revisedData.PolarisationCount() != 1 || originalData.PolarisationCount() != 1)
+						if(revisedData.PolarizationCount() != 1 || originalData.PolarizationCount() != 1)
 							throw BadUsageException("Revised or original data has multiple polarisations");
-						if(contaminatedData.PhaseRepresentation() != revisedData.PhaseRepresentation() || contaminatedData.PhaseRepresentation() != originalData.PhaseRepresentation())
+						if(contaminatedData.ComplexRepresentation() != revisedData.ComplexRepresentation() || contaminatedData.ComplexRepresentation() != originalData.ComplexRepresentation())
 							throw BadUsageException("Contaminated and Revised data do not have equal phase representations");
 						Mask2DCPtr mask = contaminatedData.GetSingleMask();
 						unsigned imageCount = contaminatedData.ImageCount();
@@ -123,7 +123,7 @@ namespace rfiStrategy {
 							Image2DCPtr
 								revisedImage = revisedData.GetImage(i),
 								originalImage = originalData.GetImage(i);
-							Image2DPtr image = Image2D::CreateCopy(contaminatedData.GetImage(i));
+							Image2DPtr image(new Image2D(*contaminatedData.GetImage(i)));
 							for(size_t y=0;y<image->Height();++y)
 							{
 								for(size_t x=0;x<image->Width();++x)
@@ -145,7 +145,7 @@ namespace rfiStrategy {
 						unsigned imageCount = contaminatedData.ImageCount();
 						for(unsigned i=0;i<imageCount;++i)
 						{
-							Image2DPtr image = Image2D::CreateCopy(contaminatedData.GetImage(i));
+							Image2DPtr image(new Image2D(*contaminatedData.GetImage(i)));
 							for(size_t y=0;y<image->Height();++y)
 							{
 								for(size_t x=0;x<image->Width();++x)
@@ -165,8 +165,8 @@ namespace rfiStrategy {
 						unsigned imageCount = contaminatedData.ImageCount();
 						for(unsigned i=0;i<imageCount;++i)
 						{
-							Image2DPtr image = Image2D::CreateCopy(contaminatedData.GetImage(i));
-							InterpolateNansAlgorithms::InterpolateFlags(image, mask);
+							Image2DPtr image(Image2D::MakePtr(*contaminatedData.GetImage(i)));
+							InterpolateNansAlgorithm::InterpolateFlags(*image, *mask);
 							contaminatedData.SetImage(i, image);
 						}
 						break;
@@ -175,14 +175,6 @@ namespace rfiStrategy {
 			}
 			void Set(TimeFrequencyData &dest, const TimeFrequencyData &source)
 			{
-				/*TimeFrequencyData *phaseData =
-					source.CreateTFData(dest.PhaseRepresentation());
-				TimeFrequencyData *phaseAndPolData =
-					phaseData->CreateTFData(dest.Polarisation());
-				delete phaseData;
-				phaseAndPolData->SetMask(dest);
-				dest = *phaseAndPolData;
-				delete phaseAndPolData;*/
 				if(dest.ImageCount() != source.ImageCount())
 				{
 					std::ostringstream s;
@@ -211,10 +203,9 @@ namespace rfiStrategy {
 						summedData->SetMask(artifacts.RevisedData());
 						artifacts.SetRevisedData(*summedData);
 						delete summedData;*/
-						TimeFrequencyData *summedData =
-							TimeFrequencyData::CreateTFDataFromSum(artifacts.OriginalData(), artifacts.RevisedData());
-						artifacts.SetRevisedData(*summedData);
-						delete summedData;
+						TimeFrequencyData summedData =
+							TimeFrequencyData::MakeFromSum(artifacts.OriginalData(), artifacts.RevisedData());
+						artifacts.SetRevisedData(summedData);
 					}
 					break;
 					case Zero:

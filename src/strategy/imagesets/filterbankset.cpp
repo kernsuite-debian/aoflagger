@@ -66,7 +66,7 @@ FilterBankSet::FilterBankSet(const std::string &location) :
 		size_t dataSize = endPos - _headerEnd;
 		_sampleCount = (dataSize * 8) / _channelCount / _bitCount;
 	}
-	AOLogger::Debug <<
+	Logger::Debug <<
 		"tsamp=" << _timeOfSample << ", tstart=" << _timeStart << ", fch1=" << _fch1 << ", foff=" << _foff << '\n' <<
 		"nChans=" << _channelCount << ", nIFs=" << _ifCount << ", nBits=" << _bitCount << ", nSamples=" << _sampleCount
 		<< "\nmachine_ID=" << _machineId << ", telescope_ID=" << _telescopeId << '\n';
@@ -78,7 +78,7 @@ FilterBankSet::FilterBankSet(const std::string &location) :
 	_intervalCount = ceil(sizeOfImage / (memSize / 16.0));
 	if(_intervalCount < 1) _intervalCount = 1;
 	if(_intervalCount*8 > _sampleCount) _intervalCount = _sampleCount/8;
-	AOLogger::Debug << round(sizeOfImage*1e-8)*0.1 << " GB/image required of total of " << round(memSize*1e-8)*0.1 << " GB of mem, splitting in " << _intervalCount << " intervals\n";
+	Logger::Debug << round(sizeOfImage*1e-8)*0.1 << " GB/image required of total of " << round(memSize*1e-8)*0.1 << " GB of mem, splitting in " << _intervalCount << " intervals\n";
 }
 
 void FilterBankSet::AddReadRequest(const ImageSetIndex& index)
@@ -86,12 +86,12 @@ void FilterBankSet::AddReadRequest(const ImageSetIndex& index)
 	_requests.push_back(new BaselineData(index));
 }
 
-BaselineData* FilterBankSet::GetNextRequested()
+std::unique_ptr<BaselineData> FilterBankSet::GetNextRequested()
 {
 	if(_bitCount != 32)
 		throw std::runtime_error("Only support for 32-bit filterbank sets has been added as of yet");
 	
-	BaselineData* baseline = _requests.front();
+	std::unique_ptr<BaselineData> baseline(std::move(_requests.front()));
 	_requests.pop_front();
 	const size_t intervalIndex = reinterpret_cast<const FilterBankSetIndex&>(baseline->Index())._intervalIndex;
 	

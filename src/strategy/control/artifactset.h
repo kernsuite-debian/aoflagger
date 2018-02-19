@@ -1,6 +1,8 @@
 #ifndef RFI_RFISTRATEGY_H
 #define RFI_RFISTRATEGY_H 
 
+#include <memory>
+#include <mutex>
 #include <vector>
 
 #include "../../structures/types.h"
@@ -19,64 +21,24 @@ namespace rfiStrategy {
 	class	ArtifactSet
 	{
 		public:
-			ArtifactSet(boost::mutex *ioMutex) : _metaData(), _sensitivity(1.0L), _projectedDirectionRad(0.0L), _imageSet(0),
-			_imageSetIndex(0), _imager(0),
+			explicit ArtifactSet(std::mutex *ioMutex) :
+			_metaData(),
+			_sensitivity(1.0L),
+			_projectedDirectionRad(0.0L),
+			_data(new Data()),
+			_imageSet(),
+			_imageSetIndex(),
 			_ioMutex(ioMutex),
-			_antennaFlagCountPlot(0), _frequencyFlagCountPlot(0),
-			_frequencyPowerPlot(0), _timeFlagCountPlot(0), _iterationsPlot(0),
-			_polarizationStatistics(0), _baselineSelectionInfo(0), _observatorium(0),
-			_model(0),
-			_horizontalProfile(), _verticalProfile()
-			{
-			}
+			_horizontalProfile(),
+			_verticalProfile()
+			{ }
 
-			ArtifactSet(const ArtifactSet &source)
-				: _originalData(source._originalData), _contaminatedData(source._contaminatedData),
-				_revisedData(source._revisedData), _metaData(source._metaData), _sensitivity(source._sensitivity), _projectedDirectionRad(source._projectedDirectionRad),
-				_imageSet(source._imageSet), _imageSetIndex(source._imageSetIndex),
-				_imager(source._imager), _ioMutex(source._ioMutex),
-				_antennaFlagCountPlot(source._antennaFlagCountPlot), _frequencyFlagCountPlot(source._frequencyFlagCountPlot),
-				_frequencyPowerPlot(source._frequencyPowerPlot),
-				_timeFlagCountPlot(source._timeFlagCountPlot),
-				_iterationsPlot(source._iterationsPlot),
-				_polarizationStatistics(source._polarizationStatistics),
-				_baselineSelectionInfo(source._baselineSelectionInfo),
-				_observatorium(source._observatorium),
-				_model(source._model),
-				_horizontalProfile(source._horizontalProfile),
-				_verticalProfile(source._verticalProfile)
-			{
-			}
+			ArtifactSet(const ArtifactSet& source) = default;
+			ArtifactSet(ArtifactSet&& source) = default;
+			~ArtifactSet();
 
-			~ArtifactSet()
-			{
-			}
-
-			ArtifactSet &operator=(const ArtifactSet &source)
-			{
-				_originalData = source._originalData;
-				_contaminatedData = source._contaminatedData;
-				_revisedData = source._revisedData;
-				_metaData = source._metaData;
-				_sensitivity = source._sensitivity;
-				_projectedDirectionRad = source._projectedDirectionRad;
-				_imageSet = source._imageSet;
-				_imageSetIndex = source._imageSetIndex;
-				_imager = source._imager;
-				_ioMutex = source._ioMutex;
-				_antennaFlagCountPlot = source._antennaFlagCountPlot;
-				_frequencyFlagCountPlot = source._frequencyFlagCountPlot;
-				_frequencyPowerPlot = source._frequencyPowerPlot;
-				_timeFlagCountPlot = source._timeFlagCountPlot;
-				_iterationsPlot = source._iterationsPlot;
-				_polarizationStatistics = source._polarizationStatistics;
-				_baselineSelectionInfo = source._baselineSelectionInfo;
-				_observatorium = source._observatorium;
-				_model = source._model;
-				_horizontalProfile = source._horizontalProfile;
-				_verticalProfile = source._verticalProfile;
-				return *this;
-			}
+			ArtifactSet &operator=(const ArtifactSet& source) = default;
+			ArtifactSet &operator=(ArtifactSet&& source) = default;
 
 			void SetOriginalData(const TimeFrequencyData &data)
 			{
@@ -108,21 +70,21 @@ namespace rfiStrategy {
 			const TimeFrequencyData &ContaminatedData() const { return _contaminatedData; }
 			TimeFrequencyData &ContaminatedData() { return _contaminatedData; }
 
-			class ImageSet *ImageSet() const { return _imageSet; }
-			void SetImageSet(class ImageSet *imageSet) { _imageSet = imageSet; }
-			void SetNoImageSet() { _imageSet = 0; _imageSetIndex = 0; }
+			class ImageSet& ImageSet() const { return *_imageSet; }
+			void SetImageSet(std::unique_ptr<class ImageSet> imageSet);
+			void SetNoImageSet();
 			
-			class ImageSetIndex *ImageSetIndex() const { return _imageSetIndex; }
-			void SetImageSetIndex(class ImageSetIndex *imageSetIndex) { _imageSetIndex = imageSetIndex; }
+			class ImageSetIndex& ImageSetIndex() const { return *_imageSetIndex; }
+			void SetImageSetIndex(std::unique_ptr<class ImageSetIndex> imageSetIndex);
 
-			class UVImager *Imager() const { return _imager; }
-			void SetImager(class UVImager *imager) { _imager = imager; }
+			class UVImager& Imager() const { return *_imager; }
+			void SetImager(class UVImager* imager);
 			
-			bool HasImageSet() const { return _imageSet != 0; }
-			bool HasImageSetIndex() const { return _imageSetIndex != 0; }
-			bool HasImager() const { return _imager != 0; }
-
-			bool HasMetaData() const { return _metaData != 0; }
+			bool HasImageSet() const { return _imageSet != nullptr; }
+			bool HasImageSetIndex() const { return _imageSetIndex != nullptr; }
+			bool HasImager() const { return _imager != nullptr; }
+			bool HasMetaData() const { return _metaData != nullptr; }
+			
 			TimeFrequencyMetaDataCPtr MetaData()
 			{
 				return _metaData;
@@ -132,82 +94,57 @@ namespace rfiStrategy {
 				_metaData = metaData;
 			}
 
-			boost::mutex &IOMutex()
+			std::mutex &IOMutex()
 			{
 				return *_ioMutex;
 			}
 
-			class AntennaFlagCountPlot *AntennaFlagCountPlot()
+			bool HasAntennaFlagCountPlot() const { return _data->_antennaFlagCountPlot!=nullptr; }
+			class AntennaFlagCountPlot& AntennaFlagCountPlot()
 			{
-				return _antennaFlagCountPlot;
+				return *_data->_antennaFlagCountPlot;
 			}
-			void SetAntennaFlagCountPlot(class AntennaFlagCountPlot *plot)
+			void SetAntennaFlagCountPlot(std::unique_ptr<class AntennaFlagCountPlot> plot);
+			class FrequencyFlagCountPlot& FrequencyFlagCountPlot()
 			{
-				_antennaFlagCountPlot = plot;
+				return *_data->_frequencyFlagCountPlot;
 			}
-			class FrequencyFlagCountPlot *FrequencyFlagCountPlot()
+			void SetFrequencyFlagCountPlot(std::unique_ptr<class FrequencyFlagCountPlot> plot);
+			class FrequencyPowerPlot& FrequencyPowerPlot()
 			{
-				return _frequencyFlagCountPlot;
+				return *_data->_frequencyPowerPlot;
 			}
-			void SetFrequencyFlagCountPlot(class FrequencyFlagCountPlot *plot)
+			void SetFrequencyPowerPlot(std::unique_ptr<class FrequencyPowerPlot> plot);
+			class TimeFlagCountPlot& TimeFlagCountPlot()
 			{
-				_frequencyFlagCountPlot = plot;
+				return *_data->_timeFlagCountPlot;
 			}
-			class FrequencyPowerPlot *FrequencyPowerPlot()
+			void SetTimeFlagCountPlot(std::unique_ptr<class TimeFlagCountPlot> plot);
+			class PolarizationStatistics& PolarizationStatistics()
 			{
-				return _frequencyPowerPlot;
+				return *_data->_polarizationStatistics;
 			}
-			void SetFrequencyPowerPlot(class FrequencyPowerPlot *plot)
+			void SetPolarizationStatistics(std::unique_ptr<class PolarizationStatistics> statistics);
+			class BaselineSelector& BaselineSelectionInfo()
 			{
-				_frequencyPowerPlot = plot;
+				return *_data->_baselineSelectionInfo;
 			}
-			class TimeFlagCountPlot *TimeFlagCountPlot()
+			bool HasIterationsPlot() const { return _data->_iterationsPlot!=nullptr; }
+			void SetIterationsPlot(std::unique_ptr<class IterationsPlot> iterationsPlot);
+			class IterationsPlot& IterationsPlot()
 			{
-				return _timeFlagCountPlot;
+				return *_data->_iterationsPlot;
 			}
-			void SetTimeFlagCountPlot(class TimeFlagCountPlot *plot)
+			void SetBaselineSelectionInfo(std::unique_ptr<class BaselineSelector> baselineSelectionInfo);
+			void SetObservatorium(std::unique_ptr<class Observatorium> observatorium);
+			class Observatorium& Observatorium() const
 			{
-				_timeFlagCountPlot = plot;
+				return *_data->_observatorium;
 			}
-			class PolarizationStatistics *PolarizationStatistics()
+			void SetModel(std::unique_ptr<class Model> model);
+			class Model& Model() const
 			{
-				return _polarizationStatistics;
-			}
-			void SetPolarizationStatistics(class PolarizationStatistics *statistics)
-			{
-				_polarizationStatistics = statistics;
-			}
-			class BaselineSelector *BaselineSelectionInfo()
-			{
-				return _baselineSelectionInfo;
-			}
-			void SetIterationsPlot(class IterationsPlot *iterationsPlot)
-			{
-				_iterationsPlot = iterationsPlot;
-			}
-			class IterationsPlot *IterationsPlot()
-			{
-				return _iterationsPlot;
-			}
-			void SetBaselineSelectionInfo(class BaselineSelector *baselineSelectionInfo)
-			{
-				_baselineSelectionInfo = baselineSelectionInfo;
-			}
-			void SetObservatorium(class Observatorium *observatorium)
-			{
-				_observatorium = observatorium;
-			}
-			class Observatorium *Observatorium() const
-			{
-				return _observatorium;
-			}
-			void SetModel(class Model *model)
-			{
-				_model = model;
-			}
-			class Model *Model() const
-			{
-				return _model;
+				return *_data->_model;
 			}
 			void SetProjectedDirectionRad(numl_t projectedDirectionRad)
 			{
@@ -222,6 +159,7 @@ namespace rfiStrategy {
 			
 			const std::vector<num_t> &VerticalProfile() const { return _verticalProfile; }
 			std::vector<num_t> &VerticalProfile() { return _verticalProfile; }
+			
 		private:
 			TimeFrequencyData _originalData;
 			TimeFrequencyData _contaminatedData;
@@ -229,22 +167,27 @@ namespace rfiStrategy {
 			TimeFrequencyMetaDataCPtr _metaData;
 			numl_t _sensitivity;
 			numl_t _projectedDirectionRad;
-
-			class ImageSet *_imageSet;
-			class ImageSetIndex *_imageSetIndex;
-			class UVImager *_imager;
-
-			boost::mutex *_ioMutex;
-			class AntennaFlagCountPlot *_antennaFlagCountPlot;
-			class FrequencyFlagCountPlot *_frequencyFlagCountPlot;
-			class FrequencyPowerPlot *_frequencyPowerPlot;
-			class TimeFlagCountPlot *_timeFlagCountPlot;
-			class IterationsPlot *_iterationsPlot;
+			class UVImager* _imager;
 			
-			class PolarizationStatistics *_polarizationStatistics;
-			class BaselineSelector *_baselineSelectionInfo;
-			class Observatorium *_observatorium;
-			class Model *_model;
+			struct Data {
+				Data();
+				~Data();
+				std::unique_ptr<class AntennaFlagCountPlot> _antennaFlagCountPlot;
+				std::unique_ptr<class FrequencyFlagCountPlot> _frequencyFlagCountPlot;
+				std::unique_ptr<class FrequencyPowerPlot> _frequencyPowerPlot;
+				std::unique_ptr<class TimeFlagCountPlot> _timeFlagCountPlot;
+				std::unique_ptr<class IterationsPlot> _iterationsPlot;
+				std::unique_ptr<class PolarizationStatistics> _polarizationStatistics;
+				std::unique_ptr<class BaselineSelector> _baselineSelectionInfo;
+				std::unique_ptr<class Observatorium> _observatorium;
+				std::unique_ptr<class Model> _model;
+			};
+			
+			std::shared_ptr<Data> _data;
+			std::shared_ptr<class ImageSet> _imageSet;
+			std::shared_ptr<class ImageSetIndex> _imageSetIndex;
+			std::mutex *_ioMutex;
+			
 			std::vector<num_t> _horizontalProfile, _verticalProfile;
 	};
 }

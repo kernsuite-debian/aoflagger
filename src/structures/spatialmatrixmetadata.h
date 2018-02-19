@@ -6,7 +6,7 @@
 class SpatialMatrixMetaData
 {
 	public:
-		SpatialMatrixMetaData(size_t antennaCount)
+		explicit SpatialMatrixMetaData(size_t antennaCount)
 			: _antennaCount(antennaCount), _antennae(new AntennaInfo[antennaCount]),
 				_uvw(new class UVW*[antennaCount]), _frequency(0.0), _channelIndex(0), _timeIndex(0)
 		{
@@ -36,7 +36,7 @@ class SpatialMatrixMetaData
 			delete[] _uvw;
 			delete[] _antennae;
 		}
-		void operator=(const SpatialMatrixMetaData &source)
+		SpatialMatrixMetaData& operator=(const SpatialMatrixMetaData &source)
 		{
 			_antennaCount = source._antennaCount;
 			_antennae = new AntennaInfo[_antennaCount];
@@ -52,6 +52,7 @@ class SpatialMatrixMetaData
 				for(size_t j=0;j<_antennaCount;++j)
 					_uvw[i][j] = source._uvw[i][j];
 			}
+			return *this;
 		}
 		void SetAntenna(unsigned index, const AntennaInfo &antenna)
 		{

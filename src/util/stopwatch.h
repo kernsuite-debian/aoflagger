@@ -8,7 +8,7 @@
 class Stopwatch{
 	public:
 		Stopwatch();
-		Stopwatch(bool start);
+		explicit Stopwatch(bool start);
 		~Stopwatch();
 		void Start();
 		void Pause();

@@ -3,13 +3,13 @@
 
 #include <fstream>
 
-#include <AOFlagger/test/testingtools/asserter.h>
-#include <AOFlagger/test/testingtools/unittest.h>
+#include "../testingtools/asserter.h"
+#include "../testingtools/unittest.h"
 
-#include <AOFlagger/strategy/algorithms/siroperator.h>
-#include <AOFlagger/strategy/algorithms/statisticalflagger.h>
+#include "../../strategy/algorithms/siroperator.h"
+#include "../../strategy/algorithms/statisticalflagger.h"
 
-#include <AOFlagger/util/rng.h>
+#include "../../util/rng.h"
 
 class ScaleInvariantDilationExperiment : public UnitTest {
 	public:

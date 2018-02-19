@@ -18,12 +18,12 @@ namespace rfiStrategy {
 			ForEachSimulatedBaselineAction() : ActionBlock()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "For each sim. baseline";
 			}
-			virtual ActionType Type() const { return ForEachSimulatedBaselineActionType; }
-			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener)
+			virtual ActionType Type() const final override { return ForEachSimulatedBaselineActionType; }
+			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener) final override
 			{
 				/*
 				double dec = 0.5*M_PI + 0.12800;

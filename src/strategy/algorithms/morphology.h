@@ -12,8 +12,8 @@ class Morphology {
 		Morphology() : _hLineEnlarging(1), _vLineEnlarging(1), _hDensityEnlargeRatio(0.5), _vDensityEnlargeRatio(0.5) { }
 		~Morphology() { }
 		
-		void SegmentByMaxLength(Mask2DCPtr mask, SegmentedImagePtr output);
-		void SegmentByLengthRatio(Mask2DCPtr mask, SegmentedImagePtr output);
+		void SegmentByMaxLength(const Mask2D* mask, SegmentedImagePtr output);
+		void SegmentByLengthRatio(const Mask2D* mask, SegmentedImagePtr output);
 		void Cluster(SegmentedImagePtr segmentedImage);
 		void RemoveSmallSegments(SegmentedImagePtr segmentedImage, size_t thresholdLevel);
 		void Classify(SegmentedImagePtr segmentedImage);
@@ -65,12 +65,12 @@ class Morphology {
 			}
 		};
 		
-		void calculateOpenings(Mask2DCPtr mask, int **values);
-		void calculateOpenings(Mask2DCPtr mask, Mask2DPtr *values, int **hCounts, int **vCounts);
-		void calculateVerticalCounts(Mask2DCPtr mask, int **values);
-		void calculateHorizontalCounts(Mask2DCPtr mask, int **values);
-		void floodFill(Mask2DCPtr mask, SegmentedImagePtr output, const int *const *lengthWidthValues, size_t x, size_t y, size_t value);
-		void floodFill(Mask2DCPtr mask, SegmentedImagePtr output, Mask2DPtr *matrices, size_t x, size_t y, size_t z, size_t value, int **hCounts, int **vCounts);
+		void calculateOpenings(const Mask2D* mask, int **values);
+		void calculateOpenings(const Mask2D* mask, Mask2DPtr *values, int **hCounts, int **vCounts);
+		void calculateVerticalCounts(const Mask2D* mask, int **values);
+		void calculateHorizontalCounts(const Mask2D* mask, int **values);
+		void floodFill(const Mask2D* mask, SegmentedImagePtr output, const int *const *lengthWidthValues, size_t x, size_t y, size_t value);
+		void floodFill(const Mask2D* mask, SegmentedImagePtr output, Mask2DPtr *matrices, size_t x, size_t y, size_t z, size_t value, int **hCounts, int **vCounts);
 		std::map<size_t,SegmentInfo> createSegmentMap(SegmentedImageCPtr segmentedImage) const;
 		
 		size_t _hLineEnlarging;

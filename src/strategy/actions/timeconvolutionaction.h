@@ -12,11 +12,9 @@
 
 #include "../../imaging/uvimager.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/ffttools.h"
 #include "../../util/progresslistener.h"
-
-#include <boost/concept_check.hpp>
 
 namespace rfiStrategy {
 
@@ -28,7 +26,7 @@ namespace rfiStrategy {
 			TimeConvolutionAction() : Action(), _operation(IterativeExtrapolatedSincOperation), _sincSize(32.0), _directionRad(M_PI*(-86.7/180.0)), _etaParameter(0.2), _autoAngle(true), _isSincScaleInSamples(false), _alwaysRemove(false), _useHammingWindow(false), _iterations(1), _channelAveragingSize(4)
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				switch(_operation)
 				{
@@ -58,8 +56,8 @@ namespace rfiStrategy {
 						break;
 				}
 			}
-			virtual ActionType Type() const { return TimeConvolutionActionType; }
-			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener)
+			virtual ActionType Type() const final override { return TimeConvolutionActionType; }
+			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener) final override
 			{
 				Image2DCPtr newImage;
 				TimeFrequencyData newRevisedData;
@@ -81,42 +79,37 @@ namespace rfiStrategy {
 						if(_autoAngle)
 							_directionRad = FindStrongestSourceAngle(artifacts, artifacts.ContaminatedData());
 						TimeFrequencyData data = artifacts.ContaminatedData();
-						TimeFrequencyData *realData = data.CreateTFData(TimeFrequencyData::RealPart);
-						TimeFrequencyData *imagData = data.CreateTFData(TimeFrequencyData::ImaginaryPart);
-						Image2DPtr real = Image2D::CreateCopy(realData->GetSingleImage());
-						Image2DPtr imaginary = Image2D::CreateCopy(imagData->GetSingleImage());
-						delete realData;
-						delete imagData;
+						TimeFrequencyData realData = data.Make(TimeFrequencyData::RealPart);
+						TimeFrequencyData imagData = data.Make(TimeFrequencyData::ImaginaryPart);
+						Image2DPtr real(new Image2D(*realData.GetSingleImage()));
+						Image2DPtr imaginary(new Image2D(*imagData.GetSingleImage()));
 						PerformExtrapolatedSincOperation(artifacts, real, imaginary, listener);
-						newRevisedData = TimeFrequencyData(data.Polarisations()[0], real, imaginary);
+						newRevisedData = TimeFrequencyData(data.Polarizations()[0], real, imaginary);
 					}
 					break;
 					case FFTSincOperation:
 						TimeFrequencyData data = artifacts.ContaminatedData();
-						TimeFrequencyData *realData = data.CreateTFData(TimeFrequencyData::RealPart);
-						TimeFrequencyData *imagData = data.CreateTFData(TimeFrequencyData::ImaginaryPart);
-						Image2DPtr real = Image2D::CreateCopy(realData->GetSingleImage());
-						Image2DPtr imaginary = Image2D::CreateCopy(imagData->GetSingleImage());
-						delete realData;
-						delete imagData;
+						TimeFrequencyData realData = data.Make(TimeFrequencyData::RealPart);
+						TimeFrequencyData imagData = data.Make(TimeFrequencyData::ImaginaryPart);
+						Image2DPtr real(new Image2D(*realData.GetSingleImage()));
+						Image2DPtr imaginary(new Image2D(*imagData.GetSingleImage()));
 						PerformFFTSincOperation(artifacts, real, imaginary);
-						newRevisedData = TimeFrequencyData(data.Polarisations()[0], real, imaginary);
+						newRevisedData = TimeFrequencyData(data.Polarizations()[0], real, imaginary);
 						break;
 				}
 				
 				if(_operation == SingleSincOperation || _operation == SincOperation || _operation == ProjectedSincOperation)
 				{
-					newRevisedData = TimeFrequencyData(artifacts.ContaminatedData().PhaseRepresentation(), artifacts.ContaminatedData().Polarisations()[0], newImage);
+					newRevisedData = TimeFrequencyData(artifacts.ContaminatedData().ComplexRepresentation(), artifacts.ContaminatedData().Polarizations()[0], newImage);
 				}
 
 				newRevisedData.SetMask(artifacts.RevisedData());
 
-				TimeFrequencyData *contaminatedData =
-					TimeFrequencyData::CreateTFDataFromDiff(artifacts.ContaminatedData(), newRevisedData);
-				contaminatedData->SetMask(artifacts.ContaminatedData());
+				TimeFrequencyData contaminatedData =
+					TimeFrequencyData::MakeFromDiff(artifacts.ContaminatedData(), newRevisedData);
+				contaminatedData.SetMask(artifacts.ContaminatedData());
 				artifacts.SetRevisedData(newRevisedData);
-				artifacts.SetContaminatedData(*contaminatedData);
-				delete contaminatedData;
+				artifacts.SetContaminatedData(contaminatedData);
 			}
 			
 			enum Operation Operation() const { return _operation; }
@@ -201,7 +194,7 @@ private:
 					const num_t sincScale = ActualSincScaleInSamples(artifacts, band.channels[y].frequencyHz);
 					if(y == image->Height()/2)
 					{
-						AOLogger::Debug << "Horizontal sinc scale: " << sincScale << " (filter scale: " << Angle::ToString(ActualSincScaleAsRaDecDist(artifacts, band.channels[y].frequencyHz)) << ")\n";
+						Logger::Debug << "Horizontal sinc scale: " << sincScale << " (filter scale: " << Angle::ToString(ActualSincScaleAsRaDecDist(artifacts, band.channels[y].frequencyHz)) << ")\n";
 					}
 					if(sincScale > 1.0)
 					{
@@ -243,7 +236,7 @@ private:
 					const num_t sincScale = ActualSincScaleInSamples(artifacts, band.channels[y].frequencyHz);
 					if(y == image->Height()/2)
 					{
-						AOLogger::Debug << "Horizontal sinc scale: " << sincScale << " (filter scale: " << Angle::ToString(ActualSincScaleAsRaDecDist(artifacts, band.channels[y].frequencyHz)) << ")\n";
+						Logger::Debug << "Horizontal sinc scale: " << sincScale << " (filter scale: " << Angle::ToString(ActualSincScaleAsRaDecDist(artifacts, band.channels[y].frequencyHz)) << ")\n";
 					}
 					if(sincScale > 1.0)
 					{
@@ -390,7 +383,7 @@ private:
 					iterData.channelMaxDist[y] = fabsnl(rowUPositions[vZeroPos]);
 					iterData.maxDist += iterData.channelMaxDist[y] / yL;
 
-					//AOLogger::Debug << "v is min at t=" << vZeroPos << " (v=+-" << vDist << ", maxDist=" << iterData.channelMaxDist[y] << ")\n";
+					//Logger::Debug << "v is min at t=" << vZeroPos << " (v=+-" << vDist << ", maxDist=" << iterData.channelMaxDist[y] << ")\n";
 				}
 			}
 
@@ -498,7 +491,7 @@ private:
 					width = iterData.width,
 					fourierWidth = iterData.fourierWidth;
 
-				AOLogger::Debug << "Inv FT, using 0-" << startXf << " and " << endXf << "-" << fourierWidth << '\n';
+				Logger::Debug << "Inv FT, using 0-" << startXf << " and " << endXf << "-" << fourierWidth << '\n';
 				
 				for(size_t t=0;t<width;++t)
 				{
@@ -506,13 +499,13 @@ private:
 						posU = iterData.rowUPositions[t],
 						posV = iterData.rowVPositions[t],
 						posFactor = posU * 2.0 * M_PInl;
-					numl_t
-						realVal = 0.0,
-						imagVal = 0.0;
-					bool residual = false;
 
 					if(posV != 0.0)
 					{
+						numl_t
+							realVal = 0.0,
+							imagVal = 0.0;
+						bool residual = false;
 						const numl_t weightSum = 1.0; //(endXf - startXf); // * fabsnl(posV / posU);
 						// compute f(x) = \\int F(xF) * exp( 2 * \\pi * i * x * xF )
 						size_t xF, loopEnd;
@@ -572,7 +565,7 @@ private:
 					iterData.fourierValuesReal[0]*iterData.fourierValuesReal[0] + iterData.fourierValuesImag[0]*iterData.fourierValuesImag[0];
 				if(withinBounds)
 				{
-					AOLogger::Debug << "Limiting search to xF<" << startXf << " and xF>" << endXf << '\n'; 
+					Logger::Debug << "Limiting search to xF<" << startXf << " and xF>" << endXf << '\n'; 
 					for(size_t xF=0;xF<startXf;++xF)
 					{
 						numl_t
@@ -700,13 +693,13 @@ private:
 									fReal = iterData.fourierValuesReal[xFRemoval],
 									fImag = iterData.fourierValuesImag[xFRemoval],
 									xFValue = sqrtnl(fReal*fReal + fImag*fImag);
-							AOLogger::Debug << "Removing frequency at xF=" << xFRemoval << ", amp=" << xFValue << '\n';
-							AOLogger::Debug << "Amplitude = sigma x " << (xFValue / GetAverageAmplitude(iterData)) << '\n';
+							Logger::Debug << "Removing frequency at xF=" << xFRemoval << ", amp=" << xFValue << '\n';
+							Logger::Debug << "Amplitude = sigma x " << (xFValue / GetAverageAmplitude(iterData)) << '\n';
 
 							if(xFRemoval < iterData.startXf || xFRemoval > iterData.endXf || _alwaysRemove)
 							{
 								if(!_alwaysRemove)
-									AOLogger::Debug << "Within bounds 0-" << iterData.startXf << '/' << iterData.endXf << "-.. removing from image.\n";
+									Logger::Debug << "Within bounds 0-" << iterData.startXf << '/' << iterData.endXf << "-.. removing from image.\n";
 								// Now, remove the fringe from each channel 
 								for(size_t yI = y; yI != y+_channelAveragingSize; ++yI)
 								{
@@ -791,13 +784,13 @@ private:
 				imager.PerformFFT();
 				Image2DPtr image(FFTTools::CreateAbsoluteImage(imager.FTReal(), imager.FTImaginary()));
 				const numl_t centralFreq = artifacts.MetaData()->Band().channels[data.ImageHeight()/2].frequencyHz;
-				AOLogger::Debug << "Central frequency: " << centralFreq << "\n";
-				AOLogger::Debug << "Baseline length: " << artifacts.MetaData()->Baseline().Distance() << '\n';
-				AOLogger::Debug << "Sinc scale in lambda: " << ActualSincScaleInLambda(artifacts, centralFreq) << '\n';
-				AOLogger::Debug << "Average distance: " << avgUVDistance(artifacts, centralFreq) << '\n';
+				Logger::Debug << "Central frequency: " << centralFreq << "\n";
+				Logger::Debug << "Baseline length: " << artifacts.MetaData()->Baseline().Distance() << '\n';
+				Logger::Debug << "Sinc scale in lambda: " << ActualSincScaleInLambda(artifacts, centralFreq) << '\n';
+				Logger::Debug << "Average distance: " << avgUVDistance(artifacts, centralFreq) << '\n';
 				const numl_t sincDist = ActualSincScaleAsRaDecDist(artifacts, centralFreq);
 				numl_t ignoreRadius = sincDist / imager.UVScaling();
-				AOLogger::Debug << "Ignoring radius=" << ignoreRadius << "\n";
+				Logger::Debug << "Ignoring radius=" << ignoreRadius << "\n";
 
 				long maxX = 0, maxY = 0;
 				num_t maxValue = image->Value(maxX, maxY);
@@ -822,7 +815,7 @@ private:
 				maxX = maxX*2-image->Width();
 				maxY = image->Height() - maxY*2;
 				numl_t angle = SinusFitter::Phase((numl_t) maxX, (numl_t) maxY);
- 				AOLogger::Debug << "Angle: " << angle/M_PInl*180.0 << ",maxX=" << maxX << ",maxY=" << maxY << '\n';
+ 				Logger::Debug << "Angle: " << angle/M_PInl*180.0 << ",maxX=" << maxX << ",maxY=" << maxY << '\n';
 				return angle;
 			}
 

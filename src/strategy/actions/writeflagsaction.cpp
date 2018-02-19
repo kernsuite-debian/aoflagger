@@ -1,18 +1,18 @@
 #include "writeflagsaction.h"
 
 #include <iostream>
+#include <thread>
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 #include "../control/artifactset.h"
 
 #include "../imagesets/imageset.h"
 
-#include <boost/thread.hpp>
 
 namespace rfiStrategy {
 
-	WriteFlagsAction::WriteFlagsAction() : _flusher(0), _isFinishing(false), _maxBufferItems(18), _minBufferItemsForWriting(12), _imageSet(0)
+	WriteFlagsAction::WriteFlagsAction() : _ioMutex(nullptr), _flusher(), _isFinishing(false), _maxBufferItems(18), _minBufferItemsForWriting(12), _imageSet()
 	{
 	}
 	
@@ -27,17 +27,17 @@ namespace rfiStrategy {
 		if(!artifacts.HasImageSet())
 			throw BadUsageException("No image set active: can not write flags");
 
-		boost::mutex::scoped_lock lock(_mutex);
-		if(_flusher == 0)
+		std::unique_lock<std::mutex> lock(_mutex);
+		if(_flusher == nullptr)
 		{
 			_ioMutex = &artifacts.IOMutex();
-			boost::mutex::scoped_lock iolock(*_ioMutex);
-			_imageSet = artifacts.ImageSet()->Copy();
+			std::unique_lock<std::mutex> iolock(*_ioMutex);
+			_imageSet = artifacts.ImageSet().Clone();
 			iolock.unlock();
 			_isFinishing = false;
 			FlushFunction flushFunction;
 			flushFunction._parent = this;
-			_flusher = new boost::thread(flushFunction);
+			_flusher.reset( new std::thread(flushFunction) );
 		}
 		lock.unlock();
 
@@ -47,13 +47,13 @@ namespace rfiStrategy {
 			Mask2DCPtr mask = artifacts.ContaminatedData().GetMask(i);
 			masks.push_back(mask);
 		}
-		BufferItem newItem(masks, *artifacts.ImageSetIndex());
+		BufferItem newItem(masks, artifacts.ImageSetIndex());
 		pushInBuffer(newItem);
 	}
 
 	void WriteFlagsAction::FlushFunction::operator()()
 	{
-		boost::mutex::scoped_lock lock(_parent->_mutex);
+		std::unique_lock<std::mutex> lock(_parent->_mutex);
 		do {
 			while(_parent->_buffer.size() < _parent->_minBufferItemsForWriting && !_parent->_isFinishing)
 				_parent->_bufferChange.wait(lock);
@@ -68,12 +68,12 @@ namespace rfiStrategy {
 			}
 			_parent->_bufferChange.notify_all();
 			if(bufferCopy.size() >= _parent->_minBufferItemsForWriting)
-				AOLogger::Debug << "Flag buffer has reached minimal writing size, flushing flags...\n";
+				Logger::Debug << "Flag buffer has reached minimal writing size, flushing flags...\n";
 			else
-				AOLogger::Debug << "Flushing flags...\n";
+				Logger::Debug << "Flushing flags...\n";
 			lock.unlock();
 
-			boost::mutex::scoped_lock ioLock(*_parent->_ioMutex);
+			std::unique_lock<std::mutex> ioLock(*_parent->_ioMutex);
 			while(!bufferCopy.empty())
 			{
 				BufferItem item = bufferCopy.top();
@@ -89,18 +89,17 @@ namespace rfiStrategy {
 
 	void WriteFlagsAction::Finish()
 	{
-		boost::mutex::scoped_lock lock(_mutex);
+		std::unique_lock<std::mutex> lock(_mutex);
 		_isFinishing = true;
 		_bufferChange.notify_all();
-		if(_flusher != 0)
+		if(_flusher != nullptr)
 		{
-			boost::thread *flusher = _flusher;
-			_flusher = 0;
+			std::unique_ptr<std::thread> flusher = std::move(_flusher);
 			lock.unlock();
-			AOLogger::Debug << "Finishing the flusher thread...\n";
+			Logger::Debug << "Finishing the flusher thread...\n";
 			flusher->join();
-			delete flusher;
-			delete _imageSet;
+			flusher.reset();
+			_imageSet.reset();
 		}
 	}
 }

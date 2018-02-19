@@ -11,14 +11,14 @@ namespace rfiStrategy {
 	{
 		public:
 			FringeStopAction() : _fringesToConsider(1.0L), _maxWindowSize(128), _fitChannelsIndividually(true), _onlyFringeStop(false), _newPhaseCentreRA(0.0), _newPhaseCentreDec(0.5 * M_PInl) { }
-			virtual ~FringeStopAction() { }
+			virtual ~FringeStopAction() final override { }
 			
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Fringe stop recovery";
 			}
 			
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener);
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override;
 
 			long double FringesToConsider() const { return _fringesToConsider; }
 			void SetFringesToConsider(long double fringes) { _fringesToConsider = fringes; }
@@ -36,7 +36,7 @@ namespace rfiStrategy {
 			void SetOnlyFringeStop(bool onlyFringeStop) throw() {
 				_onlyFringeStop = onlyFringeStop; }
 				
-			virtual ActionType Type() const { return FringeStopActionType; }
+			virtual ActionType Type() const final override { return FringeStopActionType; }
 			
 			long double NewPhaseCentreRA() const { return _newPhaseCentreRA; }
 			void SetNewPhaseCentreRA(long double newPhaseCentreRA) { _newPhaseCentreRA = newPhaseCentreRA; }

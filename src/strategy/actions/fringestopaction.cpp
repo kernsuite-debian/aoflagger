@@ -41,14 +41,12 @@ namespace rfiStrategy {
 		TimeFrequencyData newContaminatedData = fitter.Background();
 		newContaminatedData.SetMask(artifacts.ContaminatedData());
 
-		TimeFrequencyData *newRevisedData =
-			TimeFrequencyData::CreateTFDataFromDiff(artifacts.OriginalData(), newContaminatedData);
-		newRevisedData->SetMask(artifacts.RevisedData());
+		TimeFrequencyData newRevisedData =
+			TimeFrequencyData::MakeFromDiff(artifacts.OriginalData(), newContaminatedData);
+		newRevisedData.SetMask(artifacts.RevisedData());
 
-		artifacts.SetRevisedData(*newRevisedData);
+		artifacts.SetRevisedData(newRevisedData);
 		artifacts.SetContaminatedData(newContaminatedData);
-
-		delete newRevisedData;
 	}
 
 } // namespace rfiStrategy

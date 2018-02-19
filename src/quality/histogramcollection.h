@@ -17,7 +17,7 @@ class HistogramCollection : public Serializable
 	public:
 		typedef std::pair<unsigned, unsigned> AntennaPair;
 		
-		HistogramCollection() : _polarizationCount(0)
+		HistogramCollection() : _polarizationCount(0), _totalHistograms(nullptr), _rfiHistograms(nullptr)
 		{
 		}
 		
@@ -132,14 +132,14 @@ class HistogramCollection : public Serializable
 		
 		unsigned PolarizationCount() const { return _polarizationCount; }
 		
-		virtual void Serialize(std::ostream &stream) const
+		virtual void Serialize(std::ostream &stream) const final override
 		{
 			SerializeToUInt64(stream, _polarizationCount);
 			serializeMapArray(stream, _totalHistograms);
 			serializeMapArray(stream, _rfiHistograms);
 		}
 		
-		virtual void Unserialize(std::istream &stream)
+		virtual void Unserialize(std::istream &stream) final override
 		{
 			destruct();
 			_polarizationCount = UnserializeUInt64(stream);

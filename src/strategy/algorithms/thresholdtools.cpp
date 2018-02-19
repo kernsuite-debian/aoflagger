@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <deque>
 #include <limits>
 
@@ -7,7 +8,7 @@
 
 #include "thresholdtools.h"
 
-void ThresholdTools::MeanAndStdDev(const Image2DCPtr &image, const Mask2DCPtr &mask, num_t &mean, num_t &stddev)
+void ThresholdTools::MeanAndStdDev(const Image2D* image, const Mask2D* mask, num_t &mean, num_t &stddev)
 {
 	// Calculate mean
 	mean = 0.0;
@@ -37,7 +38,7 @@ void ThresholdTools::MeanAndStdDev(const Image2DCPtr &image, const Mask2DCPtr &m
 	stddev = sqrtn(stddev / (num_t) count);
 }
 
-void ThresholdTools::WinsorizedMeanAndStdDev(const Image2DCPtr &image, num_t &mean, num_t &stddev)
+void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, num_t &mean, num_t &stddev)
 {
 	size_t size = image->Width() * image->Height();
 	num_t *data = new num_t[size];
@@ -201,7 +202,7 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const std::vector<T> &input, T &mea
 template void ThresholdTools::WinsorizedMeanAndStdDev(const std::vector<num_t> &input, num_t &mean, num_t &stddev);
 template void ThresholdTools::WinsorizedMeanAndStdDev(const std::vector<double> &input, double &mean, double &stddev);
 
-void ThresholdTools::WinsorizedMeanAndStdDev(const Image2DCPtr &image, const Mask2DCPtr &mask, num_t &mean, num_t &stddev)
+void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* mask, num_t &mean, num_t &stddev)
 {
 	num_t *data = new num_t[image->Width() * image->Height()];
 	size_t unflaggedCount = 0;
@@ -256,7 +257,7 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2DCPtr &image, const Mas
 		stddev = 0.0;
 }
 
-num_t ThresholdTools::MinValue(const Image2DCPtr &image, const Mask2DCPtr &mask)
+num_t ThresholdTools::MinValue(const Image2D* image, const Mask2D* mask)
 {
 	num_t minValue = std::numeric_limits<num_t>::max();
 	for(size_t y=0;y<image->Height();++y) {
@@ -268,7 +269,7 @@ num_t ThresholdTools::MinValue(const Image2DCPtr &image, const Mask2DCPtr &mask)
 	return minValue;
 }
 
-num_t ThresholdTools::MaxValue(const Image2DCPtr &image, const Mask2DCPtr &mask)
+num_t ThresholdTools::MaxValue(const Image2D* image, const Mask2D* mask)
 {
 	num_t maxValue = boost::numeric::bounds<num_t>::lowest();
 	for(size_t y=0;y<image->Height();++y) {
@@ -280,7 +281,7 @@ num_t ThresholdTools::MaxValue(const Image2DCPtr &image, const Mask2DCPtr &mask)
 	return maxValue;
 }
 
-void ThresholdTools::SetFlaggedValuesToZero(const Image2DPtr &dest, const Mask2DCPtr &mask)
+void ThresholdTools::SetFlaggedValuesToZero(Image2D* dest, const Mask2D* mask)
 {
 	for(size_t y=0;y<dest->Height();++y) {
 		for(size_t x=0;x<dest->Width();++x) {
@@ -289,7 +290,7 @@ void ThresholdTools::SetFlaggedValuesToZero(const Image2DPtr &dest, const Mask2D
 	}
 }
 
-void ThresholdTools::CountMaskLengths(const Mask2DCPtr &mask, int *lengths, size_t lengthsSize)
+void ThresholdTools::CountMaskLengths(const Mask2D* mask, int *lengths, size_t lengthsSize)
 {
 	for(size_t i=0;i<lengthsSize;++i)
 		lengths[i] = 0;
@@ -387,7 +388,7 @@ void ThresholdTools::CountMaskLengths(const Mask2DCPtr &mask, int *lengths, size
 	delete[] horizontal;
 }
 
-num_t ThresholdTools::Mode(const Image2DCPtr &image, const Mask2DCPtr &mask)
+num_t ThresholdTools::Mode(const Image2D* image, const Mask2D* mask)
 {
 	num_t mode = 0.0;
 	size_t count = 0;
@@ -403,7 +404,7 @@ num_t ThresholdTools::Mode(const Image2DCPtr &image, const Mask2DCPtr &mask)
 	return sqrtn(mode / (2.0 * (num_t) count));
 }
 
-numl_t ThresholdTools::Sum(const Image2DCPtr &image, const Mask2DCPtr &mask)
+numl_t ThresholdTools::Sum(const Image2D* image, const Mask2D* mask)
 {
 	numl_t sum = 0.0;
 	for(size_t y = 0;y<image->Height();++y) {
@@ -415,7 +416,7 @@ numl_t ThresholdTools::Sum(const Image2DCPtr &image, const Mask2DCPtr &mask)
 	return sum;
 }
 
-numl_t ThresholdTools::RMS(const Image2DCPtr &image, const Mask2DCPtr &mask)
+numl_t ThresholdTools::RMS(const Image2D* image, const Mask2D* mask)
 {
 	numl_t mode = 0.0;
 	size_t count = 0;
@@ -431,7 +432,7 @@ numl_t ThresholdTools::RMS(const Image2DCPtr &image, const Mask2DCPtr &mask)
 	return sqrtnl(mode / (numl_t) count);
 }
 
-num_t ThresholdTools::WinsorizedMode(const Image2DCPtr &image, const Mask2DCPtr &mask)
+num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* mask)
 {
 	num_t *data = new num_t[image->Width() * image->Height()];
 	size_t unflaggedCount = 0;
@@ -470,7 +471,7 @@ num_t ThresholdTools::WinsorizedMode(const Image2DCPtr &image, const Mask2DCPtr 
 		return 0.0;
 }
 
-num_t ThresholdTools::WinsorizedMode(const Image2DCPtr &image)
+num_t ThresholdTools::WinsorizedMode(const Image2D* image)
 {
 	size_t size = image->Width() * image->Height();
 	num_t *data = new num_t[size];
@@ -500,7 +501,7 @@ num_t ThresholdTools::WinsorizedMode(const Image2DCPtr &image)
 		return 0.0;
 }
 
-void ThresholdTools::FilterConnectedSamples(Mask2DPtr mask, size_t minConnectedSampleArea, bool eightConnected)
+void ThresholdTools::FilterConnectedSamples(Mask2D* mask, size_t minConnectedSampleArea, bool eightConnected)
 {
 	for(size_t y=0;y<mask->Height();++y) {
 		for(size_t x=0;x<mask->Width();++x)
@@ -515,7 +516,7 @@ struct ConnectedAreaCoord
 	size_t x, y;
 };
 
-void ThresholdTools::FilterConnectedSample(Mask2DPtr mask, size_t x, size_t y, size_t minConnectedSampleArea, bool eightConnected)
+void ThresholdTools::FilterConnectedSample(Mask2D* mask, size_t x, size_t y, size_t minConnectedSampleArea, bool eightConnected)
 {
 	std::deque<ConnectedAreaCoord> tosearch, changed;
 	tosearch.push_back(ConnectedAreaCoord(x, y));
@@ -562,7 +563,7 @@ void ThresholdTools::FilterConnectedSample(Mask2DPtr mask, size_t x, size_t y, s
 	}
 }
 
-void ThresholdTools::UnrollPhase(Image2DPtr image)
+void ThresholdTools::UnrollPhase(Image2D* image)
 {
 	for(size_t y=0;y<image->Height();++y)
 	{
@@ -578,7 +579,7 @@ void ThresholdTools::UnrollPhase(Image2DPtr image)
 	}
 }
 
-Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor, const Image2DCPtr &input, const Mask2DCPtr &mask)
+Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor, const Image2D* input, const Mask2D* mask)
 {
 	size_t oldWidth = input->Width();
 	size_t newWidth = (oldWidth + factor - 1) / factor;

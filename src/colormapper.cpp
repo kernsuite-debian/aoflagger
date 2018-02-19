@@ -1,7 +1,3 @@
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <iostream>
 #include <cstdlib>
 #include <vector>
@@ -44,7 +40,7 @@ int main(int argc, char *argv[])
 	// parameters
 	bool useSpectrum = true, blackWhite = false, mapColours = false;
 	std::string colourMapName = "";
-	ColorMap *map = 0;
+	std::unique_ptr<ColorMap> map = 0;
 	bool colormap = false;
 	int removeNoiseImages = 0;
 	bool fft = false;
@@ -130,10 +126,11 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	Image2D *red = 0;
-	Image2D *green = 0;
-	Image2D *blue = 0;
-	Image2D *mono = 0;
+	Image2D
+		*red = nullptr,
+		*green = nullptr,
+		*blue = nullptr,
+		*mono = nullptr;
 
 	long double totalRed = 0.0, totalGreen = 0.0, totalBlue = 0.0;
 	unsigned addedCount = 0;
@@ -174,12 +171,11 @@ int main(int argc, char *argv[])
 					if(upper > images) upper = images;
 					cout << "Measuring noise level in images " << (i+1) << " - " << upper << "..." << endl;
 				}
-				Image2D *image = Image2D::CreateFromFits(fitsfile, i);
+				Image2D image(Image2D::MakeFromFits(fitsfile, i));
 				struct ImageInfo imageInfo;
-				imageInfo.variance = image->GetRMS();
+				imageInfo.variance = image.GetRMS();
 				imageInfo.index = i;
 				variances.push_back(imageInfo);
-				delete image;
 			}
 			sort(variances.begin(), variances.end());
 
@@ -223,52 +219,47 @@ int main(int argc, char *argv[])
 				else
 					wavelengthRatio = 0.5;
 				std::cout << "ratio=" << wavelengthRatio << '\n';
-				Image2D *image = Image2D::CreateFromFits(fitsfile, i);
+				Image2D image(Image2D::MakeFromFits(fitsfile, i));
 				if(subtract)
 				{
-					Image2D *imageB = Image2D::CreateFromFits(*subtractFits, i);
-					Image2D *AminB = Image2D::CreateFromDiff(*image, *imageB);
-					delete image;
-					image = AminB;
-					delete imageB;
+					Image2D imageB(Image2D::MakeFromFits(*subtractFits, i));
+					image = Image2D::MakeFromDiff(image, imageB);
 				}
 				if(window)
 				{
-					Image2D *empty = Image2D::CreateZeroImage(image->Width(), image->Height());
-					for(unsigned y=image->Height()-windowY-windowHeight;y<image->Height()-windowY;++y)
+					Image2D empty(Image2D::MakeZeroImage(image.Width(), image.Height()));
+					for(unsigned y=image.Height()-windowY-windowHeight;y<image.Height()-windowY;++y)
 					{
 						for(unsigned x=windowX;x<windowX+windowWidth;++x)
-							empty->SetValue(x, y, image->Value(x, y));
+							empty.SetValue(x, y, image.Value(x, y));
 					}
-					delete image;
 					image = empty;
 				}
 				if(cutWindow)
 				{
-					for(unsigned y=image->Height()-cutWindowY-cutWindowHeight;y<image->Height()-cutWindowY;++y)
+					for(unsigned y=image.Height()-cutWindowY-cutWindowHeight;y<image.Height()-cutWindowY;++y)
 					{
 						for(unsigned x=cutWindowX;x<cutWindowX+cutWindowWidth;++x)
-							image->SetValue(x, y, 0.0);
+							image.SetValue(x, y, 0.0);
 					}
 				}
 				if(fft) {
-					Image2D *fft = FFTTools::CreateFFTImage(*image, FFTTools::Absolute);
+					Image2D *fft = FFTTools::CreateFFTImage(image, FFTTools::Absolute);
 					Image2D *fullfft = FFTTools::CreateFullImageFromFFT(*fft);
-					delete image;
 					delete fft;
-					image = fullfft;
+					image = *fullfft;
 				}
 				long double max;
 				if(individualMaximization) {
-					max = image->GetMaximum();
+					max = image.GetMaximum();
 					if(max <= 0.0) max = 1.0;
 				} else {
 					max = 1.0;
 				}
 				if(displayMax)
-					cout << "max=" << image->GetMinimum() << ":" << image->GetMaximum() << endl; 
+					cout << "max=" << image.GetMinimum() << ":" << image.GetMaximum() << endl; 
 				if(rms)
-					ReportRMS(image);
+					ReportRMS(&image);
 				long double r=0.0,g=0.0,b=0.0;
 				if(blackWhite || mapColours) {
 					r = 1.0; b = 1.0; g = 1.0;
@@ -284,19 +275,19 @@ int main(int argc, char *argv[])
 				totalGreen += g;
 				totalBlue += b;
 				if(red == 0) {
-					red = Image2D::CreateZeroImage(image->Width(), image->Height());
-					green = Image2D::CreateZeroImage(image->Width(), image->Height());
-					blue = Image2D::CreateZeroImage(image->Width(), image->Height());
-					mono = Image2D::CreateZeroImage(image->Width(), image->Height());
+					red = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
+					green = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
+					blue = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
+					mono = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
 				}
-				size_t minY = image->Height(), minX = image->Width();
+				size_t minY = image.Height(), minX = image.Width();
 				if(red->Height() < minY) minY = red->Height();
 				if(red->Width() < minX) minX = red->Width();
 				for(unsigned y=0;y<minY;++y)
 				{
 					for(unsigned x=0;x<minX;++x)	
 					{
-						long double value = image->Value(x, y);
+						long double value = image.Value(x, y);
 						mono->AddValue(x, y, value);
 						if(mapColours) {
 							double mapVal = 2.0*value/max/scaleValue-1.0;
@@ -334,8 +325,7 @@ int main(int argc, char *argv[])
 						}
 					}
 				}
-				++addedCount; 
-				delete image;
+				++addedCount;
 			}
 		}
 		
@@ -448,7 +438,6 @@ long double HueToRGB(long double p,long double q,long double tc)
 
 void HLStoRGB(long double hue,long double lum,long double sat,long double &red,long double &green, long double &blue)
 {
-
 	if (sat == 0) {
 			red=green=blue=lum;
 		}

@@ -12,15 +12,15 @@ namespace rfiStrategy {
 		public:
 			SlidingWindowFitAction() { LoadDefaults(); }
 			virtual ~SlidingWindowFitAction() { }
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Sliding window fit";
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener);
-			virtual ActionType Type() const { return SlidingWindowFitActionType; }
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override;
+			virtual ActionType Type() const final override { return SlidingWindowFitActionType; }
 
-			const SlidingWindowFitParameters &Parameters() const throw() { return _parameters; }
-			SlidingWindowFitParameters &Parameters() throw() { return _parameters; }
+			const SlidingWindowFitParameters &Parameters() const { return _parameters; }
+			SlidingWindowFitParameters &Parameters() { return _parameters; }
 
 			void LoadDefaults();
 		private:

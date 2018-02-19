@@ -4,22 +4,26 @@
 #include <sstream>
 #include <iostream>
 
-Plot::Plot(const std::string &pdfFile)
-	: _pdfFile(pdfFile),
-		_xAxisText("x"),
-		_yAxisText("y"),
-		_zAxisText("z"),
-		_xRangeHasMin(false), _xRangeHasMax(false),
-		_yRangeHasMin(false), _yRangeHasMax(false),
-		_zRangeHasMin(false), _zRangeHasMax(false),
-		_cbRangeHasMin(false), _cbRangeHasMax(false),
-		_clipZ(false),
-		_logX(false), _logY(false), _logZ(false),
-		_hasBoxes(false),
-		_fontSize(24)
+Plot::Plot(const std::string &pdfFile) :
+	_curLineFd(-1),
+	_pdfFile(pdfFile),
+	_open(true),
+	_xAxisText("x"),
+	_yAxisText("y"),
+	_zAxisText("z"),
+	_xRangeHasMin(false), _xRangeHasMax(false),
+	_yRangeHasMin(false), _yRangeHasMax(false),
+	_zRangeHasMin(false), _zRangeHasMax(false),
+	_cbRangeHasMin(false), _cbRangeHasMax(false),
+	_xRangeMin(0.0), _xRangeMax(0.0),
+	_yRangeMin(0.0), _yRangeMax(0.0),
+	_zRangeMin(0.0), _zRangeMax(0.0),
+	_cbRangeMin(0.0), _cbRangeMax(0.0),
+	_clipZ(false),
+	_logX(false), _logY(false), _logZ(false),
+	_hasBoxes(false),
+	_fontSize(24)
 {
-	_open = true;
-	_curLineFd = -1;
 }
 
 

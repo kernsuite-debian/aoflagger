@@ -18,92 +18,50 @@
 class MSRowData : public Serializable
 {
 	public:
-		MSRowData()
-		: _polarizationCount(0), _channelCount(0), _realData(0), _imagData(0)
-		{
-		}
+		MSRowData() = default;
+    
+		MSRowData(unsigned polarizationCount, unsigned channelCount) :
+		_polarizationCount(polarizationCount),
+		_channelCount(channelCount),
+		_realData(polarizationCount * channelCount),
+		_imagData(polarizationCount * channelCount)
+		{ }
 		
-		MSRowData(unsigned polarizationCount, unsigned channelCount)
-		: _polarizationCount(polarizationCount), _channelCount(channelCount)
-		{
-			size_t size = polarizationCount * channelCount;
-			_realData = new num_t[size*2];
-			_imagData = &_realData[size];
-		}
-		
-		/**
-		 * Copy construct.
-		 */
-		MSRowData(const MSRowData &source) :
-			_polarizationCount(source._polarizationCount),
-			_channelCount(source._channelCount)
-		{
-			size_t size = _polarizationCount * _channelCount;
-			_realData = new num_t[size*2];
-			_imagData = &_realData[size];
-			memcpy(_realData, source._realData, size*2*sizeof(num_t));
-		}
-		
-		~MSRowData()
-		{
-			delete[] _realData;
-		}
-		
-		/**
-		 * Assignment.
-		 */
-		MSRowData &operator=(const MSRowData &source)
-		{
-			size_t size = source._polarizationCount * source._channelCount;
-			if(size != _polarizationCount * _channelCount)
-			{
-				delete[] _realData;
-				_realData = new num_t[size*2];
-				_imagData = &_realData[size];
-			}
-			_polarizationCount = source._polarizationCount;
-			_channelCount = source._channelCount;
-			memcpy(_realData, source._realData, size*2*sizeof(num_t));
-			return *this;
-		}
-		
-		virtual void Serialize(std::ostream &stream) const
+		virtual void Serialize(std::ostream &stream) const final override
 		{
 			SerializeToUInt32(stream, _polarizationCount);
 			SerializeToUInt32(stream, _channelCount);
-			size_t count = _polarizationCount * _channelCount * 2;
-			for(size_t i=0 ; i<count ; ++i)
-				SerializeToFloat(stream, _realData[i]);
+			for(num_t val : _realData)
+				SerializeToFloat(stream, val);
+			for(num_t val : _imagData)
+				SerializeToFloat(stream, val);
 		}
 		
-		virtual void Unserialize(std::istream &stream)
+		virtual void Unserialize(std::istream &stream) final override
 		{
-			const size_t oldSize = _polarizationCount * _channelCount;
 			_polarizationCount = UnserializeUInt32(stream);
 			_channelCount = UnserializeUInt32(stream);
 			const size_t size = _polarizationCount * _channelCount;
-			if(oldSize != size)
-			{
-					delete[] _realData;
-					_realData = new num_t[size*2];
-					_imagData = &_realData[size];
-			}
-			for(size_t i=0 ; i<size * 2; ++i)
+      _realData.resize(size);
+      _imagData.resize(size);
+			for(size_t i=0 ; i<size; ++i)
 				_realData[i] = UnserializeFloat(stream);
+			for(size_t i=0 ; i<size; ++i)
+				_imagData[i] = UnserializeFloat(stream);
 		}
 		unsigned PolarizationCount() const { return _polarizationCount; }
 		unsigned ChannelCount() const { return _channelCount; }
-		const num_t *RealPtr() const { return _realData; }
-		const num_t *ImagPtr() const { return _imagData; }
-		num_t *RealPtr() { return _realData; }
-		num_t *ImagPtr() { return _imagData; }
+		const num_t *RealPtr() const { return _realData.data(); }
+		const num_t *ImagPtr() const { return _imagData.data(); }
+		num_t *RealPtr() { return _realData.data(); }
+		num_t *ImagPtr() { return _imagData.data(); }
 		const num_t *RealPtr(size_t channel) const { return &_realData[_polarizationCount * channel]; }
 		const num_t *ImagPtr(size_t channel) const { return &_imagData[_polarizationCount * channel]; }
 		num_t *RealPtr(size_t channel) { return &_realData[_polarizationCount * channel]; }
 		num_t *ImagPtr(size_t channel) { return &_imagData[_polarizationCount * channel]; }
 	private:
 		unsigned _polarizationCount, _channelCount;
-		num_t *_realData, *_imagData;
+    std::vector<num_t> _realData, _imagData;
 };
 
 #endif

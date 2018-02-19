@@ -88,9 +88,9 @@ namespace rfiStrategy {
 			return GENERIC_TELESCOPE;
 	}
 	
-	Strategy *DefaultStrategy::CreateStrategy(enum TelescopeId telescopeId, unsigned flags, double frequency, double timeRes, double frequencyRes)
+	std::unique_ptr<Strategy> DefaultStrategy::CreateStrategy(enum TelescopeId telescopeId, unsigned flags, double frequency, double timeRes, double frequencyRes)
 	{
-		Strategy *strategy = new Strategy();
+		std::unique_ptr<Strategy> strategy(new Strategy());
 		LoadStrategy(*strategy, telescopeId, flags, frequency, timeRes, frequencyRes);
 		return strategy;
 	}
@@ -155,28 +155,29 @@ namespace rfiStrategy {
 	
 	void DefaultStrategy::LoadSingleStrategy(ActionBlock &block, int iterationCount, bool keepTransients, bool changeResVertically, bool calPassband, bool channelSelection, bool clearFlags, bool resetContaminated, double sumThresholdSensitivity, bool onStokesIQ, bool assembleStatistics, double verticalSmoothing, bool hasBaselines, bool highTimeResolution)
 	{
-		ActionBlock *current;
+		ActionBlock *current, *scratch;
 
 		if(resetContaminated)
-			block.Add(new SetImageAction());
+			block.Add(std::unique_ptr<Action>(new SetImageAction()));
 		
-		block.Add(new SetFlaggingAction());
+		block.Add(std::unique_ptr<Action>(new SetFlaggingAction()));
 		
 		current = &block;
 		
 		if(highTimeResolution)
 		{
-			ChangeResolutionAction* changeResAction = new ChangeResolutionAction();
+			std::unique_ptr<ChangeResolutionAction> changeResAction(new ChangeResolutionAction());
 			changeResAction->SetTimeDecreaseFactor(10);
 			changeResAction->SetFrequencyDecreaseFactor(1);
 			changeResAction->SetRestoreRevised(true);
 			changeResAction->SetRestoreContaminated(false);
 			changeResAction->SetRestoreMasks(true);
-			current->Add(changeResAction);
-			current = changeResAction;
+			scratch = changeResAction.get();
+			current->Add(std::move(changeResAction));
+			current = scratch;
 		}
 
-		ForEachPolarisationBlock *fepBlock = new ForEachPolarisationBlock();
+		std::unique_ptr<ForEachPolarisationBlock> fepBlock(new ForEachPolarisationBlock());
 		if(onStokesIQ)
 		{
 			fepBlock->SetOnPP(false);
@@ -186,43 +187,45 @@ namespace rfiStrategy {
 			fepBlock->SetOnStokesI(true);
 			fepBlock->SetOnStokesQ(true);
 		}
-		current->Add(fepBlock);
-		current = fepBlock;
+		scratch = fepBlock.get();
+		current->Add(std::move(fepBlock));
+		current = scratch;
 
-		ForEachComplexComponentAction *focAction = new ForEachComplexComponentAction();
+		std::unique_ptr<ForEachComplexComponentAction> focAction(new ForEachComplexComponentAction());
 		focAction->SetOnAmplitude(true);
 		focAction->SetOnImaginary(false);
 		focAction->SetOnReal(false);
 		focAction->SetOnPhase(false);
 		focAction->SetRestoreFromAmplitude(false);
-		current->Add(focAction);
-		current = focAction;
+		ForEachComplexComponentAction* focActionPtr = focAction.get();
+		current->Add(std::move(focAction));
+		current = focActionPtr;
 
-		IterationBlock *iteration = new IterationBlock();
+		std::unique_ptr<IterationBlock> iteration(new IterationBlock());
 		iteration->SetIterationCount(iterationCount);
 		iteration->SetSensitivityStart(2.0 * pow(2.0, iterationCount/2.0));
-		current->Add(iteration);
-		current = iteration;
+		scratch = iteration.get();
+		current->Add(std::move(iteration));
+		current = scratch;
 		
-		SumThresholdAction *t1 = new SumThresholdAction();
+		std::unique_ptr<SumThresholdAction> t1(new SumThresholdAction());
 		t1->SetBaseSensitivity(sumThresholdSensitivity);
 		if(keepTransients)
 			t1->SetFrequencyDirectionFlagging(false);
-		current->Add(t1);
+		current->Add(std::move(t1));
 
-		CombineFlagResults *cfr1 = new CombineFlagResults();
-		current->Add(cfr1);
-
+		std::unique_ptr<CombineFlagResults> cfr1(new CombineFlagResults());
 		if(channelSelection)
-			cfr1->Add(new FrequencySelectionAction());
+			cfr1->Add(std::unique_ptr<FrequencySelectionAction>(new FrequencySelectionAction()));
 		if(!keepTransients)
-			cfr1->Add(new TimeSelectionAction());
+			cfr1->Add(std::unique_ptr<TimeSelectionAction>(new TimeSelectionAction()));
+		current->Add(std::move(cfr1));
 	
-		current->Add(new SetImageAction());
+		current->Add(std::unique_ptr<SetImageAction>(new SetImageAction()));
 		
 		if(!keepTransients || changeResVertically)
 		{
-			ChangeResolutionAction *changeResAction = new ChangeResolutionAction();
+			std::unique_ptr<ChangeResolutionAction> changeResAction(new ChangeResolutionAction());
 			if(keepTransients)
 				changeResAction->SetTimeDecreaseFactor(1);
 			else
@@ -231,11 +234,12 @@ namespace rfiStrategy {
 				changeResAction->SetFrequencyDecreaseFactor(3);
 			else
 				changeResAction->SetFrequencyDecreaseFactor(1);
-			current->Add(changeResAction);
-			current = changeResAction;
+			scratch = changeResAction.get();
+			current->Add(std::move(changeResAction));
+			current = scratch;
 		}
 
-		HighPassFilterAction *hpAction = new HighPassFilterAction();
+		std::unique_ptr<HighPassFilterAction> hpAction(new HighPassFilterAction());
 		if(keepTransients)
 		{
 			hpAction->SetWindowWidth(1);
@@ -249,105 +253,108 @@ namespace rfiStrategy {
 			hpAction->SetMode(HighPassFilterAction::StoreRevised);
 		else
 			hpAction->SetMode(HighPassFilterAction::StoreContaminated);
-		current->Add(hpAction);
-
-		current = focAction;
-		if(calPassband)
-			current->Add(new CalibratePassbandAction());
+		scratch = focActionPtr;
+		current->Add(std::move(hpAction));
+		current = scratch;
 		
-		SumThresholdAction *t2 = new SumThresholdAction();
+		if(calPassband)
+			current->Add(std::unique_ptr<CalibratePassbandAction>(new CalibratePassbandAction()));
+		
+		std::unique_ptr<SumThresholdAction> t2(new SumThresholdAction());
 		t2->SetBaseSensitivity(sumThresholdSensitivity);
 		if(keepTransients)
 			t2->SetFrequencyDirectionFlagging(false);
-		current->Add(t2);
+		current->Add(std::move(t2));
 		
 		if(assembleStatistics)
 		{
-			PlotAction *plotPolarizationStatistics = new PlotAction();
+			std::unique_ptr<PlotAction> plotPolarizationStatistics(new PlotAction());
 			plotPolarizationStatistics->SetPlotKind(PlotAction::PolarizationStatisticsPlot);
-			block.Add(plotPolarizationStatistics);
+			block.Add(std::move(plotPolarizationStatistics));
 		}
 		
-		SetFlaggingAction *setFlagsInAllPolarizations = new SetFlaggingAction();
+		std::unique_ptr<SetFlaggingAction> setFlagsInAllPolarizations(new SetFlaggingAction());
 		setFlagsInAllPolarizations->SetNewFlagging(SetFlaggingAction::PolarisationsEqual);
+		block.Add(std::move(setFlagsInAllPolarizations));
 		
-		block.Add(setFlagsInAllPolarizations);
-		block.Add(new StatisticalFlagAction());
+		block.Add(std::unique_ptr<StatisticalFlagAction>(new StatisticalFlagAction()));
 
 		bool pedantic = false;
 		if(pedantic)
 		{
-			CombineFlagResults *cfr2 = new CombineFlagResults();
-			block.Add(cfr2);
-			cfr2->Add(new FrequencySelectionAction());
+			std::unique_ptr<CombineFlagResults> cfr2(new CombineFlagResults());
+			block.Add(std::move(cfr2));
+			cfr2->Add(std::unique_ptr<FrequencySelectionAction>(new FrequencySelectionAction()));
 			if(!keepTransients) {
-				TimeSelectionAction* tsAction = new TimeSelectionAction();
+				std::unique_ptr<TimeSelectionAction> tsAction(new TimeSelectionAction());
 				tsAction->SetThreshold(4.0);
-				cfr2->Add(tsAction);
+				cfr2->Add(std::move(tsAction));
 			}
 		} else {
 			if(!keepTransients) {
-				TimeSelectionAction* tsAction = new TimeSelectionAction();
+				std::unique_ptr<TimeSelectionAction> tsAction(new TimeSelectionAction());
 				tsAction->SetThreshold(4.0);
-				block.Add(tsAction);
+				block.Add(std::move(tsAction));
 			}
 		}
 
 		if(assembleStatistics && hasBaselines)
 		{
-			BaselineSelectionAction *baselineSelection = new BaselineSelectionAction();
+			std::unique_ptr<BaselineSelectionAction> baselineSelection(new BaselineSelectionAction());
 			baselineSelection->SetPreparationStep(true);
-			block.Add(baselineSelection);
+			block.Add(std::move(baselineSelection));
 		}
 
 		if(!clearFlags)
 		{
-			SetFlaggingAction *orWithOriginals = new SetFlaggingAction();
+			std::unique_ptr<SetFlaggingAction> orWithOriginals(new SetFlaggingAction());
 			orWithOriginals->SetNewFlagging(SetFlaggingAction::OrOriginal);
-			block.Add(orWithOriginals);
+			block.Add(std::move(orWithOriginals));
 		}
 	}
 
 	void DefaultStrategy::LoadFullStrategy(ActionBlock &destination, enum TelescopeId telescopeId, unsigned flags, double frequency, double timeRes, double frequencyRes)
 	{
-		ForEachBaselineAction *feBaseBlock = new ForEachBaselineAction();
-		destination.Add(feBaseBlock);
+		std::unique_ptr<ForEachBaselineAction> feBaseBlock(new ForEachBaselineAction());
+		ForEachBaselineAction* feBaseBlockPtr = feBaseBlock.get();
+		destination.Add(std::move(feBaseBlock));
 		
-		LoadStrategy(*feBaseBlock, telescopeId, flags, frequency, timeRes, frequencyRes);
+		LoadStrategy(*feBaseBlockPtr, telescopeId, flags, frequency, timeRes, frequencyRes);
 
-		encapsulatePostOperations(destination, feBaseBlock, telescopeId);
+		encapsulatePostOperations(destination, feBaseBlockPtr, telescopeId);
 	}
 	
-	void DefaultStrategy::EncapsulateSingleStrategy(ActionBlock& destination, ActionBlock* singleStrategy, enum TelescopeId telescopeId)
+	void DefaultStrategy::EncapsulateSingleStrategy(ActionBlock& destination, std::unique_ptr<ActionBlock> singleStrategy, enum TelescopeId telescopeId)
 	{
-		ForEachBaselineAction *feBaseBlock = new ForEachBaselineAction();
-		destination.Add(feBaseBlock);
+		std::unique_ptr<ForEachBaselineAction> feBaseBlock(new ForEachBaselineAction());
+		ForEachBaselineAction* feBaseBlockPtr = feBaseBlock.get();
+		destination.Add(std::move(feBaseBlock));
 
-		feBaseBlock->Add(singleStrategy);
+		feBaseBlockPtr->Add(std::move(singleStrategy));
 		
-		encapsulatePostOperations(destination, feBaseBlock, telescopeId);
+		encapsulatePostOperations(destination, feBaseBlockPtr, telescopeId);
 	}
 
 	void DefaultStrategy::encapsulatePostOperations(ActionBlock& destination, ForEachBaselineAction* feBaseBlock, enum TelescopeId telescopeId)
 	{
-		feBaseBlock->Add(new WriteFlagsAction());
+		feBaseBlock->Add(std::unique_ptr<WriteFlagsAction>(new WriteFlagsAction()));
 
 		if(telescopeId != ARECIBO_TELESCOPE && telescopeId != PARKES_TELESCOPE)
 		{
-			PlotAction *antennaPlotAction = new PlotAction();
+			std::unique_ptr<PlotAction> antennaPlotAction(new PlotAction());
 			antennaPlotAction->SetPlotKind(PlotAction::AntennaFlagCountPlot);
-			feBaseBlock->Add(antennaPlotAction);
+			feBaseBlock->Add(std::move(antennaPlotAction));
 		}
 
-		PlotAction *frequencyPlotAction = new PlotAction();
+		std::unique_ptr<PlotAction> frequencyPlotAction(new PlotAction());
 		frequencyPlotAction->SetPlotKind(PlotAction::FrequencyFlagCountPlot);
-		feBaseBlock->Add(frequencyPlotAction);
+		feBaseBlock->Add(std::move(frequencyPlotAction));
 
 		if(telescopeId != ARECIBO_TELESCOPE && telescopeId != PARKES_TELESCOPE && telescopeId != GENERIC_TELESCOPE)
 		{
-			BaselineSelectionAction *baselineSelection = new BaselineSelectionAction();
+			std::unique_ptr<BaselineSelectionAction> baselineSelection(new BaselineSelectionAction());
 			baselineSelection->SetPreparationStep(false);
-			destination.Add(baselineSelection);
+			destination.Add(std::move(baselineSelection));
 		}
 	}
 
@@ -355,7 +362,7 @@ namespace rfiStrategy {
 	{
 		if(telescopeId == GENERIC_TELESCOPE)
 		{
-			AOLogger::Warn << 
+			Logger::Warn << 
 				"**\n"
 				"** Measurement set specified the following telescope name: '" << telescopeName << "'\n"
 				"** No good strategy is known for this telescope!\n"
@@ -366,7 +373,7 @@ namespace rfiStrategy {
 	
 	void DefaultStrategy::DetermineSettings(MeasurementSet& measurementSet, DefaultStrategy::TelescopeId& telescopeId, unsigned int& flags, double& frequency, double& timeRes, double& frequencyRes)
 	{
-		AOLogger::Debug << "Determining best known strategy for measurement set...\n";
+		Logger::Debug << "Determining best known strategy for measurement set...\n";
 		
 		std::string telescopeName = measurementSet.TelescopeName();
 		telescopeId = TelescopeIdFromName(telescopeName);
@@ -410,7 +417,7 @@ namespace rfiStrategy {
 		else
 			timeRes = 0.0;
 		
-		AOLogger::Info <<
+		Logger::Info <<
 			"The strategy will be optimized for the following settings:\n"
 			"Telescope=" << TelescopeName(telescopeId) << ", flags=NONE, frequency="
 			<< Frequency::ToString(frequency) << ",\n"
@@ -419,15 +426,15 @@ namespace rfiStrategy {
 	
 	void DefaultStrategy::DetermineSettings(ImageSet& measurementSet, DefaultStrategy::TelescopeId& telescopeId, unsigned int& flags, double& frequency, double& timeRes, double& frequencyRes)
 	{
-		MSImageSet *msImageSet = dynamic_cast<MSImageSet*>(&measurementSet);
+		IndexableSet *indexableSet = dynamic_cast<IndexableSet*>(&measurementSet);
 		FitsImageSet *fitsImageSet = dynamic_cast<FitsImageSet*>(&measurementSet);
 		BHFitsImageSet *bhFitsImageSet = dynamic_cast<BHFitsImageSet*>(&measurementSet);
 		FilterBankSet *fbImageSet = dynamic_cast<FilterBankSet*>(&measurementSet);
 
-		if(msImageSet != 0)
+		if(indexableSet != 0)
 		{
 			DetermineSettings(
-				msImageSet->Reader()->Set(),
+				indexableSet->Reader()->Set(),
 				telescopeId,
 				flags,
 				frequency,
@@ -440,7 +447,7 @@ namespace rfiStrategy {
 		  telescopeId = TelescopeIdFromName(telescopeName);
 		  warnIfUnknownTelescope(telescopeId, telescopeName);
 		  if(telescopeId != GENERIC_TELESCOPE)
-		    AOLogger::Info <<
+		    Logger::Info <<
 		      "The strategy will be optimized for telescope " << TelescopeName(telescopeId) << ". Telescope-specific\n"
 		      "settings will be left to their defaults, which might not be optimal for all cases.\n";
 		  flags = 0;
@@ -453,7 +460,7 @@ namespace rfiStrategy {
 		  telescopeId = TelescopeIdFromName(telescopeName);
 		  warnIfUnknownTelescope(telescopeId, telescopeName);
 		  if(telescopeId != GENERIC_TELESCOPE)
-		    AOLogger::Info <<
+		    Logger::Info <<
 		      "The strategy will be optimized for telescope " << TelescopeName(telescopeId) << ". Telescope-specific\n"
 		      "settings will be left to their defaults, which might not be optimal for all cases.\n";
 		  flags = 0;
@@ -466,12 +473,12 @@ namespace rfiStrategy {
 			frequency = fbImageSet->CentreFrequency();
 			timeRes = fbImageSet->TimeResolution();
 			frequencyRes = fbImageSet->ChannelWidth();
-			AOLogger::Info <<
+			Logger::Info <<
 				"The strategy will be optimized for the following settings specified by the FilterBankSet:\n"
 				"Telescope=" << TelescopeName(telescopeId) << ", flags=NONE, frequency="
 				<< Frequency::ToString(frequency) << ",\n"
 				"time resolution=" << timeRes*1e6 << " µs, frequency resolution=" << Frequency::ToString(frequencyRes) << '\n';
-			AOLogger::Warn <<
+			Logger::Warn <<
 				"** Determined some settings from FilterBankSet, but telescope name cannot be determined.\n";
 		} else {
 		  telescopeId = GENERIC_TELESCOPE;
@@ -479,7 +486,7 @@ namespace rfiStrategy {
 		  frequency = 0.0;
 		  timeRes = 0.0;
 		  frequencyRes = 0.0;
-		  AOLogger::Warn <<
+		  Logger::Warn <<
 		    "** Could not determine telescope name from set, because it has not\n"
 		    "** been implemented for this file format. A generic strategy will be used!\n";
 		}

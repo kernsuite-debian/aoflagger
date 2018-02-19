@@ -23,19 +23,21 @@ class MemoryBaselineReader : public BaselineReader {
 			clear();
 		}
 
-		virtual void PerformReadRequests();
+		virtual void PerformReadRequests() final override;
 		
-		virtual void PerformFlagWriteRequests();
+		virtual void PerformFlagWriteRequests() final override;
 		
-		virtual void PerformDataWriteTask(std::vector<Image2DCPtr> /*_realImages*/, std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/, int /*antenna2*/, int /*spectralWindow*/, unsigned /*sequenceId*/)
+		virtual void PerformDataWriteTask(std::vector<Image2DCPtr> /*_realImages*/, std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/, int /*antenna2*/, int /*spectralWindow*/, unsigned /*sequenceId*/) final override
 		{
 			throw std::runtime_error("The full mem reader can not write data back to file: use the indirect reader");
 		}
 		
 		static bool IsEnoughMemoryAvailable(const std::string &msFile);
 		
-		virtual size_t GetMinRecommendedBufferSize(size_t /*threadCount*/) { return 1; }
-		virtual size_t GetMaxRecommendedBufferSize(size_t /*threadCount*/) { return 2; }
+		virtual size_t GetMinRecommendedBufferSize(size_t /*threadCount*/) final override
+		{ return 1; }
+		virtual size_t GetMaxRecommendedBufferSize(size_t /*threadCount*/) final override
+		{ return 2; }
 	private:
 		void readSet();
 		void writeFlags();

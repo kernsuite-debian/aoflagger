@@ -39,33 +39,34 @@ class MedianWindow
 				return *i;
 			}
 		}
-		static void SubtractMedian(SampleRowPtr sampleRow, unsigned windowSize)
+		
+		static void SubtractMedian(SampleRow& sampleRow, unsigned windowSize)
 		{
-			if(windowSize > sampleRow->Size()*2)
-				windowSize = sampleRow->Size()*2;
-			SampleRowCPtr copy = SampleRow::CreateCopy(sampleRow);
+			if(windowSize > sampleRow.Size()*2)
+				windowSize = sampleRow.Size()*2;
+			SampleRow copy(sampleRow);
 			MedianWindow<num_t> window;
 			unsigned rightPtr, leftPtr = 0;
 			for(rightPtr=0;rightPtr<windowSize/2;++rightPtr)
 			{
-				if(!copy->ValueIsMissing(rightPtr))
-					window.Add(copy->Value(rightPtr));
+				if(!copy.ValueIsMissing(rightPtr))
+					window.Add(copy.Value(rightPtr));
 			}
-			for(unsigned i=0;i<sampleRow->Size();++i)
+			for(unsigned i=0;i<sampleRow.Size();++i)
 			{
-				if(rightPtr < sampleRow->Size())
+				if(rightPtr < sampleRow.Size())
 				{
-					if(!copy->ValueIsMissing(rightPtr))
-						window.Add(copy->Value(rightPtr));
+					if(!copy.ValueIsMissing(rightPtr))
+						window.Add(copy.Value(rightPtr));
 					++rightPtr;
 				}
 				if(rightPtr >= windowSize)
 				{
-					if(!copy->ValueIsMissing(leftPtr))
-						window.Remove(copy->Value(leftPtr));
+					if(!copy.ValueIsMissing(leftPtr))
+						window.Remove(copy.Value(leftPtr));
 					++leftPtr;
 				}
-				sampleRow->SetValue(i, copy->Value(i) - window.Median());
+				sampleRow.SetValue(i, copy.Value(i) - window.Median());
 			}
 		}
 	private:

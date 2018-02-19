@@ -237,7 +237,7 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex)
 	_metaData->SetFrequency(band.CenterFrequencyHz());
 
 	TimeFrequencyData data = TimeFrequencyData::FromLinear(xxRImage, xxIImage, xyRImage, xyIImage, yxRImage, yxIImage, yyRImage, yyIImage);
-	data.SetIndividualPolarisationMasks(xxMask, xyMask, yxMask, yyMask);
+	data.SetIndividualPolarizationMasks(xxMask, xyMask, yxMask, yyMask);
 	return data;
 }
 
@@ -405,7 +405,7 @@ void BaselineMatrixLoader::LoadPerChannel(size_t timeIndex, std::vector<TimeFreq
 	for(size_t f=0;f<_frequencyCount;++f)
 	{
 		TimeFrequencyData singleMatrix = TimeFrequencyData::FromLinear(xxRImage[f], xxIImage[f], xyRImage[f], xyIImage[f], yxRImage[f], yxIImage[f], yyRImage[f], yyIImage[f]);
-		singleMatrix.SetIndividualPolarisationMasks(xxMask[f], xyMask[f], yxMask[f], yyMask[f]);
+		singleMatrix.SetIndividualPolarizationMasks(xxMask[f], xyMask[f], yxMask[f], yyMask[f]);
 		data.push_back(singleMatrix);
 	}
 }

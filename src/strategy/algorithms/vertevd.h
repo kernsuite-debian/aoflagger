@@ -6,7 +6,7 @@
 
 #include "../../structures/timefrequencydata.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 #include "eigenvalue.h"
 
@@ -18,9 +18,9 @@ class VertEVD
 	public:
 		static void Perform(TimeFrequencyData &data, bool timeIntegrated)
 		{
-			if(data.PolarisationCount() != 1)
+			if(data.PolarizationCount() != 1)
 				throw std::runtime_error("Can not decompose multipolarization data");
-			if(data.PhaseRepresentation() != TimeFrequencyData::ComplexRepresentation)
+			if(data.ComplexRepresentation() != TimeFrequencyData::ComplexParts)
 				throw std::runtime_error("Can only decompose complex data");
 			
 			Image2DCPtr
@@ -41,7 +41,7 @@ class VertEVD
 			const size_t skipped = real->Height()-((n * (n-1)) / 2);
 			if(n > 0)
 			{
-				AOLogger::Warn << "In vertical eigenvalue decomposition: height did not correspond with an exact triangle:\n"
+				Logger::Warn << "In vertical eigenvalue decomposition: height did not correspond with an exact triangle:\n"
 				<< skipped << " values of height " << (real->Height()) << " were skipped to create matrix size " << n << "\n.";
 			}
 			Image2DPtr
@@ -94,22 +94,22 @@ class VertEVD
 						++index;
 					}
 				}
-				AOLogger::Debug << "Input to EVD:\n";
+				Logger::Debug << "Input to EVD:\n";
 				for(unsigned y=0;y<realMatrix->Height();++y) {
 					for(unsigned x=0;x<realMatrix->Width();++x) {
-						AOLogger::Debug << realMatrix->Value(x, y) << ' ';
+						Logger::Debug << realMatrix->Value(x, y) << ' ';
 					}
-					AOLogger::Debug << '\n';
+					Logger::Debug << '\n';
 				}
 				
 				Eigenvalue::Remove(realMatrix, imaginaryMatrix, true);
 				
-				AOLogger::Debug << "Output to EVD:\n";
+				Logger::Debug << "Output to EVD:\n";
 				for(unsigned y=0;y<realMatrix->Height();++y) {
 					for(unsigned x=0;x<realMatrix->Width();++x) {
-						AOLogger::Debug << realMatrix->Value(x, y) << ' ';
+						Logger::Debug << realMatrix->Value(x, y) << ' ';
 					}
-					AOLogger::Debug << '\n';
+					Logger::Debug << '\n';
 				}
 				
 				for(unsigned i=0;i<n;++i)
@@ -159,12 +159,12 @@ class VertEVD
 				
 				if(t == 262)
 				{
-					AOLogger::Debug << "Input to EVD:\n";
+					Logger::Debug << "Input to EVD:\n";
 					for(unsigned y=0;y<realMatrix->Height();++y) {
 						for(unsigned x=0;x<realMatrix->Width();++x) {
-							AOLogger::Debug << realMatrix->Value(x, y) << ' ';
+							Logger::Debug << realMatrix->Value(x, y) << ' ';
 						}
-						AOLogger::Debug << '\n';
+						Logger::Debug << '\n';
 					}
 				}
 				
@@ -172,12 +172,12 @@ class VertEVD
 				
 				if(t == 262)
 				{
-					AOLogger::Debug << "Output to EVD:\n";
+					Logger::Debug << "Output to EVD:\n";
 					for(unsigned y=0;y<realMatrix->Height();++y) {
 						for(unsigned x=0;x<realMatrix->Width();++x) {
-							AOLogger::Debug << realMatrix->Value(x, y) << ' ';
+							Logger::Debug << realMatrix->Value(x, y) << ' ';
 						}
-						AOLogger::Debug << '\n';
+						Logger::Debug << '\n';
 					}
 				}
 				

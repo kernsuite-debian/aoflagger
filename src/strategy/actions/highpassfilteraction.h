@@ -21,13 +21,13 @@ namespace rfiStrategy {
 			virtual ~HighPassFilterAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "High-pass filter (Gaussian)";
 			}
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress);
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override;
 
-			virtual ActionType Type() const { return HighPassFilterActionType; }
+			virtual ActionType Type() const  final override{ return HighPassFilterActionType; }
 			
 			unsigned WindowWidth() const { return _windowWidth; }
 			unsigned WindowHeight() const { return _windowHeight; }

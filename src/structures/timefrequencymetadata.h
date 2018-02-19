@@ -3,13 +3,12 @@
 
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "antennainfo.h"
 
-typedef boost::shared_ptr<class TimeFrequencyMetaData> TimeFrequencyMetaDataPtr;
-typedef boost::shared_ptr<const class TimeFrequencyMetaData> TimeFrequencyMetaDataCPtr;
+typedef std::shared_ptr<class TimeFrequencyMetaData> TimeFrequencyMetaDataPtr;
+typedef std::shared_ptr<const class TimeFrequencyMetaData> TimeFrequencyMetaDataCPtr;
 
 class TimeFrequencyMetaData
 {
@@ -179,7 +178,7 @@ class TimeFrequencyMetaData
 			_valueUnits = valueUnits;
 		}
 	private:
-		void operator=(const TimeFrequencyMetaData &) { }
+		void operator=(const TimeFrequencyMetaData &) = delete;
 		
 		AntennaInfo *_antenna1;
 		AntennaInfo *_antenna2;

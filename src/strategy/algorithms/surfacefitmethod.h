@@ -9,11 +9,8 @@
 class SurfaceFitMethod {
 	public:
 		virtual void Initialize(const TimeFrequencyData &input) = 0;
-		virtual unsigned TaskCount() = 0;
 		virtual void PerformFit(unsigned taskNumber) = 0;
 		virtual ~SurfaceFitMethod() { }
-		virtual TimeFrequencyData Background() = 0;
-		virtual enum TimeFrequencyData::PhaseRepresentation PhaseRepresentation() const = 0;
 };
 
 #endif

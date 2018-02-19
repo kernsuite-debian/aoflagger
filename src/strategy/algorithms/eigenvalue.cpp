@@ -5,7 +5,7 @@
 
 // Needs to be included LAST
 #include "../../f2c.h"
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 extern "C" {
 	void zheevx_(char *jobz, char *range, char *uplo, integer *n,
@@ -129,10 +129,10 @@ void Eigenvalue::Remove(Image2DPtr real, Image2DPtr imaginary, bool debug)
 		
 	if(debug) 
 	{
-		AOLogger::Debug << "Eigenvalues: ";
+		Logger::Debug << "Eigenvalues: ";
 		for(long int i=0;i<n;++i)
-			AOLogger::Debug << w[i] << ' ';
-		AOLogger::Debug << '\n';
+			Logger::Debug << w[i] << ' ';
+		Logger::Debug << '\n';
 	}
 	for(int y=0;y<n;++y)
 	{

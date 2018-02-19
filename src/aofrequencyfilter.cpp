@@ -1,4 +1,5 @@
 #include <iostream>
+#include <mutex>
 
 #include <fftw3.h>
 
@@ -20,7 +21,7 @@ using namespace aoRemote;
 lane<ObservationTimerange*> *readLane;
 lane<ObservationTimerange*> *writeLane;
 
-boost::mutex commanderMutex;
+std::mutex commanderMutex;
 ProcessCommander *commander;
 
 fftw_plan fftPlanForward, fftPlanBackward;
@@ -134,7 +135,7 @@ void readThreadFunction(ObservationTimerange &timerange, const size_t &totalRows
 			currentRowCount = totalRows - currentRow;
 		timerange.SetZero();
 		
-		boost::mutex::scoped_lock lock(commanderMutex);
+		std::unique_lock<std::mutex> lock(commanderMutex);
 		std::cout << "Reading... " << std::flush;
 		commander->PushReadDataRowsTask(timerange, currentRow, currentRowCount, &rowBuffer[0]);
 		commander->Run(false);
@@ -166,7 +167,7 @@ void writeThreadFunction()
 				rowBuffer[i][row] = MSRowDataExt(timerange->PolarizationCount(), timerange->Band(i).channels.size());
 		}
 		do {
-			boost::mutex::scoped_lock lock(commanderMutex);
+			std::unique_lock<std::mutex> lock(commanderMutex);
 			std::cout << "Writing... " << std::flush;
 			commander->PushWriteDataRowsTask(*timerange, &rowBuffer[0]);
 			commander->Run(false);
@@ -249,12 +250,12 @@ int main(int argc, char *argv[])
 		writeLane = new lane<ObservationTimerange*>(processorCount);
 		
 		// Start worker threads
-		std::vector<boost::thread*> threads(processorCount);
+		std::vector<std::thread> threads;
 		for(size_t i=0; i<processorCount; ++i)
 		{
-			threads[i] = new boost::thread(&workThread);
+			threads.emplace_back(&workThread);
 		}
-		boost::thread writeThread(&writeThreadFunction);
+		std::thread writeThread(&writeThreadFunction);
 		
 		readThreadFunction(timerange, totalRows);
 		
@@ -262,7 +263,7 @@ int main(int argc, char *argv[])
 		readLane->write_end();
 		for(size_t i=0; i<processorCount; ++i)
 		{
-			threads[i]->join();
+			threads[i].join();
 		}
 		delete readLane;
 		

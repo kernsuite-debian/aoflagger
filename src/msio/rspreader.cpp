@@ -7,7 +7,7 @@
 #include "../structures/mask2d.h"
 #include "../structures/samplerow.h"
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 #include "../util/ffttools.h"
 
 const unsigned char RSPReader::BitReverseTable256[256] = 
@@ -30,14 +30,12 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadChannelBeam
 	
 	std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> data = ReadSingleBeamlet(timestepStart*(unsigned long) 256, timestepEnd*(unsigned long) 256, beamletCount, beamletIndex);
 
-	TimeFrequencyData *allX = data.first.CreateTFData(Polarization::XX);
-	TimeFrequencyData *allY = data.first.CreateTFData(Polarization::YY);
-	Image2DCPtr xr = allX->GetRealPart();
-	Image2DCPtr xi = allX->GetImaginaryPart();
-	Image2DCPtr yr = allY->GetRealPart();
-	Image2DCPtr yi = allY->GetImaginaryPart();
-	delete allX;
-	delete allY;
+	TimeFrequencyData allX = data.first.Make(Polarization::XX);
+	TimeFrequencyData allY = data.first.Make(Polarization::YY);
+	Image2DCPtr xr = allX.GetRealPart();
+	Image2DCPtr xi = allX.GetImaginaryPart();
+	Image2DCPtr yr = allY.GetRealPart();
+	Image2DCPtr yi = allY.GetImaginaryPart();
 	Mask2DCPtr mask = data.first.GetSingleMask();
 	
 	Image2DPtr
@@ -52,18 +50,19 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadChannelBeam
 	for(unsigned long timestep = 0;timestep < timestepEnd-timestepStart;++timestep)
 	{
 		unsigned long timestepIndex = timestep * 256;
-		SampleRowPtr realX = SampleRow::CreateFromRow(xr, timestepIndex, 256, 0);
-		SampleRowPtr imaginaryX = SampleRow::CreateFromRow(xi, timestepIndex, 256, 0);
-		SampleRowPtr realY = SampleRow::CreateFromRow(yr, timestepIndex, 256, 0);
-		SampleRowPtr imaginaryY = SampleRow::CreateFromRow(yi, timestepIndex, 256, 0);
+		SampleRow
+			realX = SampleRow::MakeFromRow(xr.get(), timestepIndex, 256, 0),
+			imaginaryX = SampleRow::MakeFromRow(xi.get(), timestepIndex, 256, 0),
+			realY = SampleRow::MakeFromRow(yr.get(), timestepIndex, 256, 0),
+			imaginaryY = SampleRow::MakeFromRow(yi.get(), timestepIndex, 256, 0);
 		
 		FFTTools::FFT(realX, imaginaryX);
 		FFTTools::FFT(realY, imaginaryY);
 		
-		realX->SetVerticalImageValues(outXR, timestep);
-		imaginaryX->SetVerticalImageValues(outXI, timestep);
-		realY->SetVerticalImageValues(outYR, timestep);
-		imaginaryY->SetVerticalImageValues(outYI, timestep);
+		realX.SetVerticalImageValues(outXR.get(), timestep);
+		imaginaryX.SetVerticalImageValues(outXI.get(), timestep);
+		realY.SetVerticalImageValues(outYR.get(), timestep);
+		imaginaryY.SetVerticalImageValues(outYI.get(), timestep);
 		
 		observationTimes.push_back(data.second->ObservationTimes()[timestepIndex + 256/2]);
 
@@ -106,14 +105,12 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadSingleBeaml
 	Image2DPtr imaginaryY = Image2D::CreateZeroImagePtr(width, 1);
 	Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(width, 1);
 	
-	TimeFrequencyData *allX = data.first.CreateTFData(Polarization::XX);
-	TimeFrequencyData *allY = data.first.CreateTFData(Polarization::YY);
-	Image2DCPtr xr = allX->GetRealPart();
-	Image2DCPtr xi = allX->GetImaginaryPart();
-	Image2DCPtr yr = allY->GetRealPart();
-	Image2DCPtr yi = allY->GetImaginaryPart();
-	delete allX;
-	delete allY;
+	TimeFrequencyData allX = data.first.Make(Polarization::XX);
+	TimeFrequencyData allY = data.first.Make(Polarization::YY);
+	Image2DCPtr xr = allX.GetRealPart();
+	Image2DCPtr xi = allX.GetImaginaryPart();
+	Image2DCPtr yr = allY.GetRealPart();
+	Image2DCPtr yi = allY.GetImaginaryPart();
 	Mask2DCPtr maskWithBeamlets = data.first.GetSingleMask();
 	
 	for(unsigned x=0;x<width;++x)
@@ -145,7 +142,7 @@ unsigned long RSPReader::TimeStepCount(size_t beamletCount) const
 	const unsigned long bytesPerFrame = beamletCount * firstHeader.nofBlocks * RCPBeamletData::SIZE + RCPApplicationHeader::SIZE;
 	const unsigned long frames = fileSize / bytesPerFrame;
 	
-	AOLogger::Debug << "File has " << frames << " number of frames (" << ((double) (frames*firstHeader.nofBlocks*STATION_INTEGRATION_STEPS)/_clockSpeed) << "s of data)\n";
+	Logger::Debug << "File has " << frames << " number of frames (" << ((double) (frames*firstHeader.nofBlocks*STATION_INTEGRATION_STEPS)/_clockSpeed) << "s of data)\n";
 	
 	return frames * firstHeader.nofBlocks;
 }
@@ -162,7 +159,6 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadAllBeamlets
 	std::ifstream file(_rawFile.c_str(), std::ios_base::binary | std::ios_base::in);
 	size_t frame = 0;
 	std::set<short> stations;
-	std::set<unsigned int> timestamps;
 	
 	TimeFrequencyMetaDataPtr metaData = TimeFrequencyMetaDataPtr(new TimeFrequencyMetaData());
 	BandInfo band;
@@ -185,7 +181,7 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadAllBeamlets
 	const unsigned long startFrame = timestepStart / (unsigned long) firstHeader.nofBlocks;
 	const unsigned long startByte = startFrame * bytesPerFrame;
 	const unsigned long offsetFromStart = timestepStart - (startFrame * firstHeader.nofBlocks);
-	//AOLogger::Debug << "Seeking to " << startByte << " (timestepStart=" << timestepStart << ", offsetFromStart=" << offsetFromStart << ", startFrame=" << startFrame << ",bytesPerFrame=" << bytesPerFrame << ")\n";
+	//Logger::Debug << "Seeking to " << startByte << " (timestepStart=" << timestepStart << ", offsetFromStart=" << offsetFromStart << ", startFrame=" << startFrame << ",bytesPerFrame=" << bytesPerFrame << ")\n";
 	file.seekg(startByte, std::ios_base::beg);
 	
 	// Read the frames
@@ -229,7 +225,7 @@ std::pair<TimeFrequencyData,TimeFrequencyMetaDataPtr> RSPReader::ReadAllBeamlets
 		x += header.nofBlocks;
 		++frame;
 	}
-	//AOLogger::Debug << "Read " << frame << " frames.\n";
+	//Logger::Debug << "Read " << frame << " frames.\n";
 	
 	for(unsigned long i=0;i<width;++i)
 	{
@@ -305,13 +301,13 @@ void RSPReader::ReadForStatistics(unsigned beamletCount)
 		{
 			for(unsigned i=0;i<beamletCount;++i)
 			{
-				AOLogger::Info << "Beamlet index " << i << ":\n";
+				Logger::Info << "Beamlet index " << i << ":\n";
 				statistics[i].Print();
 			}
 		}
 		if((dataPair.second->ObservationTimes()[0] - periodStartTime) > 60.0)
 		{
-			AOLogger::Debug << "Processed 1 minute of data (" << (dataPair.second->ObservationTimes()[0] - startTime) << "s)\n";
+			Logger::Debug << "Processed 1 minute of data (" << (dataPair.second->ObservationTimes()[0] - startTime) << "s)\n";
 			for(unsigned i=0;i<beamletCount;++i)
 			{
 				(*statFile[i])
@@ -332,7 +328,7 @@ void RSPReader::ReadForStatistics(unsigned beamletCount)
 	
 	for(unsigned i=0;i<beamletCount;++i)
 	{
-		AOLogger::Info << "Beamlet index " << i << ":\n";
+		Logger::Info << "Beamlet index " << i << ":\n";
 		statistics[i].Print();
 		delete statFile[i];
 	}

@@ -11,14 +11,13 @@
 
 #include "../algorithms/sinusfitter.h"
 #include "../algorithms/thresholdtools.h"
-#include "../algorithms/rfistatistics.h"
 
-#include "../../gui/plot/plot2d.h"
+#include "../../plot/plot2d.h"
 
 void RFIPlots::Bin(Image2DCPtr image, Mask2DCPtr mask, std::vector<size_t> &valuesOutput, std::vector<long double> &binsOutput, size_t binCount, long double start, long double end, long double factor, long double stretch) throw()
 {
-	const long double min = start==end ? ThresholdTools::MinValue(image, mask) : start;
-	const long double max = start==end ? ThresholdTools::MaxValue(image, mask) : end;
+	const long double min = start==end ? ThresholdTools::MinValue(image.get(), mask.get()) : start;
+	const long double max = start==end ? ThresholdTools::MaxValue(image.get(), mask.get()) : end;
 	const long double binsize = (max-min) / binCount;
 	valuesOutput.resize(binCount);
 	binsOutput.resize(binCount);
@@ -53,7 +52,7 @@ void RFIPlots::MakeDistPlot(Plot2DPointSet &pointSet, Image2DCPtr image, Mask2DC
 	num_t mean, stddev;
 	num_t min = image->GetMinimum();
 	num_t max = image->GetMaximum();
-	ThresholdTools::WinsorizedMeanAndStdDev(image, mean, stddev);
+	ThresholdTools::WinsorizedMeanAndStdDev(image.get(), mean, stddev);
 	if(min < mean-3.0L*stddev)
 		min = mean-3.0L*stddev;
 	if(max > mean+3.0L*stddev)
@@ -80,11 +79,9 @@ void RFIPlots::MakeMeanSpectrumPlot(Plot2DPointSet &pointSet, const TimeFrequenc
 	}
 	
 	TimeFrequencyData displayData = data;
-	if(displayData.PhaseRepresentation() == TimeFrequencyData::ComplexRepresentation)
+	if(displayData.ComplexRepresentation() == TimeFrequencyData::ComplexParts)
 	{
-		TimeFrequencyData *newData = data.CreateTFData(TimeFrequencyData::AmplitudePart);
-		displayData = *newData;
-		delete newData;
+		displayData = data.Make(TimeFrequencyData::AmplitudePart);
 	}
 
 	long double min = 1e100, max = -1e100;
@@ -249,9 +246,9 @@ void RFIPlots::MakeFittedComplexPlot(Plot2DPointSet &pointSet, const TimeFrequen
 	Image2DCPtr real = data.GetRealPart();
 	Image2DCPtr imaginary = data.GetImaginaryPart();
 
-	num_t *xReal = new num_t[length];
-	num_t *xImag = new num_t[length];
-	num_t *t = new num_t[length];
+	std::vector<num_t> xReal(length);
+	std::vector<num_t> xImag(length);
+	std::vector<num_t> t(length);
 	size_t dataIndex = 0;
 
 	for(size_t x=xStart;x<xStart + length;++x)
@@ -283,15 +280,11 @@ void RFIPlots::MakeFittedComplexPlot(Plot2DPointSet &pointSet, const TimeFrequen
 		imagPhase, imagAmplitude, imagMean;
 	const num_t twopi = 2.0*M_PIn;
 
-	//fitter.FindPhaseAndAmplitude(realPhase, realAmplitude, xReal, t, dataIndex, frequency*twopi);
-	//fitter.FindPhaseAndAmplitude(imagPhase, imagAmplitude, xImag, t, dataIndex, frequency*twopi);
-	//realMean = fitter.FindMean(realPhase, realAmplitude, xReal, t, dataIndex, frequency*twopi);
-	//imagMean = fitter.FindMean(imagPhase, imagAmplitude, xImag, t, dataIndex, frequency*twopi);
-	fitter.FindPhaseAndAmplitudeComplex(realPhase, realAmplitude, xReal, xImag, t, dataIndex, frequency*twopi);
+	fitter.FindPhaseAndAmplitudeComplex(realPhase, realAmplitude, xReal.data(), xImag.data(), t.data(), dataIndex, frequency*twopi);
 	imagPhase = realPhase + 0.5*M_PIn;
 	imagAmplitude = realAmplitude;
-	realMean = fitter.FindMean(realPhase, realAmplitude, xReal, t, dataIndex, frequency*twopi);
-	imagMean = fitter.FindMean(imagPhase, imagAmplitude, xImag, t, dataIndex, frequency*twopi);
+	realMean = fitter.FindMean(realPhase, realAmplitude, xReal.data(), t.data(), dataIndex, frequency*twopi);
+	imagMean = fitter.FindMean(imagPhase, imagAmplitude, xImag.data(), t.data(), dataIndex, frequency*twopi);
 
 	std::cout << "Amplitude found: " << realAmplitude << " phase found: " << realPhase << std::endl;
 
@@ -308,13 +301,9 @@ void RFIPlots::MakeFittedComplexPlot(Plot2DPointSet &pointSet, const TimeFrequen
 			pointSet.PushDataPoint(x,
 				cosn(frequency*twopi*(long double) x + realPhase) * realAmplitude + realMean);
 	}
-
-	delete t;
-	delete xReal;
-	delete xImag;
 }
 
-void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData)
+void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex, const Image2DCPtr& image, const Mask2DCPtr& mask, const TimeFrequencyMetaDataCPtr& metaData)
 {
 	plot.SetXAxisText("Time (s)");
 	plot.SetYAxisText("Visibility");
@@ -348,7 +337,7 @@ void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex, Imag
 	}
 }
 
-void RFIPlots::MakeFrequencyScatterPlot(class MultiPlot &plot, size_t plotIndex, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData)
+void RFIPlots::MakeFrequencyScatterPlot(class MultiPlot &plot, size_t plotIndex, const Image2DCPtr& image, const Mask2DCPtr& mask, const TimeFrequencyMetaDataCPtr& metaData)
 {
 	plot.SetXAxisText("Frequency (MHz)");
 	plot.SetYAxisText("Visibility");
@@ -377,101 +366,31 @@ void RFIPlots::MakeFrequencyScatterPlot(class MultiPlot &plot, size_t plotIndex,
 	}
 }
 
-void RFIPlots::MakeScatterPlot(class MultiPlot &plot, size_t plotIndex, SampleRowCPtr row)
+void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, const TimeFrequencyData &data, const TimeFrequencyMetaDataCPtr& metaData, unsigned startIndex)
 {
-	for(size_t x=0;x<row->Size();++x) {
-		if(!row->ValueIsMissing(x))
-			plot.AddPoint(plotIndex, x, row->Value(x));
+	for(size_t polIndex = 0; polIndex!=data.PolarizationCount(); ++polIndex)
+	{
+		PolarizationEnum pol = data.GetPolarization(polIndex);
+		TimeFrequencyData polTF = data.Make(pol);
+		MakeTimeScatterPlot(plot, startIndex+polIndex, polTF.GetSingleImage(), polTF.GetSingleMask(), metaData);
+		if(data.PolarizationCount() == 1)
+			plot.SetLegend(startIndex, data.Description());
+		else
+			plot.SetLegend(startIndex+polIndex, Polarization::TypeToFullString(pol));
 	}
 }
 
-void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, const TimeFrequencyData &data, TimeFrequencyMetaDataCPtr metaData, unsigned startIndex)
+void RFIPlots::MakeFrequencyScatterPlot(class MultiPlot &plot, const TimeFrequencyData &data, const TimeFrequencyMetaDataCPtr& metaData, unsigned startIndex)
 {
-	switch(data.PolarisationCount())
+	for(size_t polIndex = 0; polIndex!=data.PolarizationCount(); ++polIndex)
 	{
-		case 4:
-		{
-			TimeFrequencyData
-				*xx = data.CreateTFData(Polarization::XX),
-				*xy = data.CreateTFData(Polarization::XY),
-				*yx = data.CreateTFData(Polarization::YX),
-				*yy = data.CreateTFData(Polarization::YY);
-			MakeTimeScatterPlot(plot, startIndex+0, xx->GetSingleImage(), xx->GetSingleMask(), metaData);
-			MakeTimeScatterPlot(plot, startIndex+1, xy->GetSingleImage(), xy->GetSingleMask(), metaData);
-			MakeTimeScatterPlot(plot, startIndex+2, yx->GetSingleImage(), yx->GetSingleMask(), metaData);
-			MakeTimeScatterPlot(plot, startIndex+3, yy->GetSingleImage(), yy->GetSingleMask(), metaData);
-			delete xx;
-			delete xy;
-			delete yx;
-			delete yy;
-			plot.SetLegend(startIndex+0, "XX");
-			plot.SetLegend(startIndex+1, "XY");
-			plot.SetLegend(startIndex+2, "YX");
-			plot.SetLegend(startIndex+3, "YY");
-			break;
-		}
-		case 2:
-		{
-			TimeFrequencyData
-				*xx = data.CreateTFData(Polarization::XX),
-				*yy = data.CreateTFData(Polarization::YY);
-			MakeTimeScatterPlot(plot, startIndex+0, xx->GetSingleImage(), xx->GetSingleMask(), metaData);
-			MakeTimeScatterPlot(plot, startIndex+1, yy->GetSingleImage(), yy->GetSingleMask(), metaData);
-			plot.SetLegend(startIndex+0, "XX");
-			plot.SetLegend(startIndex+1, "YY");
-			delete xx;
-			delete yy;
-			break;
-		}
-		case 1:
-			MakeTimeScatterPlot(plot, startIndex+0, data.GetSingleImage(), data.GetSingleMask(), metaData);
-			plot.SetLegend(startIndex+0, data.Description());
-		break;
-	}
-}
-
-void RFIPlots::MakeFrequencyScatterPlot(class MultiPlot &plot, const TimeFrequencyData &data, TimeFrequencyMetaDataCPtr metaData, unsigned startIndex)
-{
-	switch(data.PolarisationCount())
-	{
-		case 4:
-		{
-			TimeFrequencyData
-				*xx = data.CreateTFData(Polarization::XX),
-				*xy = data.CreateTFData(Polarization::XY),
-				*yx = data.CreateTFData(Polarization::YX),
-				*yy = data.CreateTFData(Polarization::YY);
-			MakeFrequencyScatterPlot(plot, startIndex+0, xx->GetSingleImage(), xx->GetSingleMask(), metaData);
-			MakeFrequencyScatterPlot(plot, startIndex+1, xy->GetSingleImage(), xy->GetSingleMask(), metaData);
-			MakeFrequencyScatterPlot(plot, startIndex+2, yx->GetSingleImage(), yx->GetSingleMask(), metaData);
-			MakeFrequencyScatterPlot(plot, startIndex+3, yy->GetSingleImage(), yy->GetSingleMask(), metaData);
-			delete xx;
-			delete xy;
-			delete yx;
-			delete yy;
-			plot.SetLegend(startIndex+0, "XX");
-			plot.SetLegend(startIndex+1, "XY");
-			plot.SetLegend(startIndex+2, "YX");
-			plot.SetLegend(startIndex+3, "YY");
-			break;
-		}
-		case 2:
-		{
-			TimeFrequencyData
-				*xx = data.CreateTFData(Polarization::XX),
-				*yy = data.CreateTFData(Polarization::YY);
-			MakeFrequencyScatterPlot(plot, startIndex+0, xx->GetSingleImage(), xx->GetSingleMask(), metaData);
-			MakeFrequencyScatterPlot(plot, startIndex+1, yy->GetSingleImage(), yy->GetSingleMask(), metaData);
-			plot.SetLegend(startIndex+0, "XX");
-			plot.SetLegend(startIndex+1, "YY");
-			delete xx;
-			delete yy;
-			break;
-		}
-		case 1:
-			MakeFrequencyScatterPlot(plot, startIndex+0, data.GetSingleImage(), data.GetSingleMask(), metaData);
-			plot.SetLegend(startIndex+0, data.Description());
-		break;
+		PolarizationEnum pol = data.GetPolarization(polIndex);
+		TimeFrequencyData polTF = data.Make(pol);
+		MakeFrequencyScatterPlot(plot, startIndex+polIndex, polTF.GetSingleImage(), polTF.GetSingleMask(), metaData);
+		if(data.PolarizationCount() == 1)
+			plot.SetLegend(startIndex, data.Description());
+		else
+			plot.SetLegend(startIndex+polIndex, Polarization::TypeToFullString(pol));
 	}
 }
 
@@ -511,11 +430,33 @@ void RFIPlots::MakeSNRSpectrumPlot(Plot2DPointSet &plot, Image2DCPtr image, Imag
 	long double min = 1e100, max = 0.0;
 
 	for(size_t y=0;y<image->Height();++y) {
-		num_t v = RFIStatistics::FrequencySNR(image, model, mask, y);
+		num_t v = FrequencySNR(image, model, mask, y);
 
 		if(v < min) min = v;
 		if(v > max) max = v;
 		plot.PushDataPoint(y, v);
 	}
 	plot.SetYRange(min, max);
+}
+
+num_t RFIPlots::FrequencySNR(Image2DCPtr image, Image2DCPtr model, Mask2DCPtr mask, unsigned channel)
+{
+	num_t sum = 0.0;
+	size_t count = 0;
+	for(unsigned x=0;x<image->Width();++x)
+	{
+		if(!mask->Value(x, channel))
+		{
+			num_t noise = fabsn(image->Value(x, channel) - model->Value(x, channel));
+			num_t signal = fabsn(model->Value(x, channel));
+			if(std::isfinite(signal) && std::isfinite(noise))
+			{
+				num_t snr = logn(signal / noise);
+				sum += snr;
+	
+				++count;
+			}
+		}
+	}
+	return expn(sum / count);
 }

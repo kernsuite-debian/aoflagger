@@ -9,10 +9,9 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 
 #include <boost/function.hpp>
-
-#include <boost/thread/thread.hpp>
 
 #include "clusteredobservation.h"
 
@@ -45,7 +44,7 @@ class RemoteProcess
 		void Start()
 		{
 			_running = true;
-			_thread = new boost::thread(ThreadFunctor(*this));
+			_thread = new std::thread(ThreadFunctor(*this));
 		}
 		
 		boost::function<void(RemoteProcess &/*process*/, bool /*error*/, int /*status*/)> &SignalFinished()
@@ -58,12 +57,12 @@ class RemoteProcess
 			return _clientHostName;
 		}
 	private:
-		RemoteProcess(const RemoteProcess &source) { }
-		void operator=(const RemoteProcess &source) { }
+		RemoteProcess(const RemoteProcess &source) = delete;
+		void operator=(const RemoteProcess &source) = delete;
 		
 		struct ThreadFunctor
 		{
-			ThreadFunctor(RemoteProcess &process) : _remoteProcess(process) { }
+			explicit ThreadFunctor(RemoteProcess &process) : _remoteProcess(process) { }
 			RemoteProcess &_remoteProcess;
 			void operator()()
 			{
@@ -101,7 +100,7 @@ class RemoteProcess
 		
 		const ClusteredObservationItem _item;
 		const Hostname _clientHostName, _serverHostName;
-		boost::thread *_thread;
+		std::thread *_thread;
 		bool _running;
 		
 		boost::function<void(RemoteProcess &/*process*/, bool /*error*/, int /*status*/)> _onFinished;

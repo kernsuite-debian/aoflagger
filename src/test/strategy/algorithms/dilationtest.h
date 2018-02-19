@@ -98,7 +98,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 {
 	std::string expected;
 	Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(5, 5);
-	dilate(mask, 0);
+	dilate(mask.get(), 0);
 	expected =
 		"     \n"
 		"     \n"
@@ -106,17 +106,17 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"     \n"
 		"     \n";
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=0");
-	dilate(mask, 1);
+	dilate(mask.get(), 1);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=1");
-	dilate(mask, 2);
+	dilate(mask.get(), 2);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=2");
-	dilate(mask, 3);
+	dilate(mask.get(), 3);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=3");
-	dilate(mask, 4);
+	dilate(mask.get(), 4);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=4");
-	dilate(mask, 5);
+	dilate(mask.get(), 5);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=5");
-	dilate(mask, 6);
+	dilate(mask.get(), 6);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with size=6");
 	
 	expected =
@@ -126,10 +126,10 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"     \n"
 		"     \n";
 	setMask(mask, Flip, expected);
-	dilate(mask, 0);
+	dilate(mask.get(), 0);
 	AssertEquals(maskToString(mask, Flip), expected, "Empty dilation with single flag");
 
-	dilate(mask, 1);
+	dilate(mask.get(), 1);
 	expected =
 		"     \n"
 		"     \n"
@@ -138,7 +138,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"     \n";
 	AssertEquals(maskToString(mask, Flip), expected, "Dilation with single flag, size=1");
 
-	dilate(mask, 1);
+	dilate(mask.get(), 1);
 	expected =
 		"     \n"
 		"     \n"
@@ -146,9 +146,9 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"     \n"
 		"     \n";
 	AssertEquals(maskToString(mask, Flip), expected, "Dilation with three flags, size=1");
-	dilate(mask, 1);
+	dilate(mask.get(), 1);
 	AssertEquals(maskToString(mask, Flip), expected, "Dilation with five flags at the borders, size=1");
-	dilate(mask, 100);
+	dilate(mask.get(), 100);
 	AssertEquals(maskToString(mask, Flip), expected, "Dilation with five flags at the borders, size=100");
 
 	setMask(mask, Flip,
@@ -157,7 +157,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"x    \n"
 		"    x\n"
 		" x x \n");
-	dilate(mask, 2);
+	dilate(mask.get(), 2);
 	expected =
 		"xxxx \n"
 		" xxxx\n"
@@ -172,7 +172,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"  x  \n"
 		"   x \n"
 		"    x\n");
-	dilate(mask, 6);
+	dilate(mask.get(), 6);
 	expected =
 		"xxxxx\n"
 		"xxxxx\n"
@@ -185,7 +185,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		mask = Mask2D::CreateSetMaskPtr<false>(4, 6);
 	else
 		mask = Mask2D::CreateSetMaskPtr<false>(6, 4);
-	dilate(mask, 0);
+	dilate(mask.get(), 0);
 	expected =
 		"      \n"
 		"      \n"
@@ -198,7 +198,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"  x   \n"
 		"    x \n"
 		"     x\n");
-	dilate(mask, 4);
+	dilate(mask.get(), 4);
 	expected =
 		"xxxxx \n"
 		"xxxxxx\n"
@@ -211,7 +211,7 @@ inline void DilationTest::TestSingleDilation::testDilation(DilateFunction dilate
 		"      \n"
 		"    x \n"
 		"     x\n");
-	dilate(mask, 7);
+	dilate(mask.get(), 7);
 	expected =
 		"xxxxxx\n"
 		"      \n"

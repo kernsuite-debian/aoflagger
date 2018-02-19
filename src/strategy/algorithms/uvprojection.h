@@ -7,7 +7,7 @@
 
 #include "../../imaging/uvimager.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 class UVProjection
 {

@@ -63,51 +63,51 @@ inline void StatisticalFlaggerTest::TestTimeDilation::operator()()
 	Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(10, 1);
 	setMask(mask, "     x    ");
 	
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.0);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "     x    ", "Min=0.0, single center flagged, no enlarge");
 	
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.5);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "     x    ", "Min=0.5, single center flagged, no enlarge");
 	
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.6);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.6);
 	AssertEquals(maskToString(mask), "    xx    ", "Min=0.6, from one to two samples");
 
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.0);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "    xx    ");
 	
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.5);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "   xxxx   ");
 
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.6);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.6);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 
-	StatisticalFlagger::DensityTimeFlagger(mask, 1.0);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 1.0);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 	
 	setMask(mask, "xx xx     ");
 
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.0);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "xx xx     ");
 
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.5);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.5);
 	AssertTrue(mask->Value(2,0), "Fill hole");
 	
 	mask = Mask2D::CreateSetMaskPtr<false>(40, 1);
 	//             0    5    0    5    0    5    0    5    
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.2);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.2);
 	AssertEquals(maskToString(mask), "    xxxxxxxxxxxxx x xxxxxxxxxxxx        ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.3);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx       ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.5);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ");
 
 	setMask(mask, "xxxxxxxxxxxxxxx       xxxxxxxxxxxxxxxxxx");
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.3);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 }
 
@@ -116,51 +116,51 @@ inline void StatisticalFlaggerTest::TestFrequencyDilation::operator()()
 	Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(1, 10);
 	setMask(mask, "     x    ");
 	
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.0);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "     x    ", "Min=0.0, single center flagged, no enlarge");
 	
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.5);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "     x    ", "Min=0.5, single center flagged, no enlarge");
 	
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.6);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.6);
 	AssertEquals(maskToString(mask), "    xx    ", "Min=0.6, from one to two samples");
 
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.0);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "    xx    ");
 	
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.5);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "   xxxx   ");
 
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.6);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.6);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 1.0);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 1.0);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 	
 	setMask(mask, "xx xx     ");
 
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.0);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "xx xx     ");
 
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.5);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.5);
 	AssertTrue(mask->Value(0,2), "Fill hole");
 	
 	mask = Mask2D::CreateSetMaskPtr<false>(1, 40);
 	//             0    5    0    5    0    5    0    5    
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.2);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.2);
 	AssertEquals(maskToString(mask), "    xxxxxxxxxxxxx x xxxxxxxxxxxx        ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.3);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx       ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.5);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ");
 
 	setMask(mask, "xxxxxxxxxxxxxxx       xxxxxxxxxxxxxxxxxx");
-	StatisticalFlagger::DensityFrequencyFlagger(mask, 0.3);
+	StatisticalFlagger::DensityFrequencyFlagger(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 }
 
@@ -176,7 +176,7 @@ inline void StatisticalFlaggerTest::TestTimeDilationSpeed::operator()()
 			mask->SetValue(i, 0, (RNG::Uniform() >= 0.2));
 		}
 	}
-	StatisticalFlagger::DensityTimeFlagger(mask, 0.1);
+	StatisticalFlagger::DensityTimeFlagger(mask.get(), 0.1);
 }
 
 #endif

@@ -1,15 +1,13 @@
 #ifndef RFIBASELINESELECTIONACTION_H
 #define RFIBASELINESELECTIONACTION_H
 
-#include <vector>
-
-#include <boost/thread/mutex.hpp>
-
 #include "../../structures/types.h"
 
 #include "action.h"
 
 #include "../algorithms/baselineselector.h"
+
+#include <vector>
 
 namespace rfiStrategy {
 
@@ -18,21 +16,21 @@ namespace rfiStrategy {
 		public:
 			BaselineSelectionAction() : _preparationStep(true), _flagBadBaselines(false), _makePlot(false), _threshold(8.0), _absThreshold(0.4), _smoothingSigma(0.6) { }
 
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				if(_preparationStep)
 					return "Select baselines (preparation)";
 				else
 					return "Mark bad baselines";
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener)
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override
 			{
 				if(_preparationStep)
 					prepare(artifacts, listener);
 				else
 					mark(artifacts, listener);
 			}
-			virtual ActionType Type() const { return BaselineSelectionActionType; }
+			virtual ActionType Type() const final override { return BaselineSelectionActionType; }
 
 			bool PreparationStep() const { return _preparationStep; }
 			void SetPreparationStep(bool preparationStep) { _preparationStep = preparationStep; }

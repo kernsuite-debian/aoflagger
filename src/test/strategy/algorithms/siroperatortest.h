@@ -203,60 +203,60 @@ inline void SIROperatorTest::TestTimeApplication::operator()()
 	Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(10, 1);
 	setMask(mask, "     x    ");
 	
-	SIROperator::OperateHorizontally(mask, 0.0);
+	SIROperator::OperateHorizontally(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "     x    ", "Eta=0.0, single center flagged, no enlarge");
 	
-	SIROperator::OperateHorizontally(mask, 0.4);
+	SIROperator::OperateHorizontally(mask.get(), 0.4);
 	AssertEquals(maskToString(mask), "     x    ", "Eta=0.4, single center flagged");
 	
-	SIROperator::OperateHorizontally(mask, 0.5);
+	SIROperator::OperateHorizontally(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "    xxx   ", "Eta=0.5, from one to three samples");
 
-	SIROperator::OperateHorizontally(mask, 0.0);
+	SIROperator::OperateHorizontally(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "    xxx   ");
 	
-	SIROperator::OperateHorizontally(mask, 0.25);
+	SIROperator::OperateHorizontally(mask.get(), 0.25);
 	AssertEquals(maskToString(mask), "   xxxxx  ");
 
-	SIROperator::OperateHorizontally(mask, 0.16);
+	SIROperator::OperateHorizontally(mask.get(), 0.16);
 	AssertEquals(maskToString(mask), "   xxxxx  ");
 
-	SIROperator::OperateHorizontally(mask, 0.17);
+	SIROperator::OperateHorizontally(mask.get(), 0.17);
 	AssertEquals(maskToString(mask), "  xxxxxxx ");
 
-	SIROperator::OperateHorizontally(mask, 0.6);
+	SIROperator::OperateHorizontally(mask.get(), 0.6);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 
-	SIROperator::OperateHorizontally(mask, 1.0);
+	SIROperator::OperateHorizontally(mask.get(), 1.0);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 	
 	setMask(mask, "xx xx     ");
 
-	SIROperator::OperateHorizontally(mask, 0.0);
+	SIROperator::OperateHorizontally(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "xx xx     ");
 
-	SIROperator::OperateHorizontally(mask, 0.19);
+	SIROperator::OperateHorizontally(mask.get(), 0.19);
 	AssertEquals(maskToString(mask), "xx xx     ", "Did not fill hole");
 	
-	SIROperator::OperateHorizontally(mask, 0.2);
+	SIROperator::OperateHorizontally(mask.get(), 0.2);
 	AssertEquals(maskToString(mask), "xxxxx     ", "Fill hole");
 	
 	mask = Mask2D::CreateSetMaskPtr<false>(40, 1);
 	//             0    5    0    5    0    5    0    5    
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	SIROperator::OperateHorizontally(mask, 0.2);
+	SIROperator::OperateHorizontally(mask.get(), 0.2);
 	AssertEquals(maskToString(mask), "    xxxxxxxxxxxxx x xxxxxxxxxxxx        ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	SIROperator::OperateHorizontally(mask, 0.3);
+	SIROperator::OperateHorizontally(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx       ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	SIROperator::OperateHorizontally(mask, 0.4);
+	SIROperator::OperateHorizontally(mask.get(), 0.4);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ");
 
 	setMask(mask, "xxxxxxxxxxxxxxx       xxxxxxxxxxxxxxxxxx");
-	SIROperator::OperateHorizontally(mask, 0.3);
+	SIROperator::OperateHorizontally(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 }
 
@@ -265,60 +265,60 @@ inline void SIROperatorTest::TestFrequencyApplication::operator()()
 	Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(1, 10);
 	setMask(mask, "     x    ");
 	
-	SIROperator::OperateVertically(mask, 0.0);
+	SIROperator::OperateVertically(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "     x    ", "Eta=0.0, single center flagged, no enlarge");
 	
-	SIROperator::OperateVertically(mask, 0.4);
+	SIROperator::OperateVertically(mask.get(), 0.4);
 	AssertEquals(maskToString(mask), "     x    ", "Eta=0.4, single center flagged, eta 0.4");
 	
-	SIROperator::OperateVertically(mask, 0.5);
+	SIROperator::OperateVertically(mask.get(), 0.5);
 	AssertEquals(maskToString(mask), "    xxx   ", "Eta=0.5, from one to three samples");
 
-	SIROperator::OperateVertically(mask, 0.0);
+	SIROperator::OperateVertically(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "    xxx   ");
 	
-	SIROperator::OperateVertically(mask, 0.25);
+	SIROperator::OperateVertically(mask.get(), 0.25);
 	AssertEquals(maskToString(mask), "   xxxxx  ");
 	
-	SIROperator::OperateVertically(mask, 0.16);
+	SIROperator::OperateVertically(mask.get(), 0.16);
 	AssertEquals(maskToString(mask), "   xxxxx  ");
 
-	SIROperator::OperateVertically(mask, 0.17);
+	SIROperator::OperateVertically(mask.get(), 0.17);
 	AssertEquals(maskToString(mask), "  xxxxxxx ");
 
-	SIROperator::OperateVertically(mask, 0.6);
+	SIROperator::OperateVertically(mask.get(), 0.6);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 
-	SIROperator::OperateVertically(mask, 1.0);
+	SIROperator::OperateVertically(mask.get(), 1.0);
 	AssertEquals(maskToString(mask), "xxxxxxxxxx");
 	
 	setMask(mask, "xx xx     ");
 
-	SIROperator::OperateVertically(mask, 0.0);
+	SIROperator::OperateVertically(mask.get(), 0.0);
 	AssertEquals(maskToString(mask), "xx xx     ");
 
-	SIROperator::OperateVertically(mask, 0.19);
+	SIROperator::OperateVertically(mask.get(), 0.19);
 	AssertEquals(maskToString(mask), "xx xx     ", "Did not fill hole");
 	
-	SIROperator::OperateVertically(mask, 0.2);
+	SIROperator::OperateVertically(mask.get(), 0.2);
 	AssertEquals(maskToString(mask), "xxxxx     ", "Fill hole");
 	
 	mask = Mask2D::CreateSetMaskPtr<false>(1, 40);
 	//             0    5    0    5    0    5    0    5    
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	SIROperator::OperateVertically(mask, 0.2);
+	SIROperator::OperateVertically(mask.get(), 0.2);
 	AssertEquals(maskToString(mask), "    xxxxxxxxxxxxx x xxxxxxxxxxxx        ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	SIROperator::OperateVertically(mask, 0.3);
+	SIROperator::OperateVertically(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx       ");
 
 	setMask(mask, "     xxxxxx xx xx x x xxx xxxxx         ");
-	SIROperator::OperateVertically(mask, 0.4);
+	SIROperator::OperateVertically(mask.get(), 0.4);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ");
 
 	setMask(mask, "xxxxxxxxxxxxxxx       xxxxxxxxxxxxxxxxxx");
-	SIROperator::OperateVertically(mask, 0.3);
+	SIROperator::OperateVertically(mask.get(), 0.3);
 	AssertEquals(maskToString(mask), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 }
 
@@ -334,7 +334,7 @@ inline void SIROperatorTest::TestTimeApplicationSpeed::operator()()
 			mask->SetValue(i, 0, (RNG::Uniform() >= 0.2));
 		}
 	}
-	SIROperator::OperateHorizontally(mask, 0.1);
+	SIROperator::OperateHorizontally(mask.get(), 0.1);
 }
 
 #endif

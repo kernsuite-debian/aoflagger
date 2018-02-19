@@ -18,13 +18,13 @@ namespace rfiStrategy {
 			IterationBlock() : _iterationCount(4), _sensitivityStart(10.0L) { }
 			virtual ~IterationBlock() { }
 
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				std::stringstream s;
 				s << "Iterate " << _iterationCount << " times";
 				return s.str();
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener)
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override
 			{
 				long double oldSensitivity = artifacts.Sensitivity();
 
@@ -41,13 +41,13 @@ namespace rfiStrategy {
 				}
 				artifacts.SetSensitivity(oldSensitivity);
 			}
-			virtual ActionType Type() const { return IterationBlockType; }
-			virtual unsigned int Weight() const { return ActionBlock::Weight() * _iterationCount; }
+			virtual ActionType Type() const final override { return IterationBlockType; }
+			virtual unsigned int Weight() const final override { return ActionBlock::Weight() * _iterationCount; }
 
-			size_t IterationCount() const throw() { return _iterationCount; }
-			void SetIterationCount(size_t newCount) throw() { _iterationCount = newCount; }
-			long double SensitivityStart() const throw() { return _sensitivityStart; }
-			void SetSensitivityStart(long double sensitivityStart) throw() { _sensitivityStart = sensitivityStart; }
+			size_t IterationCount() const { return _iterationCount; }
+			void SetIterationCount(size_t newCount) { _iterationCount = newCount; }
+			long double SensitivityStart() const { return _sensitivityStart; }
+			void SetSensitivityStart(long double sensitivityStart) { _sensitivityStart = sensitivityStart; }
 		private:
 			size_t _iterationCount;
 			long double _sensitivityStart;

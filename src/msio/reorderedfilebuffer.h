@@ -5,7 +5,7 @@
 #include <vector>
 #include <set>
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 
 class ReorderedFileBuffer
 {
@@ -37,7 +37,7 @@ public:
 	
 	void flush()
 	{
-		AOLogger::Debug << "Flushing reordered file buffer...\n";
+		Logger::Debug << "Flushing reordered file buffer...\n";
 		for(std::set<BufferEntry>::const_iterator i=_buffer.begin(); i!=_buffer.end(); ++i)
 		{
 			_stream->seekp(i->position, std::ios_base::beg);

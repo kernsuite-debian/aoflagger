@@ -7,7 +7,7 @@
 class IntegerDomain {
 	public:
 		IntegerDomain(const IntegerDomain &source);
-		IntegerDomain(int singleValue);
+		explicit IntegerDomain(int singleValue);
 		IntegerDomain(const int *values, unsigned count);
 		IntegerDomain(int first, unsigned count);
 		IntegerDomain(int first, unsigned step, unsigned count);

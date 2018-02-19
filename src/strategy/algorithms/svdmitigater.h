@@ -10,24 +10,27 @@
 // Needs to be included LAST
 #include "../../f2c.h"
 
-class SVDMitigater : public SurfaceFitMethod {
+class SVDMitigater final : public SurfaceFitMethod {
 	public:
 		SVDMitigater();
 		~SVDMitigater();
 
-		virtual void Initialize(const TimeFrequencyData &data) {
+		virtual void Initialize(const TimeFrequencyData &data) final override {
 			Clear();
 			_data = data;
 			_iteration = 0;
 		}
-		virtual unsigned TaskCount() { return 1; }
-		virtual void PerformFit(unsigned)
+		void PerformFit()
 		{
 			_iteration++;
 			RemoveSingularValues(_removeCount);
 		}
+		virtual void PerformFit(unsigned) final override
+		{
+			PerformFit();
+		}
 
-		virtual void RemoveSingularValues(unsigned singularValueCount)
+		void RemoveSingularValues(unsigned singularValueCount)
 		{
 			if(!IsDecomposed())
 				Decompose();
@@ -36,14 +39,14 @@ class SVDMitigater : public SurfaceFitMethod {
 			Compose();
 		}
 
-		virtual TimeFrequencyData Background()
+		TimeFrequencyData Background() const
 		{
 			return *_background;
 		}
 
-		virtual enum TimeFrequencyData::PhaseRepresentation PhaseRepresentation() const
+		enum TimeFrequencyData::ComplexRepresentation ComplexRepresentation() const
 		{
-			return TimeFrequencyData::ComplexRepresentation;
+			return TimeFrequencyData::ComplexParts;
 		}
 
 		bool IsDecomposed() const throw() { return _singularValues != 0 ; }

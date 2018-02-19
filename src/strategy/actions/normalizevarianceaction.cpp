@@ -25,14 +25,14 @@ void NormalizeVarianceAction::initializeStdDevs(ArtifactSet &artifacts)
 	// std dev. When a new measurement set is read, Initialize or Finalize
 	// will be called, causing a clean().
 	
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	if(!_isInitialized)
 	{
 		if(!artifacts.HasImageSet())
 			throw std::runtime_error("Normalize variance called without image set");
-		ImageSet *imageSet = artifacts.ImageSet();
-		MSImageSet *msImageSet = dynamic_cast<MSImageSet*>(imageSet);
-		if(msImageSet == 0)
+		ImageSet& imageSet = artifacts.ImageSet();
+		MSImageSet* msImageSet = dynamic_cast<MSImageSet*>(&imageSet);
+		if(msImageSet == nullptr)
 			throw std::runtime_error("Normalize variance actions needs measurement set");
 		std::string filename = msImageSet->Reader()->Set().Path();
 		QualityTablesFormatter qtables(filename);
@@ -58,7 +58,7 @@ void NormalizeVarianceAction::initializeStdDevs(ArtifactSet &artifacts)
 
 void NormalizeVarianceAction::clean()
 {
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	_isInitialized = false;
 	_stddevs.clear(); // frees a bit of memory.
 }
@@ -74,7 +74,7 @@ void NormalizeVarianceAction::Perform(ArtifactSet &artifacts, ProgressListener &
 	
 	std::vector<Image2DPtr> data;
 	for(unsigned img=0;img<original.ImageCount();++img)
-		data.push_back(Image2D::CreateCopy(original.GetImage(img)));
+		data.emplace_back(new Image2D(*original.GetImage(img)));
 		
 	// Add the first half of the window
 	const double halfWindowTime = _medianFilterSizeInS * 0.5;

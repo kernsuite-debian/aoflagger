@@ -1,7 +1,7 @@
 #include "memorybaselinereader.h"
 #include "../structures/system.h"
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 #include "../util/stopwatch.h"
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
@@ -112,7 +112,7 @@ void MemoryBaselineReader::readSet()
 		}
 		
 		// The actual reading of the data
-		AOLogger::Debug << "Reading the data...\n";
+		Logger::Debug << "Reading the data...\n";
 		
 		double prevTime = -1.0;
 		size_t curTimeIndex = size_t(0);
@@ -230,7 +230,7 @@ void MemoryBaselineReader::readSet()
 		_areFlagsChanged = false;
 		_isRead = true;
 		
-		AOLogger::Debug << "Reading toke " << watch.ToString() << ".\n";
+		Logger::Debug << "Reading toke " << watch.ToString() << ".\n";
 	}
 }
 
@@ -246,7 +246,7 @@ void MemoryBaselineReader::PerformFlagWriteRequests()
 		if(result->_flags.size() != request.flags.size())
 			throw std::runtime_error("Polarizations do not match");
 		for(size_t p=0;p!=result->_flags.size();++p)
-			result->_flags[p] = Mask2D::CreateCopy(request.flags[p]);
+			result->_flags[p].reset(new Mask2D(*request.flags[p]));
 	}
 	_areFlagsChanged = true;
 	
@@ -271,7 +271,7 @@ void MemoryBaselineReader::writeFlags()
 	
 	const size_t polarizationCount = Polarizations().size();
 		
-	AOLogger::Debug << "Flags have changed, writing them back to the set...\n";
+	Logger::Debug << "Flags have changed, writing them back to the set...\n";
 	
 	double prevTime = -1.0;
 	unsigned rowCount = table.nrow();
@@ -336,12 +336,12 @@ bool MemoryBaselineReader::IsEnoughMemoryAvailable(const std::string &filename)
 	
 	if(size * 2 >= totalMem)
 	{
-		AOLogger::Warn
+		Logger::Warn
 			<< (size/1000000) << " MB required, but " << (totalMem/1000000) << " MB available.\n"
 			"Because this is not at least twice as much, direct read mode (slower!) will be used.\n";
 		return false;
 	} else {
-		AOLogger::Debug
+		Logger::Debug
 			<< (size/1000000) << " MB required, " << (totalMem/1000000)
 			<< " MB available: will use memory read mode.\n";
 		return true;

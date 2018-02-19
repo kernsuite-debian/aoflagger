@@ -10,13 +10,13 @@ namespace rfiStrategy {
 	class ActionBlock : public ActionContainer
 	{
 		public:
-			virtual std::string Description()
+			virtual std::string Description() override
 			{
 				return "Block";
 			}
-			virtual void Perform(class ArtifactSet &artifacts, ProgressListener &listener);
+			virtual void Perform(class ArtifactSet &artifacts, ProgressListener &listener) override;
 
-			virtual unsigned int Weight() const
+			virtual unsigned int Weight() const override
 			{
 				unsigned int weight = 0;
 				for(const_iterator i=begin();i!=end();++i)

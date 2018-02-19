@@ -7,8 +7,9 @@
 #include "../../msio/fitsfile.h"
 #include "../../structures/image2d.h"
 #include "../../structures/timefrequencydata.h"
+#include "../../structures/timefrequencymetadata.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 namespace rfiStrategy {
 	
@@ -40,18 +41,18 @@ namespace rfiStrategy {
 	{
 	}
 	
-	FitsImageSet *FitsImageSet::Copy()
+	std::unique_ptr<ImageSet> FitsImageSet::Clone()
 	{
-		return new FitsImageSet(*this);
+		return std::unique_ptr<FitsImageSet>(new FitsImageSet(*this));
 	}
 
 	void FitsImageSet::Initialize()
 	{
-		//AOLogger::Debug << "Keyword count: " << _file->GetKeywordCount() << '\n';
+		//Logger::Debug << "Keyword count: " << _file->GetKeywordCount() << '\n';
 		if(_file->HasGroups())
 		{
-			AOLogger::Debug << "This file has " << _file->GetGroupCount() << " groups with " << _file->GetParameterCount() << " parameters.\n";
-			//AOLogger::Debug << "Group size: " << _file->GetGroupSize() << '\n';
+			Logger::Debug << "This file has " << _file->GetGroupCount() << " groups with " << _file->GetParameterCount() << " parameters.\n";
+			//Logger::Debug << "Group size: " << _file->GetGroupSize() << '\n';
 			_file->MoveToHDU(1);
 			if(_file->GetCurrentHDUType() != FitsFile::ImageHDUType)
 				throw FitsIOException("Primary table is not a grouped image");
@@ -67,7 +68,7 @@ namespace rfiStrategy {
 				baselineSet.insert(std::pair<size_t,size_t>(a1,a2));
 			}
 			delete[] parameters;
-			AOLogger::Debug << "Baselines in file: " << baselineSet.size() << '\n';
+			Logger::Debug << "Baselines in file: " << baselineSet.size() << '\n';
 			for(std::set<std::pair<size_t,size_t> >::const_iterator i=baselineSet.begin();i!=baselineSet.end();++i)
 				_baselines.push_back(*i);
 			_bandCount = _file->GetCurrentImageSize(5);
@@ -75,8 +76,10 @@ namespace rfiStrategy {
 			// sdfits
 			
 			_baselines.push_back(std::pair<size_t,size_t>(0, 0));
-			_antennaInfos.push_back(AntennaInfo());
-			
+      AntennaInfo antenna;
+      antenna.id = 0;
+			_antennaInfos.push_back(antenna);
+      
 			// find number of bands
 			_file->MoveToHDU(2);
 			int ifColumn = _file->GetTableColumnIndex("IF");
@@ -92,15 +95,15 @@ namespace rfiStrategy {
 			if(_bandCount == 0)
 				throw std::runtime_error("Could not find any IF's in this set");
 			_bandIndexToNumber.clear();
-			AOLogger::Debug << _bandCount << " IF's in set: [" << *ifSet.begin();
-			for(std::set<int>::const_iterator i=ifSet.begin(); i!=ifSet.end(); ++i)
+			Logger::Debug << _bandCount << " IF's in set: [" << *ifSet.begin();
+			for(int i : ifSet)
 			{
-				_bandInfos.insert(std::pair<int, BandInfo>(*i, BandInfo()));
+				_bandInfos.insert(std::pair<int, BandInfo>(i, BandInfo()));
 				if(_bandIndexToNumber.size()>0)
-					AOLogger::Debug << ", " << *i;
-				_bandIndexToNumber.push_back(*i);
+					Logger::Debug << ", " << i;
+				_bandIndexToNumber.push_back(i);
 			}
-			AOLogger::Debug << "]\n";
+			Logger::Debug << "]\n";
 		}
 	}
 
@@ -122,15 +125,15 @@ namespace rfiStrategy {
 			switch(_file->GetCurrentHDUType())
 			{
 				case FitsFile::BinaryTableHDUType:
-					AOLogger::Debug << "Binary table found.\n";
+					Logger::Debug << "Binary table found.\n";
 					ReadTable(data, *metaData, fitsIndex._band);
 					break;
 				case FitsFile::ASCIITableHDUType:
-					AOLogger::Debug << "ASCII table found.\n";
+					Logger::Debug << "ASCII table found.\n";
 					ReadTable(data, *metaData, fitsIndex._band);
 					break;
 				case FitsFile::ImageHDUType:
-					AOLogger::Debug << "Image found.\n";
+					Logger::Debug << "Image found.\n";
 					break;
 			}
 		}
@@ -141,9 +144,14 @@ namespace rfiStrategy {
 			_currentBandIndex = fitsIndex._band;
 			int bandNumber = _bandIndexToNumber[fitsIndex._band];
 			metaData->SetBand(_bandInfos[bandNumber]);
-			AOLogger::Debug << "Loaded metadata for: " << Date::AipsMJDToString(metaData->ObservationTimes()[0]) << ", band " << bandNumber << " (" << Frequency::ToString(_bandInfos[bandNumber].channels[0].frequencyHz) << " - " << Frequency::ToString(_bandInfos[bandNumber].channels.rbegin()->frequencyHz) << ")\n";
-
+      metaData->SetAntenna1(_antennaInfos[_baselines[_currentBaselineIndex].first]);
+      metaData->SetAntenna2(_antennaInfos[_baselines[_currentBaselineIndex].second]);
+			Logger::Debug << "Loaded metadata for: " << Date::AipsMJDToString(metaData->ObservationTimes()[0]) << ", band " << bandNumber << " (" << Frequency::ToString(_bandInfos[bandNumber].channels[0].frequencyHz) << " - " << Frequency::ToString(_bandInfos[bandNumber].channels.rbegin()->frequencyHz) << ")\n";
 		}
+		else {
+      metaData->SetAntenna1(_antennaInfos[0]);
+      metaData->SetAntenna2(_antennaInfos[0]);
+    }
 		return BaselineData(data, metaData, index);
 	}
 
@@ -157,7 +165,7 @@ namespace rfiStrategy {
 
 		//int keywordCount = _file->GetKeywordCount();
 		//for(int i=1;i<=keywordCount;++i)
-		//	AOLogger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
+		//	Logger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
 
 		std::vector<long double> parameters(_file->GetParameterCount());
 		int baseline = (_baselines[baselineIndex].first+1) + ((_baselines[baselineIndex].second+1)<<8);
@@ -223,11 +231,11 @@ namespace rfiStrategy {
 				++match;
 			}
 		}
-		AOLogger::Debug << match << " rows in table matched baseline.\n";
+		Logger::Debug << match << " rows in table matched baseline.\n";
 		data.clear();
 		parameters.clear();
 
-		AOLogger::Debug << "Image is " << valuesR[0].size() << " x " << frequencyCount << '\n';
+		Logger::Debug << "Image is " << valuesR[0].size() << " x " << frequencyCount << '\n';
 		if(valuesR[0].size() == 0)
 			throw BadUsageException("Baseline not found!");
 		Image2DPtr
@@ -251,20 +259,20 @@ namespace rfiStrategy {
 	{
 		//int keywordCount = _file->GetKeywordCount();
 		//for(int i=1;i<=keywordCount;++i)
-		//	AOLogger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
+		//	Logger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
 	}
 	
 	void FitsImageSet::ReadTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData, size_t bandIndex)
 	{
-		//AOLogger::Debug << "Row count: " << _file->GetRowCount() << '\n';
-		//AOLogger::Debug << "Column count: " << _file->GetColumnCount() << '\n';
+		//Logger::Debug << "Row count: " << _file->GetRowCount() << '\n';
+		//Logger::Debug << "Column count: " << _file->GetColumnCount() << '\n';
 		//for(int i= 1;i <= _file->GetColumnCount(); ++i)
 		//{
-		//	AOLogger::Debug << "Column type " << i << ": " << _file->GetColumnType(i) << '\n';
+		//	Logger::Debug << "Column type " << i << ": " << _file->GetColumnType(i) << '\n';
 		//}
 		std::string extName = _file->GetKeywordValue("EXTNAME");
 		//for(int i=1;i<=_file->GetKeywordCount();++i)
-		//	AOLogger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
+		//	Logger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
 		if(extName == "AIPS AN")
 			ReadAntennaTable(metaData);
 		else if(extName == "AIPS FQ")
@@ -277,7 +285,7 @@ namespace rfiStrategy {
 	
 	void FitsImageSet::ReadAntennaTable(TimeFrequencyMetaData &metaData)
 	{
-		AOLogger::Debug << "Found antenna table\n";
+		Logger::Debug << "Found antenna table\n";
 		_frequencyOffset = _file->GetDoubleKeywordValue("FREQ");
 		for(std::map<int, BandInfo>::iterator i=_bandInfos.begin();i!=_bandInfos.end();++i)
 		{
@@ -302,6 +310,7 @@ namespace rfiStrategy {
 			_file->ReadTableCell(i, 1, name);
 			_file->ReadTableCell(i, 2, pos, 3);
 			info.name = name;
+      info.id = _antennaInfos.size();
 			info.position.x = pos[0];
 			info.position.y = pos[1];
 			info.position.z = pos[2];
@@ -311,9 +320,9 @@ namespace rfiStrategy {
 
 	void FitsImageSet::ReadFrequencyTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData)
 	{
-		AOLogger::Debug << "Found frequency table\n";
+		Logger::Debug << "Found frequency table\n";
 		const size_t numberIfs = _file->GetIntKeywordValue("NO_IF");
-		AOLogger::Debug << "Number of ifs: " << numberIfs << '\n';
+		Logger::Debug << "Number of ifs: " << numberIfs << '\n';
 		_bandInfos.clear();
 		BandInfo bandInfo;
 		for(int i=1;i<=_file->GetRowCount();++i)
@@ -346,13 +355,13 @@ namespace rfiStrategy {
 
 	void FitsImageSet::ReadCalibrationTable()
 	{
-		AOLogger::Debug << "Found calibration table with " << _file->GetRowCount() << " rows.\n";
+		Logger::Debug << "Found calibration table with " << _file->GetRowCount() << " rows.\n";
 	}
 	
 	void FitsImageSet::ReadSingleDishTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData, size_t ifIndex)
 	{
 		const int rowCount = _file->GetRowCount();
-		AOLogger::Debug << "Found single dish table with " << rowCount << " rows.\n";
+		Logger::Debug << "Found single dish table with " << rowCount << " rows.\n";
 		const int
 			timeColumn = _file->GetTableColumnIndex("TIME"),
 			dateObsColumn = _file->GetTableColumnIndex("DATE-OBS"),
@@ -377,9 +386,9 @@ namespace rfiStrategy {
 		_antennaInfos[0].name = telescopeName;
 			
 		const int totalSize = _file->GetTableColumnArraySize(dataColumn);
-		AOLogger::Debug << "Shape of data cells: " << freqCount << " channels x " << polarizationCount << " pols x " << raCount << " RAs x " << decCount << " decs" << "=" << totalSize << '\n';
+		Logger::Debug << "Shape of data cells: " << freqCount << " channels x " << polarizationCount << " pols x " << raCount << " RAs x " << decCount << " decs" << "=" << totalSize << '\n';
 		std::vector<long double> cellData(totalSize);
-		bool *flagData = new bool[totalSize];
+		std::unique_ptr<bool[]> flagData(new bool[totalSize]);
 		std::vector<Image2DPtr> images(polarizationCount);
 		std::vector<Mask2DPtr> masks(polarizationCount);
 		for(int i=0;i<polarizationCount;++i)
@@ -415,8 +424,8 @@ namespace rfiStrategy {
 					_file->ReadTableCell(row, freqBandwidthColumn, &freqBandwidth, 1);
 					if(freqBandwidth > 0.0)
 					{
-						AOLogger::Debug << "Frequency info: " <<freqVal << " Hz at index " << freqRefPix << ", delta " << freqDelta << "\n";
-						AOLogger::Debug << "Frequency res: " <<freqRes << " with bandwidth " << freqBandwidth << " Hz\n";
+						Logger::Debug << "Frequency info: " <<freqVal << " Hz at index " << freqRefPix << ", delta " << freqDelta << "\n";
+						Logger::Debug << "Frequency res: " <<freqRes << " with bandwidth " << freqBandwidth << " Hz\n";
 						BandInfo bandInfo;
 						bandInfo.windowIndex = ifNumber;
 						for(int i=0;i<freqCount;++i)
@@ -433,7 +442,7 @@ namespace rfiStrategy {
 				}
 
 				long double *dataPtr = &cellData[0];
-				bool *flagPtr = flagData;
+				bool *flagPtr = flagData.get();
 				for(int p=0;p<polarizationCount;++p)
 				{
 					for(int f=0;f<freqCount;++f)
@@ -447,7 +456,7 @@ namespace rfiStrategy {
 				++timeIndex;
 			}
 		}
-		delete[] flagData;
+		flagData.reset();
 		if(timeIndex == 0)
 		{
 			throw std::runtime_error("Couldn't find any rows in the fits image set for the requested IF");
@@ -455,7 +464,7 @@ namespace rfiStrategy {
 		for(int p=0;p<polarizationCount;++p)
 		{
 			images[p]->SetTrim(0, 0, timeIndex, images[p]->Height());
-			masks[p] = masks[p]->Trim(0, 0, timeIndex, images[p]->Height());
+			masks[p].reset(new Mask2D(masks[p]->Trim(0, 0, timeIndex, images[p]->Height())));
 		}
 		observationTimes.resize(timeIndex);
 		metaData.SetObservationTimes(observationTimes);
@@ -466,7 +475,7 @@ namespace rfiStrategy {
 		} else if(polarizationCount == 2)
 		{
 			data = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::XX, images[0], Polarization::YY, images[1]);
-			data.SetIndividualPolarisationMasks(masks[0], masks[1]);
+			data.SetIndividualPolarizationMasks(masks[0], masks[1]);
 		}
 		else throw std::runtime_error("Don't know how to convert polarizations in file");
 	}
@@ -493,7 +502,7 @@ namespace rfiStrategy {
 		_file->Close();
 		_file->Open(FitsFile::ReadWriteMode);
 		_file->MoveToHDU(2);
-		AOLogger::Debug << "Writing single dish table for band " << ifIndex << " with " << _file->GetRowCount() << " rows.\n";
+		Logger::Debug << "Writing single dish table for band " << ifIndex << " with " << _file->GetRowCount() << " rows.\n";
 		const int
 			dataColumn = _file->GetTableColumnIndex("DATA"),
 			flagColumn = _file->GetTableColumnIndex("FLAGGED"),
@@ -505,7 +514,7 @@ namespace rfiStrategy {
 		const int totalSize = _file->GetTableColumnArraySize(dataColumn);
 		const int rowCount = _file->GetRowCount();
 		std::vector<double> cellData(totalSize);
-		bool *flagData = new bool[totalSize];
+		std::unique_ptr<bool[]> flagData ( new bool[totalSize] );
 		std::vector<Mask2DCPtr> storedFlags = flags;
 		if(flags.size()==1)
 		{
@@ -531,10 +540,10 @@ namespace rfiStrategy {
 			
 			if(ifNumber == specifiedIFNumber)
 			{
-				AOLogger::Debug << row << "\n";
+				Logger::Debug << row << "\n";
 				_file->ReadTableCell(row, dataColumn, &cellData[0], totalSize);
 				double *dataPtr = &cellData[0];
-				bool *flagPtr = flagData;
+				bool *flagPtr = flagData.get();
 				
 				for(int p=0;p<polarizationCount;++p)
 				{
@@ -553,11 +562,10 @@ namespace rfiStrategy {
 				}
 				
 				_file->WriteTableCell(row, dataColumn, &cellData[0], totalSize);
-				_file->WriteTableCell(row, flagColumn, flagData, totalSize);
+				_file->WriteTableCell(row, flagColumn, flagData.get(), totalSize);
 				++timeIndex;
 			}
 		}
-		delete[] flagData;
 	}
 	
 	void FitsImageSetIndex::Previous()

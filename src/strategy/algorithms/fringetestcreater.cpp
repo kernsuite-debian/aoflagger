@@ -26,5 +26,5 @@ void FringeTestCreater::AddStaticFringe(class TimeFrequencyData &ftData, TimeFre
 		}
 	}
 	
-	ftData.Set(ftData.Polarisations()[0], newReal, newImaginary);
+	ftData.Set(ftData.Polarizations()[0], newReal, newImaginary);
 }

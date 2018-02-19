@@ -1,8 +1,6 @@
 #ifndef XYSWAPPEDMASK2D_H
 #define XYSWAPPEDMASK2D_H
 
-#include <boost/shared_ptr.hpp>
-
 #include "mask2d.h"
 
 /**
@@ -22,7 +20,7 @@
 class XYSwappedMask2D
 {
 	public:
-		inline XYSwappedMask2D(Mask2D &mask) : _mask(mask)
+		explicit XYSwappedMask2D(Mask2D &mask) : _mask(mask)
 		{
 		}
 		

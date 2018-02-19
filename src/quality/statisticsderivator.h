@@ -14,7 +14,7 @@ struct stat;
 class StatisticsDerivator
 {
 	public:
-		StatisticsDerivator(const StatisticsCollection &collection) :
+		explicit StatisticsDerivator(const StatisticsCollection &collection) :
 			_collection(collection)
 		{
 		}
@@ -262,7 +262,6 @@ class StatisticsDerivator
 					const std::complex<T> stddev =
 						deriveComplex<T>(QualityTablesFormatter::DStandardDeviationStatistic, statistics, polarization);
 					return std::complex<T>(fabsl(statistics.Mean<T>(polarization).real() / stddev.real()), fabsl(statistics.Mean<T>(polarization).imag() / stddev.imag()));
-					break;
 				}
 				default:
 					throw std::runtime_error("Can not derive requested statistic");

@@ -11,7 +11,7 @@
 
 class UnitTest : public TestItem {
 	public:
-		UnitTest(const std::string &name) : _name(name), _successes(0), _failures(0)
+		explicit UnitTest(const std::string &name) : _name(name), _successes(0), _failures(0)
 		{
 		}
 		
@@ -56,7 +56,7 @@ class UnitTest : public TestItem {
 	private:
 		struct RunnableTest {
 			public:
-				RunnableTest(const std::string &name) : _name(name) { }
+				explicit RunnableTest(const std::string &name) : _name(name) { }
 				virtual ~RunnableTest() { }
 				virtual void Run() = 0;
 				std::string _name;
@@ -70,7 +70,7 @@ class UnitTest : public TestItem {
 			SpecificTest(Functor functor, const std::string &name) : RunnableTest(name), _functor(functor)
 			{
 			}
-			virtual void Run()
+			virtual void Run() override
 			{
 				_functor();
 			}

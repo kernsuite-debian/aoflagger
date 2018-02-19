@@ -139,8 +139,9 @@ namespace aoflagger {
 			 * observations. Examples are observations for fast pulsars or fast radio burst.
 			 */
 			static const unsigned HIGH_TIME_RESOLUTION;
+			
 		private:
-			StrategyFlags();
+			StrategyFlags() = delete;
 	};
 
 	/** @brief A set of time-frequency 'images' which together contain data for one
@@ -171,11 +172,21 @@ namespace aoflagger {
 			/** @brief Copy the image set. Only references to images are copied. */
 			ImageSet(const ImageSet& sourceImageSet);
 			
+			/** @brief Move from the image set.
+			 * @since Version 2.10
+			 */
+			ImageSet(ImageSet&& sourceImageSet);
+			
 			/** @brief Destruct image set. Destroys its images if no longer referenced. */
 			~ImageSet();
 			
 			/** @brief Assign to this image set. Only references to images are copied. */
 			ImageSet &operator=(const ImageSet& sourceImageSet);
+			
+			/** @brief Move assign to this image set.
+			 * @since Version 2.10
+			 */
+			ImageSet &operator=(ImageSet&& sourceImageSet);
 			
 			/** @brief Get access to the data buffer of an image.
 			 * @param imageIndex Index of image. See class description for ordering.
@@ -274,6 +285,21 @@ namespace aoflagger {
 			/** @brief Copy a flag mask. Only copies a reference, not the data. */
 			FlagMask(const FlagMask& sourceMask);
 			
+			/** @brief Move construct a flag mask.
+			 * @since Version 2.10
+			 */
+			FlagMask(FlagMask&& sourceMask);
+			
+			/** @brief Copy assignment.
+			 * @since Version 2.10
+			 */
+			FlagMask& operator=(const FlagMask& source);
+			
+			/** @brief Move assignment.
+			 * @since Version 2.10
+			 */
+			FlagMask& operator=(FlagMask&& source);
+			
 			/** @brief Destroy a flag mask. Destroys mask data if no longer references. */
 			~FlagMask();
 			
@@ -328,16 +354,26 @@ namespace aoflagger {
 			/** @brief Create a copy of a strategy. */
 			Strategy(const Strategy& sourceStrategy);
 			
+			/** @brief Move construct a strategy.
+			 * @since Version 2.10
+			 */
+			Strategy(Strategy&& sourceStrategy);
+			
 			/** @brief Destruct strategy. */
 			~Strategy();
 			
 			/** @brief Assign to strategy. */
 			Strategy &operator=(const Strategy& sourceStrategy);
 			
+			/** @brief Move assign to strategy.
+			 * @since Version 2.10
+			 */
+			Strategy &operator=(Strategy&& sourceStrategy);
+			
 		private:
 			Strategy(enum TelescopeId telescopeId, unsigned strategyFlags, double frequency=0.0, double timeRes=0.0, double frequencyRes=0.0);
 			
-			Strategy(const std::string& filename);
+			explicit Strategy(const std::string& filename);
 			
 			class StrategyData *_data;
 	};
@@ -368,13 +404,23 @@ namespace aoflagger {
 			friend class AOFlagger;
 			
 			/** @brief Copy the object. This is fast; only references are copied. */
-			QualityStatistics(const QualityStatistics &sourceQS);
+			QualityStatistics(const QualityStatistics& sourceQS);
+			
+			/** @brief Move construct the object.
+			 * @since Version 2.10
+			 */
+			QualityStatistics(QualityStatistics&& sourceQS);
 			
 			/** @brief Destruct the object. Data is destroyed if no more references exist. */
 			~QualityStatistics();
 			
 			/** @brief Assign to this object. This is fast; only references are copied. */
-			QualityStatistics &operator=(const QualityStatistics &sourceQS);
+			QualityStatistics& operator=(const QualityStatistics &sourceQS);
+			
+			/** @brief Assign to this object. This is fast; only references are copied.
+			 * @since Version 2.10
+			 */
+			QualityStatistics& operator=(QualityStatistics&& sourceQS);
 			
 			/** @brief Combine the statistics from the given object with the statistics in this object.
 			 *
@@ -397,7 +443,7 @@ namespace aoflagger {
 	 * @brief A base class which callers can inherit from to be able to receive
 	 * progress updates and error messages.
 	 * 
-	 * When calling the Run() method in parallell, a status listener should be thread safe.
+	 * A status listener should be thread safe when the Run() method is called in parallell.
 	 */
 	class StatusListener
 	{
@@ -512,7 +558,7 @@ namespace aoflagger {
 	{
 		public:
 			/** @brief Create and initialize the flagger main class. */
-			AOFlagger() : _statusListener(0) { }
+			AOFlagger() : _statusListener(nullptr) { }
 			
 			/** @brief Destructor. */
 			~AOFlagger() { }
@@ -731,11 +777,11 @@ namespace aoflagger {
 		private:
 			/** @brief It is not allowed to copy this class
 			 */
-			AOFlagger(const AOFlagger&) { }
+			AOFlagger(const AOFlagger&) = delete;
 			
 			/** @brief It is not allowed to assign to this class
 			 */
-			void operator=(const AOFlagger&) { }
+			void operator=(const AOFlagger&) = delete;
 			
 			StatusListener* _statusListener;
 	};

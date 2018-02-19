@@ -7,7 +7,7 @@ class MSIOTestGroup : public TestGroup {
 	public:
 		MSIOTestGroup() : TestGroup("Measurement set input/output") { }
 		
-		virtual void Initialize()
+		virtual void Initialize() override
 		{
 		}
 };

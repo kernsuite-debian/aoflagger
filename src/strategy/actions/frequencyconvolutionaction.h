@@ -7,7 +7,7 @@
 
 #include "../../imaging/uvimager.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/progresslistener.h"
 
 #include "action.h"
@@ -27,19 +27,19 @@ namespace rfiStrategy {
 			FrequencyConvolutionAction() : Action(), _kernelKind(SincKernel), _convolutionSize(4.0), _inSamples(false)
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Frequency convolution";
 			}
-			virtual ActionType Type() const { return FrequencyConvolutionActionType; }
-			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener)
+			virtual ActionType Type() const final override { return FrequencyConvolutionActionType; }
+			virtual void Perform(ArtifactSet &artifacts, class ProgressListener &listener) final override
 			{
 				TimeFrequencyData &data = artifacts.ContaminatedData();
 				if(_kernelKind == TotalKernel)
 				{
 					Image2DPtr
-						rImage = Image2D::CreateCopy(data.GetImage(0)),
-						iImage = Image2D::CreateCopy(data.GetImage(1));
+						rImage(new Image2D(*data.GetImage(0))),
+						iImage(new Image2D(*data.GetImage(1)));
 					Convolve(rImage, iImage, artifacts.MetaData(), listener);
 					data.SetImage(0, rImage);
 					data.SetImage(1, iImage);
@@ -55,10 +55,10 @@ namespace rfiStrategy {
 					{
 						default:
 						case RectangleKernel:
-						newImage = ThresholdTools::FrequencyRectangularConvolution(data.GetImage(0), (unsigned) roundn(_convolutionSize));
+						newImage = ThresholdTools::FrequencyRectangularConvolution(data.GetImage(0).get(), (unsigned) roundn(_convolutionSize));
 						break;
 						case SincKernel:
-						newImage = sincConvolution(artifacts.MetaData(), data.GetImage(0));
+						newImage = sincConvolution(artifacts.MetaData(), data.GetImage(0).get());
 						break;
 					}
 					
@@ -75,18 +75,18 @@ namespace rfiStrategy {
 			bool InSamples() const { return _inSamples; }
 			void SetInSamples(bool inSamples) { _inSamples = inSamples; }
 		private:
-			Image2DPtr sincConvolution(TimeFrequencyMetaDataCPtr metaData, Image2DCPtr source)
+			Image2DPtr sincConvolution(TimeFrequencyMetaDataCPtr metaData, const Image2D* source)
 			{
 				numl_t uvDist = averageUVDist(metaData);
-				AOLogger::Debug << "Avg uv dist: " << uvDist << '\n';
+				Logger::Debug << "Avg uv dist: " << uvDist << '\n';
 				numl_t convolutionSize = convolutionSizeInSamples(uvDist, source->Height());
-				AOLogger::Debug << "Convolution size: " << convolutionSize << '\n';
+				Logger::Debug << "Convolution size: " << convolutionSize << '\n';
 				Image2DPtr destination = Image2D::CreateUnsetImagePtr(source->Width(), source->Height());
 				for(unsigned x=0;x<source->Width();++x)
 				{
-					SampleRowPtr row = SampleRow::CreateFromColumn(source, x);
-					row->ConvolveWithSinc(1.0 / convolutionSize);
-					row->SetVerticalImageValues(destination, x);
+					SampleRow row = SampleRow::MakeFromColumn(source, x);
+					row.ConvolveWithSinc(1.0 / convolutionSize);
+					row.SetVerticalImageValues(destination.get(), x);
 				}
 				return destination;
 			}
@@ -122,8 +122,8 @@ namespace rfiStrategy {
 			
 			void Convolve(Image2DPtr rImage, Image2DPtr iImage, TimeFrequencyMetaDataCPtr metaData, ProgressListener &listener)
 			{
-				Image2DPtr copyReal = Image2D::CreateCopy(rImage);
-				Image2DPtr copyImag = Image2D::CreateCopy(iImage);
+				Image2DPtr copyReal(new Image2D(*rImage));
+				Image2DPtr copyImag(new Image2D(*iImage));
 				const size_t
 					width = rImage->Width(),
 					height = rImage->Height();
@@ -163,7 +163,7 @@ namespace rfiStrategy {
 									const num_t sincVal = sinn(dist) / dist;
 									/*if(xi == 0)
 									{
-										AOLogger::Debug << dist << '*' << factor << " -> " << sincVal << '\n';
+										Logger::Debug << dist << '*' << factor << " -> " << sincVal << '\n';
 									}*/
 									
 									real += sincVal * copyReal->Value(xi, yi);

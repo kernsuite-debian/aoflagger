@@ -10,7 +10,7 @@
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 
 #include "../structures/image2d.h"
 #include "../structures/timefrequencydata.h"
@@ -62,7 +62,7 @@ class ParmTable
 		
 		TimeFrequencyData Read(const std::string &antenna)
 		{
-			AOLogger::Debug << "Reading antenna " << antenna << "\n";
+			Logger::Debug << "Reading antenna " << antenna << "\n";
 			
 			// find the nameid's that we need to select
 			const int
@@ -70,7 +70,7 @@ class ParmTable
 				r11 = FindEntry(1, 1, GainNameEntry::Real, antenna).index,
 				i00 = FindEntry(0, 0, GainNameEntry::Imaginary, antenna).index,
 				i11 = FindEntry(1, 1, GainNameEntry::Imaginary, antenna).index;
-			AOLogger::Debug
+			Logger::Debug
 				<< "Names: r00=" << r00 << ", "
 				<< "r11=" << r11 << ", "
 				<< "i00=" << i00 << ", "
@@ -124,11 +124,11 @@ class ParmTable
 					const unsigned xShape = values.shape(row)[0];
 					if(xShape > curXShape)
 						curXShape = xShape;
-					
+					Logger::Debug << "Image has size " << xShape << " x " << curYShape << '\n';
 					const casacore::Array<double> valueArray = values(row);
 					casacore::Array<double>::const_iterator vIter = valueArray.begin();
-					for(unsigned x=0;x<xShape;++x) {
-						for(unsigned y=0;y<curYShape;++y) {
+					for(unsigned y=0;y<curYShape;++y) {
+						for(unsigned x=0;x<xShape;++x) {
 							destImage->SetValue(yPos + y, xPos + x, *vIter);
 							++vIter;
 						}
@@ -151,7 +151,7 @@ class ParmTable
 					}
 				}
 			}
-			AOLogger::Debug
+			Logger::Debug
 				<< "Counts: r00=" << r00Count << ", "
 				<< "r11=" << r11Count << ", "
 				<< "i00=" << i00Count << ", "
@@ -231,7 +231,7 @@ class ParmTable
 			
 			width = maxY;
 			height = maxX;
-			AOLogger::Debug << "Rows in table: " << table.nrow() << "\n"
+			Logger::Debug << "Rows in table: " << table.nrow() << "\n"
 				"Matching rows: " << matches << "\n"
 				"Number of blocks: " << maxX << " x " << maxY << "\n"
 				"Image size: " << width << " x " << height << "\n";

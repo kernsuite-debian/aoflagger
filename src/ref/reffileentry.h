@@ -26,12 +26,13 @@ namespace AOTools
 			{
 			}
 			
-			void operator=(const RefFileEntry &source)
+			RefFileEntry& operator=(const RefFileEntry &source)
 			{
 				_path = source._path;
 				_frequency = source._frequency;
 				_size = source._size;
 				_node = source._node;
+				return *this;
 			}
 
 			const std::string &Path() const { return _path; }

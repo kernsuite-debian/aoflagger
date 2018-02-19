@@ -18,20 +18,20 @@ namespace rfiStrategy {
 	class FitsImageSetIndex : public ImageSetIndex {
 		friend class FitsImageSet;
 		
-		FitsImageSetIndex(class rfiStrategy::ImageSet &set) : ImageSetIndex(set), _baselineIndex(0), _band(0), _field(0), _isValid(true) { }
+		explicit FitsImageSetIndex(class rfiStrategy::ImageSet &set) : ImageSetIndex(set), _baselineIndex(0), _band(0), _field(0), _isValid(true) { }
 		
-		virtual void Previous();
-		virtual void Next();
-		virtual std::string Description() const;
-		virtual bool IsValid() const throw() { return _isValid; }
-		virtual FitsImageSetIndex *Copy() const
+		virtual void Previous() final override;
+		virtual void Next() final override;
+		virtual std::string Description() const final override;
+		virtual bool IsValid() const final override { return _isValid; }
+		virtual std::unique_ptr<ImageSetIndex> Clone() const final override
 		{
-			FitsImageSetIndex *index = new FitsImageSetIndex(imageSet());
+			std::unique_ptr<FitsImageSetIndex> index( new FitsImageSetIndex(imageSet()) );
 			index->_baselineIndex = _baselineIndex;
 			index->_band = _band;
 			index->_field = _field;
 			index->_isValid = _isValid;
-			return index;
+			return std::move(index);
 		}
 		private:
 			size_t _baselineIndex, _band, _field;
@@ -41,56 +41,57 @@ namespace rfiStrategy {
 	class FitsImageSet : public ImageSet
 	{
 		public:
-			FitsImageSet(const std::string &file);
+			explicit FitsImageSet(const std::string &file);
 			~FitsImageSet();
-			virtual void Initialize();
+			virtual void Initialize() override final;
 
-			virtual FitsImageSet *Copy();
+			virtual std::unique_ptr<ImageSet> Clone() override final;
 
-			virtual ImageSetIndex *StartIndex()
+			virtual std::unique_ptr<ImageSetIndex> StartIndex() override final
 			{
-				return new FitsImageSetIndex(*this);
+				return std::unique_ptr<ImageSetIndex>(new FitsImageSetIndex(*this));
 			}
-			virtual std::string Name()
+			virtual std::string Name() override final
 			{
 				return File();
 			}
-			virtual std::string File();
-			const std::vector<std::pair<size_t,size_t> > &Baselines() const throw() { return _baselines; }
-			size_t BandCount() { return _bandCount; }
-			class AntennaInfo GetAntennaInfo(unsigned antennaIndex) { return _antennaInfos[antennaIndex]; }
-			virtual void AddReadRequest(const ImageSetIndex &index)
+			virtual std::string File() override final;
+			virtual void AddReadRequest(const ImageSetIndex &index) override final
 			{
 				_baselineData.push(loadData(index));
 			}
-			virtual void PerformReadRequests()
+			virtual void PerformReadRequests() override final
 			{
 			}
-			virtual BaselineData *GetNextRequested()
+			virtual std::unique_ptr<BaselineData> GetNextRequested() override final
 			{
-				BaselineData *data = new BaselineData(_baselineData.top());
+				std::unique_ptr<BaselineData> data(new BaselineData(_baselineData.top()));
 				_baselineData.pop();
-				return data;
+				return std::move(data);
 			}
-			virtual void AddWriteFlagsTask(const ImageSetIndex &index, std::vector<Mask2DCPtr> &flags);
-			virtual void PerformWriteFlagsTask();
-			virtual void PerformWriteDataTask(const ImageSetIndex &, std::vector<Image2DCPtr>, std::vector<Image2DCPtr>)
+			virtual void AddWriteFlagsTask(const ImageSetIndex &index, std::vector<Mask2DCPtr> &flags) override final;
+			virtual void PerformWriteFlagsTask() override final;
+			virtual void PerformWriteDataTask(const ImageSetIndex &, std::vector<Image2DCPtr>, std::vector<Image2DCPtr>) override final
 			{
 				throw BadUsageException("Not implemented");
 			}
-			
+			const std::vector<std::pair<size_t,size_t> > &Baselines() const
+			{
+				return _baselines;
+			}
+			size_t BandCount() const
+			{
+				return _bandCount;
+			}
+			class AntennaInfo GetAntennaInfo(unsigned antennaIndex) const
+			{
+				return _antennaInfos[antennaIndex];
+			}
 			std::string ReadTelescopeName();
 			
 		private:
 			FitsImageSet(const FitsImageSet &source);
 			BaselineData loadData(const ImageSetIndex &index);
-			
-			size_t getAntenna1(const ImageSetIndex &index) {
-				return _baselines[static_cast<const FitsImageSetIndex&>(index)._baselineIndex].first;
-			}
-			size_t getAntenna2(const ImageSetIndex &index) {
-				return _baselines[static_cast<const FitsImageSetIndex&>(index)._baselineIndex].second;
-			}
 			
 			void ReadPrimarySingleTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData);
 			void ReadTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData, size_t bandIndex);
@@ -102,7 +103,7 @@ namespace rfiStrategy {
 			
 			void saveSingleDishFlags(std::vector<Mask2DCPtr> &flags, size_t ifIndex);
 			
-			boost::shared_ptr<class FitsFile> _file;
+			std::shared_ptr<class FitsFile> _file;
 			std::vector<std::pair<size_t,size_t> > _baselines;
 			size_t _bandCount;
 			std::vector<AntennaInfo> _antennaInfos;

@@ -7,7 +7,7 @@ template<typename T>
 class Parameter {
 	public:
 		Parameter() : _isSet(false), _value() { }
-		Parameter(const T val) : _isSet(true), _value(val) { }
+		explicit Parameter(const T val) : _isSet(true), _value(val) { }
 		Parameter(const Parameter<T> &source)
 			: _isSet(source._isSet), _value(source._value) { }
 
@@ -15,6 +15,7 @@ class Parameter {
 		{
 			_isSet = source._isSet;
 			_value = source._value;
+			return *this;
 		}
 
 		Parameter &operator=(T val)

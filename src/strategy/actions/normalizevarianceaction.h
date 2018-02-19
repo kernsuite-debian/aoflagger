@@ -2,8 +2,7 @@
 #define RFISTRATEGYNORMALIZEVARIANCEACTION_H
 
 #include <map>
-
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 #include "action.h"
 
@@ -18,27 +17,27 @@ namespace rfiStrategy {
 			{
 			}
 			virtual ~NormalizeVarianceAction();
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Normalize variance over time";
 			}
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress);
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override;
 
-			virtual void Initialize()
+			virtual void Initialize() final override
 			{
 				clean();
 			}
-			virtual void Finish()
+			virtual void Finish() final override
 			{
 				clean();
 			}
-			virtual ActionType Type() const { return NormalizeVarianceActionType; }
+			virtual ActionType Type() const final override { return NormalizeVarianceActionType; }
 
 			double MedianFilterSizeInS() const { return _medianFilterSizeInS; }
 			void SetMedianFilterSizeInS(double filterSize) { _medianFilterSizeInS = filterSize; }
 		private:
 			double _medianFilterSizeInS;
-			boost::mutex _mutex;
+			std::mutex _mutex;
 			bool _isInitialized;
 			std::map<double, double> _stddevs;
 			

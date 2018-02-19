@@ -84,7 +84,7 @@ void ProcessCommander::continueReadQualityTablesTask(ServerConnectionPtr serverC
 {
 	const Hostname &hostname = serverConnection->GetHostname();
 	
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	ClusteredObservationItem item;
 	if(_nodeCommands.Pop(hostname, item))
 	{
@@ -102,12 +102,11 @@ void ProcessCommander::continueReadQualityTablesTask(ServerConnectionPtr serverC
 
 void ProcessCommander::continueReadAntennaTablesTask(ServerConnectionPtr serverConnection)
 {
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	
 	const Hostname &hostname = serverConnection->GetHostname();
-	std::vector<AntennaInfo> *antennas = new std::vector<AntennaInfo>();
-	serverConnection->ReadAntennaTables(_nodeCommands.Top(hostname).LocalPath(),
-																			boost::shared_ptr<std::vector<AntennaInfo> >(antennas));
+	std::unique_ptr<std::vector<AntennaInfo>> antennas(new std::vector<AntennaInfo>());
+	serverConnection->ReadAntennaTables(_nodeCommands.Top(hostname).LocalPath(), std::move(antennas));
 	
 	onCurrentTaskFinished();
 }
@@ -116,7 +115,7 @@ void ProcessCommander::continueReadBandTablesTask(ServerConnectionPtr serverConn
 {
 	const Hostname &hostname = serverConnection->GetHostname();
 	
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	ClusteredObservationItem item;
 	if(_nodeCommands.Pop(hostname, item))
 	{
@@ -134,7 +133,7 @@ void ProcessCommander::continueReadDataRowsTask(ServerConnectionPtr serverConnec
 {
 	const Hostname &hostname = serverConnection->GetHostname();
 	
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	ClusteredObservationItem item;
 	if(_nodeCommands.Pop(hostname, item))
 	{
@@ -155,7 +154,7 @@ void ProcessCommander::continueWriteDataRowsTask(ServerConnectionPtr serverConne
 {
 	const Hostname &hostname = serverConnection->GetHostname();
 	
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	ClusteredObservationItem item;
 	if(_nodeCommands.Pop(hostname, item))
 	{
@@ -229,7 +228,7 @@ void ProcessCommander::onConnectionAwaitingCommand(ServerConnectionPtr serverCon
 
 void ProcessCommander::onConnectionFinishReadQualityTables(ServerConnectionPtr serverConnection, StatisticsCollection &statisticsCollection, HistogramCollection &histogramCollection)
 {
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	if(statisticsCollection.PolarizationCount() == 0)
 		throw std::runtime_error("Client sent StatisticsCollection with 0 polarizations.");
 	
@@ -262,9 +261,9 @@ void ProcessCommander::onConnectionFinishReadQualityTables(ServerConnectionPtr s
 	delete &histogramCollection;
 }
 
-void ProcessCommander::onConnectionFinishReadAntennaTables(ServerConnectionPtr serverConnection, boost::shared_ptr<std::vector<AntennaInfo> > antennas, size_t polarizationCount)
+void ProcessCommander::onConnectionFinishReadAntennaTables(ServerConnectionPtr serverConnection, std::shared_ptr<std::vector<AntennaInfo> > antennas, size_t polarizationCount)
 {
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	_polarizationCount = polarizationCount;
 	_antennas = *antennas;
 }
@@ -296,13 +295,13 @@ void ProcessCommander::onError(ServerConnectionPtr connection, const std::string
 	if(knowFile)
 		s << " to process local file '" << item.LocalPath() << "'";
 	s << ", reported error was: " << error;
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	_errors.push_back(s.str());
 }
 
 void ProcessCommander::onProcessFinished(RemoteProcess &process, bool error, int status)
 {
-	boost::mutex::scoped_lock lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 	
 	if(_nodeCommands.RemoveNode(process.ClientHostname()) && _nodeCommands.Empty())
 		onCurrentTaskFinished();

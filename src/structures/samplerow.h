@@ -1,165 +1,165 @@
 #ifndef SAMPLEROW_H
 #define SAMPLEROW_H
 
+#include <algorithm>
 #include <limits>
 #include <cmath>
-
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <vector>
 
 #include "image2d.h"
 #include "mask2d.h"
-
-typedef boost::shared_ptr<class SampleRow> SampleRowPtr;
-typedef boost::shared_ptr<const class SampleRow> SampleRowCPtr;
 
 #include "../strategy/algorithms/convolutions.h"
 
 class SampleRow {
 	public:
-		~SampleRow()
+		explicit SampleRow(size_t size) :
+			_values(size)
+		{ }
+		
+		static SampleRow MakeEmpty(size_t size)
 		{
-			delete[] _values;
+			return SampleRow(size);
 		}
-
-		static SampleRowPtr CreateEmpty(size_t size) {
-			return SampleRowPtr(new SampleRow(size));
+		
+		static SampleRow MakeZero(size_t size) {
+			SampleRow row(size);
+			std::fill(row._values.begin(), row._values.end(), 0.0);
+			return row;
 		}
-		static SampleRowPtr CreateZero(size_t size) {
-			SampleRow *row = new SampleRow(size);
-			for(size_t i=0;i<size;++i)
-				row->_values[i] = 0.0;
-			return SampleRowPtr(row);
-		}
-		static SampleRowPtr CreateFromRow(Image2DCPtr image, size_t y)
+		
+		static SampleRow MakeFromRow(const Image2D* image, size_t y)
 		{
-			SampleRow *row = new SampleRow(image->Width());
-			for(size_t x=0;x<image->Width();++x)
-				row->_values[x] = image->Value(x, y);
-			return SampleRowPtr(row);
+			SampleRow row(image->Width());
+			std::copy(image->ValuePtr(0, y), image->ValuePtr(0, y) + image->Width(), row._values.data());
+			return row;
 		}
-		static SampleRowPtr CreateFromRow(Image2DCPtr image, size_t xStart, size_t length, size_t y)
+		
+		static SampleRow MakeFromRow(const Image2D* image, size_t xStart, size_t length, size_t y)
 		{
-			SampleRow *row = new SampleRow(length);
-			for(size_t x=0;x<length;++x)
-				row->_values[x] = image->Value(x+xStart, y);
-			return SampleRowPtr(row);
+			SampleRow row(length);
+			std::copy(image->ValuePtr(xStart, y), image->ValuePtr(xStart, y) + length, row._values.data());
+			return row;
 		}
-		static SampleRowPtr CreateFromRowWithMissings(Image2DCPtr image, Mask2DCPtr mask, size_t y)
+		
+		static SampleRow MakeFromRowWithMissings(const Image2D* image, const Mask2D* mask, size_t y)
 		{
-			SampleRow *row = new SampleRow(image->Width());
+			SampleRow row(image->Width());
 			for(size_t x=0;x<image->Width();++x)
 			{
 				if(mask->Value(x, y))
-					row->_values[x] = std::numeric_limits<num_t>::quiet_NaN();
+					row._values[x] = std::numeric_limits<num_t>::quiet_NaN();
 				else
-					row->_values[x] = image->Value(x, y);
+					row._values[x] = image->Value(x, y);
 			}
-			return SampleRowPtr(row);
+			return row;
 		}
-		static SampleRowPtr CreateAmplitudeFromRow(Image2DCPtr real, Image2DCPtr imaginary, size_t y)
+		
+		static SampleRow MakeAmplitudeFromRow(const Image2D* real, const Image2D* imaginary, size_t y)
 		{
-			SampleRow *row = new SampleRow(real->Width());
+			SampleRow row(real->Width());
 			for(size_t x=0;x<real->Width();++x)
 			{
-				row->_values[x] = sqrtn(real->Value(x,y)*real->Value(x,y) + imaginary->Value(x,y)*imaginary->Value(x,y));
+				row._values[x] = sqrtn(real->Value(x,y)*real->Value(x,y) + imaginary->Value(x,y)*imaginary->Value(x,y));
 			}
-			return SampleRowPtr(row);
+			return row;
 		}
-		static SampleRowPtr CreateFromColumn(Image2DCPtr image, size_t x)
+		
+		static SampleRow MakeFromColumn(const Image2D* image, size_t x)
 		{
-			SampleRow *row = new SampleRow(image->Height());
+			SampleRow row(image->Height());
 			for(size_t y=0;y<image->Height();++y)
-				row->_values[y] = image->Value(x, y);
-			return SampleRowPtr(row);
+				row._values[y] = image->Value(x, y);
+			return row;
 		}
-		static SampleRowPtr CreateFromColumnWithMissings(Image2DCPtr image, Mask2DCPtr mask, size_t x)
+		
+		static SampleRow MakeFromColumnWithMissings(const Image2D* image, const Mask2D* mask, size_t x)
 		{
-			SampleRow *row = new SampleRow(image->Height());
+			SampleRow row(image->Height());
 			for(size_t y=0;y<image->Height();++y)
 			{
 				if(mask->Value(x, y))
-					row->_values[y] = std::numeric_limits<num_t>::quiet_NaN();
+					row._values[y] = std::numeric_limits<num_t>::quiet_NaN();
 				else
-					row->_values[y] = image->Value(x, y);
+					row._values[y] = image->Value(x, y);
 			}
-			return SampleRowPtr(row);
+			return row;
 		}
-		static SampleRowPtr CreateFromRowSum(Image2DCPtr image, size_t yStart, size_t yEnd)
+		
+		static SampleRow MakeFromRowSum(const Image2D* image, size_t yStart, size_t yEnd)
 		{
 			if(yEnd > yStart) {
-				SampleRowPtr row = CreateFromRow(image, yStart);
+				SampleRow row = MakeFromRow(image, yStart);
 	
 				for(size_t y=yStart+1;y<yEnd;++y) {
 					for(size_t x=0;x<image->Width();++x)
-						row->_values[x] += image->Value(x, y);
+						row._values[x] += image->Value(x, y);
 				}
 				return row;
 			} else {
-				return CreateZero(image->Width());
+				return MakeZero(image->Width());
 			}
 		}
-		static SampleRowPtr CreateFromColumnSum(Image2DCPtr image, size_t xStart, size_t xEnd)
+		
+		static SampleRow MakeFromColumnSum(const Image2D* image, size_t xStart, size_t xEnd)
 		{
 			if(xEnd > xStart) {
-				SampleRowPtr row = CreateFromColumn(image, xStart);
+				SampleRow row = MakeFromColumn(image, xStart);
 	
 				for(size_t x=xStart+1;x<xEnd;++x) {
 					for(size_t y=0;y<image->Width();++y)
-						row->_values[y] += image->Value(x, y);
+						row._values[y] += image->Value(x, y);
 				}
 				return row;
 			} else {
-				return CreateZero(image->Width());
+				return MakeZero(image->Width());
 			}
 		}
-		static SampleRowPtr CreateCopy(SampleRowCPtr source)
-		{
-			return SampleRowPtr(new SampleRow(*source));
-		}
-		SampleRowPtr Copy() const
-		{
-			return SampleRowPtr(new SampleRow(*this));
-		}
 		
-		void SetHorizontalImageValues(Image2DPtr image, unsigned y) const
+		void SetHorizontalImageValues(Image2D* image, unsigned y) const noexcept
 		{
-			for(size_t i=0;i<_size;++i)
+			for(size_t i=0;i<_values.size();++i)
 			{
 				image->SetValue(i, y, _values[i]);
 			}
 		}
-		void SetHorizontalImageValues(Image2DPtr image, unsigned xStart, unsigned y) const
+		
+		void SetHorizontalImageValues(Image2D* image, unsigned xStart, unsigned y) const noexcept
 		{
-			for(size_t i=0;i<_size;++i)
+			for(size_t i=0;i<_values.size();++i)
 			{
 				image->SetValue(i+xStart, y, _values[i]);
 			}
 		}
-		void SetVerticalImageValues(Image2DPtr image, unsigned x) const
+		
+		void SetVerticalImageValues(Image2D* image, unsigned x) const noexcept
 		{
-			for(size_t i=0;i<_size;++i)
+			for(size_t i=0;i<_values.size();++i)
 			{
 				image->SetValue(x, i, _values[i]);
 			}
 		}
-		void SetVerticalImageValues(Image2DPtr image, unsigned x, unsigned yStart) const
+		
+		void SetVerticalImageValues(Image2D* image, unsigned x, unsigned yStart) const noexcept
 		{
-			for(size_t i=0;i<_size;++i)
+			for(size_t i=0;i<_values.size();++i)
 			{
 				image->SetValue(x, i+yStart, _values[i]);
 			}
 		}
 		
-		num_t Value(size_t i) const { return _values[i]; }
-		void SetValue(size_t i, num_t newValue) { _values[i] = newValue; }
-
-		size_t Size() const { return _size; }
+		num_t Value(size_t i) const noexcept { return _values[i]; }
 		
-		size_t IndexOfMax() const
+		void SetValue(size_t i, num_t newValue) noexcept { _values[i] = newValue; }
+
+		size_t Size() const noexcept { return _values.size(); }
+		
+		size_t IndexOfMax() const noexcept
 		{
 			size_t maxIndex = 0;
 			num_t maxValue = _values[0];
-			for(size_t i = 1; i<_size;++i)
+			for(size_t i = 1; i<_values.size();++i)
 			{
 				if(_values[i] > maxValue)
 				{
@@ -170,119 +170,125 @@ class SampleRow {
 			return maxIndex;
 		}
 
-		numl_t RMS() const
+		numl_t RMS() const noexcept
 		{
-			if(_size == 0) return std::numeric_limits<numl_t>::quiet_NaN();
+			if(_values.empty()) return std::numeric_limits<numl_t>::quiet_NaN();
 			numl_t sum = 0.0;
-			for(size_t i=0;i<_size;++i)
-				sum += _values[i] * _values[i];
-			return sqrtnl(sum / _size);
+			for(num_t v : _values)
+				sum += v * v;
+			return sqrtnl(sum / _values.size());
 		}
-		num_t Median() const
+		
+		num_t Median() const noexcept
 		{
-			if(_size == 0) return std::numeric_limits<num_t>::quiet_NaN();
+			if(_values.empty()) return std::numeric_limits<num_t>::quiet_NaN();
 
-			num_t *copy = new num_t[_size];
-			for(size_t i=0;i<_size;++i)
-				copy[i] = _values[i];
-			if(_size % 2 == 0)
+			std::vector<num_t> copy(_values);
+			if(_values.size() % 2 == 0)
 			{
 				size_t
-					m = _size / 2 - 1;
-				std::nth_element(copy, copy + m, copy + _size);
-				num_t leftMid = *(copy + m);
-				std::nth_element(copy, copy + m + 1, copy + _size);
-				num_t rightMid = *(copy + m + 1);
-				delete[] copy;
+					m = _values.size() / 2 - 1;
+				std::nth_element(copy.begin(), copy.begin() + m, copy.end());
+				num_t leftMid = *(copy.begin() + m);
+				std::nth_element(copy.begin(), copy.begin() + m + 1, copy.end());
+				num_t rightMid = *(copy.begin() + m + 1);
 				return (leftMid + rightMid) / 2;
 			} else {
 				size_t
-					m = _size / 2;
-				std::nth_element(copy, copy + m, copy + _size);
-				num_t mid = *(copy + m);
-				delete[] copy;
+					m = _values.size() / 2;
+				std::nth_element(copy.begin(), copy.begin() + m, copy.end());
+				num_t mid = *(copy.begin() + m);
 				return mid;
 			}
 		}
-		numl_t Mean() const
+		
+		numl_t Mean() const noexcept
 		{
 			numl_t mean = 0.0;
-			for(size_t i = 0; i<_size;++i)
-				mean += _values[i];
-			return mean / _size;
+			for(num_t v : _values)
+				mean += v;
+			return mean / _values.size();
 		}
-		numl_t MeanWithMissings() const
+		
+		numl_t MeanWithMissings() const noexcept
 		{
 			numl_t mean = 0.0;
 			size_t count = 0;
-			for(size_t i = 0; i<_size;++i)
+			for(num_t v : _values)
 			{
-				if(std::isfinite(_values[i]))
+				if(std::isfinite(v))
 				{
-					mean += _values[i];
+					mean += v;
 					++count;
 				}
 			}
 			return mean / count;
 		}
-		numl_t StdDev(double mean) const
+		
+		numl_t StdDev(double mean) const noexcept
 		{
 			numl_t stddev = 0.0;
-			for(size_t i = 0; i<_size;++i)
-				stddev += (_values[i] - mean) * (_values[i] - mean);
-			return sqrtnl(stddev / _size);
+			for(num_t v : _values)
+				stddev += (v - mean) * (v - mean);
+			return sqrtnl(stddev / _values.size());
 		}
+		
 		num_t RMSWithMissings() const
 		{
-			SampleRowPtr row = CreateWithoutMissings();
-			return row->RMS();
+			return MakeWithoutMissings().RMS();
 		}
+		
 		num_t MedianWithMissings() const
 		{
-			SampleRowPtr row = CreateWithoutMissings();
-			return row->Median();
+			return MakeWithoutMissings().Median();
 		}
+		
 		num_t StdDevWithMissings(double mean) const
 		{
-			SampleRowPtr row = CreateWithoutMissings();
-			return row->StdDev(mean);
+			return MakeWithoutMissings().StdDev(mean);
 		}
-		SampleRowPtr CreateWithoutMissings() const;
+		
+		SampleRow MakeWithoutMissings() const;
+		
 		bool ValueIsMissing(size_t i) const
 		{
 			return !std::isfinite(Value(i));
 		}
+		
 		void SetValueMissing(size_t i)
 		{
 			SetValue(i, std::numeric_limits<num_t>::quiet_NaN());
 		}
+		
 		void ConvolveWithGaussian(num_t sigma)
 		{
-			Convolutions::OneDimensionalGausConvolution(_values, _size, sigma);
+			Convolutions::OneDimensionalGausConvolution(_values.data(), _values.size(), sigma);
 		}
+		
 		void ConvolveWithSinc(num_t frequency)
 		{
-			Convolutions::OneDimensionalSincConvolution(_values, _size, frequency);
+			Convolutions::OneDimensionalSincConvolution(_values.data(), _values.size(), frequency);
 		}
-		void Subtract(SampleRowCPtr source)
+		
+		SampleRow* operator-=(const SampleRow& source) noexcept
 		{
-			for(unsigned i=0;i<_size;++i)
-				_values[i] -= source->_values[i];
+			for(unsigned i=0;i<_values.size();++i)
+				_values[i] -= source._values[i];
+			return this;
 		}
+		
 		num_t WinsorizedMean() const
 		{
-			num_t *data = new num_t[_size];
-			memcpy(data, _values, sizeof(num_t) * _size);
-			std::sort(data, data + _size, numLessThanOperator);
-			size_t lowIndex = (size_t) floor(0.1 * _size);
-			size_t highIndex = (size_t) ceil(0.9 * _size)-1;
+			std::vector<num_t> data(_values);
+			std::sort(data.begin(), data.end(), numLessThanOperator);
+			size_t lowIndex = (size_t) floor(0.1 * data.size());
+			size_t highIndex = (size_t) ceil(0.9 * data.size())-1;
 			num_t lowValue = data[lowIndex];
 			num_t highValue = data[highIndex];
-			delete[] data;
 
 			// Calculate mean
 			num_t mean = 0.0;
-			for(size_t x = 0;x < _size; ++x) {
+			for(size_t x = 0;x < data.size(); ++x) {
 				const num_t value = data[x];
 				if(value < lowValue)
 					mean += lowValue;
@@ -291,35 +297,21 @@ class SampleRow {
 				else
 					mean += value;
 			}
-			return mean / (num_t) _size;
+			return mean / (num_t) data.size();
 		}
+		
 		num_t WinsorizedMeanWithMissings() const
 		{
-			SampleRowPtr row = CreateWithoutMissings();
-			return row->WinsorizedMean();
+			return MakeWithoutMissings().WinsorizedMean();
 		}
+		
 	private:
-		explicit SampleRow(size_t size) :
-			_size(size), _values(new num_t[_size])
-		{
-		}
-		SampleRow(const SampleRow &source) :
-			_size(source._size), _values(new num_t[_size])
-		{
-			for(unsigned i=0;i<_size;++i)
-				_values[i] = source._values[i];
-		}
-		SampleRow &operator=(const SampleRow &)
-		{
-			return *this;
-		}
-		size_t _size;
-		num_t *_values;
+		std::vector<num_t> _values;
 		
 		// We need this less than operator, because the normal operator
 		// does not enforce a strictly ordered set, because a<b != !(b<a) in the case
 		// of nans/infs.
-		static bool numLessThanOperator(const num_t &a, const num_t &b) {
+		static bool numLessThanOperator(const num_t& a, const num_t& b) noexcept {
 			if(std::isfinite(a)) {
 				if(std::isfinite(b))
 					return a < b;

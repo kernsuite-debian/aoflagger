@@ -15,7 +15,7 @@ namespace rfiStrategy {
 
 			SetFlaggingAction() : _newFlagging(None) { }
 
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				switch(_newFlagging)
 				{
@@ -38,7 +38,7 @@ namespace rfiStrategy {
 						return "Or flags with original";
 				}
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &)
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &) final override
 			{
 				if(artifacts.ContaminatedData().IsEmpty())
 					throw std::runtime_error("No baseline is loaded! This might mean you forgot to put a For Each Baseline action in front of everything, or you might have forgotten to open an MS.");
@@ -71,7 +71,7 @@ namespace rfiStrategy {
 						}
 						break;
 					case Invert: {
-						Mask2DPtr mask = Mask2D::CreateCopy(artifacts.ContaminatedData().GetSingleMask());
+						Mask2DPtr mask(new Mask2D(*artifacts.ContaminatedData().GetSingleMask()));
 						mask->Invert();
 						artifacts.ContaminatedData().SetGlobalMask(mask);
 						break;
@@ -82,7 +82,7 @@ namespace rfiStrategy {
 						break;
 					}
 					case FlagZeros: {
-						Mask2DPtr mask = Mask2D::CreateCopy(artifacts.ContaminatedData().GetSingleMask());
+						Mask2DPtr mask(new Mask2D(*artifacts.ContaminatedData().GetSingleMask()));
 						Image2DCPtr image = artifacts.ContaminatedData().GetSingleImage();
 						for(unsigned y=0;y<image->Height();++y) {
 							for(unsigned x=0;x<image->Width();++x) {
@@ -94,19 +94,19 @@ namespace rfiStrategy {
 						break;
 					}
 					case OrOriginal: {
-						Mask2DPtr mask = Mask2D::CreateCopy(artifacts.ContaminatedData().GetSingleMask());
-						mask->Join(artifacts.OriginalData().GetSingleMask());
+						Mask2DPtr mask(new Mask2D(*artifacts.ContaminatedData().GetSingleMask()));
+						mask->Join(*artifacts.OriginalData().GetSingleMask());
 						artifacts.ContaminatedData().SetGlobalMask(mask);
 						break;
 					}
 				}
 			}
-			void SetNewFlagging(enum NewFlagging newFlagging) throw()
+			void SetNewFlagging(enum NewFlagging newFlagging)
 			{
 				_newFlagging = newFlagging;
 			}
-			enum NewFlagging NewFlagging() const throw() { return _newFlagging; }
-			virtual ActionType Type() const { return SetFlaggingActionType; }
+			enum NewFlagging NewFlagging() const { return _newFlagging; }
+			virtual ActionType Type() const final override { return SetFlaggingActionType; }
 		private:
 			enum NewFlagging _newFlagging;
 	};

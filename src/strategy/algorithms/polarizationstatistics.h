@@ -10,34 +10,32 @@
 #include "../../structures/timefrequencydata.h"
 #include "../../structures/timefrequencymetadata.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 class PolarizationStatistics {
 	public:
 		PolarizationStatistics() { }
 		~PolarizationStatistics() { }
 
-		void Add(class TimeFrequencyData &data)
+		void Add(const class TimeFrequencyData &data)
 		{
-			unsigned polarizationCount = data.PolarisationCount();
+			unsigned polarizationCount = data.PolarizationCount();
 			if(_flaggedCounts.size() == 0)
 			{
-				_polarizations = data.Polarisations();
+				_polarizations = data.Polarizations();
 				for(unsigned i=0;i<polarizationCount;++i)
 				{
 					_flaggedCounts.push_back(0);
 					_totalCounts.push_back(0);
 					_names.push_back(Polarization::TypeToFullString(_polarizations[i]));
 				}
-			} else if(_polarizations != data.Polarisations())
+			} else if(_polarizations != data.Polarizations())
 			{
 				throw std::runtime_error("Adding differently polarized data to statistics");
 			}
 			for(unsigned i=0;i<polarizationCount;++i)
 			{
-				TimeFrequencyData *polData = data.CreateTFDataFromPolarisationIndex(i);
-				Mask2DCPtr mask = polData->GetSingleMask();
-				delete polData;
+				Mask2DCPtr mask = data.MakeFromPolarizationIndex(i).GetSingleMask();
 				_flaggedCounts[i] += mask->GetCount<true>();
 				_totalCounts[i] += mask->Width() * mask->Height();
 			}
@@ -47,19 +45,19 @@ class PolarizationStatistics {
 		{
 			if(HasData())
 			{
-				AOLogger::Info
+				Logger::Info
 					<< "Polarization statistics: ";
 				for(unsigned i=0;i<_flaggedCounts.size();++i)
 				{
 					numl_t percentage = (numl_t) _flaggedCounts[i] * 100.0 / (numl_t) _totalCounts[i];
 					if(i!=0)
-						AOLogger::Info << ", ";
-					AOLogger::Info
+						Logger::Info << ", ";
+					Logger::Info
 						<< _names[i] << ": " << formatPercentage(percentage) << '%';
 				}
-				AOLogger::Info << '\n';
+				Logger::Info << '\n';
 			} else {
-				AOLogger::Info
+				Logger::Info
 					<< "No polarization statistics were collected.\n";
 			}
 		}

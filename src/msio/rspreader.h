@@ -3,7 +3,7 @@
 
 #include <fstream>
 
-#include "../util/aologger.h"
+#include "../util/logger.h"
 
 #include "../structures/timefrequencydata.h"
 #include "../structures/timefrequencymetadata.h"
@@ -32,37 +32,6 @@ class RSPReader {
 	private:
 		static const unsigned char BitReverseTable256[256];
 
-		static void readNetworkOrder(std::ifstream &stream, char *buffer, unsigned length)
-		{
-			std::vector<char> swappedBuffer(length);
-			stream.read(&swappedBuffer[0], length);
-			for(unsigned i=0,j=length-1;i<length;++i,--j)
-				buffer[j] = swappedBuffer[i];
-		}
-		static unsigned char reverse(unsigned char c)
-		{
-			return BitReverseTable256[c];
-		}
-		static unsigned short reverse(unsigned short c)
-		{
-			return
-				BitReverseTable256[c >> 8] |
-				(BitReverseTable256[c &0xFF]<<8);
-		}
-		static signed short reverse(signed short c)
-		{
-			return
-				BitReverseTable256[c >> 8] |
-				(BitReverseTable256[c &0xFF]<<8);
-		}
-		static unsigned int reverse(unsigned int c)
-		{
-			return
-				BitReverseTable256[c >> 24] |
-				(BitReverseTable256[(c >> 16)&0xFF]<<8) |
-				(BitReverseTable256[(c >> 8)&0xFF]<<16) |
-				(BitReverseTable256[c & 0xFF]<<24);
-		}
 		static signed short toShort(unsigned char c1, unsigned char c2)
 		{
 			return (c2<<8) | c1;
@@ -98,7 +67,7 @@ class RSPReader {
 			
 			void Print() const
 			{
-				AOLogger::Debug
+				Logger::Debug
 					<< "versionAndHeaderLength=" << versionAndHeaderLength << "\n"
 					<< "typeOfService=" << typeOfService << "\n"
 					<< "totalLength=" << totalLength << "\n"
@@ -144,7 +113,7 @@ class RSPReader {
 			
 			void Print() const
 			{
-				AOLogger::Debug
+				Logger::Debug
 					<< "versionId=" << (unsigned int) versionId << "\n"
 					<< "sourceInfo=" << (unsigned int) sourceInfo << "\n"
 					<< "configurationId=" << (unsigned int) configurationId << "\n"
@@ -173,12 +142,12 @@ class RSPReader {
 			
 			void Print()
 			{
-				AOLogger::Debug << "x=" << xr;
-				if(xi > 0) AOLogger::Debug << "+" << xi << "i";
-				else AOLogger::Debug << "-" << (-xi) << "i";
-				AOLogger::Debug << ",y=" << yr;
-				if(yi > 0) AOLogger::Debug << "+" << yi << "i\n";
-				else AOLogger::Debug << "-" << (-yi) << "i\n";
+				Logger::Debug << "x=" << xr;
+				if(xi > 0) Logger::Debug << "+" << xi << "i";
+				else Logger::Debug << "-" << (-xi) << "i";
+				Logger::Debug << ",y=" << yr;
+				if(yi > 0) Logger::Debug << "+" << yi << "i\n";
+				else Logger::Debug << "-" << (-yi) << "i\n";
 			}
 		};
 		struct BeamletStatistics {
@@ -190,7 +159,7 @@ class RSPReader {
 			{
 				for(unsigned bit=0;bit<16;++bit)
 				{
-					AOLogger::Info
+					Logger::Info
 						<< "Bit " << bit << " times required: "
 						<< bitUseCount[bit] << " ("
 						<< (100.0 * (double) bitUseCount[bit] / (double) totalCount) << "%)"

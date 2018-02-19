@@ -1,6 +1,6 @@
 #include "iterationsplot.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/plot.h"
 
 #include "../../structures/timefrequencydata.h"
@@ -12,8 +12,8 @@ void IterationsPlot::Add(TimeFrequencyData &data, TimeFrequencyMetaDataCPtr)
 {
 	Item item;
 	Mask2DCPtr mask = data.GetSingleMask();
-	item.mode = ThresholdTools::Mode(data.GetSingleImage(), mask);
-	item.winsorizedMode = ThresholdTools::WinsorizedMode(data.GetSingleImage(), mask);
+	item.mode = ThresholdTools::Mode(data.GetSingleImage().get(), mask.get());
+	item.winsorizedMode = ThresholdTools::WinsorizedMode(data.GetSingleImage().get(), mask.get());
 	item.flaggedRatio = (double) mask->GetCount<true>() / ((double) mask->Width() * (double) mask->Height());
 	_stats.push_back(item);
 }

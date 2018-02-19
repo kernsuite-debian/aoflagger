@@ -10,23 +10,23 @@
 #include "../../msio/indirectbaselinereader.h"
 #include "../../msio/memorybaselinereader.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 namespace rfiStrategy {
 
 	void MSImageSet::Initialize()
 	{
-		AOLogger::Debug << "Initializing image set...\n";
-		AOLogger::Debug << "Antenna's: " << _set.AntennaCount() << '\n';
+		Logger::Debug << "Initializing image set...\n";
+		Logger::Debug << "Antenna's: " << _set.AntennaCount() << '\n';
 		_sequences = _set.GetSequences();
-		AOLogger::Debug << "Unique sequences: " << _sequences.size() << '\n';
+		Logger::Debug << "Unique sequences: " << _sequences.size() << '\n';
 		if(_sequences.empty())
 			throw std::runtime_error("Trying to open a measurement set with no sequences");
 		initReader();
 		_bandCount = _set.BandCount();
 		_fieldCount = _set.FieldCount();
 		_sequencesPerBaselineCount = _set.SequenceCount();
-		AOLogger::Debug << "Bands: " << _bandCount << '\n';
+		Logger::Debug << "Bands: " << _bandCount << '\n';
 	}
 	
 	void MSImageSetIndex::Previous()
@@ -82,34 +82,12 @@ namespace rfiStrategy {
 
 	size_t MSImageSet::StartIndex(const MSImageSetIndex &index)
 	{
-		//size_t startIndex =
-		//	(_timeScanCount * index._partIndex) / _partCount - LeftBorder(index);
-		//return startIndex;
 		return 0;
 	}
 
 	size_t MSImageSet::EndIndex(const MSImageSetIndex &index)
 	{
-		//size_t endIndex =
-		//	(_timeScanCount * (index._partIndex+1)) / _partCount + RightBorder(index);
-		//return endIndex;
 		return _reader->Set().GetObservationTimesSet(GetSequenceId(index)).size();
-	}
-
-	size_t MSImageSet::LeftBorder(const MSImageSetIndex &index)
-	{
-		//if(index._partIndex > 0)
-		//	return _scanCountPartOverlap/2;
-		//else
-			return 0;
-	}
-
-	size_t MSImageSet::RightBorder(const MSImageSetIndex &index)
-	{
-		//if(index._partIndex + 1 < _partCount)
-		//	return _scanCountPartOverlap/2 + _scanCountPartOverlap%2;
-		//else
-			return 0;
 	}
 
 	std::vector<double> MSImageSet::ObservationTimesVector(const ImageSetIndex &index)
@@ -218,13 +196,13 @@ namespace rfiStrategy {
 		}
 	}
 	
-	BaselineData *MSImageSet::GetNextRequested()
+	std::unique_ptr<BaselineData> MSImageSet::GetNextRequested()
 	{
-		BaselineData top = _baselineData.front();
+		std::unique_ptr<BaselineData> top(new BaselineData(_baselineData.front()));
 		_baselineData.erase(_baselineData.begin());
-		if(top.Data().IsEmpty())
+		if(top->Data().IsEmpty())
 			throw std::runtime_error("Calling GetNextRequested(), but requests were not read with LoadRequests.");
-		return new BaselineData(top);
+		return top;
 	}
 	
 	void MSImageSet::AddWriteFlagsTask(const ImageSetIndex &index, std::vector<Mask2DCPtr> &flags)

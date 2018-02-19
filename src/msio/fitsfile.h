@@ -22,7 +22,7 @@
 class FitsIOException : public BaseException {
 	public:
 		FitsIOException() : BaseException() { }
-		FitsIOException(const std::string &description) : BaseException(description) { }
+		explicit FitsIOException(const std::string &description) : BaseException(description) { }
 		~FitsIOException() throw() { }
 };
 
@@ -100,7 +100,7 @@ class FitsFile {
 		 * @param filename The file name of the fits file, to be opened with Open() or
 		 * created with Create().
 		 */
-		FitsFile(const std::string &filename);
+		explicit FitsFile(const std::string &filename);
 		
 		/**
 		 * Destructor.

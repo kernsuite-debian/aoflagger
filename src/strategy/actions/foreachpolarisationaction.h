@@ -22,7 +22,7 @@ namespace rfiStrategy {
 			virtual ~ForEachPolarisationBlock()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				if(selectedPolarizationCount() == 1)
 				{
@@ -38,18 +38,18 @@ namespace rfiStrategy {
 				return "For each polarisation";
 			}
 			
-			virtual void Initialize()
+			virtual void Initialize() final override
 			{ }
 			
-			virtual ActionType Type() const { return ForEachPolarisationBlockType; }
+			virtual ActionType Type() const final override { return ForEachPolarisationBlockType; }
 			
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress)
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override
 			{
 				const TimeFrequencyData
 					contaminatedData = artifacts.ContaminatedData(),
 					originalData = artifacts.OriginalData();
 					
-				if(contaminatedData.Polarisations() != originalData.Polarisations())
+				if(contaminatedData.Polarizations() != originalData.Polarizations())
 					throw BadUsageException("Contaminated and original do not have equal polarisation, in for each polarisation block");
 
 				// Since Stokes parameters are (normally) not directly available but
@@ -155,31 +155,27 @@ namespace rfiStrategy {
 					oldRevisedData = artifacts.RevisedData(),
 					oldOriginalData = artifacts.OriginalData();
 					
-				bool changeRevised = (oldRevisedData.Polarisations() == oldContaminatedData.Polarisations());
-				unsigned count = oldContaminatedData.PolarisationCount();
+				bool changeRevised = (oldRevisedData.Polarizations() == oldContaminatedData.Polarizations());
+				unsigned count = oldContaminatedData.PolarizationCount();
 
 				for(unsigned polarizationIndex = 0; polarizationIndex < count; ++polarizationIndex)
 				{
-					if(isDirectPolarizationSelected(oldContaminatedData.GetPolarisation(polarizationIndex)))
+					if(isDirectPolarizationSelected(oldContaminatedData.GetPolarization(polarizationIndex)))
 					{
-						TimeFrequencyData *newContaminatedData =
-							oldContaminatedData.CreateTFDataFromPolarisationIndex(polarizationIndex);
-						TimeFrequencyData *newOriginalData =
-							oldOriginalData.CreateTFDataFromPolarisationIndex(polarizationIndex);
+						TimeFrequencyData newContaminatedData(
+							oldContaminatedData.MakeFromPolarizationIndex(polarizationIndex));
+						TimeFrequencyData newOriginalData(
+							oldOriginalData.MakeFromPolarizationIndex(polarizationIndex));
 
-						artifacts.SetContaminatedData(*newContaminatedData);
-						artifacts.SetOriginalData(*newOriginalData);
+						artifacts.SetContaminatedData(newContaminatedData);
+						artifacts.SetOriginalData(newOriginalData);
 		
-						progress.OnStartTask(*this, polarizationIndex, count, newContaminatedData->Description());
+						progress.OnStartTask(*this, polarizationIndex, count, newContaminatedData.Description());
 		
-						delete newOriginalData;
-						delete newContaminatedData;
-						
 						if(changeRevised)
 						{
-							TimeFrequencyData *newRevised = oldRevisedData.CreateTFDataFromPolarisationIndex(polarizationIndex);
-							artifacts.SetRevisedData(*newRevised);
-							delete newRevised;
+							artifacts.SetRevisedData(
+								oldRevisedData.MakeFromPolarizationIndex(polarizationIndex));
 						}
 		
 						ActionBlock::Perform(artifacts, progress);
@@ -205,32 +201,32 @@ namespace rfiStrategy {
 					oldRevisedData = artifacts.RevisedData(),
 					oldOriginalData = artifacts.OriginalData();
 
-				bool changeRevised = (oldRevisedData.Polarisations() == oldContaminatedData.Polarisations());
+				bool changeRevised = (oldRevisedData.Polarizations() == oldContaminatedData.Polarizations());
 
 				Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(oldContaminatedData.ImageWidth(), oldContaminatedData.ImageHeight());
 
 				if(_onStokesI)
 				{
 					performDerivedPolarisation(artifacts, progress, Polarization::StokesI, oldContaminatedData, oldOriginalData, oldRevisedData, changeRevised, 0, 4);
-					mask->Join(artifacts.ContaminatedData().GetSingleMask());
+					mask->Join(*artifacts.ContaminatedData().GetSingleMask());
 				}
 
 				if(_onStokesQ)
 				{
 					performDerivedPolarisation(artifacts, progress, Polarization::StokesQ, oldContaminatedData, oldOriginalData, oldRevisedData, changeRevised, 1, 4);
-					mask->Join(artifacts.ContaminatedData().GetSingleMask());
+					mask->Join(*artifacts.ContaminatedData().GetSingleMask());
 				}
 
 				if(_onStokesU)
 				{
 					performDerivedPolarisation(artifacts, progress, Polarization::StokesU, oldContaminatedData, oldOriginalData, oldRevisedData, changeRevised, 2, 4);
-					mask->Join(artifacts.ContaminatedData().GetSingleMask());
+					mask->Join(*artifacts.ContaminatedData().GetSingleMask());
 				}
 
 				if(_onStokesV)
 				{
 					performDerivedPolarisation(artifacts, progress, Polarization::StokesV, oldContaminatedData, oldOriginalData, oldRevisedData, changeRevised, 3, 4);
-					mask->Join(artifacts.ContaminatedData().GetSingleMask());
+					mask->Join(*artifacts.ContaminatedData().GetSingleMask());
 				}
 				
 				oldContaminatedData.SetGlobalMask(mask);
@@ -241,23 +237,19 @@ namespace rfiStrategy {
 
 			void performDerivedPolarisation(ArtifactSet &artifacts, ProgressListener &progress, PolarizationEnum polarisation, const TimeFrequencyData &oldContaminatedData, const TimeFrequencyData &oldOriginalData, const TimeFrequencyData &oldRevisedData, bool changeRevised, size_t taskNr, size_t taskCount)
 			{
-				TimeFrequencyData *newContaminatedData =
-					oldContaminatedData.CreateTFData(polarisation);
-				artifacts.SetContaminatedData(*newContaminatedData);
-				progress.OnStartTask(*this, taskNr, taskCount, newContaminatedData->Description());
-				delete newContaminatedData;
+				TimeFrequencyData newContaminatedData =
+					oldContaminatedData.Make(polarisation);
+				artifacts.SetContaminatedData(newContaminatedData);
+				progress.OnStartTask(*this, taskNr, taskCount, newContaminatedData.Description());
 
-				TimeFrequencyData *newOriginalData =
-					oldOriginalData.CreateTFData(polarisation);
-				artifacts.SetOriginalData(*newOriginalData);
-				delete newOriginalData;
-
+				TimeFrequencyData newOriginalData =
+					oldOriginalData.Make(polarisation);
+				artifacts.SetOriginalData(newOriginalData);
 
 				if(changeRevised)
 				{
-					TimeFrequencyData *newRevised = oldRevisedData.CreateTFData(polarisation);
-					artifacts.SetRevisedData(*newRevised);
-					delete newRevised;
+					TimeFrequencyData newRevised = oldRevisedData.Make(polarisation);
+					artifacts.SetRevisedData(newRevised);
 				}
 
 				ActionBlock::Perform(artifacts, progress);

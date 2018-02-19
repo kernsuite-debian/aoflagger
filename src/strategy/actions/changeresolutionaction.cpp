@@ -80,38 +80,37 @@ namespace rfiStrategy {
 			for(size_t i=0;i<imageCount;++i)
 			{
 				Image2DCPtr image = timeFrequencyData.GetImage(i);
-				Image2DPtr newImage = image->ShrinkHorizontally(_timeDecreaseFactor);
+				Image2DPtr newImage(new Image2D(image->ShrinkHorizontally(_timeDecreaseFactor)));
 				timeFrequencyData.SetImage(i, newImage);
 			}
 			size_t maskCount = timeFrequencyData.MaskCount();
 			for(size_t i=0;i<maskCount;++i)
 			{
 				Mask2DCPtr mask = timeFrequencyData.GetMask(i);
-				Mask2DPtr newMask = mask->ShrinkHorizontally(_timeDecreaseFactor);
+				Mask2DPtr newMask(new Mask2D(mask->ShrinkHorizontally(_timeDecreaseFactor)));
 				timeFrequencyData.SetMask(i, newMask);
 			}
 		}
 	}
 	
-	void ChangeResolutionAction::DecreaseTimeWithMask(TimeFrequencyData &data)
+	void ChangeResolutionAction::DecreaseTimeWithMask(TimeFrequencyData& data)
 	{
-		size_t polCount = data.PolarisationCount();
+		size_t polCount = data.PolarizationCount();
 		for(size_t i=0;i<polCount;++i)
 		{
-			TimeFrequencyData *polData = data.CreateTFDataFromPolarisationIndex(i);
-			Mask2DCPtr mask = polData->GetSingleMask();
-			for(unsigned j=0;j<polData->ImageCount();++j)
+			TimeFrequencyData polData(data.MakeFromPolarizationIndex(i));
+			const Mask2D* mask = polData.GetSingleMask().get();
+			for(unsigned j=0;j<polData.ImageCount();++j)
 			{
-				Image2DCPtr image = polData->GetImage(j);
-				polData->SetImage(j, ThresholdTools::ShrinkHorizontally(_timeDecreaseFactor, image, mask));
+				const Image2D* image = polData.GetImage(j).get();
+				polData.SetImage(j, ThresholdTools::ShrinkHorizontally(_timeDecreaseFactor, image, mask));
 			}
-			delete polData;
 		}
 		size_t maskCount = data.MaskCount();
 		for(size_t i=0;i<maskCount;++i)
 		{
 			Mask2DCPtr mask = data.GetMask(i);
-			Mask2DPtr newMask = mask->ShrinkHorizontallyForAveraging(_timeDecreaseFactor);
+			Mask2DPtr newMask(new Mask2D(mask->ShrinkHorizontallyForAveraging(_timeDecreaseFactor)));
 			data.SetMask(i, newMask);
 		}
 	}
@@ -122,14 +121,14 @@ namespace rfiStrategy {
 		for(size_t i=0;i<imageCount;++i)
 		{
 			Image2DCPtr image = timeFrequencyData.GetImage(i);
-			Image2DPtr newImage = image->ShrinkVertically(_frequencyDecreaseFactor);
+			Image2DPtr newImage(new Image2D(image->ShrinkVertically(_frequencyDecreaseFactor)));
 			timeFrequencyData.SetImage(i, newImage);
 		}
 		size_t maskCount = timeFrequencyData.MaskCount();
 		for(size_t i=0;i<maskCount;++i)
 		{
 			Mask2DCPtr mask = timeFrequencyData.GetMask(i);
-			Mask2DPtr newMask = mask->ShrinkVertically(_frequencyDecreaseFactor);
+			Mask2DPtr newMask(new Mask2D(mask->ShrinkVertically(_frequencyDecreaseFactor)));
 			timeFrequencyData.SetMask(i, newMask);
 		}
 	}
@@ -144,7 +143,7 @@ namespace rfiStrategy {
 			for(size_t i=0;i<imageCount;++i)
 			{
 				Image2DCPtr image = changedData.GetImage(i);
-				Image2DPtr newImage = image->EnlargeHorizontally(_timeDecreaseFactor, originalData.ImageWidth());
+				Image2DPtr newImage(new Image2D(image->EnlargeHorizontally(_timeDecreaseFactor, originalData.ImageWidth())));
 				originalData.SetImage(i, newImage);
 			}
 		}
@@ -156,7 +155,7 @@ namespace rfiStrategy {
 			{
 				Mask2DCPtr mask = changedData.GetMask(i);
 				Mask2DPtr newMask = Mask2D::CreateUnsetMaskPtr(originalData.ImageWidth(), originalData.ImageHeight());
-				newMask->EnlargeHorizontallyAndSet(mask, _timeDecreaseFactor);
+				newMask->EnlargeHorizontallyAndSet(*mask, _timeDecreaseFactor);
 				originalData.SetMask(i, newMask);
 			}
 		}
@@ -172,7 +171,7 @@ namespace rfiStrategy {
 			for(size_t i=0;i<imageCount;++i)
 			{
 				Image2DCPtr image = changedData.GetImage(i);
-				Image2DPtr newImage = image->EnlargeVertically(_frequencyDecreaseFactor, originalData.ImageHeight());
+				Image2DPtr newImage(new Image2D(image->EnlargeVertically(_frequencyDecreaseFactor, originalData.ImageHeight())));
 				originalData.SetImage(i, newImage);
 			}
 		}
@@ -184,7 +183,7 @@ namespace rfiStrategy {
 			{
 				Mask2DCPtr mask = changedData.GetMask(i);
 				Mask2DPtr newMask = Mask2D::CreateUnsetMaskPtr(originalData.ImageWidth(), originalData.ImageHeight());
-				newMask->EnlargeVerticallyAndSet(mask, _frequencyDecreaseFactor);
+				newMask->EnlargeVerticallyAndSet(*mask, _frequencyDecreaseFactor);
 				originalData.SetMask(i, newMask);
 			}
 		}

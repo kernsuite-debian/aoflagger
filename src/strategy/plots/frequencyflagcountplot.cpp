@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/plot.h"
 
 #include "../../structures/timefrequencydata.h"
@@ -69,7 +69,7 @@ void FrequencyFlagCountPlot::Report()
 		size_t index = _ignoreFirstChannel ? 1 : 0;
 		size_t column = 0;
 		std::stringstream rowStr;
-		AOLogger::Info
+		Logger::Info
 			<< "Summary of RFI per channel: ("
 			<< formatFrequency(_counts.begin()->first) << " Hz - "
 			<< formatFrequency(_counts.rbegin()->first) << " Hz)\n";
@@ -77,7 +77,7 @@ void FrequencyFlagCountPlot::Report()
 		{
 			if(column == 0)
 			{
-				AOLogger::Info << "Channel " << formatIndex(index) << "-";
+				Logger::Info << "Channel " << formatIndex(index) << "-";
 			}
 			std::string percString = formatPercentage(100.0L * (long double) i->second.count / (long double) i->second.total);
 			for(unsigned j=percString.size();j<6;++j)
@@ -86,7 +86,7 @@ void FrequencyFlagCountPlot::Report()
 			++column;
 			if(column >= 8)
 			{
-				AOLogger::Info << formatIndex(index) << ":" << rowStr.str() << '\n';
+				Logger::Info << formatIndex(index) << ":" << rowStr.str() << '\n';
 				rowStr.str(std::string());
 				column = 0;
 			}
@@ -94,7 +94,7 @@ void FrequencyFlagCountPlot::Report()
 		}
 		if(column != 0)
 		{
-			AOLogger::Info << formatIndex(index-1) << ":" << rowStr.str() << '\n';
+			Logger::Info << formatIndex(index-1) << ":" << rowStr.str() << '\n';
 		}
 	}
 }

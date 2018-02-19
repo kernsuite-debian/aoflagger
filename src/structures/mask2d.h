@@ -1,51 +1,53 @@
 #ifndef MASK2D_H
 #define MASK2D_H
 
-#include <string.h>
+#include <cstring>
+#include <memory>
 
-#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/intrusive_ptr.hpp>
+#include <boost/smart_ptr/intrusive_ref_counter.hpp>
 
 #include "image2d.h"
 
-typedef boost::shared_ptr<class Mask2D> Mask2DPtr;
-typedef boost::shared_ptr<const class Mask2D> Mask2DCPtr;
+typedef boost::intrusive_ptr<class Mask2D> Mask2DPtr;
+typedef boost::intrusive_ptr<const class Mask2D> Mask2DCPtr;
 
-class Mask2D {
+void swap(Mask2D&, Mask2D&);
+void swap(Mask2D&, Mask2D&&);
+void swap(Mask2D&&, Mask2D&);
+
+class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 	public:
-		~Mask2D();
+		Mask2D(const Mask2D& source);
+		
+		Mask2D(Mask2D&& source) noexcept;
+		
+		~Mask2D() noexcept;
 
-		// This method assumes equal height and width.
-		void operator=(Mask2DCPtr source)
+		Mask2D& operator=(const Mask2D& rhs);
+		
+		Mask2D& operator=(Mask2D&& rhs) noexcept;
+		
+		template<typename... Args>
+		static Mask2DPtr MakePtr(Args&&... args)
 		{
-			memcpy(_valuesConsecutive, source->_valuesConsecutive, _stride * _height * sizeof(bool));
-		}
-
-		// This method assumes equal height and width.
-		void operator=(const Mask2D &source)
-		{
-			memcpy(_valuesConsecutive, source._valuesConsecutive, _stride * _height * sizeof(bool));
+			// This function is to have a generic 'make_<ptr>' function, that e.g. calls
+			// the more efficient make_shared() when Mask2DPtr is a shared_ptr, but
+			// also works when Mask2DPtr is a boost::intrusive_ptr.
+			return Mask2DPtr(new Mask2D(std::forward<Args>(args)...));
 		}
 		
-		/**
-		 * Swaps the contents of the two masks. This can be used as a move assignment operator, as it
-		 * only swaps pointers; hence it is fast.
-		 */
-		void Swap(Mask2D &source)
+		static Mask2D MakeUnsetMask(size_t width, size_t height)
 		{
-			std::swap(source._width, _width);
-			std::swap(source._stride, _stride);
-			std::swap(source._height, _height);
-			std::swap(source._values, _values);
-			std::swap(source._valuesConsecutive, _valuesConsecutive);
+			return Mask2D(width, height);
 		}
-
-		/**
-		 * Swaps the contents of the two masks. This can be used as a move assignment operator, as it
-		 * only swaps pointers; hence it is fast.
-		 */
-		void Swap(Mask2DPtr source)
+		
+		template<bool InitValue>
+		static Mask2D MakeSetMask(size_t width, size_t height)
 		{
-			Swap(*source);
+			Mask2D newMask(width, height);
+			memset(newMask._valuesConsecutive, InitValue, newMask._stride * height * sizeof(bool));
+			return newMask;
 		}
 		
 		static Mask2D *CreateUnsetMask(size_t width, size_t height)
@@ -86,30 +88,24 @@ class Mask2D {
 			return Mask2DPtr(CreateSetMask<InitValue>(width, height));
 		}
 
-		static Mask2D *CreateCopy(const Mask2D &source);
-		static Mask2DPtr CreateCopy(Mask2DCPtr source)
-		{
-			return Mask2DPtr(CreateCopy(*source));
-		}
-
-		inline bool Value(size_t x, size_t y) const
+		bool Value(size_t x, size_t y) const
 		{
 			return _values[y][x];
 		}
 		
-		inline void SetValue(size_t x, size_t y, bool newValue)
+		void SetValue(size_t x, size_t y, bool newValue)
 		{
 			_values[y][x] = newValue;
 		}
 		
-		inline void SetHorizontalValues(size_t x, size_t y, bool newValue, size_t count)
+		void SetHorizontalValues(size_t x, size_t y, bool newValue, size_t count)
 		{
 			memset(&_values[y][x], newValue, count * sizeof(bool));
 		}
 		
-		inline size_t Width() const { return _width; }
+		size_t Width() const { return _width; }
 		
-		inline size_t Height() const { return _height; }
+		size_t Height() const { return _height; }
 
 		bool AllFalse() const
 		{
@@ -136,7 +132,7 @@ class Mask2D {
 		 * 
 		 * @see Stride()
 		 */
-		inline bool *ValuePtr(size_t x, size_t y)
+		bool *ValuePtr(size_t x, size_t y)
 		{
 			return &_values[y][x];
 		}
@@ -153,17 +149,17 @@ class Mask2D {
 		 * 
 		 * @see Stride()
 		 */
-		inline const bool *ValuePtr(size_t x, size_t y) const
+		const bool *ValuePtr(size_t x, size_t y) const
 		{
 			return &_values[y][x];
 		}
 		
-		inline bool *Data()
+		bool *Data()
 		{
 			return _valuesConsecutive;
 		}
 		
-		inline const bool *Data() const
+		const bool *Data() const
 		{
 			return _valuesConsecutive;
 		}
@@ -176,7 +172,7 @@ class Mask2D {
 		 * 
 		 * @see ValuePtr(unsigned, unsigned)
 		 */
-		inline size_t Stride() const
+		size_t Stride() const
 		{
 			return _stride;
 		}
@@ -228,15 +224,15 @@ class Mask2D {
 		/**
 		 * Flips the image round the diagonal, i.e., x becomes y and y becomes x.
 		 */
-		Mask2DPtr CreateXYFlipped() const
+		Mask2D MakeXYFlipped() const
 		{
-			Mask2D *mask = new Mask2D(_height, _width);
+			Mask2D mask(_height, _width);
 			for(size_t y=0;y<_height;++y)
 			{
 				for(size_t x=0;x<_width;++x)
-					mask->_values[x][y] = _values[y][x];
+					mask._values[x][y] = _values[y][x];
 			}
-			return Mask2DPtr(mask);
+			return mask;
 		}
 
 		template<bool BoolValue>
@@ -263,79 +259,111 @@ class Mask2D {
 			return true;
 		}
 
-		Mask2DPtr ShrinkHorizontally(int factor) const;
-		Mask2DPtr ShrinkHorizontallyForAveraging(int factor) const;
+		Mask2D ShrinkHorizontally(int factor) const;
+		Mask2D ShrinkHorizontallyForAveraging(int factor) const;
 		
-		Mask2DPtr ShrinkVertically(int factor) const;
+		Mask2D ShrinkVertically(int factor) const;
 
-		void EnlargeHorizontallyAndSet(Mask2DCPtr smallMask, int factor);
-		void EnlargeVerticallyAndSet(Mask2DCPtr smallMask, int factor);
+		void EnlargeHorizontallyAndSet(const Mask2D& smallMask, int factor);
+		void EnlargeVerticallyAndSet(const Mask2D& smallMask, int factor);
 
-		void Join(Mask2DCPtr other)
+		void Join(const Mask2D& other)
 		{
 			for(size_t y=0;y<_height;++y) {
 				for(size_t x=0;x<_width;++x)
-					SetValue(x, y, other->Value(x, y) || Value(x, y));
+					SetValue(x, y, other.Value(x, y) || Value(x, y));
 			}
 		}
 		
-		void Intersect(Mask2DCPtr other)
+		void Intersect(const Mask2D& other)
 		{
 			for(size_t y=0;y<_height;++y) {
 				for(size_t x=0;x<_width;++x)
-					SetValue(x, y, other->Value(x, y) && Value(x, y));
+					SetValue(x, y, other.Value(x, y) && Value(x, y));
 			}
 		}
 		
-		Mask2DPtr Trim(size_t startX, size_t startY, size_t endX, size_t endY) const
+		Mask2D Trim(size_t startX, size_t startY, size_t endX, size_t endY) const
 		{
 			size_t
 				width = endX - startX,
 				height = endY - startY;
-			Mask2D *mask = new Mask2D(width, height);
+			Mask2D mask(width, height);
 			for(size_t y=startY;y<endY;++y)
 			{
 				for(size_t x=startX;x<endX;++x)
-					mask->SetValue(x-startX, y-startY, Value(x, y));
+					mask.SetValue(x-startX, y-startY, Value(x, y));
 			}
-			return Mask2DPtr(mask);
+			return mask;
 		}
 		
-		void CopyFrom(Mask2DCPtr source, size_t destX, size_t destY)
+		void CopyFrom(const Mask2D& source, size_t destX, size_t destY)
 		{
 			size_t
-				x2 = source->_width + destX,
-				y2 = source->_height + destY;
+				x2 = source._width + destX,
+				y2 = source._height + destY;
 			if(x2 > _width) x2 = _width;
 			if(y2 > _height) y2 = _height;
 			for(size_t y=destY;y<y2;++y)
 			{
 				for(size_t x=destX;x<x2;++x)
-					SetValue(x, y, source->Value(x-destX, y-destY));
+					SetValue(x, y, source.Value(x-destX, y-destY));
 			}
 		}
 		
 		void SwapXY()
 		{
-			Mask2D *tempMask = new Mask2D(_height, _width);
+			Mask2D tempMask(_height, _width);
 			for(size_t y=0;y<_height;++y)
 			{
 				for(size_t x=0;x<_width;++x)
 				{
-					tempMask->SetValue(y, x, Value(x, y));
+					tempMask.SetValue(y, x, Value(x, y));
 				}
 			}
-			Swap(*tempMask);
-			delete tempMask;
+			*this = std::move(tempMask);
 		}
 	private:
+		friend void swap(Mask2D&, Mask2D&);
+		friend void swap(Mask2D&, Mask2D&&);
+		friend void swap(Mask2D&&, Mask2D&);
+		
 		Mask2D(size_t width, size_t height);
-
+		
+		void allocate();
+		
 		size_t _width, _height;
 		size_t _stride;
 		
 		bool **_values;
 		bool *_valuesConsecutive;
 };
+
+inline void swap(Mask2D& left, Mask2D& right)
+{
+	std::swap(left._width, right._width);
+	std::swap(left._stride, right._stride);
+	std::swap(left._height, right._height);
+	std::swap(left._values, right._values);
+	std::swap(left._valuesConsecutive, right._valuesConsecutive);
+}
+
+inline void swap(Mask2D& left, Mask2D&& right)
+{
+	std::swap(left._width, right._width);
+	std::swap(left._stride, right._stride);
+	std::swap(left._height, right._height);
+	std::swap(left._values, right._values);
+	std::swap(left._valuesConsecutive, right._valuesConsecutive);
+}
+
+inline void swap(Mask2D&& left, Mask2D& right)
+{
+	std::swap(left._width, right._width);
+	std::swap(left._stride, right._stride);
+	std::swap(left._height, right._height);
+	std::swap(left._values, right._values);
+	std::swap(left._valuesConsecutive, right._valuesConsecutive);
+}
 
 #endif

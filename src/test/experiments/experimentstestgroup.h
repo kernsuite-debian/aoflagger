@@ -13,7 +13,7 @@ class ExperimentsTestGroup : public TestGroup {
 	public:
 		ExperimentsTestGroup() : TestGroup("Experiments") { }
 		
-		virtual void Initialize()
+		virtual void Initialize() override
 		{
 			Add(new HighPassFilterExperiment());
 			//Add(new RankOperatorROCExperiment());

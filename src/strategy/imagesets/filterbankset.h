@@ -6,7 +6,7 @@
 
 #include "imageset.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 
 namespace rfiStrategy {
 
@@ -14,20 +14,20 @@ namespace rfiStrategy {
 		public:
 			friend class FilterBankSet;
 			
-			FilterBankSetIndex(class rfiStrategy::ImageSet &set) :
+			explicit FilterBankSetIndex(class rfiStrategy::ImageSet &set) :
 				ImageSetIndex(set), _intervalIndex(0), _isValid(true)
 			{ }
 			
-			virtual void Previous();
-			virtual void Next();
-			virtual std::string Description() const;
-			virtual bool IsValid() const { return _isValid; }
-			virtual FilterBankSetIndex *Copy() const
+			virtual void Previous() final override;
+			virtual void Next() final override;
+			virtual std::string Description() const final override;
+			virtual bool IsValid() const final override { return _isValid; }
+			virtual std::unique_ptr<ImageSetIndex> Clone() const final override
 			{
-				FilterBankSetIndex *index = new FilterBankSetIndex(imageSet());
+				std::unique_ptr<FilterBankSetIndex> index( new FilterBankSetIndex(imageSet()) );
 				index->_intervalIndex = _intervalIndex;
 				index->_isValid = _isValid;
-				return index;
+				return std::move(index);
 			}
 		private:
 			size_t _intervalIndex;
@@ -36,39 +36,38 @@ namespace rfiStrategy {
 	
 	class FilterBankSet : public ImageSet {
 		public:
-			FilterBankSet(const std::string &location);
+			explicit FilterBankSet(const std::string &location);
 			
 			~FilterBankSet()
 			{ }
 
-			virtual FilterBankSet* Copy()
+			virtual std::unique_ptr<ImageSet> Clone() final override
 			{
-				FilterBankSet* set = new FilterBankSet(*this);
+				std::unique_ptr<FilterBankSet> set(new FilterBankSet(*this));
 				set->_requests.clear();
-				return set;
+				return std::move(set);
 			}
 	
-			virtual std::string Name() { return _location; }
+			virtual std::string Name() final override { return _location; }
 			
-			virtual std::string File() { return _location; }
+			virtual std::string File() final override { return _location; }
 			
-			virtual void AddReadRequest(const ImageSetIndex &index);
+			virtual void AddReadRequest(const ImageSetIndex &index) final override;
 			
-			virtual void PerformReadRequests();
+			virtual void PerformReadRequests() final override;
 			
-			virtual BaselineData *GetNextRequested();
+			virtual std::unique_ptr<BaselineData> GetNextRequested() final override;
 
-			virtual void AddWriteFlagsTask(const ImageSetIndex &index, std::vector<Mask2DCPtr> &flags);
+			virtual void AddWriteFlagsTask(const ImageSetIndex &index, std::vector<Mask2DCPtr> &flags) final override;
 			
-			virtual void PerformWriteFlagsTask()
+			virtual void Initialize() final override;
+	
+			virtual std::unique_ptr<ImageSetIndex> StartIndex() final override
 			{
+				return std::unique_ptr<ImageSetIndex>(new FilterBankSetIndex(*this));
 			}
 
-			virtual void Initialize();
-	
-			virtual ImageSetIndex* StartIndex() { return new FilterBankSetIndex(*this); }
-
-			virtual void PerformWriteDataTask(const ImageSetIndex &index, std::vector<Image2DCPtr> realImages, std::vector<Image2DCPtr> imaginaryImages);
+			virtual void PerformWriteDataTask(const ImageSetIndex &index, std::vector<Image2DCPtr> realImages, std::vector<Image2DCPtr> imaginaryImages) final override;
 			
 			double CentreFrequency() const
 			{

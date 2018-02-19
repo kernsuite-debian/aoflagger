@@ -14,6 +14,7 @@ namespace rfiStrategy
 			
 	void ParmImageSet::Initialize()
 	{
+		delete _parmTable;
 		_parmTable = new ParmTable(_path);
 		const std::set<std::string> antennaSet = _parmTable->GetAntennas();
 		for(std::set<std::string>::const_iterator i=antennaSet.begin();i!=antennaSet.end();++i)

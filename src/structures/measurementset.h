@@ -58,6 +58,8 @@ class MSIterator {
 		}
 		unsigned Window() { return (*_windowCol)(_row); }
 	private:
+		MSIterator(const MSIterator&) = delete;
+		MSIterator& operator=(const MSIterator&) = delete;
 		unsigned long _row;
 		casacore::ROScalarColumn<int> *_antenna1Col;
 		casacore::ROScalarColumn<int> *_antenna2Col;
@@ -76,7 +78,7 @@ class MeasurementSet {
 	public:
 		class Sequence;
 		
-		MeasurementSet(const std::string &path) throw()
+		explicit MeasurementSet(const std::string &path)
 			: _path(path), _isMainTableDataInitialized(false)
 		{
 			initializeOtherData();
@@ -191,7 +193,7 @@ class MeasurementSet {
 			return times;
 		}
 		
-		bool HasRFIConsoleHistory();
+		bool HasAOFlaggerHistory();
 		
 		void GetAOFlaggerHistory(std::ostream &stream);
 		

@@ -189,7 +189,7 @@ class StatisticsCollection : public Serializable
 			}
 		}
 		
-		virtual void Serialize(std::ostream &stream) const
+		virtual void Serialize(std::ostream &stream) const final override
 		{
 			SerializeToUInt64(stream, _polarizationCount);
 			serializeTime(stream);
@@ -197,7 +197,7 @@ class StatisticsCollection : public Serializable
 			serializeBaselines(stream);
 		}
 		
-		virtual void Unserialize(std::istream &stream)
+		virtual void Unserialize(std::istream &stream) final override
 		{
 			_polarizationCount = UnserializeUInt64(stream);
 			_emptyBaselineStatisticsMap = BaselineStatisticsMap(_polarizationCount);

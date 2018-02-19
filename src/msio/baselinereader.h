@@ -4,8 +4,7 @@
 #include <map>
 #include <vector>
 #include <stdexcept>
-
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "../structures/antennainfo.h"
 #include "../structures/image2d.h"
@@ -13,12 +12,12 @@
 #include "../structures/measurementset.h"
 #include "../structures/polarization.h"
 
-typedef boost::shared_ptr<class BaselineReader> BaselineReaderPtr;
-typedef boost::shared_ptr<const class BaselineReader> BaselineReaderCPtr;
+typedef std::shared_ptr<class BaselineReader> BaselineReaderPtr;
+typedef std::shared_ptr<const class BaselineReader> BaselineReaderCPtr;
 
 class BaselineReader {
 	public:
-		BaselineReader(const std::string &msFile);
+		explicit BaselineReader(const std::string &msFile);
 		virtual ~BaselineReader();
 
 		bool ReadFlags() const { return _readFlags; }
@@ -101,24 +100,12 @@ class BaselineReader {
 			size_t endIndex;
 		};
 		struct FlagWriteRequest {
-			FlagWriteRequest() { }
+			FlagWriteRequest() = default;
 			FlagWriteRequest(const FlagWriteRequest &source)
 			: flags(source.flags), antenna1(source.antenna1), antenna2(source.antenna2), spectralWindow(source.spectralWindow), sequenceId(source.sequenceId),
 			startIndex(source.startIndex), endIndex(source.endIndex),
 			leftBorder(source.leftBorder), rightBorder(source.rightBorder)
 			{
-			}
-			void operator=(const FlagWriteRequest &source)
-			{
-				flags = source.flags;
-				antenna1 = source.antenna1;
-				antenna2 = source.antenna2;
-				spectralWindow = source.spectralWindow;
-				sequenceId = source.sequenceId;
-				startIndex = source.startIndex;
-				endIndex = source.endIndex;
-				leftBorder = source.leftBorder;
-				rightBorder = source.rightBorder;
 			}
 			std::vector<Mask2DCPtr> flags;
 			int antenna1;
@@ -132,7 +119,7 @@ class BaselineReader {
 		};
 		
 		struct Result {
-			Result() { }
+			Result() = default;
 			Result(const Result &source) :
 				_realImages(source._realImages),
 				_imaginaryImages(source._imaginaryImages),
@@ -141,14 +128,6 @@ class BaselineReader {
 				_bandInfo(source._bandInfo)
 				{
 				}
-			void operator=(const Result &source)
-			{
-				_realImages = source._realImages;
-				_imaginaryImages = source._imaginaryImages;
-				_flags = source._flags;
-				_uvw = source._uvw;
-				_bandInfo = source._bandInfo;
-			}
 			std::vector<Image2DPtr> _realImages;
 			std::vector<Image2DPtr> _imaginaryImages;
 			std::vector<Mask2DPtr> _flags;
@@ -160,13 +139,14 @@ class BaselineReader {
 			initObservationTimes();
 			initializePolarizations();
 		}
-		//casacore::ROArrayColumn<casacore::Complex> *CreateDataColumn(const std::string &columnName, class casacore::Table &table);
-		//casacore::ArrayColumn<casacore::Complex> *CreateDataColumnRW(const std::string &columnName, class casacore::Table &table);
 
 		std::vector<ReadRequest> _readRequests;
 		std::vector<FlagWriteRequest> _writeRequests;
 		std::vector<Result> _results;
 	private:
+		BaselineReader(const BaselineReader&) = delete;
+		BaselineReader& operator=(const BaselineReader&) = delete;
+
 		void initializePolarizations();
 		void initObservationTimes();
 		

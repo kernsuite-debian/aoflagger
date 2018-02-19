@@ -9,7 +9,7 @@ namespace AOTools
 	{
 		public:
 		RefFileException() : std::runtime_error("Exception in reference file") { }
-		RefFileException(const std::string &message) : std::runtime_error(message) { }
+		explicit RefFileException(const std::string &message) : std::runtime_error(message) { }
 	};
 }
 

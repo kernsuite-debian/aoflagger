@@ -9,7 +9,7 @@ class UtilTestGroup : public TestGroup {
 	public:
 		UtilTestGroup() : TestGroup("Common utilities") { }
 		
-		virtual void Initialize()
+		virtual void Initialize() override
 		{
 			Add(new NumberParserTest());
 		}

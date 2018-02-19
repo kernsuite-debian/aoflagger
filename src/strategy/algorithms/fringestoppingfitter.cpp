@@ -2,7 +2,7 @@
 
 #include "../../imaging/uvimager.h"
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/rng.h"
 
 #include "../algorithms/fringestoppingfitter.h"
@@ -257,7 +257,7 @@ void FringeStoppingFitter::GetRFIValue(num_t &r, num_t &i, int x, int y, num_t r
 	i = -sinn(rotations * 2.0 * M_PIn + rfiPhase) * rfiStrength;
 }
 
-void FringeStoppingFitter::GetMeanValue(num_t &rMean, num_t &iMean, num_t phase, num_t amplitude, SampleRowCPtr real, SampleRowCPtr imaginary, unsigned xStart, unsigned xEnd, unsigned y)
+void FringeStoppingFitter::GetMeanValue(num_t &rMean, num_t &iMean, num_t phase, num_t amplitude, const SampleRow& real, const SampleRow& imaginary, unsigned xStart, unsigned xEnd, unsigned y)
 {
 	rMean = 0.0;
 	iMean = 0.0;
@@ -265,14 +265,14 @@ void FringeStoppingFitter::GetMeanValue(num_t &rMean, num_t &iMean, num_t phase,
 	{
 		num_t r, i;
 		GetRFIValue(r, i, t, y, phase, amplitude);
-		rMean += real->Value(t) - r;
-		iMean += imaginary->Value(t) - i;
+		rMean += real.Value(t) - r;
+		iMean += imaginary.Value(t) - i;
 	}
 	rMean /= (num_t) (xEnd - xStart);
 	iMean /= (num_t) (xEnd - xStart);
 }
 
-void FringeStoppingFitter::MinimizeRFIFitError(num_t &phase, num_t &amplitude, SampleRowCPtr real, SampleRowCPtr imaginary, unsigned xStart, unsigned xEnd, unsigned y) const throw()
+void FringeStoppingFitter::MinimizeRFIFitError(num_t &phase, num_t &amplitude, const SampleRow& real, const SampleRow& imaginary, unsigned xStart, unsigned xEnd, unsigned y) const throw()
 {
 	// calculate 1/N * \sum_x v(t) e^{2 i \pi \tau_g(t)}, where \tau_g(t) is the number of phase rotations
 	// because of the geometric delay as function of time t.
@@ -285,8 +285,8 @@ void FringeStoppingFitter::MinimizeRFIFitError(num_t &phase, num_t &amplitude, S
 		
 	for(unsigned t=xStart;t<xEnd;++t)
 	{
-		const num_t vR = real->Value(t);
-		const num_t vI = imaginary->Value(t);
+		const num_t vR = real.Value(t);
+		const num_t vI = imaginary.Value(t);
 		
 		if(std::isfinite(vR) && std::isfinite(vI))
 		{
@@ -313,17 +313,17 @@ void FringeStoppingFitter::MinimizeRFIFitError(num_t &phase, num_t &amplitude, S
 
 void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneChannel(unsigned y)
 {
-	SampleRowPtr
-		real = SampleRow::CreateFromRow(_originalData->GetRealPart(), y),
-		imaginary = SampleRow::CreateFromRow(_originalData->GetImaginaryPart(), y);
+	SampleRow
+		real = SampleRow::MakeFromRow(_originalData->GetRealPart().get(), y),
+		imaginary = SampleRow::MakeFromRow(_originalData->GetImaginaryPart().get(), y);
 	PerformDynamicFrequencyFitOnOneRow(real, imaginary, y);
 }
 
-void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(SampleRowCPtr real, SampleRowCPtr imaginary, unsigned y)
+void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(const SampleRow& real, const SampleRow& imaginary, unsigned y)
 {
 	num_t phase, strength;
 	MinimizeRFIFitError(phase, strength, real, imaginary, 0, _originalData->ImageWidth(), y);
-	AOLogger::Debug << "Amplitude found: " << strength << " phase found: " << phase << '\n';
+	Logger::Debug << "Amplitude found: " << strength << " phase found: " << phase << '\n';
 	for(size_t x=0;x<_originalData->ImageWidth();++x)
 	{
 		num_t rfiR, rfiI;
@@ -343,26 +343,26 @@ void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(SampleRowCPtr real
 
 void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneChannel(unsigned y, unsigned windowSize)
 {
-	SampleRowPtr
-		real = SampleRow::CreateFromRowWithMissings(_originalData->GetRealPart(), _originalMask, y),
-		imaginary = SampleRow::CreateFromRowWithMissings(_originalData->GetImaginaryPart(), _originalMask, y);
+	SampleRow
+		real = SampleRow::MakeFromRowWithMissings(_originalData->GetRealPart().get(), _originalMask.get(), y),
+		imaginary = SampleRow::MakeFromRowWithMissings(_originalData->GetImaginaryPart().get(), _originalMask.get(), y);
 	PerformDynamicFrequencyFitOnOneRow(real, imaginary, y, windowSize);
 }
 
-void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(SampleRowCPtr real, SampleRowCPtr imaginary, unsigned y, unsigned windowSize)
+void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(const SampleRow& real, const SampleRow& imaginary, unsigned y, unsigned windowSize)
 {
 	unsigned halfWindowSize = windowSize / 2;
-	for(size_t x=0;x<real->Size();++x)
+	for(size_t x=0;x<real.Size();++x)
 	{
 		size_t windowStart, windowEnd;
 		if(x > halfWindowSize)
 			windowStart = x - halfWindowSize;
 		else
 			windowStart = 0;
-		if(x + halfWindowSize < real->Size())
+		if(x + halfWindowSize < real.Size())
 			windowEnd = x + halfWindowSize;
 		else
-			windowEnd =  real->Size();
+			windowEnd =  real.Size();
 		num_t windowPhase, windowStrength;
 		MinimizeRFIFitError(windowPhase, windowStrength, real, imaginary, windowStart, windowEnd, y);
 
@@ -391,26 +391,26 @@ void FringeStoppingFitter::PerformDynamicFrequencyFit()
 
 void FringeStoppingFitter::PerformDynamicFrequencyFit(unsigned yStart, unsigned yEnd, unsigned windowSize)
 {
-	SampleRowPtr
-		real = SampleRow::CreateFromRowSum(_originalData->GetRealPart(), yStart, yEnd),
-		imaginary = SampleRow::CreateFromRowSum(_originalData->GetImaginaryPart(), yStart, yEnd);
+	SampleRow
+		real = SampleRow::MakeFromRowSum(_originalData->GetRealPart().get(), yStart, yEnd),
+		imaginary = SampleRow::MakeFromRowSum(_originalData->GetImaginaryPart().get(), yStart, yEnd);
 	PerformDynamicFrequencyFitOnOneRow(real, imaginary, (yStart + yEnd) / 2, windowSize);
 }
 
 void FringeStoppingFitter::PerformDynamicFrequencyFit(unsigned yStart, unsigned yEnd)
 {
-	SampleRowPtr
-		real = SampleRow::CreateFromRowSum(_originalData->GetRealPart(), yStart, yEnd),
-		imaginary = SampleRow::CreateFromRowSum(_originalData->GetImaginaryPart(), yStart, yEnd);
+	SampleRow
+		real = SampleRow::MakeFromRowSum(_originalData->GetRealPart().get(), yStart, yEnd),
+		imaginary = SampleRow::MakeFromRowSum(_originalData->GetImaginaryPart().get(), yStart, yEnd);
 	PerformDynamicFrequencyFitOnOneRow(real, imaginary, (yStart + yEnd) / 2);
 }
 
 num_t FringeStoppingFitter::GetAmplitude(unsigned yStart, unsigned yEnd)
 {
 	unsigned y = (yStart + yEnd) / 2;
-	SampleRowPtr
-		real = SampleRow::CreateFromRowSum(_originalData->GetRealPart(), yStart, yEnd),
-		imaginary = SampleRow::CreateFromRowSum(_originalData->GetImaginaryPart(), yStart, yEnd);
+	SampleRow
+		real = SampleRow::MakeFromRowSum(_originalData->GetRealPart().get(), yStart, yEnd),
+		imaginary = SampleRow::MakeFromRowSum(_originalData->GetImaginaryPart().get(), yStart, yEnd);
 	num_t phase, amplitude;
 	MinimizeRFIFitError(phase, amplitude, real, imaginary, 0, _originalData->ImageWidth(), y);
 	return amplitude;

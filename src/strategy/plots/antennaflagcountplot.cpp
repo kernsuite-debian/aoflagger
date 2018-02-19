@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include "../../util/aologger.h"
+#include "../../util/logger.h"
 #include "../../util/plot.h"
 
 #include "../../structures/timefrequencydata.h"
@@ -76,24 +76,13 @@ void AntennaFlagCountPlot::MakePlot()
 	plot.Show();
 }
 
-void AntennaFlagCountPlot::WriteCounts()
-{
-	std::ofstream file("antenna-vs-counts.txt");
-	file << std::setprecision(14);
-	for(std::map<int, MapItem>::const_iterator i=_counts.begin();i!=_counts.end();++i)
-	{
-		file << i->second.name << "\t" << (100.0L * (long double) i->second.autoCount / (long double) i->second.autoTotal) << "\t" << (100.0L * (long double) i->second.crossCount / (long double) i->second.crossTotal) << "\n";
-	}
-	file.close();
-}
-
 void AntennaFlagCountPlot::Report()
 {
 	for(std::map<int, MapItem>::const_iterator i=_counts.begin();i!=_counts.end();++i)
 	{
 		if(i->second.autoTotal != 0)
 		{
-			AOLogger::Info
+			Logger::Info
 				<< "Flagged in autocorrelations of antenna "
 				<< i->second.name << ": "
 				<< formatPercentage(100.0L * (long double) i->second.autoCount / (long double) i->second.autoTotal)
@@ -101,7 +90,7 @@ void AntennaFlagCountPlot::Report()
 		}
 		if(i->second.crossTotal != 0)
 		{
-			AOLogger::Info
+			Logger::Info
 				<< "Flagged in cross correlations with antenna "
 				<< i->second.name << ": "
 				<< formatPercentage(100.0L * (long double) i->second.crossCount / (long double) i->second.crossTotal)

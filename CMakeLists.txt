@@ -28,8 +28,7 @@ find_package(LibXml2 REQUIRED)
 find_package(PNG REQUIRED)
 #Prevent accidentally finding old BoostConfig.cmake file from casapy
 set(Boost_NO_BOOST_CMAKE ON)
-find_package(Boost REQUIRED COMPONENTS date_time thread filesystem signals system)
-find_package(Threads REQUIRED)
+find_package(Boost REQUIRED COMPONENTS date_time filesystem python signals system)
 find_library(FFTW3_LIB fftw3 REQUIRED)
 enable_language(Fortran OPTIONAL)
 find_package(BLAS REQUIRED)
@@ -38,6 +37,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   find_library(RT_LIBRARY rt)
 #  list(APPEND LOFAR_EXTRA_LIBRARIES ${RT_LIBRARY})
 endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+find_package(PythonLibs 2.7 REQUIRED)
 
 include_directories(${CASACORE_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
@@ -47,6 +47,7 @@ include_directories(${FFTW3_INCLUDE_DIR})
 if(GSL_INCLUDE_DIR)
 	include_directories(${GSL_INCLUDE_DIR})
 endif(GSL_INCLUDE_DIR)
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 # The following stuff will set the "rpath" correctly, so that
 # LD_LIBRARY_PATH doesn't have to be set.

@@ -3,7 +3,7 @@
 #include "svdmitigater.h"
 
 #ifdef HAVE_GTKMM
- #include "../../gui/plot/plot2d.h"
+ #include "../../plot/plot2d.h"
 #endif
 
 extern "C" {
@@ -13,7 +13,7 @@ extern "C" {
 	      integer *lwork, doublereal *rwork, integer *info);
 }
 
-SVDMitigater::SVDMitigater() : _background(0), _singularValues(0), _leftSingularVectors(0), _rightSingularVectors(0), _iteration(0), _removeCount(10),  _verbose(false)
+SVDMitigater::SVDMitigater() : _background(0), _singularValues(0), _leftSingularVectors(0), _rightSingularVectors(0), _m(0), _n(0), _iteration(0), _removeCount(10),  _verbose(false)
 {
 }
 
@@ -149,20 +149,20 @@ void SVDMitigater::Compose()
 
 #ifdef HAVE_GTKMM
 
-void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData &data, Plot2D &plot)
+void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData& data, Plot2D& plot)
 {
-	size_t polarisationCount = data.PolarisationCount();
+	size_t polarisationCount = data.PolarizationCount();
 	plot.SetTitle("Distribution of singular values");
 	plot.SetLogarithmicYAxis(true);
 	for(size_t i=0;i<polarisationCount;++i)
 	{
-		TimeFrequencyData *polarizationData = data.CreateTFDataFromPolarisationIndex(i);
+		TimeFrequencyData polarizationData(data.MakeFromPolarizationIndex(i));
 		SVDMitigater svd;
-		svd.Initialize(*polarizationData);
+		svd.Initialize(polarizationData);
 		svd.Decompose();
 		size_t minmn = svd._m<svd._n ? svd._m : svd._n;
 		
-		Plot2DPointSet &pointSet = plot.StartLine(polarizationData->Description());
+		Plot2DPointSet &pointSet = plot.StartLine(polarizationData.Description());
 		pointSet.SetXDesc("Singular value index");
 		pointSet.SetYDesc("Singular value");
 		

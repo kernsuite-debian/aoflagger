@@ -14,25 +14,25 @@ namespace rfiStrategy {
 		public:
 			QuickCalibrateAction() { }
 
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "Quickly calibrate";
 			}
-			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &)
+			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &) final override
 			{
 				Image2DCPtr image = artifacts.ContaminatedData().GetSingleImage();
 				Mask2DCPtr mask = artifacts.ContaminatedData().GetSingleMask();
 				num_t mean, stddev;
-				ThresholdTools::WinsorizedMeanAndStdDev(image, mask, mean, stddev);
+				ThresholdTools::WinsorizedMeanAndStdDev(image.get(), mask.get(), mean, stddev);
 				for(size_t i=0;i!=artifacts.ContaminatedData().ImageCount();++i)
 				{
 					Image2DCPtr image = artifacts.ContaminatedData().GetImage(i);
-					Image2DPtr normalized = Image2D::CreateCopy(image);
+					Image2DPtr normalized(new Image2D(*image));
 					normalized->MultiplyValues(1.0/mean);
 					artifacts.ContaminatedData().SetImage(i, normalized);
 				}
 			}
-			virtual ActionType Type() const { return QuickCalibrateActionType; }
+			virtual ActionType Type() const final override { return QuickCalibrateActionType; }
 		private:
 	};
 }

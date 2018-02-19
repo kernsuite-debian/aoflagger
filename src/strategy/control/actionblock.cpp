@@ -8,9 +8,8 @@ namespace rfiStrategy {
 	{
 		size_t nr = 0;
 		unsigned totalWeight = Weight();
-		for(const_iterator i=begin();i!=end();++i)
+		for(const std::unique_ptr<Action>& action : *this)
 		{
-			Action *action = *i;
 			unsigned weight = action->Weight();
 			listener.OnStartTask(*this, nr, totalWeight, action->Description(), weight);
 			action->Perform(artifacts, listener);

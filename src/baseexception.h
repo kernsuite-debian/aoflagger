@@ -5,37 +5,31 @@
 #ifndef BASEEXCEPTION_H
 #define BASEEXCEPTION_H
 
-#include <exception>
+#include <stdexcept>
 #include <string>
 
 /**
  * The base exception class that all exceptions should inherit from.
  */
-class BaseException : public std::exception {
+class BaseException : public std::runtime_error {
 	public:
 		/**
 		 * Constructor that initialises the exception as if an unspecified error occured.
 		 */
-		BaseException() throw() : _description("Unspecified error") { }
+		BaseException() noexcept : std::runtime_error("Unspecified error") { }
 		
 		/**
 		 * Constructor that initialises the exception with a specified description.
 		 * @param description The description that should describe the cause of the exception.
 		 */
-		BaseException(const std::string &description) throw() : _description(description) { }
+		explicit BaseException(const std::string &description) noexcept : std::runtime_error(description) { }
 		
 		/**
 		 * Destructor.
 		 */
-		virtual ~BaseException() throw() { }
+		virtual ~BaseException() noexcept { }
 		
-		/**
-		 * Implementation of the std::exception::what() method that returns a description of the exception.
-		 * @return A description of the exception.
-		 */
-		virtual const char *what() const throw() { return _description.c_str(); }
 	private:
-		const std::string _description;
 };
 
 /**
@@ -46,13 +40,13 @@ class IOException : public BaseException {
 		/**
 		 * Constructor that initialises the IOException without a description.
 		 */
-		IOException() throw() : BaseException() { }
+		IOException() noexcept : BaseException() { }
 		
 		/**
 		 * Constructor that initialises the IOException with a description
 		 * @param description The description of the Input/Output exception
 		 */
-		IOException(const std::string &description) throw() : BaseException(description) { }
+		explicit IOException(const std::string &description) noexcept : BaseException(description) { }
 };
 
 /**
@@ -64,7 +58,7 @@ class ConfigurationException : public BaseException {
 		 * Constructor that initialises the ConfigurationException with a description
 		 * @param description The description of the configuration error
 		 */
-		ConfigurationException(const std::string &description) throw() : BaseException(description) { }
+		explicit ConfigurationException(const std::string &description) noexcept : BaseException(description) { }
 };
 
 /**
@@ -76,6 +70,6 @@ class BadUsageException : public BaseException {
 		 * Constructor that initialises the BadUsageException with a description
 		 * @param description The description of the incorrect usage
 		 */
-		BadUsageException(const std::string &description) throw() : BaseException(description) { }
+		explicit BadUsageException(const std::string &description) noexcept : BaseException(description) { }
 };
 #endif

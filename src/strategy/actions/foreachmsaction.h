@@ -11,21 +11,28 @@ namespace rfiStrategy {
 
 	class ForEachMSAction  : public ActionBlock {
 		public:
-			ForEachMSAction() : _readUVW(false), _dataColumnName("DATA"), _subtractModel(false), _skipIfAlreadyProcessed(false), _loadOptimizedStrategy(false), _baselineIOMode(AutoReadMode),
+			ForEachMSAction() : 
+			_readUVW(false), 
+			_dataColumnName("DATA"),
+			_subtractModel(false), 
+			_combineSPWs(false),
+			_skipIfAlreadyProcessed(false),
+			_loadOptimizedStrategy(false),
+			_baselineIOMode(AutoReadMode),
 			_threadCount(0)
 			{
 			}
 			~ForEachMSAction()
 			{
 			}
-			virtual std::string Description()
+			virtual std::string Description() final override
 			{
 				return "For each measurement set";
 			}
-			virtual void Initialize();
-			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress);
-			virtual ActionType Type() const { return ForEachMSActionType; }
-			virtual unsigned int Weight() const { return ActionBlock::Weight() * _filenames.size(); }
+			virtual void Initialize() final override;
+			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override;
+			virtual ActionType Type() const final override { return ForEachMSActionType; }
+			virtual unsigned int Weight() const final override { return ActionBlock::Weight() * _filenames.size(); }
 			void AddDirectory(const std::string &name);
 			void writeHistory(const std::string &filename);
 
@@ -40,12 +47,15 @@ namespace rfiStrategy {
 
 			const std::string &DataColumnName() const { return _dataColumnName; }
 			void SetDataColumnName(const std::string &name) { _dataColumnName = name; }
+			
+			bool CombineSPWs() const { return _combineSPWs; }
+			void SetCombineSPWs(bool combineSPWs) { _combineSPWs = combineSPWs; }
 
 			bool SubtractModel() const { return _subtractModel; }
 			void SetSubtractModel(bool subtractModel) { _subtractModel = subtractModel; }
 
 			std::string CommandLineForHistory() const { return _commandLineForHistory; }
-			void SetCommandLineForHistory(const std::string cmd) { _commandLineForHistory = cmd; }
+			void SetCommandLineForHistory(const std::string& cmd) { _commandLineForHistory = cmd; }
 			
 			bool SkipIfAlreadyProcessed() const { return _skipIfAlreadyProcessed; }
 			void SetSkipIfAlreadyProcessed(bool value) { _skipIfAlreadyProcessed = value; }
@@ -67,6 +77,7 @@ namespace rfiStrategy {
 			std::string _dataColumnName;
 			bool _subtractModel;
 			std::string _commandLineForHistory;
+			bool _combineSPWs;
 			bool _skipIfAlreadyProcessed;
 			bool _loadOptimizedStrategy;
 			BaselineIOMode _baselineIOMode;

@@ -8,6 +8,7 @@
 class Observatorium
 {
 	public:
+		Observatorium() : _channelWidthHz(0.0) { }
 		void AddAntenna(AntennaInfo &antenna)
 		{
 			_antennae.push_back(antenna);

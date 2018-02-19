@@ -16,7 +16,6 @@ class AntennaFlagCountPlot {
 		bool HasData() { return !_counts.empty(); }
 		void Report();
 	private:
-		void WriteCounts();
 		std::string formatPercentage(double percentage);
 
 		struct MapItem {
