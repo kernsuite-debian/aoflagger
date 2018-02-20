@@ -1,0 +1,87 @@
+From: Peter Williams <peter@newton.cx>
+Date: Wed, 7 Feb 2018 18:20:16 -0500
+Subject: Support Python 3.x
+
+The new release of aoflagger only builds against Python 2.x because of
+a call to PyString_FromString, which is removed in the 3.x API. I'd
+argue that it would be a very good idea to include and test support
+for Python 3 since support for 2.x is disappearing quickly these
+days. Casacore supports 3.x.
+
+Here is the quick-and-dirty patch that I applied to be able to build
+aoflagger against Python 3.x within the conda-forge
+framework. conda-forge's version of Boost calls its Python library
+boost_python3 in the 3.x case and just boost_python in 2.x; I don't
+think that's necessarily standard. And from my readin of the docs, the
+find_package(PythonLibs, ...) call should find Python 3.x even if 2.7
+is given as the target version (as in the current CMakeLists.txt), but
+that didn't work for me.
+
+The actual problematic PyString_FromString call could be #ifdef'ed to
+handle both major versions of Python simultaneously. The
+PyUnicode_FromString call, at least, assumes the input bytes are
+UTF8-encoded; it would be worth checking that that's what one gets
+from boost::filesystem.
+---
+ CMakeLists.txt                          | 4 ++--
+ src/CMakeLists.txt                      | 4 ++--
+ src/strategy/control/pythonstrategy.cpp | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f14a1a8..a4dbdfa 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -28,7 +28,7 @@ find_package(LibXml2 REQUIRED)
+ find_package(PNG REQUIRED)
+ #Prevent accidentally finding old BoostConfig.cmake file from casapy
+ set(Boost_NO_BOOST_CMAKE ON)
+-find_package(Boost REQUIRED COMPONENTS date_time filesystem python signals system)
++find_package(Boost REQUIRED COMPONENTS date_time filesystem python3 signals system)
+ find_library(FFTW3_LIB fftw3 REQUIRED)
+ enable_language(Fortran OPTIONAL)
+ find_package(BLAS REQUIRED)
+@@ -37,7 +37,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+   find_library(RT_LIBRARY rt)
+ #  list(APPEND LOFAR_EXTRA_LIBRARIES ${RT_LIBRARY})
+ endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+-find_package(PythonLibs 2.7 REQUIRED)
++find_package(PythonLibs 3 REQUIRED)
+ 
+ include_directories(${CASACORE_INCLUDE_DIRS})
+ include_directories(${Boost_INCLUDE_DIR})
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index e863607..9c9686f 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -232,7 +232,7 @@ set(PYTHON_FILES
+ 
+ set(ALL_LIBRARIES
+ 	${Boost_SYSTEM_LIBRARY}
+-	${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON_LIBRARIES}
++	${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON3_LIBRARIES}
+ 	${FFTW3_LIB}
+ 	${CASACORE_LIBRARIES}
+ 	${CMAKE_THREAD_LIBS_INIT}
+@@ -261,7 +261,7 @@ set_target_properties(aoflagger-shared PROPERTIES OUTPUT_NAME aoflagger)
+ SET_TARGET_PROPERTIES(aoflagger-shared PROPERTIES SOVERSION 0)
+ target_link_libraries(aoflagger-shared PRIVATE
+   ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY}
+-  ${Boost_FILESYSTEM_LIBRARY} ${Boost_PYTHON_LIBRARIES}
++  ${Boost_FILESYSTEM_LIBRARY} ${Boost_PYTHON3_LIBRARIES}
+   ${FFTW3_LIB}
+   ${CASACORE_LIBRARIES}
+   ${CFITSIO_LIBRARY}
+diff --git a/src/strategy/control/pythonstrategy.cpp b/src/strategy/control/pythonstrategy.cpp
+index 2b40912..0550d49 100644
+--- a/src/strategy/control/pythonstrategy.cpp
++++ b/src/strategy/control/pythonstrategy.cpp
+@@ -47,7 +47,7 @@ PythonStrategy::PythonStrategy() : _code(
+ 	// The following statement add the curr path to the Python search path
+ 	boost::filesystem::path workingDir = boost::filesystem::current_path().normalize();
+ 	PyObject* sysPath = PySys_GetObject(const_cast<char*>("path"));
+-	PyList_Insert( sysPath, 0, PyString_FromString(workingDir.string().c_str()));
++	PyList_Insert( sysPath, 0, PyUnicode_FromString(workingDir.string().c_str()));
+ }
+ 
+ PythonStrategy::~PythonStrategy()
