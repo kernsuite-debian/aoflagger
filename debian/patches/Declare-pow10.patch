@@ -1,0 +1,28 @@
+Description: fix missing pow10
+
+--- aoflagger-2.10.0.orig/src/quality/loghistogram.h
++++ aoflagger-2.10.0/src/quality/loghistogram.h
+@@ -10,10 +10,7 @@
+ 
+ #include "../util/serializable.h"
+ 
+-//# pow10 seems to be undefined on OS-X
+-#ifdef __APPLE__
+ # define pow10(x) pow(10., (x))
+-#endif
+ 
+ 
+ class LogHistogram : public Serializable
+--- aoflagger-2.10.0.orig/src/util/numberparser.h
++++ aoflagger-2.10.0/src/util/numberparser.h
+@@ -2,10 +2,7 @@
+ 
+ #include <cmath>
+ 
+-//# pow10 seems to be undefined on OS-X
+-#ifdef __APPLE__
+ # define pow10(x) pow(10., (x))
+-#endif
+ 
+ 
+ class NumberParsingException : public std::runtime_error
