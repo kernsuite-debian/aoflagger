@@ -1,3 +1,10 @@
+aoflagger (2.10.0-2) unstable; urgency=low
+
+  [ Gijs Molenaar ]
+  * Add pow10 patch. Closes: #893272
+
+ -- Ole Streicher <olebole@debian.org>  Mon, 19 Mar 2018 15:08:04 +0100
+
 aoflagger (2.10.0-1) unstable; urgency=low
 
   * New upstream version 2.10.0. Rediff patches
