@@ -1,3 +1,12 @@
+aoflagger (2.10.0-3) unstable; urgency=medium
+
+  * Remove outdated CheckCXXSymbolExists (Closes: #897115)
+  * Push Standards-Version to 4.1.4. No changes needed.
+  * Remove unneeded --parallel from d/rules
+  * Mark aoflagger-dev as Multi-Arch: same as hinted
+
+ -- Ole Streicher <olebole@debian.org>  Sat, 28 Apr 2018 21:41:14 +0200
+
 aoflagger (2.10.0-2) unstable; urgency=low
 
   [ Gijs Molenaar ]
