@@ -66,6 +66,7 @@ Description: Find RFI in radio astronomical observations (shared lib)
 
 Package: aoflagger-dev
 Architecture: any
+Multi-Arch: same
 Section: libdevel
 Depends: libaoflagger0 (= ${binary:Version}),
          ${misc:Depends},
