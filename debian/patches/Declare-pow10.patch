@@ -1,7 +1,16 @@
-Description: fix missing pow10
+From: Gijs Molenaar <gijs@pythonic.nl>
+Date: Mon, 19 Mar 2018 12:49:10 +0000
+Subject: Declare-pow10
 
---- aoflagger-2.10.0.orig/src/quality/loghistogram.h
-+++ aoflagger-2.10.0/src/quality/loghistogram.h
+---
+ src/quality/loghistogram.h | 3 ---
+ src/util/numberparser.h    | 3 ---
+ 2 files changed, 6 deletions(-)
+
+diff --git a/src/quality/loghistogram.h b/src/quality/loghistogram.h
+index 1150786..6b62ee1 100644
+--- a/src/quality/loghistogram.h
++++ b/src/quality/loghistogram.h
 @@ -10,10 +10,7 @@
  
  #include "../util/serializable.h"
@@ -13,8 +22,10 @@ Description: fix missing pow10
  
  
  class LogHistogram : public Serializable
---- aoflagger-2.10.0.orig/src/util/numberparser.h
-+++ aoflagger-2.10.0/src/util/numberparser.h
+diff --git a/src/util/numberparser.h b/src/util/numberparser.h
+index 509ae4f..889cba0 100644
+--- a/src/util/numberparser.h
++++ b/src/util/numberparser.h
 @@ -2,10 +2,7 @@
  
  #include <cmath>

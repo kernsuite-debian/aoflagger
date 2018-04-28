@@ -7,7 +7,7 @@ Subject: Build shared lib with SONAME and SOVERSION
  1 file changed, 20 insertions(+), 11 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 80275a8..93d54de 100644
+index 80275a8..e863607 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -231,15 +231,11 @@ set(PYTHON_FILES
