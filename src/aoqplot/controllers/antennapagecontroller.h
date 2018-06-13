@@ -32,7 +32,7 @@ protected:
 		return _statistics;
 	}
 	
-	virtual void startLine(Plot2D& plot, const std::string &name, const std::string &yAxisDesc) override final
+	virtual void startLine(Plot2D& plot, const std::string &name, int lineIndex, const std::string &yAxisDesc) override final
 	{
 		Plot2DPointSet& pointSet = plot.StartLine(name, "Antenna index", yAxisDesc, false, Plot2DPointSet::DrawColumns);
 		

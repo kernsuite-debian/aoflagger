@@ -32,41 +32,32 @@ class StrategyPlotFrame : public Gtk::Frame {
 		_applyButton("Apply")
 		{
 			_box.pack_start(_plotKindLabel);
-			_plotKindLabel.show();
 
 			Gtk::RadioButton::Group group;
 
 			_box.pack_start(_antennaVsFlagsButton);
 			_antennaVsFlagsButton.set_group(group);
-			_antennaVsFlagsButton.show();
 
 			_box.pack_start(_frequencyVsFlagsButton);
 			_frequencyVsFlagsButton.set_group(group);
-			_frequencyVsFlagsButton.show();
 
 			_box.pack_start(_frequencyVsPowerButton);
 			_frequencyVsPowerButton.set_group(group);
-			_frequencyVsPowerButton.show();
 
 			_box.pack_start(_timeVsFlagsButton);
 			_timeVsFlagsButton.set_group(group);
-			_timeVsFlagsButton.show();
 
 			_box.pack_start(_polarizationVsFlagsButton);
 			_polarizationVsFlagsButton.set_group(group);
-			_polarizationVsFlagsButton.show();
 
 			_box.pack_start(_baselineSpectrumPlotButton);
 			_baselineSpectrumPlotButton.set_group(group);
-			_baselineSpectrumPlotButton.show();
 
 			_box.pack_start(_baselineRMSButton);
 			_baselineRMSButton.set_group(group);
-			_baselineRMSButton.show();
 
 			_box.pack_start(_iterationsButton);
 			_iterationsButton.set_group(group);
-			_iterationsButton.show();
 
 			switch(_action.PlotKind())
 			{
@@ -98,17 +89,14 @@ class StrategyPlotFrame : public Gtk::Frame {
 
 			_logYScaleButton.set_active(_action.LogarithmicYAxis());
 			_box.pack_start(_logYScaleButton);
-			_logYScaleButton.show();
 
 			_buttonBox.pack_start(_applyButton);
 			_applyButton.signal_clicked().connect(sigc::mem_fun(*this, &StrategyPlotFrame::onApplyClicked));
-			_applyButton.show();
 
 			_box.pack_start(_buttonBox);
-			_buttonBox.show();
 
 			add(_box);
-			_box.show();
+			_box.show_all();
 		}
 	private:
 		EditStrategyWindow &_editStrategyWindow;

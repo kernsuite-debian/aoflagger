@@ -168,7 +168,7 @@ Data shrink(const Data& data, size_t horizontalFactor, size_t verticalFactor)
 	return Data(timeFrequencyData);
 }
 
-void sumthreshold(Data& data, double thresholdFactor, bool horizontal, bool vertical)
+void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor, bool horizontal, bool vertical)
 {
 	ThresholdConfig thresholdConfig;
 	thresholdConfig.InitializeLengthsDefault();
@@ -183,7 +183,7 @@ void sumthreshold(Data& data, double thresholdFactor, bool horizontal, bool vert
 	
 	Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
 	Image2DCPtr image = data.TFData().GetSingleImage();
-	thresholdConfig.Execute(image.get(), mask.get(), false, thresholdFactor);
+	thresholdConfig.Execute(image.get(), mask.get(), false, hThresholdFactor, vThresholdFactor);
 	data.TFData().SetGlobalMask(mask);
 }
 

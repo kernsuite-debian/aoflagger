@@ -4,10 +4,11 @@
 #include "../testingtools/testgroup.h"
 
 #include "defaultstrategyspeedtest.h"
-//#include "filterresultstest.h"
 #include "highpassfilterexperiment.h"
-//#include "scaleinvariantdilationexperiment.h"
-//#include "rankoperatorrocexperiment.h"
+
+#include "filterresultstest.h"
+#include "scaleinvariantdilationexperiment.h"
+#include "rankoperatorrocexperiment.h"
 
 class ExperimentsTestGroup : public TestGroup {
 	public:
@@ -16,8 +17,10 @@ class ExperimentsTestGroup : public TestGroup {
 		virtual void Initialize() override
 		{
 			Add(new HighPassFilterExperiment());
-			//Add(new RankOperatorROCExperiment());
 			Add(new DefaultStrategySpeedTest());
+			
+			// Optionals:
+			//Add(new RankOperatorROCExperiment());
 			//Add(new FilterResultsTest());
 			//Add(new ScaleInvariantDilationExperiment());
 		}

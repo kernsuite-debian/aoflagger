@@ -17,38 +17,39 @@ class SumThresholdFrame : public Gtk::Frame {
 		SumThresholdFrame(rfiStrategy::SumThresholdAction &action, EditStrategyWindow &editStrategyWindow)
 		: Gtk::Frame("SumThreshold"),
 		_editStrategyWindow(editStrategyWindow), _action(action),
-		_sensitivityLabel("Base sensitivity: (low = sensitive)"),
-		_sensitivityScale(Gtk::ORIENTATION_HORIZONTAL),
-		_timeDirectionButton("In time direction"),
-		_frequencyDirectionButton("In frequency direction"),
+		_timeDirectionButton("In time direction (sensitive to spectral lines)"),
+		_timeSensitivityLabel("Time-direction base sensitivity: (low = sensitive)"),
+		_timeSensitivityScale(Gtk::ORIENTATION_HORIZONTAL),
+		_frequencyDirectionButton("In frequency direction (sensitive to temporal RFI)"),
+		_frequencySensitivityLabel("Frequency-direction base sensitivity: (low = sensitive)"),
+		_frequencySensitivityScale(Gtk::ORIENTATION_HORIZONTAL),
 		_applyButton("Apply")
 		{
-			_box.pack_start(_sensitivityLabel);
-			_sensitivityLabel.show();
-
-			_box.pack_start(_sensitivityScale);
-			_sensitivityScale.set_range(0, 10);
-			_sensitivityScale.set_increments(0.1, 1.0);
-			_sensitivityScale.set_value(_action.BaseSensitivity());
-			_sensitivityScale.show();
-			
 			_timeDirectionButton.set_active(_action.TimeDirectionFlagging());
-			_buttonBox.pack_start(_timeDirectionButton);
-			_timeDirectionButton.show();
+			_box.pack_start(_timeDirectionButton);
+
+			_box.pack_start(_timeSensitivityLabel);
+			_box.pack_start(_timeSensitivityScale);
+			_timeSensitivityScale.set_range(0, 10);
+			_timeSensitivityScale.set_increments(0.1, 1.0);
+			_timeSensitivityScale.set_value(_action.TimeDirectionSensitivity());
 
 			_frequencyDirectionButton.set_active(_action.FrequencyDirectionFlagging());
-			_buttonBox.pack_start(_frequencyDirectionButton);
-			_frequencyDirectionButton.show();
+			_box.pack_start(_frequencyDirectionButton);
+
+			_box.pack_start(_frequencySensitivityLabel);
+			_box.pack_start(_frequencySensitivityScale);
+			_frequencySensitivityScale.set_range(0, 10);
+			_frequencySensitivityScale.set_increments(0.1, 1.0);
+			_frequencySensitivityScale.set_value(_action.FrequencyDirectionSensitivity());
 
 			_buttonBox.pack_start(_applyButton);
 			_applyButton.signal_clicked().connect(sigc::mem_fun(*this, &SumThresholdFrame::onApplyClicked));
-			_applyButton.show();
 
-			_box.pack_start(_buttonBox);
-			_buttonBox.show();
+			_box.pack_end(_buttonBox);
 
 			add(_box);
-			_box.show();
+			_box.show_all();
 		}
 	private:
 		EditStrategyWindow &_editStrategyWindow;
@@ -56,16 +57,20 @@ class SumThresholdFrame : public Gtk::Frame {
 
 		Gtk::VBox _box;
 		Gtk::ButtonBox _buttonBox;
-		Gtk::Label _sensitivityLabel;
-		Gtk::Scale _sensitivityScale;
-		Gtk::CheckButton _timeDirectionButton, _frequencyDirectionButton;
+		Gtk::CheckButton _timeDirectionButton;
+		Gtk::Label _timeSensitivityLabel;
+		Gtk::Scale _timeSensitivityScale;
+		Gtk::CheckButton _frequencyDirectionButton;
+		Gtk::Label _frequencySensitivityLabel;
+		Gtk::Scale _frequencySensitivityScale;
 		Gtk::Button _applyButton;
 
 		void onApplyClicked()
 		{
-			_action.SetBaseSensitivity(_sensitivityScale.get_value());
 			_action.SetTimeDirectionFlagging(_timeDirectionButton.get_active());
+			_action.SetTimeDirectionSensitivity(_timeSensitivityScale.get_value());
 			_action.SetFrequencyDirectionFlagging(_frequencyDirectionButton.get_active());
+			_action.SetFrequencyDirectionSensitivity(_frequencySensitivityScale.get_value());
 			_editStrategyWindow.UpdateAction(&_action);
 		}
 };

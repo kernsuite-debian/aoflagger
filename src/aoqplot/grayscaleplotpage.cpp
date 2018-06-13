@@ -127,7 +127,7 @@ void GrayScalePlotPage::initPolarizations(Gtk::Toolbar& toolbar)
 
 	_polQPButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
 	_polQPButton.set_icon_name("showqp");
-	_polPQButton.set_tooltip_text("Display statistics for the QP polarization. Depending on the polarization configuration of the measurement set, this will show YX or LR.");
+	_polQPButton.set_tooltip_text("Display statistics for the QP polarization. Depending on the polarization configuration of the measurement set, this will show YX or LR.");
 	toolbar.append(_polQPButton);
 
 	_polQQButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));

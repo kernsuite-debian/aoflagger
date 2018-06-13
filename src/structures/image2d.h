@@ -26,7 +26,7 @@ void swap(Image2D&& left, Image2D& right);
 /**
  * This class represents a two dimensional single-valued (=gray scale) image. It can be
  * read from and written to a @c .fits file and written to a @c .png file. A new Image2D can
- * be constructed with e.g. the CreateFromFits(), CreateUnsetImage() or CreateFromDiff() static methods.
+ * be constructed with e.g. the MakeFromFits(), MakeUnsetImage() or MakeFromDiff() static methods.
  */
 class Image2D : public boost::intrusive_ref_counter<Image2D> {
 	public:

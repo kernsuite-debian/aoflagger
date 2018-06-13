@@ -20,33 +20,6 @@ namespace rfiStrategy {
 			{
 				SingleBaselineInfo() : marked(false) { }
 
-				SingleBaselineInfo(const SingleBaselineInfo &source) :
-					antenna1(source.antenna1),
-					antenna2(source.antenna2),
-					antenna1Name(source.antenna1Name),
-					antenna2Name(source.antenna2Name),
-					band(source.band),
-					sequenceId(source.sequenceId),
-					length(source.length),
-					rfiCount(source.rfiCount),
-					totalCount(source.totalCount),
-					marked(source.marked)
-				{
-				}
-				SingleBaselineInfo& operator=(const SingleBaselineInfo &source)
-				{
-					antenna1 = source.antenna1;
-					antenna2 = source.antenna2;
-					antenna1Name = source.antenna1Name;
-					antenna2Name = source.antenna2Name;
-					band = source.band;
-					sequenceId = source.sequenceId;
-					length = source.length;
-					rfiCount = source.rfiCount;
-					totalCount = source.totalCount;
-					marked = source.marked;
-					return *this;
-				}
 				bool operator<(const SingleBaselineInfo &rhs) const
 				{
 					return length < rhs.length;
@@ -64,8 +37,7 @@ namespace rfiStrategy {
 			BaselineSelector() :
 			_threshold(8.0), _absThreshold(0.4), _smoothingSigma(0.6),
 			_makePlot(false), _useLog(true)
-			{
-			}
+			{ }
 
 			typedef std::vector<SingleBaselineInfo> BaselineVector;
 			void Search(std::vector<BaselineSelector::SingleBaselineInfo> &markedBaselines);

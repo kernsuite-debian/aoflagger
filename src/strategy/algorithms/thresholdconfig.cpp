@@ -69,41 +69,53 @@ void ThresholdConfig::InitializeThresholdsFromFirstThreshold(num_t firstThreshol
 	_distribution = noiseDistribution;
 }
 
-void ThresholdConfig::Execute(const Image2D* image, Mask2D* mask, bool additive, num_t sensitivity) const
+void ThresholdConfig::Execute(const Image2D* image, Mask2D* mask, bool additive, num_t timeSensitivity, num_t frequencySensitivity) const
 {
-	num_t factor;
+	num_t timeFactor, frequencyFactor;
 	
 	switch(_distribution) {
 		case Gaussian: {
 		num_t mean, stddev;
 		ThresholdTools::WinsorizedMeanAndStdDev(image, mask, mean, stddev);
 		if(stddev == 0.0L)
-			factor = sensitivity;
-		else
-			factor = stddev * sensitivity;
+		{
+			timeFactor = timeSensitivity;
+			frequencyFactor = frequencySensitivity;
+		}
+		else {
+			timeFactor = stddev * timeSensitivity;
+			frequencyFactor = stddev * frequencySensitivity;
+		}
 		if(_verbose)
-			std::cout << "Stddev=" << stddev << " first threshold=" << _horizontalOperations[0].threshold*factor << std::endl; 
+			std::cout << "Stddev=" << stddev << " first time-direction threshold=" << _horizontalOperations[0].threshold*timeFactor << std::endl; 
 		} break;
 		case Rayleigh: {
 		num_t mode = ThresholdTools::WinsorizedMode(image, mask);
 		if(mode == 0.0L)
-			factor = sensitivity;
-		else
-			factor = sensitivity * mode;
+		{
+			timeFactor = timeSensitivity;
+			frequencyFactor = frequencySensitivity;
+		}
+		else {
+			timeFactor = timeSensitivity * mode;
+			frequencyFactor = frequencySensitivity * mode;
+		}
 		if(_verbose) {
 			num_t mean, stddev;
 			ThresholdTools::WinsorizedMeanAndStdDev(image, mask, mean, stddev);
-			std::cout << "Mode=" << mode << " first threshold=" << _horizontalOperations[0].threshold*factor << std::endl;
+			std::cout << "Mode=" << mode << " first time-direction threshold=" << _horizontalOperations[0].threshold*timeFactor << std::endl;
 			std::cout << "Stddev=" << stddev << std::endl; 
-		} 
+		}
 		} break;
 		default:
-		factor = sensitivity;
+		timeFactor = timeSensitivity;
+		frequencyFactor = frequencySensitivity;
 		break;
 	}
 
 	if(!additive)
 		mask->SetAll<false>();
+	Mask2D scratch(*mask);
 
 	size_t operationCount = _horizontalOperations.size() > _verticalOperations.size() ?
 		_horizontalOperations.size() : _verticalOperations.size();
@@ -115,23 +127,23 @@ void ThresholdConfig::Execute(const Image2D* image, Mask2D* mask, bool additive,
 			{
 				if(_verbose)
 					std::cout << "Performing SumThreshold with length " << _horizontalOperations[i].length 
-						<< ", threshold " << _horizontalOperations[i].threshold*factor << "..." << std::endl;
-				CombinatorialThresholder::HorizontalSumThresholdLarge(image, mask, _horizontalOperations[i].length, _horizontalOperations[i].threshold*factor);
+						<< ", threshold " << _horizontalOperations[i].threshold*timeFactor << "..." << std::endl;
+				CombinatorialThresholder::HorizontalSumThresholdLarge(image, mask, &scratch, _horizontalOperations[i].length, _horizontalOperations[i].threshold*timeFactor);
 			}
 			
 			if(i < _verticalOperations.size())
-				CombinatorialThresholder::VerticalSumThresholdLarge(image, mask, _verticalOperations[i].length, _verticalOperations[i].threshold*factor);
+				CombinatorialThresholder::VerticalSumThresholdLarge(image, mask, &scratch, _verticalOperations[i].length, _verticalOperations[i].threshold*frequencyFactor);
 			break;
 			case VarThreshold:
 			if(i < _horizontalOperations.size())
 			{
 				if(_verbose)
 					std::cout << "Performing VarThreshold with length " << _horizontalOperations[i].length 
-						<< ", threshold " << _horizontalOperations[i].threshold*factor << "..." << std::endl;
-				CombinatorialThresholder::HorizontalVarThreshold(image, mask, _horizontalOperations[i].length, _horizontalOperations[i].threshold*factor);
+						<< ", threshold " << _horizontalOperations[i].threshold*timeFactor << "..." << std::endl;
+				CombinatorialThresholder::HorizontalVarThreshold(image, mask, _horizontalOperations[i].length, _horizontalOperations[i].threshold*timeFactor);
 			}
 			if(i < _verticalOperations.size())
-				CombinatorialThresholder::HorizontalVarThreshold(image, mask, _verticalOperations[i].length, _verticalOperations[i].threshold*factor);
+				CombinatorialThresholder::VerticalVarThreshold(image, mask, _verticalOperations[i].length, _verticalOperations[i].threshold*frequencyFactor);
 			break;
 		}
 	}

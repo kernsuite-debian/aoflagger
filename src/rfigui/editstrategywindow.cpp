@@ -47,12 +47,9 @@ EditStrategyWindow::EditStrategyWindow(StrategyController &strategyController)
 	_removeActionButton("_Remove", true),
 	_moveUpButton("_Up", true),
 	_moveDownButton("_Down", true),
-	_addFOBButton("FOB"),
-	_addFOMSButton("FOMS"),
 	_loadEmptyButton("_New", true),
 	_loadDefaultButton("Default"),
 	_wizardButton("_Wizard...", true),
-	_loadFullButton("Full"),
 	_saveButton("_Save As...", true),
 	_openButton("_Open", true),
 	_disableUpdates(false),
@@ -119,12 +116,6 @@ void EditStrategyWindow::initEditButtons()
 
 	_strategyBox.pack_start(_strategyEditButtonBox, Gtk::PACK_SHRINK, 0);
 
-	_strategyFileButtonBox.pack_start(_addFOBButton);
-	_addFOBButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onAddFOBaseline));
-
-	_strategyFileButtonBox.pack_start(_addFOMSButton);
-	_addFOMSButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onAddFOMS));
-
 	_strategyFileButtonBox.pack_start(_saveButton);
 	_saveButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onSaveClicked));
 
@@ -144,9 +135,6 @@ void EditStrategyWindow::initLoadDefaultsButtons()
 	
 	_strategyLoadDefaultsButtonBox.pack_start(_wizardButton);
 	_wizardButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onWizardClicked));
-
-	_strategyLoadDefaultsButtonBox.pack_start(_loadFullButton);
-	_loadFullButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onLoadFullButtonClicked));
 
 	_strategyBox.pack_start(_strategyLoadDefaultsButtonBox, Gtk::PACK_SHRINK, 0);
 }
@@ -451,14 +439,6 @@ void EditStrategyWindow::onLoadDefaultClicked()
 	fillStore();
 }
 
-void EditStrategyWindow::onLoadFullButtonClicked()
-{
-	_store->clear();
-	_strategy->RemoveAll();
-	DefaultStrategy::LoadFullStrategy(*_strategy, rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_GUI_FRIENDLY);
-	fillStore();
-}
-
 void EditStrategyWindow::onSaveClicked()
 {
   Gtk::FileChooserDialog dialog(*this, "Save strategy", Gtk::FILE_CHOOSER_ACTION_SAVE);
@@ -516,28 +496,14 @@ void EditStrategyWindow::onOpenClicked()
 	}
 }
 
-void EditStrategyWindow::onAddFOBaseline()
-{
-	addContainerBetween(*_strategy, std::unique_ptr<rfiStrategy::ForEachBaselineAction>(new rfiStrategy::ForEachBaselineAction()));
-	_store->clear();
-	fillStore();
-}
-
-void EditStrategyWindow::onAddFOMS()
-{
-	addContainerBetween(*_strategy, std::unique_ptr<rfiStrategy::ForEachMSAction>(new rfiStrategy::ForEachMSAction()));
-	_store->clear();
-	fillStore();
-}
-
-void EditStrategyWindow::addContainerBetween(rfiStrategy::ActionContainer &root, std::unique_ptr<rfiStrategy::ActionContainer> newContainer)
+/*void EditStrategyWindow::addContainerBetween(rfiStrategy::ActionContainer &root, std::unique_ptr<rfiStrategy::ActionContainer> newContainer)
 {
 	while(root.GetChildCount() > 0)
 	{
 		newContainer->Add(root.RemoveAndAcquire(&root.GetFirstChild()));
 	}
 	root.Add(std::move(newContainer));
-}
+}*/
 
 void EditStrategyWindow::onWizardClicked()
 {

@@ -57,6 +57,7 @@ namespace rfiStrategy {
 		{
 			default:
 			case GENERIC_TELESCOPE: return "Generic";
+			case AARTFAAC_TELESCOPE: return "Aartfaac";
 			case ARECIBO_TELESCOPE: return "Arecibo";
 			case BIGHORNS_TELESCOPE: return "Bighorns";
 			case JVLA_TELESCOPE: return "JVLA";
@@ -70,7 +71,9 @@ namespace rfiStrategy {
 	DefaultStrategy::TelescopeId DefaultStrategy::TelescopeIdFromName(const std::string &name)
 	{
 		const std::string nameUpper = boost::algorithm::to_upper_copy(name);
-		if(nameUpper == "ARECIBO" || nameUpper == "ARECIBO 305M")
+		if(nameUpper == "AARTFAAC")
+			return AARTFAAC_TELESCOPE;
+		else if(nameUpper == "ARECIBO" || nameUpper == "ARECIBO 305M")
 			return ARECIBO_TELESCOPE;
 		else if(nameUpper == "BIGHORNS")
 			return BIGHORNS_TELESCOPE;
@@ -142,7 +145,8 @@ namespace rfiStrategy {
 		if((flags&FLAG_UNSENSITIVE) != 0)
 			sumThresholdSensitivity *= 1.2;
 		bool onStokesIQ = ((flags&FLAG_FAST) != 0);
-		bool assembleStatistics = ((flags&FLAG_GUI_FRIENDLY)!=0) || telescopeId!=MWA_TELESCOPE;
+		bool assembleStatistics = ((flags&FLAG_GUI_FRIENDLY)!=0) ||
+			!(telescopeId==MWA_TELESCOPE || telescopeId==AARTFAAC_TELESCOPE);
 		
 		double verticalSmoothing = 5.0;
 		if(telescopeId == JVLA_TELESCOPE)
@@ -209,7 +213,8 @@ namespace rfiStrategy {
 		current = scratch;
 		
 		std::unique_ptr<SumThresholdAction> t1(new SumThresholdAction());
-		t1->SetBaseSensitivity(sumThresholdSensitivity);
+		t1->SetTimeDirectionSensitivity(sumThresholdSensitivity);
+		t1->SetFrequencyDirectionSensitivity(sumThresholdSensitivity);
 		if(keepTransients)
 			t1->SetFrequencyDirectionFlagging(false);
 		current->Add(std::move(t1));
@@ -261,7 +266,8 @@ namespace rfiStrategy {
 			current->Add(std::unique_ptr<CalibratePassbandAction>(new CalibratePassbandAction()));
 		
 		std::unique_ptr<SumThresholdAction> t2(new SumThresholdAction());
-		t2->SetBaseSensitivity(sumThresholdSensitivity);
+		t2->SetTimeDirectionSensitivity(sumThresholdSensitivity);
+		t2->SetFrequencyDirectionSensitivity(sumThresholdSensitivity);
 		if(keepTransients)
 			t2->SetFrequencyDirectionFlagging(false);
 		current->Add(std::move(t2));

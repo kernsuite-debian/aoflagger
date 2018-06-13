@@ -58,9 +58,9 @@ void CombinatorialThresholder::VerticalSumThreshold(const Image2D* input, Mask2D
 }
 
 template<size_t Length>
-void CombinatorialThresholder::HorizontalSumThresholdLarge(const Image2D* input, Mask2D* mask, num_t threshold)
+void CombinatorialThresholder::HorizontalSumThresholdLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
 {
-	Mask2D maskCopy(*mask);
+	*scratch = *mask;
 	const size_t width = mask->Width(), height = mask->Height();
 	if(Length <= width)
 	{
@@ -90,7 +90,7 @@ void CombinatorialThresholder::HorizontalSumThresholdLarge(const Image2D* input,
 				// Check
 				if(count>0 && fabs(sum/count) > threshold)
 				{
-					maskCopy.SetHorizontalValues(xLeft, y, true, Length);
+					scratch->SetHorizontalValues(xLeft, y, true, Length);
 				}
 				// subtract the sample at the left
 				if(!mask->Value(xLeft, y))
@@ -103,13 +103,13 @@ void CombinatorialThresholder::HorizontalSumThresholdLarge(const Image2D* input,
 			}
 		}
 	}
-	*mask = std::move(maskCopy);
+	*mask = std::move(*scratch);
 }
 
 template<size_t Length>
-void CombinatorialThresholder::VerticalSumThresholdLarge(const Image2D* input, Mask2D* mask, num_t threshold)
+void CombinatorialThresholder::VerticalSumThresholdLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
 {
-	Mask2D maskCopy(*mask);
+	*scratch = *mask;
 	const size_t width = mask->Width(), height = mask->Height();
 	if(Length <= height)
 	{
@@ -140,7 +140,7 @@ void CombinatorialThresholder::VerticalSumThresholdLarge(const Image2D* input, M
 				if(count>0 && fabs(sum/count) > threshold)
 				{
 					for(size_t i=0;i<Length;++i)
-						maskCopy.SetValue(x, yTop + i, true);
+						scratch->SetValue(x, yTop + i, true);
 				}
 				// subtract the sample at the top
 				if(!mask->Value(x, yTop))
@@ -153,78 +153,97 @@ void CombinatorialThresholder::VerticalSumThresholdLarge(const Image2D* input, M
 			}
 		}
 	}
-	*mask = std::move(maskCopy);
+	*mask = std::move(*scratch);
 }
 
-void CombinatorialThresholder::HorizontalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+void CombinatorialThresholder::HorizontalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 {
 	switch(length)
 	{
 		case 1: HorizontalSumThreshold<1>(input, mask, threshold); break;
-		case 2: HorizontalSumThresholdLarge<2>(input, mask, threshold); break;
-		case 4: HorizontalSumThresholdLarge<4>(input, mask, threshold); break;
-		case 8: HorizontalSumThresholdLarge<8>(input, mask, threshold); break;
-		case 16: HorizontalSumThresholdLarge<16>(input, mask, threshold); break;
-		case 32: HorizontalSumThresholdLarge<32>(input, mask, threshold); break;
-		case 64: HorizontalSumThresholdLarge<64>(input, mask, threshold); break;
-		case 128: HorizontalSumThresholdLarge<128>(input, mask, threshold); break;
-		case 256: HorizontalSumThresholdLarge<256>(input, mask, threshold); break;
+		case 2: HorizontalSumThresholdLarge<2>(input, mask, scratch, threshold); break;
+		case 4: HorizontalSumThresholdLarge<4>(input, mask, scratch, threshold); break;
+		case 8: HorizontalSumThresholdLarge<8>(input, mask, scratch, threshold); break;
+		case 16: HorizontalSumThresholdLarge<16>(input, mask, scratch, threshold); break;
+		case 32: HorizontalSumThresholdLarge<32>(input, mask, scratch, threshold); break;
+		case 64: HorizontalSumThresholdLarge<64>(input, mask, scratch, threshold); break;
+		case 128: HorizontalSumThresholdLarge<128>(input, mask, scratch, threshold); break;
+		case 256: HorizontalSumThresholdLarge<256>(input, mask, scratch, threshold); break;
 		default: throw BadUsageException("Invalid value for length");
 	}	
 }
 
-void CombinatorialThresholder::VerticalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+void CombinatorialThresholder::VerticalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 {
 	switch(length)
 	{
 		case 1: VerticalSumThreshold<1>(input, mask, threshold); break;
-		case 2: VerticalSumThresholdLarge<2>(input, mask, threshold); break;
-		case 4: VerticalSumThresholdLarge<4>(input, mask, threshold); break;
-		case 8: VerticalSumThresholdLarge<8>(input, mask, threshold); break;
-		case 16: VerticalSumThresholdLarge<16>(input, mask, threshold); break;
-		case 32: VerticalSumThresholdLarge<32>(input, mask, threshold); break;
-		case 64: VerticalSumThresholdLarge<64>(input, mask, threshold); break;
-		case 128: VerticalSumThresholdLarge<128>(input, mask, threshold); break;
-		case 256: VerticalSumThresholdLarge<256>(input, mask, threshold); break;
+		case 2: VerticalSumThresholdLarge<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalSumThresholdLarge<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalSumThresholdLarge<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalSumThresholdLarge<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalSumThresholdLarge<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalSumThresholdLarge<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalSumThresholdLarge<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalSumThresholdLarge<256>(input, mask, scratch, threshold); break;
 		default: throw BadUsageException("Invalid value for length");
 	}
 }
 
-#ifdef USE_INTRINSICS
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+#ifdef __SSE__
+void CombinatorialThresholder::VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 {
 	switch(length)
 	{
 		case 1: VerticalSumThreshold<1>(input, mask, threshold); break;
-		case 2: VerticalSumThresholdLargeSSE<2>(input, mask, threshold); break;
-		case 4: VerticalSumThresholdLargeSSE<4>(input, mask, threshold); break;
-		case 8: VerticalSumThresholdLargeSSE<8>(input, mask, threshold); break;
-		case 16: VerticalSumThresholdLargeSSE<16>(input, mask, threshold); break;
-		case 32: VerticalSumThresholdLargeSSE<32>(input, mask, threshold); break;
-		case 64: VerticalSumThresholdLargeSSE<64>(input, mask, threshold); break;
-		case 128: VerticalSumThresholdLargeSSE<128>(input, mask, threshold); break;
-		case 256: VerticalSumThresholdLargeSSE<256>(input, mask, threshold); break;
+		case 2: VerticalSumThresholdLargeSSE<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalSumThresholdLargeSSE<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalSumThresholdLargeSSE<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalSumThresholdLargeSSE<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalSumThresholdLargeSSE<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalSumThresholdLargeSSE<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalSumThresholdLargeSSE<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalSumThresholdLargeSSE<256>(input, mask, scratch, threshold); break;
 		default: throw BadUsageException("Invalid value for length");
 	}	
 }
 
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+void CombinatorialThresholder::HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 {
 	switch(length)
 	{
 		case 1: HorizontalSumThreshold<1>(input, mask, threshold); break;
-		case 2: HorizontalSumThresholdLargeSSE<2>(input, mask, threshold); break;
-		case 4: HorizontalSumThresholdLargeSSE<4>(input, mask, threshold); break;
-		case 8: HorizontalSumThresholdLargeSSE<8>(input, mask, threshold); break;
-		case 16: HorizontalSumThresholdLargeSSE<16>(input, mask, threshold); break;
-		case 32: HorizontalSumThresholdLargeSSE<32>(input, mask, threshold); break;
-		case 64: HorizontalSumThresholdLargeSSE<64>(input, mask, threshold); break;
-		case 128: HorizontalSumThresholdLargeSSE<128>(input, mask, threshold); break;
-		case 256: HorizontalSumThresholdLargeSSE<256>(input, mask, threshold); break;
+		case 2: HorizontalSumThresholdLargeSSE<2>(input, mask, scratch, threshold); break;
+		case 4: HorizontalSumThresholdLargeSSE<4>(input, mask, scratch, threshold); break;
+		case 8: HorizontalSumThresholdLargeSSE<8>(input, mask, scratch, threshold); break;
+		case 16: HorizontalSumThresholdLargeSSE<16>(input, mask, scratch, threshold); break;
+		case 32: HorizontalSumThresholdLargeSSE<32>(input, mask, scratch, threshold); break;
+		case 64: HorizontalSumThresholdLargeSSE<64>(input, mask, scratch, threshold); break;
+		case 128: HorizontalSumThresholdLargeSSE<128>(input, mask, scratch, threshold); break;
+		case 256: HorizontalSumThresholdLargeSSE<256>(input, mask, scratch, threshold); break;
 		default: throw BadUsageException("Invalid value for length");
 	}	
 }
-#endif
+#endif // SSE
+
+#ifdef __AVX2__
+void CombinatorialThresholder::VerticalSumThresholdLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: VerticalSumThreshold<1>(input, mask, threshold); break;
+		case 2: VerticalSumThresholdLargeAVX<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalSumThresholdLargeAVX<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalSumThresholdLargeAVX<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalSumThresholdLargeAVX<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalSumThresholdLargeAVX<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalSumThresholdLargeAVX<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalSumThresholdLargeAVX<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalSumThresholdLargeAVX<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}
+}
+#endif // AVX2
 
 void CombinatorialThresholder::HorizontalVarThreshold(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
 {

@@ -11,7 +11,7 @@ CHECK_CXX_SYMBOL_EXISTS(exp10 "cmath" HAVE_EXP10)
 # -march=native speeds up the flagger with about 6% - 7%, but is not supported prior gcc 4.2.
 # Hence, only enable it if it is supported.
 if(PORTABLE)
-  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance")
+  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance.")
 else()	
 	CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 	if(COMPILER_SUPPORTS_MARCH_NATIVE)
@@ -154,6 +154,7 @@ set(STRATEGY_ACTION_FILES
   strategy/actions/writeflagsaction.cpp)
 
 set(STRATEGY_ALGORITHMS_FILES
+  strategy/algorithms/antennaselector.cpp
   strategy/algorithms/baselineselector.cpp
 	strategy/algorithms/baselinetimeplaneimager.cpp
   strategy/algorithms/combinatorialthresholder.cpp
@@ -233,25 +234,30 @@ set(PYTHON_FILES
 set(ALL_LIBRARIES
 	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
 	${Boost_SYSTEM_LIBRARY}
-	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON_LIBRARIES} ${Boost_SIGNALS_LIBRARY}
+	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
+#	${Boost_PYTHON-PY36_LIBRARIES}
+	${Boost_PYTHON_LIBRARIES}
+	${Boost_SIGNALS_LIBRARY}
 	${FFTW3_LIB}
 	${CASACORE_LIBRARIES}
 	${LAPACK_lapack_LIBRARY}
 	${CFITSIO_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT}
 	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
-	${PYTHON_LIBRARY})
+	${PYTHON_LIBRARIES})
 
-message(STATUS "GTKMM found.") 
-include_directories(${GTKMM_INCLUDE_DIRS} ${GLIBMM_INCLUDE_DIRS})
-link_directories(${GTKMM_LIBDIR} ${GLIBMM_LIBDIR})
-set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GTKMM_LIBRARIES} ${GLIBMM_LIBRARIES})
+if(GTKMM_FOUND)
+	message(STATUS "GTKMM found.") 
+	include_directories(${GTKMM_INCLUDE_DIRS})
+	link_directories(${GTKMM_LIBDIR})
+	set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GTKMM_LIBRARIES})
+endif(GTKMM_FOUND)
 
 if(SIGCXX_FOUND)
-  message(STATUS "SIGCXX found.") 
-  include_directories(${SIGCXX_INCLUDE_DIRS})
-  link_directories(${SIGCXX_LIBDIR})
-  set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
+	message(STATUS "SIGCXX found.") 
+	include_directories(${SIGCXX_INCLUDE_DIRS})
+	link_directories(${SIGCXX_LIBDIR})
+	set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
 endif(SIGCXX_FOUND)
 
 if(GTKMM_FOUND)

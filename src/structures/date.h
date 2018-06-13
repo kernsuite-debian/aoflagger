@@ -86,7 +86,6 @@ class Date {
 			time -= mins/60.0;
 			
 			int hours = int(round(time));
-			time -= hours;
 			s << hours << ":" << (mins/10) << (mins%10);
 			if(msec != 0 || secs != 0)
 			{

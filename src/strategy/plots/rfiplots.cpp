@@ -339,13 +339,16 @@ void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex, cons
 
 void RFIPlots::MakeFrequencyScatterPlot(class MultiPlot &plot, size_t plotIndex, const Image2DCPtr& image, const Mask2DCPtr& mask, const TimeFrequencyMetaDataCPtr& metaData)
 {
-	plot.SetXAxisText("Frequency (MHz)");
 	plot.SetYAxisText("Visibility");
 	bool useMeta;
 	if(metaData != 0 && metaData->HasBand())
 		useMeta = true;
 	else
 		useMeta = false;
+	if(useMeta)
+		plot.SetXAxisText("Frequency (MHz)");
+	else
+		plot.SetXAxisText("Channel index");
 
 	for(size_t y=0;y<image->Height();++y) {
 		size_t count = 0;

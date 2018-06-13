@@ -1173,7 +1173,7 @@ void RFIGuiWindow::onShowStats()
 			unsigned intCount = intersect->GetCount<true>();
 			if(intCount != 0)
 			{
-				if(!original->Equals(alternative))
+				if(*original != *alternative)
 				{
 					s << "Overlap between original and alternative: " << TimeFrequencyStatistics::FormatRatio((double) intCount / ((double) (original->Width() * original->Height()))) << "\n"
 					<< "(relative to alternative flags: " << TimeFrequencyStatistics::FormatRatio((double) intCount / ((double) (alternative->GetCount<true>()))) << ")\n";

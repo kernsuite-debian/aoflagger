@@ -599,7 +599,15 @@ class Action *StrategyReader::parseSVDAction(xmlNode *node)
 class Action *StrategyReader::parseSumThresholdAction(xmlNode *node)
 {
 	SumThresholdAction *newAction = new SumThresholdAction();
-	newAction->SetBaseSensitivity(getDouble(node, "base-sensitivity"));
+	double timeSensitivity = getDoubleOr(node, "time-direction-sensitivity", -1.0);
+	double freqSensitivity = getDoubleOr(node, "frequency-direction-sensitivity", -1.0);
+	if(timeSensitivity==-1.0 || freqSensitivity == -1.0)
+	{
+		timeSensitivity = getDouble(node, "base-sensitivity");
+		freqSensitivity = timeSensitivity;
+	}
+	newAction->SetTimeDirectionSensitivity(timeSensitivity);
+	newAction->SetFrequencyDirectionSensitivity(freqSensitivity);
 	newAction->SetTimeDirectionFlagging(getBool(node, "time-direction-flagging"));
 	newAction->SetFrequencyDirectionFlagging(getBool(node, "frequency-direction-flagging"));
 	return newAction;

@@ -5,6 +5,7 @@
 #include "../testingtools/unittest.h"
 
 #include "../../strategy/algorithms/combinatorialthresholder.h"
+#include "../../strategy/algorithms/polarizationstatistics.h"
 #include "../../strategy/algorithms/testsetgenerator.h"
 #include "../../strategy/algorithms/siroperator.h"
 
@@ -40,10 +41,10 @@ class DefaultStrategySpeedTest : public UnitTest {
 			{
 				AddTest(TimeLoopUntilAmplitude(), "Timing loop until amplitude");
 				AddTest(TimeLoop(), "Timing loop");
-				AddTest(TimeSumThreshold(), "Timing SumThreshold method");
-				AddTest(TimeRankOperator(), "Timing scale-invariant rank operator");
-				//AddTest(TimeSumThresholdN(), "Timing varying SumThreshold method");
 			}
+			AddTest(TimeSumThreshold(), "Timing SumThreshold method");
+			AddTest(TimeSumThresholdN(), "Timing varying SumThreshold method");
+			AddTest(TimeRankOperator(), "Timing scale-invariant rank operator");
 			AddTest(TimeSlidingWindowFit(), "Timing sliding window fit");
 			AddTest(TimeHighPassFilter(), "Timing high-pass filter");
 			AddTest(TimeStrategy(), "Timing strategy");
@@ -103,7 +104,7 @@ class DefaultStrategySpeedTest : public UnitTest {
 inline void DefaultStrategySpeedTest::prepareStrategy(rfiStrategy::ArtifactSet &artifacts)
 {
 	const unsigned
-		width = 10000,
+		width = 50000,
 		height = 256;
 	Mask2D rfi = Mask2D::MakeUnsetMask(width, height);
 	Image2DPtr
@@ -127,6 +128,8 @@ inline void DefaultStrategySpeedTest::prepareStrategy(rfiStrategy::ArtifactSet &
 inline void DefaultStrategySpeedTest::TimeStrategy::operator()()
 {
 	rfiStrategy::ArtifactSet artifacts(0);
+	artifacts.SetPolarizationStatistics(std::unique_ptr<PolarizationStatistics>(
+		new PolarizationStatistics() ));
 	std::unique_ptr<rfiStrategy::Strategy> strategy = rfiStrategy::DefaultStrategy::CreateStrategy(
 		rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE
 	);
@@ -321,7 +324,8 @@ inline void DefaultStrategySpeedTest::TimeSumThreshold::operator()()
 	iteration->SetSensitivityStart(4.0);
 	
 	std::unique_ptr<rfiStrategy::SumThresholdAction> t2(new rfiStrategy::SumThresholdAction());
-	t2->SetBaseSensitivity(1.0);
+	t2->SetTimeDirectionSensitivity(1.0);
+	t2->SetFrequencyDirectionSensitivity(1.0);
 	iteration->Add(std::move(t2));
 		
 	std::unique_ptr<rfiStrategy::ChangeResolutionAction> changeResAction2(new rfiStrategy::ChangeResolutionAction());
@@ -345,51 +349,100 @@ inline void DefaultStrategySpeedTest::TimeSumThreshold::operator()()
 
 inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 {
-	rfiStrategy::ArtifactSet artifacts(0);
+	rfiStrategy::ArtifactSet artifacts(nullptr);
 	prepareStrategy(artifacts);
 
 	ThresholdConfig config;
 	config.InitializeLengthsDefault(9);
 	num_t stddev = artifacts.OriginalData().GetSingleImage()->GetStdDev();
-	num_t mode = artifacts.OriginalData().GetSingleImage()->GetMode();
-	Logger::Info << "Stddev: " << stddev << '\n';
-	Logger::Info << "Mode: " << mode << '\n';
+	//num_t mode = artifacts.OriginalData().GetSingleImage()->GetMode();
+	//Logger::Info << "Stddev: " << stddev << '\n';
+	//Logger::Info << "Mode: " << mode << '\n';
 	config.InitializeThresholdsFromFirstThreshold(6.0 * stddev, ThresholdConfig::Rayleigh);
+	const size_t N=100;
+	double hor=0.0, vert=0.0, sseHor=0.0, sseVert=0.0, avxVert=0.0;
 	for(unsigned i=0;i<9;++i)
 	{
 		const unsigned length = config.GetHorizontalLength(i);
 		const double threshold = config.GetHorizontalThreshold(i);
 		Image2DCPtr input = artifacts.OriginalData().GetSingleImage();
+		Mask2D scratch = Mask2D::MakeUnsetMask(input->Width(), input->Height());
 		
-		Mask2DPtr maskA(new Mask2D(*artifacts.OriginalData().GetSingleMask()));
+		Mask2D maskA(*artifacts.OriginalData().GetSingleMask()), maskInp = maskA;
 		Stopwatch watchA(true);
-		CombinatorialThresholder::HorizontalSumThresholdLargeReference(input.get(), maskA.get(), length, threshold);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = maskA;
+			CombinatorialThresholder::HorizontalSumThresholdLargeReference(input.get(), &maskInp, &scratch, length, threshold);
+		}
+		hor += watchA.Seconds();
 		Logger::Info << "Horizontal, length " << length << ": " << watchA.ToString() << '\n';
 		
 #ifdef __SSE__
-		Mask2DPtr maskC(new Mask2D(*artifacts.OriginalData().GetSingleMask()));
-		Stopwatch watchC(true);
-		CombinatorialThresholder::HorizontalSumThresholdLargeSSE(input.get(), maskC.get(), length, threshold);
-		Logger::Info << "Horizontal SSE, length " << length << ": " << watchC.ToString() << '\n';
+		Mask2D maskE(*artifacts.OriginalData().GetSingleMask());
+		Stopwatch watchE(true);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = maskE;
+			CombinatorialThresholder::HorizontalSumThresholdLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
+		}
+		sseHor += watchE.Seconds();
+		Logger::Info << "SSE Horizontal, length " << length << ": " << watchE.ToString() << '\n';
 #endif
+
+/*
+#ifdef __AVX2__
+		Mask2D maskC(*artifacts.OriginalData().GetSingleMask());
+		Stopwatch watchC(true);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = maskC;
+			CombinatorialThresholder::HorizontalSumThresholdLargeAVX(input.get(), maskInp, &scratch, length, threshold);
+		}
+		Logger::Info << "AVX Horizontal, length " << length << ": " << watchC.ToString() << '\n';
+#endif*/
 		
-		Mask2DPtr maskB(new Mask2D(*artifacts.OriginalData().GetSingleMask()));
+		Mask2D maskB(*artifacts.OriginalData().GetSingleMask());
 		Stopwatch watchB(true);
-		CombinatorialThresholder::VerticalSumThresholdLargeReference(input.get(), maskB.get(), length, threshold);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = maskB;
+			CombinatorialThresholder::VerticalSumThresholdLargeReference(input.get(), &maskInp, &scratch, length, threshold);
+		}
+		vert += watchB.Seconds();
 		Logger::Info << "Vertical, length " << length << ": " << watchB.ToString() << '\n';
 		
 #ifdef __SSE__
-		Mask2DPtr maskD(new Mask2D(*artifacts.OriginalData().GetSingleMask()));
+		Mask2D maskD(*artifacts.OriginalData().GetSingleMask());
 		Stopwatch watchD(true);
-		CombinatorialThresholder::VerticalSumThresholdLargeSSE(input.get(), maskD.get(), length, threshold);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = maskD;
+			CombinatorialThresholder::VerticalSumThresholdLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
+		}
+		sseVert += watchD.Seconds();
 		Logger::Info << "SSE Vertical, length " << length << ": " << watchD.ToString() << '\n';
 #endif
+
+#ifdef __AVX2__
+		Mask2D maskF(*artifacts.OriginalData().GetSingleMask());
+		Stopwatch watchF(true);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = maskF;
+			CombinatorialThresholder::VerticalSumThresholdLargeAVX(input.get(), &maskF, &scratch, length, threshold);
+		}
+		avxVert += watchF.Seconds();
+		Logger::Info << "AVX Vertical, length " << length << ": " << watchF.ToString() << '\n';
+#endif
+		Logger::Info
+			<< "Horizontal ref: " << hor << "\n"
+			<< "  Vertical ref: " << vert << "\n"
+			<< "Horizontal SSE: " << sseHor << "\n"
+			<< "  Vertical SSE: " << sseVert << "\n"
+			<< "  Vertical AVX: " << avxVert << "\n";
 	}
 }
 
 inline void DefaultStrategySpeedTest::TimeRankOperator::operator()()
 {
-	rfiStrategy::ArtifactSet artifacts(0);
+	rfiStrategy::ArtifactSet artifacts(nullptr);
+	artifacts.SetPolarizationStatistics(std::unique_ptr<PolarizationStatistics>(
+		new PolarizationStatistics() ));
 
 	std::unique_ptr<rfiStrategy::Strategy> strategy = rfiStrategy::DefaultStrategy::CreateStrategy(
 		rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE
@@ -449,14 +502,14 @@ inline void DefaultStrategySpeedTest::TimeSSEHighPassFilterStrategy::operator()(
 	current = scratch;
 	
 	std::unique_ptr<rfiStrategy::SumThresholdAction> t2(new rfiStrategy::SumThresholdAction());
-	t2->SetBaseSensitivity(1.0);
+	t2->SetTimeDirectionSensitivity(1.0);
+	t2->SetFrequencyDirectionSensitivity(1.0);
 	current->Add(std::move(t2));
 
 	std::unique_ptr<rfiStrategy::CombineFlagResults> cfr2(new rfiStrategy::CombineFlagResults());
-	current->Add(std::move(cfr2));
-
 	cfr2->Add(std::unique_ptr<rfiStrategy::FrequencySelectionAction>(new rfiStrategy::FrequencySelectionAction()));
 	cfr2->Add(std::unique_ptr<rfiStrategy::TimeSelectionAction>(new rfiStrategy::TimeSelectionAction()));
+	current->Add(std::move(cfr2));
 
 	current->Add(std::unique_ptr<rfiStrategy::SetImageAction>(new rfiStrategy::SetImageAction()));
 	std::unique_ptr<rfiStrategy::ChangeResolutionAction>
@@ -500,6 +553,8 @@ inline void DefaultStrategySpeedTest::TimeSSEHighPassFilterStrategy::operator()(
 	block.Add(std::move(orWithOriginals));
 
 	rfiStrategy::ArtifactSet artifacts(0);
+	artifacts.SetPolarizationStatistics(std::unique_ptr<PolarizationStatistics>(
+		new PolarizationStatistics() ));
 	prepareStrategy(artifacts);
 	DummyProgressListener progressListener;
 	Stopwatch watch(true);

@@ -9,7 +9,7 @@ public:
 	void SetPerformFT(bool performFT) { _performFT = performFT; }
 	
 protected:
-	virtual void processStatistics(const StatisticsCollection *statCollection, const std::vector<AntennaInfo> &antennas) override final
+	virtual void processStatistics(const StatisticsCollection *statCollection, const std::vector<AntennaInfo>&) override final
 	{
 		_statistics.clear();
 		
@@ -26,7 +26,7 @@ protected:
 		return _statistics;
 	}
 	
-	virtual void startLine(Plot2D &plot, const std::string &name, const std::string &yAxisDesc) override final
+	virtual void startLine(Plot2D &plot, const std::string &name, int lineIndex, const std::string &yAxisDesc) override final
 	{
 		if(_performFT)
 			plot.StartLine(name, "Time (μs)", yAxisDesc, false);
