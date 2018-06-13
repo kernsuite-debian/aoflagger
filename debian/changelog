@@ -1,3 +1,10 @@
+aoflagger (2.11.0-1) unstable; urgency=low
+
+  * New upstream version 2.11.0. Rediff patches
+  * Remove unused paragraph from d/copyright
+
+ -- Ole Streicher <olebole@debian.org>  Wed, 13 Jun 2018 11:12:52 +0200
+
 aoflagger (2.10.0-3) unstable; urgency=medium
 
   * Remove outdated CheckCXXSymbolExists (Closes: #897115)
