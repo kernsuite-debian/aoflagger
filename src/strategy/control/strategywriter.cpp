@@ -414,7 +414,8 @@ namespace rfiStrategy {
 	void StrategyWriter::writeSumThresholdAction(const SumThresholdAction &action)
 	{
 		Attribute("type", "SumThresholdAction");
-		Write<num_t>("base-sensitivity", action.BaseSensitivity());
+		Write<num_t>("time-direction-sensitivity", action.TimeDirectionSensitivity());
+		Write<num_t>("frequency-direction-sensitivity", action.FrequencyDirectionSensitivity());
 		Write<bool>("time-direction-flagging", action.TimeDirectionFlagging());
 		Write<bool>("frequency-direction-flagging", action.FrequencyDirectionFlagging());
 	}

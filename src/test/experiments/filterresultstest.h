@@ -4,25 +4,24 @@
 #include <complex>
 #include <fstream>
 
-#include <AOFlagger/test/testingtools/asserter.h>
-#include <AOFlagger/test/testingtools/unittest.h>
+#include "../testingtools/asserter.h"
+#include "../testingtools/unittest.h"
 
-#include <AOFlagger/msio/pngfile.h>
+#include "../../msio/pngfile.h"
 
-#include <AOFlagger/util/ffttools.h>
+#include "../../util/ffttools.h"
 
-#include <AOFlagger/imaging/defaultmodels.h>
+#include "../../structures/colormap.h"
 
-#include <AOFlagger/strategy/actions/directionalcleanaction.h>
-#include <AOFlagger/strategy/actions/foreachcomplexcomponentaction.h>
-#include <AOFlagger/strategy/actions/fouriertransformaction.h>
-#include <AOFlagger/strategy/actions/frequencyconvolutionaction.h>
-#include <AOFlagger/strategy/actions/fringestopaction.h>
-#include <AOFlagger/strategy/actions/iterationaction.h>
-#include <AOFlagger/strategy/actions/setimageaction.h>
-#include <AOFlagger/strategy/actions/strategyaction.h>
-#include <AOFlagger/strategy/actions/timeconvolutionaction.h>
-#include <AOFlagger/strategy/actions/uvprojectaction.h>
+#include "../../imaging/defaultmodels.h"
+
+#include "../../strategy/actions/foreachcomplexcomponentaction.h"
+#include "../../strategy/actions/frequencyconvolutionaction.h"
+#include "../../strategy/actions/fringestopaction.h"
+#include "../../strategy/actions/iterationaction.h"
+#include "../../strategy/actions/setimageaction.h"
+#include "../../strategy/actions/strategy.h"
+#include "../../strategy/actions/timeconvolutionaction.h"
 
 class FilterResultsTest : public UnitTest {
 	public:
@@ -61,94 +60,57 @@ class FilterResultsTest : public UnitTest {
 			void operator()();
 		};
 		
-		static rfiStrategy::Strategy *createStrategy(bool withFringeFilter, bool withTimeConv, bool withFrequencyConv, bool withTimeClean)
+		static rfiStrategy::Strategy *createStrategy(bool withFringeFilter, bool withTimeConv, bool withFrequencyConv)
 		{
 			rfiStrategy::Strategy *strategy = new rfiStrategy::Strategy();
 			
 			if(withFringeFilter)
 			{
-				rfiStrategy::FringeStopAction *fsAction = new rfiStrategy::FringeStopAction();
+				std::unique_ptr<rfiStrategy::FringeStopAction> fsAction(
+					new rfiStrategy::FringeStopAction());
 				fsAction->SetNewPhaseCentreRA(DefaultModels::DistortionRA());
 				fsAction->SetNewPhaseCentreDec(DefaultModels::DistortionDec());
 				fsAction->SetFringesToConsider(3.0);
 				fsAction->SetMinWindowSize(500);
 				fsAction->SetMaxWindowSize(500);
-				strategy->Add(fsAction);
+				strategy->Add(std::move(fsAction));
 
-				rfiStrategy::SetImageAction *setAction = new rfiStrategy::SetImageAction();
+				std::unique_ptr<rfiStrategy::SetImageAction> setAction(
+					new rfiStrategy::SetImageAction());
 				setAction->SetNewImage(rfiStrategy::SetImageAction::SwapRevisedAndContaminated);
-				strategy->Add(setAction);
+				strategy->Add(std::move(setAction));
 			}
 			
 			if(withFrequencyConv || withTimeConv)
 			{
-				rfiStrategy::ForEachComplexComponentAction *foccAction = new rfiStrategy::ForEachComplexComponentAction();
-				strategy->Add(foccAction);
+				std::unique_ptr<rfiStrategy::ForEachComplexComponentAction> foccAction(
+					new rfiStrategy::ForEachComplexComponentAction());
 
 				if(withFrequencyConv)
 				{
-					rfiStrategy::FrequencyConvolutionAction *fcAction = new rfiStrategy::FrequencyConvolutionAction();
+					std::unique_ptr<rfiStrategy::FrequencyConvolutionAction> fcAction(
+						new rfiStrategy::FrequencyConvolutionAction());
 					fcAction->SetConvolutionSize(5.0);
 					fcAction->SetKernelKind(rfiStrategy::FrequencyConvolutionAction::SincKernel);
-					foccAction->Add(fcAction);
+					foccAction->Add(std::move(fcAction));
 				}
 				
 				if(withTimeConv)
 				{
-					rfiStrategy::TimeConvolutionAction *tcAction = new rfiStrategy::TimeConvolutionAction();
+					std::unique_ptr<rfiStrategy::TimeConvolutionAction> tcAction(
+						new rfiStrategy::TimeConvolutionAction());
 					tcAction->SetSincScale(6.0);
 					tcAction->SetIsSincScaleInSamples(false);
 					tcAction->SetOperation(rfiStrategy::TimeConvolutionAction::SingleSincOperation);
-					foccAction->Add(tcAction);
+					foccAction->Add(std::move(tcAction));
 					
-					rfiStrategy::SetImageAction *setAction = new rfiStrategy::SetImageAction();
+					std::unique_ptr<rfiStrategy::SetImageAction> setAction(
+						new rfiStrategy::SetImageAction());
 					setAction->SetNewImage(rfiStrategy::SetImageAction::SwapRevisedAndContaminated);
-					foccAction->Add(setAction);
+					foccAction->Add(std::move(setAction));
 				}
-			}
-			
-			if(withTimeClean)
-			{
-				rfiStrategy::SetImageAction *set1Action = new rfiStrategy::SetImageAction();
-				set1Action->SetNewImage(rfiStrategy::SetImageAction::SwapRevisedAndContaminated);
-				strategy->Add(set1Action);
 				
-				rfiStrategy::IterationBlock *iterAction = new rfiStrategy::IterationBlock();
-				iterAction->SetIterationCount(50);
-				strategy->Add(iterAction);
-
-				rfiStrategy::SetImageAction *set2Action = new rfiStrategy::SetImageAction();
-				set2Action->SetNewImage(rfiStrategy::SetImageAction::FromRevised);
-				iterAction->Add(set2Action);
-				
-				rfiStrategy::ForEachComplexComponentAction *feccAction = new rfiStrategy::ForEachComplexComponentAction();
-				feccAction->SetOnAmplitude(false);
-				feccAction->SetOnReal(true);
-				feccAction->SetOnImaginary(true);
-				iterAction->Add(feccAction);
-				
-				rfiStrategy::UVProjectAction *projAction = new rfiStrategy::UVProjectAction();
-				projAction->SetDirectionRad(103.54 * (M_PI / 180.0));
-				projAction->SetReverse(false);
-				feccAction->Add(projAction);
-
-				rfiStrategy::FourierTransformAction *ftAction = new rfiStrategy::FourierTransformAction();
-				iterAction->Add(ftAction);
-				
-				rfiStrategy::DirectionalCleanAction *dcAction = new rfiStrategy::DirectionalCleanAction();
-				dcAction->SetLimitingDistance(1.0/2.0);
-				dcAction->SetChannelConvolutionSize(1);
-				dcAction->SetMakePlot(false);
-				dcAction->SetRemoveRatio(0.8);
-				iterAction->Add(dcAction);
-				
-				rfiStrategy::SetImageAction *set3Action = new rfiStrategy::SetImageAction();
-				set3Action->SetNewImage(rfiStrategy::SetImageAction::FromOriginal);
-				strategy->Add(set3Action);
-				
-				//rfiStrategy::SetImageAction *set4Action = new rfiStrategy::SetImageAction();
-				//set4Action->SetNewImage(rfiStrategy::SetImageAction::SwapRevisedAndContaminated);
-				//strategy->Add(set4Action);
+				strategy->Add(std::move(foccAction));
 			}
 			
 			return strategy;
@@ -206,18 +168,16 @@ class FilterResultsTest : public UnitTest {
 		{
 			UVImager imager(1024*1.5, 1024*1.5);
 			
-			TimeFrequencyData *data;
+			TimeFrequencyData data;
 			if(difference)
 			{
-				data =
-					TimeFrequencyData::CreateTFDataFromDiff(original, artifacts.ContaminatedData());
+				data = TimeFrequencyData::MakeFromDiff(original, artifacts.ContaminatedData());
 			} else {
-				data =
-					new TimeFrequencyData(artifacts.ContaminatedData());
+				data = artifacts.ContaminatedData();
 			}
 			
 			imager.SetUVScaling(0.0012);
-			imager.Image(*data, artifacts.MetaData());
+			imager.Image(data, artifacts.MetaData());
 			imager.PerformFFT();
 			
 			if(!difference)
@@ -227,15 +187,13 @@ class FilterResultsTest : public UnitTest {
 			//const Image2DPtr uvImage = Image2D::CreateCopyPtr(imager.RealUVImage());
 			//PngFile::Save(*uvImage, std::string("UV-") + filename, colorMap);
 			
-			const Image2DPtr image = Image2D::CreateCopyPtr(imager.FTReal());
+			Image2D image(imager.FTReal());
 			
-			image->SetTrim(400, 0, 1000, 1200);
-			FFTTools::SignedSqrt(*image);
-			image->SetToAbs();
+			image.SetTrim(400, 0, 1000, 1200);
+			FFTTools::SignedSqrt(image);
+			image.SetToAbs();
 			
-			PngFile::Save(*image, filename, colorMap, 0.01);
-			
-			delete data;
+			PngFile::Save(image, filename, colorMap, 0.01);
 		}
 		
 		static void Run(rfiStrategy::Strategy *strategy, std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> data, const std::string &appliedName, const std::string &differenceName, double centerPower, double sidelobePower, double onAxisPower)
@@ -262,23 +220,19 @@ class FilterResultsTest : public UnitTest {
 			Run(strategy, data, setPrefix + "0-" + setName + "-Original.png", "Empty.png", centerPower, sidelobePower, onAxisPower);
 			delete strategy;
 
-			strategy = createStrategy(true, false, false, false);
+			strategy = createStrategy(true, false, false);
 			Run(strategy, data, setPrefix + "1-" + setName + "-FringeFilter-Applied.png", setPrefix + "1-" + setName + "-FringeFilter-Difference.png", centerPower, sidelobePower, onAxisPower);
 			delete strategy;
 			
-			strategy = createStrategy(false, true, false, false);
+			strategy = createStrategy(false, true, false);
 			Run(strategy, data, setPrefix + "2-" + setName + "-TimeFilter-Applied.png", setPrefix + "2-" + setName + "-TimeFilter-Difference.png", centerPower, sidelobePower, onAxisPower);
 			delete strategy;
 			
-			strategy = createStrategy(false, false, true, false);
+			strategy = createStrategy(false, false, true);
 			Run(strategy, data, setPrefix + "3-" + setName + "-FreqFilter-Applied.png", setPrefix + "3-" + setName + "-FreqFilter-Difference.png", centerPower, sidelobePower, onAxisPower);
 			delete strategy;
 
-			strategy = createStrategy(false, false, false, true);
-			Run(strategy, data, setPrefix + "4-" + setName + "-TimeClean-Applied.png", setPrefix + "4-" + setName + "-TimeClean-Difference.png", centerPower, sidelobePower, onAxisPower);
-			delete strategy;
-
-			strategy = createStrategy(false, true, true, false);
+			strategy = createStrategy(false, true, true);
 			Run(strategy, data, setPrefix + "5-" + setName + "-TimeFreq-Applied.png", setPrefix + "5-" + setName + "-TimeFreq-Difference.png", centerPower, sidelobePower, onAxisPower);
 			delete strategy;
 		}
@@ -286,7 +240,6 @@ class FilterResultsTest : public UnitTest {
 
 const unsigned FilterResultsTest::CHANNEL_COUNT = 64;
 const double FilterResultsTest::BANDWIDTH = 2500000.0;
-
 
 inline void FilterResultsTest::TestNoSource::operator()()
 {

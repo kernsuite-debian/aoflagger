@@ -30,7 +30,7 @@ def flag(input):
       
       for threshold_factor in threshold_factors:
       
-        print 'Flagging polarization ' + str(polarization) + ' (' + str(representation) + ', ' + str(threshold_factor) + ')'
+        print('Flagging polarization ' + str(polarization) + ' (' + str(representation) + ', ' + str(threshold_factor) + ')')
 
         aoflagger.sumthreshold(data, threshold_factor * base_threshold, True, True)
         chdata = copy.copy(data)
@@ -87,4 +87,4 @@ def test_sumthreshold(input):
       
 aoflagger.set_flag_function(flag)
                                           
-print 'strategy.py parsed'
+print('strategy.py parsed')

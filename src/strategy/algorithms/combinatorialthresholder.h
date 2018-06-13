@@ -7,14 +7,8 @@
 #include "../../structures/image2d.h"
 #include "../../structures/mask2d.h"
 
-#ifdef __SSE__
-#define USE_INTRINSICS
-#endif
-
 class CombinatorialThresholder {
 	public:
-		//static void Threshold(class Image2D &image, num_t threshold);
-
 		template<size_t Length>
 		static void HorizontalSumThreshold(const Image2D* input, Mask2D* mask, num_t threshold);
 		
@@ -22,25 +16,29 @@ class CombinatorialThresholder {
 		static void VerticalSumThreshold(const Image2D* input, Mask2D* mask, num_t threshold);
 		
 		template<size_t Length>
-		static void HorizontalSumThresholdLarge(const Image2D* input, Mask2D* mask, num_t threshold);
+		static void HorizontalSumThresholdLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 
-#ifdef USE_INTRINSICS
+#ifdef __SSE__
 		template<size_t Length>
-		static void VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, num_t threshold);
+		static void VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 		
-		static void VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
+		static void VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold);
 
 		template<size_t Length>
-		static void HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, num_t threshold);
+		static void HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 		
-		static void HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
+		static void HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold);
+#endif
+		
+#ifdef __AVX2__
+		template<size_t Length>
+		static void VerticalSumThresholdLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+		
+		static void VerticalSumThresholdLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold);
 #endif
 		
 		template<size_t Length>
-		static void VerticalSumThresholdLargeCompare(const Image2D* input, Mask2D* mask, num_t threshold);
-
-		template<size_t Length>
-		static void VerticalSumThresholdLarge(const Image2D* input, Mask2D* mask, num_t threshold);
+		static void VerticalSumThresholdLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 		
 		template<size_t Length>
 		static void SumThresholdLarge(const Image2D* input, Mask2D* mask, num_t hThreshold, num_t vThreshold)
@@ -49,25 +47,27 @@ class CombinatorialThresholder {
 			VerticalSumThresholdLarge<Length>(input, mask, vThreshold);
 		}
 		
-		static void VerticalSumThresholdLarge(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+		static void VerticalSumThresholdLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 		{
-#ifdef USE_INTRINSICS
-			VerticalSumThresholdLargeSSE(input, mask, length, threshold);
+#if defined(__AVX2__)
+			VerticalSumThresholdLargeAVX(input, mask, scratch, length, threshold);
+#elif defined(__SSE__)
+			VerticalSumThresholdLargeSSE(input, mask, scratch, length, threshold);
 #else
-			VerticalSumThresholdLargeReference(input, mask, length, threshold);
+			VerticalSumThresholdLargeReference(input, mask, scratch, length, threshold);
 #endif
 		}
 		
-		static void VerticalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
+		static void VerticalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold);
 		
-		static void HorizontalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
+		static void HorizontalSumThresholdLargeReference(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold);
 		
-		static void HorizontalSumThresholdLarge(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+		static void HorizontalSumThresholdLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 		{
-#ifdef USE_INTRINSICS
-			HorizontalSumThresholdLargeSSE(input, mask, length, threshold);
+#ifdef __SSE__
+			HorizontalSumThresholdLargeSSE(input, mask, scratch, length, threshold);
 #else
-			HorizontalSumThresholdLargeReference(input, mask, length, threshold);
+			HorizontalSumThresholdLargeReference(input, mask, scratch, length, threshold);
 #endif
 		}
 
@@ -76,8 +76,9 @@ class CombinatorialThresholder {
 		static void HorizontalVarThreshold(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
 		
 		static void VerticalVarThreshold(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
+		
 	private:
-		CombinatorialThresholder() { }
+		CombinatorialThresholder() = delete;
 };
 
 #undef USE_INSTRINSICS

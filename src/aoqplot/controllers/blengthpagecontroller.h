@@ -36,7 +36,7 @@ protected:
 		return _includeAutoCorrelations ? _statisticsWithAutocorrelations : _statisticsWithoutAutocorrelations;
 	}
 	
-	virtual void startLine(Plot2D &plot, const std::string &name, const std::string &yAxisDesc) override final
+	virtual void startLine(Plot2D &plot, const std::string &name, int lineIndex, const std::string &yAxisDesc) override final
 	{
 		plot.StartLine(name, "Baseline length (m)", yAxisDesc, false, Plot2DPointSet::DrawPoints);
 	}

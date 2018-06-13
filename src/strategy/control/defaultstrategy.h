@@ -25,6 +25,7 @@ namespace rfiStrategy {
 		*/
 		enum TelescopeId {
 			GENERIC_TELESCOPE = aoflagger::GENERIC_TELESCOPE,
+			AARTFAAC_TELESCOPE = aoflagger::AARTFAAC_TELESCOPE,
 			ARECIBO_TELESCOPE = aoflagger::ARECIBO_TELESCOPE,
 			BIGHORNS_TELESCOPE = aoflagger::BIGHORNS_TELESCOPE,
 			JVLA_TELESCOPE = aoflagger::JVLA_TELESCOPE,

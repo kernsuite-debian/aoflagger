@@ -454,6 +454,34 @@ void actionQueryTime(const std::string &kindName, const std::string &filename)
 	}
 }
 
+void actionQueryAntenna(const std::string &kindName, const std::string &filename)
+{
+	const unsigned polarizationCount = MeasurementSet::PolarizationCount(filename);
+	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
+	
+	QualityTablesFormatter formatter(filename);
+	StatisticsCollection collection(polarizationCount);
+	collection.Load(formatter);
+	const std::map<size_t, DefaultStatistics> stats = collection.GetAntennaStatistics();
+	StatisticsDerivator derivator(collection);
+
+	std::cout << "ANTENNA";
+	for(unsigned p=0;p<polarizationCount;++p)
+		std::cout << '\t' << kindName << "_POL" << p << "_R\t" << kindName << "_POL" << p << "_I" ;
+	std::cout << '\n';
+	for(const std::pair<size_t, DefaultStatistics>& s : stats)
+	{
+		const size_t antenna = s.first;
+		std::cout << antenna;
+		for(unsigned p=0;p<polarizationCount;++p)
+		{
+			const std::complex<long double> val = derivator.GetComplexStatistic(kind, s.second, p);
+			std::cout << '\t' << val.real() << '\t' << val.imag();
+		}
+		std::cout << '\n';
+	}
+}
+
 void actionSummarize(const std::string &filename)
 {
 	bool remote = aoRemote::ClusteredObservation::IsClusteredFilename(filename);
@@ -461,16 +489,16 @@ void actionSummarize(const std::string &filename)
 	HistogramCollection histogramCollection;
 	if(remote)
 	{
-		aoRemote::ClusteredObservation *observation = aoRemote::ClusteredObservation::Load(filename);
+		std::unique_ptr<aoRemote::ClusteredObservation> observation =
+			aoRemote::ClusteredObservation::Load(filename);
 		aoRemote::ProcessCommander commander(*observation);
 		commander.PushReadQualityTablesTask(&statisticsCollection, &histogramCollection);
 		commander.Run();
-		delete observation;
 	}
 	else {
-		MeasurementSet *ms = new MeasurementSet(filename);
+		std::unique_ptr<MeasurementSet> ms(new MeasurementSet(filename));
 		const unsigned polarizationCount = ms->PolarizationCount();
-		delete ms;
+		ms.reset();
 		
 		statisticsCollection.SetPolarizationCount(polarizationCount);
 		QualityTablesFormatter qualityData(filename);
@@ -772,6 +800,11 @@ int main(int argc, char *argv[])
 					std::cout << "Syntax: " << argv[0] << " summarize <ms>\n\n"
 						"Gives a summary of the statistics in the measurement set.\n";
 				}
+				else if(helpAction == "query_a")
+				{
+					std::cout << "Syntax: " << argv[0] << " query_a <kind> <ms>\n\n"
+						"Prints the given statistic for each antenna.\n";
+				}
 				else if(helpAction == "query_b")
 				{
 					std::cout << "Syntax: " << argv[0] << " query_b <kind> <ms>\n\n"
@@ -933,6 +966,18 @@ int main(int argc, char *argv[])
 			}
 			else {
 				actionQueryGlobalStat(argv[2], argv[3]);
+			}
+		}
+		else if(action == "query_a")
+		{
+			if(argc != 4)
+			{
+				std::cerr << "Syntax for query antennas: 'aoquality query_a <KIND> <MS>'\n";
+				return -1;
+			}
+			else {
+				actionQueryAntenna(argv[2], argv[3]);
+				return 0;
 			}
 		}
 		else if(action == "query_b")

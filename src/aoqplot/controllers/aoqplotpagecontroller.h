@@ -45,7 +45,7 @@ protected:
 	
 	virtual const std::map<double, class DefaultStatistics> &getStatistics() const = 0;
 	
-	virtual void startLine(Plot2D& plot, const std::string &name, const std::string &yAxisDesc) = 0;
+	virtual void startLine(Plot2D& plot, const std::string &name, int lineIndex, const std::string &yAxisDesc) = 0;
 	
 	virtual void processPlot(Plot2D& plot)
 	{ }
@@ -67,7 +67,7 @@ private:
 	
 	double getValue(enum PhaseType Phase, const std::complex<long double>& val);
 	
-	void plotStatistic(QualityTablesFormatter::StatisticKind kind, SelectedPol pol, PhaseType phase, const std::string& yDesc);
+	void plotStatistic(QualityTablesFormatter::StatisticKind kind, SelectedPol pol, PhaseType phase, int lineIndex, const std::string& yDesc);
 	const StatisticsCollection *_statCollection;
 	Plot2D _plot;
 	std::string getYDesc(const std::set<QualityTablesFormatter::StatisticKind>& kinds) const;

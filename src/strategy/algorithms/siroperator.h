@@ -24,11 +24,7 @@
  * The algorithm will be applied both in time and in frequency direction, thus w(y) can
  * contain a slice through the time-frequency image in either directions.
  * 
- * If you want to read more about the algorithm, read Offringa et al. 2010 (PoS RFI2010),
- * or the Dilate() function, which is the proof of concept, reference
- * O(N) algorithm and includes some comments within the algorithm.
- * 
- * Thanks to Jasper van de Gronde for the idea of an O(N) algorithm.
+ * The algorithm is described in Offringa, van de Gronde and Roerdink 2012 (A&A).
  * 
  * @author A.R. Offringa
  */
@@ -123,7 +119,7 @@ class SIROperator
 		}
 		
 		/**
-		 * Performs a horizontal dilation directly on a mask. Algorithm is equal to Dilate().
+		 * Performs a horizontal dilation directly on a mask. Algorithm is equal to Operate().
 		 * This is the implementation.
 		 * 
 		 * @param [in,out] mask The input flag mask to be dilated.
@@ -136,7 +132,7 @@ class SIROperator
 		}
 		
 		/**
-		 * Performs a vertical dilation directly on a mask. Algorithm is equal to Dilate().
+		 * Performs a vertical dilation directly on a mask. Algorithm is equal to Operate().
 		 * 
 		 * @param [in,out] mask The input flag mask to be dilated.
 		 * @param [in] eta The η parameter that specifies the minimum number of good data
@@ -152,7 +148,7 @@ class SIROperator
 		SIROperator() { }
 
 		/**
-		 * Performs a horizontal dilation directly on a mask. Algorithm is equal to Dilate().
+		 * Performs a horizontal dilation directly on a mask. Algorithm is equal to Operate().
 		 * This is the implementation.
 		 * 
 		 * @param [in,out] mask The input flag mask to be dilated.

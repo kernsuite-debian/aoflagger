@@ -52,6 +52,10 @@ namespace aoflagger {
 			std::vector<Image2DPtr> images;
 	};
 	
+	ImageSet::ImageSet() :
+		_data(nullptr)
+	{ }
+	
 	ImageSet::ImageSet(size_t width, size_t height, size_t count) :
 		_data(new ImageSetData(count))
 	{
@@ -85,13 +89,16 @@ namespace aoflagger {
 	}
 	
 	ImageSet::ImageSet(const ImageSet& sourceImageSet) :
-		_data(new ImageSetData(*sourceImageSet._data))
+		_data(sourceImageSet._data!=nullptr
+			? new ImageSetData(*sourceImageSet._data)
+			: nullptr)
 	{
 	}
 	
 	ImageSet::ImageSet::ImageSet(aoflagger::ImageSet&& sourceImageSet) :
-		_data(new ImageSetData(std::move(*sourceImageSet._data)))
+		_data(sourceImageSet._data)
 	{
+		sourceImageSet._data = nullptr;
 	}
 	
 	ImageSet::~ImageSet()
@@ -101,13 +108,24 @@ namespace aoflagger {
 	
 	ImageSet &ImageSet::operator=(const ImageSet& sourceImageSet)
 	{
-		*_data = *sourceImageSet._data;
+		if(sourceImageSet._data == nullptr)
+		{
+			delete _data;
+			_data = nullptr;
+		}
+		else if(_data == nullptr)
+		{
+			_data = new ImageSetData(*sourceImageSet._data);
+		}
+		else {
+			*_data = *sourceImageSet._data;
+		}
 		return *this;
 	}
 	
 	ImageSet &ImageSet::operator=(ImageSet&& sourceImageSet)
 	{
-		*_data = std::move(*sourceImageSet._data);
+		std::swap(_data, sourceImageSet._data);
 		return *this;
 	}
 	
@@ -172,7 +190,7 @@ namespace aoflagger {
 			Mask2DPtr mask;
 	};
 	
-	FlagMask::FlagMask() : _data(0)
+	FlagMask::FlagMask() : _data(nullptr)
 	{ }
 	
 	FlagMask::FlagMask(size_t width, size_t height) : _data(new FlagMaskData(
@@ -189,12 +207,16 @@ namespace aoflagger {
 	}
 	
 	FlagMask::FlagMask(const FlagMask& sourceMask) :
-		_data(new FlagMaskData(*sourceMask._data))
+		_data(sourceMask._data==nullptr
+			? nullptr
+			: new FlagMaskData(*sourceMask._data))
 	{ }
 			
 	FlagMask::FlagMask(FlagMask&& sourceMask) :
-		_data(new FlagMaskData(std::move(*sourceMask._data)))
-	{ }
+		_data(sourceMask._data)
+	{ 
+		sourceMask._data = nullptr;
+	}
 	
 	FlagMask& FlagMask::operator=(const FlagMask& flagMask)
 	{
@@ -204,13 +226,13 @@ namespace aoflagger {
 	
 	FlagMask& FlagMask::operator=(FlagMask&& flagMask)
 	{
-		*_data = std::move(*flagMask._data);
+		std::swap(_data, flagMask._data);
 		return *this;
 	}
 	
 	FlagMask::~FlagMask()
 	{
-		// _data might be 0, but it's fine to delete 0; (by standard)
+		// _data might be nullptr, but it's fine to delete nullptr; (by standard)
 		delete _data;
 	}
 			

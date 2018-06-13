@@ -530,7 +530,7 @@ bool FitsFile::HasGroupParameter(const std::string &parameterName, int number)
 	return false;
 }
 
-bool FitsFile::HasTableColumn(const std::string &columnName, int columnIndex)
+bool FitsFile::HasTableColumn(const std::string &columnName, int& columnIndex)
 {
 	int colCount = GetColumnCount();
 	for(int i=1;i<=colCount;++i)
@@ -569,7 +569,19 @@ int FitsFile::GetTableColumnArraySize(int columnIndex)
 	return repeat;
 }
 
-long FitsFile::GetTableDimensionSize(int columnIndex, int dimension)
+std::vector<long> FitsFile::GetColumnDimensions(int columnIndex)
+{
+	CheckOpen();
+	int naxis = 0, status = 0;
+	constexpr int maxdim = 10;
+	std::vector<long> axes(maxdim, 0);
+	fits_read_tdim(_fptr, columnIndex, maxdim, &naxis, axes.data(), &status);
+	CheckStatus(status);
+	axes.resize(naxis);
+	return axes;
+}
+
+long FitsFile::GetColumnDimensionSize(int columnIndex, int dimension)
 {
 	CheckOpen();
 	int naxis = 0, status = 0, maxdim = 10;
@@ -577,7 +589,24 @@ long FitsFile::GetTableDimensionSize(int columnIndex, int dimension)
 	for(size_t i=0;i!=10;++i) naxes[i] = 0;
 	fits_read_tdim(_fptr, columnIndex, maxdim, &naxis, naxes, &status);
 	CheckStatus(status);
+	if(dimension >= naxis)
+		throw FitsIOException("Requested dimension index not available in fits file");
 	return naxes[dimension];
+}
+
+std::string FitsFile::GetTableDimensionName(int index)
+{
+	CheckOpen();
+	std::ostringstream name;
+	name << "CTYPE" << (index+1);
+	int status = 0;
+	char valueStr[256], commentStr[256];
+	fits_read_key(_fptr, TSTRING, name.str().c_str(), valueStr, commentStr, &status);
+	std::string val;
+	if(!status) {
+		val = valueStr;
+	}
+	return val;
 }
 
 void FitsFile::ReadTableCell(int row, int col, double *output, size_t size)
@@ -590,26 +619,24 @@ void FitsFile::ReadTableCell(int row, int col, double *output, size_t size)
 
 void FitsFile::ReadTableCell(int row, int col, long double *output, size_t size)
 {
-	double *data = new double[size];
+	std::vector<double> data(size);
 	int status = 0;
 	double nulValue = std::numeric_limits<double>::quiet_NaN();
 	int anynul = 0;
-	fits_read_col(_fptr, TDOUBLE, col, row, 1, size, &nulValue, data, &anynul, &status);
+	fits_read_col(_fptr, TDOUBLE, col, row, 1, size, &nulValue, data.data(), &anynul, &status);
 	for(size_t i = 0;i<size;++i)
 		output[i] = data[i];
-	delete[] data;
 }
 
 void FitsFile::ReadTableCell(int row, int col, bool *output, size_t size)
 {
-	char *data = new char[size];
+	std::vector<char> data(size);
 	int status = 0;
 	char nulValue = 0;
 	int anynul = 0;
-	fits_read_col(_fptr, TBIT, col, row, 1, size, &nulValue, data, &anynul, &status);
+	fits_read_col(_fptr, TBIT, col, row, 1, size, &nulValue, data.data(), &anynul, &status);
 	for(size_t i = 0;i<size;++i)
 		output[i] = data[i]!=0;
-	delete[] data;
 }
 
 void FitsFile::ReadTableCell(int row, int col, char *output)
@@ -629,12 +656,11 @@ void FitsFile::WriteTableCell(int row, int col, double *data, size_t size)
 
 void FitsFile::WriteTableCell(int row, int col, const bool *data, size_t size)
 {
-	char *dataChar = new char[size];
+	std::vector<char> dataChar(size);
 	int status = 0;
 	for(size_t i = 0;i<size;++i)
 	{
 		dataChar[i] = data[i] ? 1 : 0;
 	}
-	fits_write_col(_fptr, TBIT, col, row, 1, size, dataChar, &status);
-	delete[] dataChar;
+	fits_write_col(_fptr, TBIT, col, row, 1, size, dataChar.data(), &status);
 }

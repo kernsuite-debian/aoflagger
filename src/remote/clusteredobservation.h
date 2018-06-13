@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "hostname.h"
 
@@ -56,11 +57,11 @@ class ClusteredObservation
 		
 		static bool IsRefFilename(const std::string &filename);
 		
-		static ClusteredObservation *Load(const std::string &filename);
+		static std::unique_ptr<ClusteredObservation> Load(const std::string& filename);
 		
-		static ClusteredObservation *LoadFromVds(const std::string &vdsFilename);
+		static std::unique_ptr<ClusteredObservation> LoadFromVds(const std::string &vdsFilename);
 		
-		static ClusteredObservation *LoadFromRef(const std::string &refFilename);
+		static std::unique_ptr<ClusteredObservation> LoadFromRef(const std::string &refFilename);
 		
 		void AddItem(const ClusteredObservationItem &item)
 		{

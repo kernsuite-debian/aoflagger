@@ -172,6 +172,25 @@ class StatisticsCollection : public Serializable
 			return _frequencyStatistics;
 		}
 		
+		std::map<size_t, DefaultStatistics> GetAntennaStatistics() const
+		{
+			const BaselineStatisticsMap& map = BaselineStatistics();
+			vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
+			
+			std::map<size_t, DefaultStatistics> antStatistics;
+			
+			for(const std::pair<unsigned, unsigned>& p : baselines)
+			{
+				if(p.first != p.second)
+				{
+					const DefaultStatistics& stats = map.GetStatistics(p.first, p.second);
+					addAntennaStatistic(p.first, stats, antStatistics);
+					addAntennaStatistic(p.second, stats, antStatistics);
+				}
+			}
+			return antStatistics;
+		}
+		
 		unsigned PolarizationCount() const
 		{
 			return _polarizationCount;
@@ -828,6 +847,15 @@ class StatisticsCollection : public Serializable
 				newMap.insert(std::pair<double, DefaultStatistics>(key, i->second));
 			}
 			regridMap = newMap;
+		}
+		
+		static void addAntennaStatistic(unsigned antIndex, const DefaultStatistics& stats, std::map<size_t, DefaultStatistics>& antStatistics)
+		{
+			std::map<size_t, DefaultStatistics>::iterator iter = antStatistics.find(antIndex);
+			if(iter == antStatistics.end())
+				antStatistics.insert(std::make_pair(antIndex, stats));
+			else
+				iter->second += stats;
 		}
 		
 		std::map<double, DoubleStatMap> _timeStatistics;

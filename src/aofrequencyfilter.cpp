@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 		else throw std::runtime_error("Bad mode");
 		
 		filterFringeSize = atof(argv[3]);
-		ClusteredObservation *obs = ClusteredObservation::Load(argv[1]);
+		std::unique_ptr<ClusteredObservation> obs = ClusteredObservation::Load(argv[1]);
 		commander = new ProcessCommander(*obs);
 		commander->PushReadAntennaTablesTask();
 		commander->PushReadBandTablesTask();
@@ -274,6 +274,5 @@ int main(int argc, char *argv[])
 		
 		// Clean
 		delete commander;
-		delete obs;
 	}
 }
