@@ -7,27 +7,30 @@ Subject: Build shared lib with SONAME and SOVERSION
  1 file changed, 20 insertions(+), 11 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 80275a8..e863607 100644
+index 7b9424d..eb48e2b 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -231,15 +231,11 @@ set(PYTHON_FILES
+@@ -232,18 +232,14 @@ set(PYTHON_FILES
  	python/functions.cpp)
  
  set(ALL_LIBRARIES
 -	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
  	${Boost_SYSTEM_LIBRARY}
--	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON_LIBRARIES} ${Boost_SIGNALS_LIBRARY}
-+	${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON_LIBRARIES}
+-	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
++	${Boost_DATE_TIME_LIBRARY}
+ #	${Boost_PYTHON-PY36_LIBRARIES}
+ 	${Boost_PYTHON_LIBRARIES}
+ 	${Boost_SIGNALS_LIBRARY}
  	${FFTW3_LIB}
  	${CASACORE_LIBRARIES}
 -	${LAPACK_lapack_LIBRARY}
 -	${CFITSIO_LIBRARY}
  	${CMAKE_THREAD_LIBS_INIT}
 -	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
- 	${PYTHON_LIBRARY})
+ 	${PYTHON_LIBRARIES})
  
- message(STATUS "GTKMM found.") 
-@@ -257,11 +253,23 @@ endif(SIGCXX_FOUND)
+ if(GTKMM_FOUND)
+@@ -263,11 +259,23 @@ endif(SIGCXX_FOUND)
  if(GTKMM_FOUND)
  	set(AOFLAGGER_PLOT_FILES ${PLOT_FILES})
  endif(GTKMM_FOUND)
@@ -56,7 +59,7 @@ index 80275a8..e863607 100644
  
  add_library(python_aoflagger SHARED python/pyinterface.cpp)
  set_target_properties(python_aoflagger PROPERTIES SOVERSION 0)
-@@ -322,5 +330,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
+@@ -328,5 +336,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  	install (TARGETS aoquality aoremoteclient DESTINATION bin)
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  

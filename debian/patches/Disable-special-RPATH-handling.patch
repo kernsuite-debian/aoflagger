@@ -7,10 +7,10 @@ Subject: Disable special RPATH handling
  1 file changed, 18 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 41475df..f14a1a8 100644
+index 52a3f05..8111615 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -49,24 +49,6 @@ if(GSL_INCLUDE_DIR)
+@@ -54,24 +54,6 @@ if(GSL_INCLUDE_DIR)
  endif(GSL_INCLUDE_DIR)
  include_directories(${PYTHON_INCLUDE_DIRS})
  

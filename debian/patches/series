@@ -1,5 +1,2 @@
 Build-shared-lib-with-SONAME-and-SOVERSION.patch
 Disable-special-RPATH-handling.patch
-Declare-pow10.patch
-#Support-Python-3.x.patch
-Remove-outdated-CheckCXXSymbolExists.patch
