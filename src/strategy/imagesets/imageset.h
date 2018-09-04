@@ -27,13 +27,15 @@ namespace rfiStrategy {
 				_set = &imageSet;
 				reattach();
 			}
-		protected:
-			virtual void reattach() { }
+			
 			ImageSetIndex(const ImageSetIndex&) = default;
 			ImageSetIndex(ImageSetIndex&&) = default;
 			ImageSetIndex& operator=(const ImageSetIndex&) = default;
 			ImageSetIndex& operator=(ImageSetIndex&&) = default;
+		protected:
+			virtual void reattach() { }
 			ImageSet &imageSet() const { return *_set; }
+			
 		private:
 			class ImageSet *_set;
 	};
@@ -42,29 +44,30 @@ namespace rfiStrategy {
 		public:
 			BaselineData(const TimeFrequencyData& data, const TimeFrequencyMetaDataCPtr& metaData, const ImageSetIndex &index)
 			: _data(data), _metaData(metaData), _index(index.Clone())
-			{
-			}
+			{ }
+			
 			explicit BaselineData(const ImageSetIndex &index)
 			: _data(), _metaData(), _index(index.Clone())
-			{
-			}
+			{ }
+			
 			BaselineData(const TimeFrequencyData& data, const TimeFrequencyMetaDataCPtr& metaData)
 			: _data(data), _metaData(metaData), _index()
-			{
-			}
+			{ }
+			
 			explicit BaselineData(const TimeFrequencyMetaDataCPtr& metaData)
 			: _data(), _metaData(metaData), _index()
-			{
-			}
+			{ }
+			
 			BaselineData()
 			: _data(), _metaData(), _index()
-			{
-			}
+			{ }
+			
 			BaselineData(const BaselineData& source)
 			: _data(source._data), _metaData(source._metaData), _index()
 			{
 				if(source._index != nullptr) _index = source._index->Clone();
 			}
+			
 			BaselineData& operator=(const BaselineData &source)
 			{
 				_data = source._data;
@@ -72,6 +75,7 @@ namespace rfiStrategy {
 				_index = source._index->Clone();
 				return *this;
 			}
+			
 			const TimeFrequencyData &Data() const { return _data; }
 			void SetData(const TimeFrequencyData &data) { _data = data; }
 			
@@ -124,7 +128,7 @@ namespace rfiStrategy {
 				throw std::runtime_error("Not implemented");
 			}
 			
-			static class ImageSet *Create(const std::string &file, BaselineIOMode ioMode);
+			static class ImageSet *Create(const std::vector<std::string>& files, BaselineIOMode ioMode);
 			static bool IsFitsFile(const std::string &file);
 			static bool IsBHFitsFile(const std::string &file);
 			static bool IsRCPRawFile(const std::string &file);

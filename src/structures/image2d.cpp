@@ -33,21 +33,23 @@ Image2D::Image2D() noexcept :
 Image2D::Image2D(size_t width, size_t height, size_t widthCapacity) :
 	_width(width),
 	_height(height),
-	_stride((((widthCapacity-1)/4)+1)*4)
+	_stride(widthCapacity==0 ? 0 : (((widthCapacity-1)/8)+1)*8)
 {
-	if(widthCapacity == 0) _stride=0;
 	allocate();
 }
 
 void Image2D::allocate()
 {
+	// The height is made divisable by 4 (128 bits) to allow 128-bit vector
+	// operations to be executed in the vertical direction.
 	unsigned allocHeight = ((((_height-1)/4)+1)*4);
 	if(_height == 0) allocHeight = 0;
 #ifdef __APPLE__
 		// OS-X has no posix_memalign, but malloc always uses 16-byte alignment.
+		// This is not enough for AVX instructions, so those cannot be executed on apple machines.
 		_dataConsecutive = (num_t*)malloc(_stride * allocHeight * sizeof(num_t));
 #else
-		if(posix_memalign((void **) &_dataConsecutive, 16, _stride * allocHeight * sizeof(num_t)) != 0)
+		if(posix_memalign((void **) &_dataConsecutive, 32, _stride * allocHeight * sizeof(num_t)) != 0)
 			throw std::bad_alloc();
 #endif
 	_dataPtr = new num_t*[allocHeight];

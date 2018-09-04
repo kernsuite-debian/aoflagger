@@ -1,8 +1,6 @@
-#ifdef __SSE__
-#define USE_INTRINSICS
-#endif
+#include "sumthreshold.h"
 
-#ifdef USE_INTRINSICS
+#ifdef __SSE__
 
 #include <stdint.h>
 #include <xmmintrin.h>
@@ -10,9 +8,245 @@
 
 #include "../../structures/image2d.h"
 
-#include "combinatorialthresholder.h"
-
 #include "../../util/logger.h"
+
+template<size_t Length>
+void SumThreshold::Horizontal(const Image2D* input, Mask2D* mask, num_t threshold)
+{
+	if(Length <= input->Width())
+	{
+		size_t width = input->Width()-Length+1; 
+		for(size_t y=0;y<input->Height();++y) {
+			for(size_t x=0;x<width;++x) {
+				num_t sum = 0.0;
+				size_t count = 0;
+				for(size_t i=0;i<Length;++i) {
+					if(!mask->Value(x+i, y)) {
+						sum += input->Value(x+i, y);
+						count++;
+					}
+				}
+				if(count>0 && fabs(sum/count) > threshold) {
+					for(size_t i=0;i<Length;++i)
+						mask->SetValue(x + i, y, true);
+				}
+			}
+		}
+	}
+}
+
+template<size_t Length>
+void SumThreshold::Vertical(const Image2D* input, Mask2D* mask, num_t threshold)
+{
+	if(Length <= input->Height())
+	{
+		size_t height = input->Height()-Length+1; 
+		for(size_t y=0;y<height;++y) {
+			for(size_t x=0;x<input->Width();++x) {
+				num_t sum = 0.0;
+				size_t count = 0;
+				for(size_t i=0;i<Length;++i) {
+					if(!mask->Value(x, y+i)) {
+						sum += input->Value(x, y + i);
+						count++;
+					}
+				}
+				if(count>0 && fabs(sum/count) > threshold) {
+					for(size_t i=0;i<Length;++i)
+					mask->SetValue(x, y + i, true);
+				}
+			}
+		}
+	}
+}
+
+template<size_t Length>
+void SumThreshold::HorizontalLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
+{
+	*scratch = *mask;
+	const size_t width = mask->Width(), height = mask->Height();
+	if(Length <= width)
+	{
+		for(size_t y=0;y<height;++y)
+		{
+			num_t sum = 0.0;
+			size_t count = 0, xLeft, xRight;
+
+			for(xRight=0;xRight<Length-1;++xRight)
+			{
+				if(!mask->Value(xRight, y))
+				{
+					sum += input->Value(xRight, y);
+					count++;
+				}
+			}
+
+			xLeft = 0;
+			while(xRight < width)
+			{
+				// add the sample at the right
+				if(!mask->Value(xRight, y))
+				{
+					sum += input->Value(xRight, y);
+					++count;
+				}
+				// Check
+				if(count>0 && fabs(sum/count) > threshold)
+				{
+					scratch->SetHorizontalValues(xLeft, y, true, Length);
+				}
+				// subtract the sample at the left
+				if(!mask->Value(xLeft, y))
+				{
+					sum -= input->Value(xLeft, y);
+					--count;
+				}
+				++xLeft;
+				++xRight;
+			}
+		}
+	}
+	*mask = std::move(*scratch);
+}
+
+template<size_t Length>
+void SumThreshold::VerticalLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
+{
+	*scratch = *mask;
+	const size_t width = mask->Width(), height = mask->Height();
+	if(Length <= height)
+	{
+		for(size_t x=0;x<width;++x)
+		{
+			num_t sum = 0.0;
+			size_t count = 0, yTop, yBottom;
+
+			for(yBottom=0;yBottom<Length-1;++yBottom)
+			{
+				if(!mask->Value(x, yBottom))
+				{
+					sum += input->Value(x, yBottom);
+					++count;
+				}
+			}
+
+			yTop = 0;
+			while(yBottom < height)
+			{
+				// add the sample at the bottom
+				if(!mask->Value(x, yBottom))
+				{
+					sum += input->Value(x, yBottom);
+					++count;
+				}
+				// Check
+				if(count>0 && fabs(sum/count) > threshold)
+				{
+					for(size_t i=0;i<Length;++i)
+						scratch->SetValue(x, yTop + i, true);
+				}
+				// subtract the sample at the top
+				if(!mask->Value(x, yTop))
+				{
+					sum -= input->Value(x, yTop);
+					--count;
+				}
+				++yTop;
+				++yBottom;
+			}
+		}
+	}
+	*mask = std::move(*scratch);
+}
+
+void SumThreshold::HorizontalLargeReference(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: Horizontal<1>(input, mask, threshold); break;
+		case 2: HorizontalLarge<2>(input, mask, scratch, threshold); break;
+		case 4: HorizontalLarge<4>(input, mask, scratch, threshold); break;
+		case 8: HorizontalLarge<8>(input, mask, scratch, threshold); break;
+		case 16: HorizontalLarge<16>(input, mask, scratch, threshold); break;
+		case 32: HorizontalLarge<32>(input, mask, scratch, threshold); break;
+		case 64: HorizontalLarge<64>(input, mask, scratch, threshold); break;
+		case 128: HorizontalLarge<128>(input, mask, scratch, threshold); break;
+		case 256: HorizontalLarge<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}	
+}
+
+void SumThreshold::VerticalLargeReference(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: Vertical<1>(input, mask, threshold); break;
+		case 2: VerticalLarge<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalLarge<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalLarge<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalLarge<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalLarge<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalLarge<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalLarge<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalLarge<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}
+}
+
+#ifdef __SSE__
+void SumThreshold::VerticalLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: Vertical<1>(input, mask, threshold); break;
+		case 2: VerticalLargeSSE<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalLargeSSE<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalLargeSSE<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalLargeSSE<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalLargeSSE<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalLargeSSE<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalLargeSSE<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalLargeSSE<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}	
+}
+
+void SumThreshold::HorizontalLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: Horizontal<1>(input, mask, threshold); break;
+		case 2: HorizontalLargeSSE<2>(input, mask, scratch, threshold); break;
+		case 4: HorizontalLargeSSE<4>(input, mask, scratch, threshold); break;
+		case 8: HorizontalLargeSSE<8>(input, mask, scratch, threshold); break;
+		case 16: HorizontalLargeSSE<16>(input, mask, scratch, threshold); break;
+		case 32: HorizontalLargeSSE<32>(input, mask, scratch, threshold); break;
+		case 64: HorizontalLargeSSE<64>(input, mask, scratch, threshold); break;
+		case 128: HorizontalLargeSSE<128>(input, mask, scratch, threshold); break;
+		case 256: HorizontalLargeSSE<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}	
+}
+#endif // SSE
+
+#ifdef __AVX2__
+void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: Vertical<1>(input, mask, threshold); break;
+		case 2: VerticalLargeAVX<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalLargeAVX<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalLargeAVX<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalLargeAVX<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalLargeAVX<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalLargeAVX<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalLargeAVX<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalLargeAVX<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}
+}
+#endif // AVX2
 
 /**
  * The SSE version of the Vertical SumThreshold algorithm using intrinsics.
@@ -34,7 +268,7 @@
  * computing a sumthreshold has a lot of overhead, hence is not optimal at that size.
  */
 template<size_t Length>
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
+void SumThreshold::VerticalLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
 {
 	*scratch = *mask;
 	const size_t width = mask->Width(), height = mask->Height();
@@ -150,7 +384,7 @@ void CombinatorialThresholder::VerticalSumThresholdLargeSSE(const Image2D* input
 }
 
 template<size_t Length>
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
+void SumThreshold::HorizontalLargeSSE(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
 {
 	// The idea of the horizontal SSE version is to read four ('y') rows and
 	// process them simultaneously. 
@@ -322,38 +556,38 @@ void CombinatorialThresholder::HorizontalSumThresholdLargeSSE(const Image2D* inp
 }
 
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<2>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<2>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<4>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<4>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<8>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<8>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<16>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<16>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<32>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<32>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<64>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<64>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeSSE<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeSSE<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<2>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<2>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<4>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<4>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<8>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<8>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<16>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<16>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<32>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<32>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<64>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<64>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::HorizontalLargeSSE<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 
 #endif
 
@@ -362,7 +596,7 @@ void CombinatorialThresholder::HorizontalSumThresholdLargeSSE<256>(const Image2D
 #include <immintrin.h>
 
 template<size_t Length>
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
+void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold)
 {
 	*scratch = *mask;
 	const size_t width = mask->Width(), height = mask->Height();
@@ -605,21 +839,21 @@ void CombinatorialThresholder::VerticalSumThresholdLargeAVX(const Image2D* input
 }
 
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<2>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<2>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<4>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<4>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<8>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<8>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<16>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<16>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<32>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<32>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<64>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<64>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
-void CombinatorialThresholder::VerticalSumThresholdLargeAVX<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+void SumThreshold::VerticalLargeAVX<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 
 #else
 #warning "AVX2 optimization of SumThreshold algorithm is not used"

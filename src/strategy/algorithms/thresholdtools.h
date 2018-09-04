@@ -14,12 +14,14 @@ class ThresholdTools {
 		static numl_t RMS(const Image2D* image, const Mask2D* mask);
 		static num_t Mode(const Image2D* input, const Mask2D* mask);
 		static num_t WinsorizedMode(const Image2D* image, const Mask2D* mask);
+		static num_t WinsorizedMode(const Image2D* image, const Mask2D* maskA, const Mask2D* maskB);
 		static num_t WinsorizedMode(const Image2D* image);
 		template<typename T>
 		static void TrimmedMeanAndStdDev(const std::vector<T> &input, T &mean, T &stddev);
 		template<typename T>
 		static void WinsorizedMeanAndStdDev(const std::vector<T> &input, T &mean, T &stddev);
 		static void WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* mask, num_t &mean, num_t &variance);
+		static void WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* maskA, const Mask2D* maskB, num_t &mean, num_t &variance);
 		static void WinsorizedMeanAndStdDev(const Image2D* image, num_t &mean, num_t &variance);
 		static num_t MinValue(const Image2D* image, const Mask2D* mask);
 		static num_t MaxValue(const Image2D* image, const Mask2D* mask);

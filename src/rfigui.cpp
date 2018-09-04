@@ -128,12 +128,10 @@ static void run(int argc, char *argv[])
 		
 		if(!filenames.empty())
 		{
-			if(filenames.size() > 1)
-				throw std::runtime_error("Error: multiple input paths specified; RFIGui can only handle one path.\n");
 			if(interactive)
-				window->OpenPath(filenames[0]);
+				window->OpenPaths(filenames);
 			else
-				controller.Open(filenames[0], DirectReadMode, true, dataColumnName, false, 4, true, false);
+				controller.Open(filenames, DirectReadMode, true, dataColumnName, false, 4, true, false);
 		}
 		
 		if(!savedBaselines.empty())

@@ -20,9 +20,9 @@ class HorizontalPlotScale {
 			_isSecondAxis = isSecondAxis;
 			_metricsAreInitialized = false;
 		}
-		double GetHeight(Cairo::RefPtr<Cairo::Context> cairo);
-		double GetRightMargin(Cairo::RefPtr<Cairo::Context> cairo);
-		void Draw(Cairo::RefPtr<Cairo::Context> cairo);
+		double GetHeight(const Cairo::RefPtr<Cairo::Context>& cairo);
+		double GetRightMargin(const Cairo::RefPtr<Cairo::Context>& cairo);
+		void Draw(const Cairo::RefPtr<Cairo::Context>& cairo);
 		void InitializeNumericTicks(double min, double max);
 		void InitializeTimeTicks(double timeMin, double timeMax);
 		void InitializeTextTicks(const std::vector<std::string> &labels);
@@ -55,9 +55,9 @@ class HorizontalPlotScale {
 		double UnitToAxis(double unitValue) const;
 		double AxisToUnit(double axisValue) const;
 	private:
-		void drawDescription(Cairo::RefPtr<Cairo::Context> cairo);
-		bool ticksFit(Cairo::RefPtr<Cairo::Context> cairo);
-		void initializeMetrics(Cairo::RefPtr<Cairo::Context> cairo); 
+		void drawDescription(const Cairo::RefPtr<Cairo::Context>& cairo);
+		bool ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo);
+		void initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo); 
 
 		double _plotWidth, _plotHeight, _fromLeft, _fromTop;
 		bool _metricsAreInitialized;

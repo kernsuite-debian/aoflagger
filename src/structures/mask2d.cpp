@@ -73,7 +73,7 @@ Mask2D& Mask2D::operator=(const Mask2D& rhs)
 		_stride != rhs._stride)
 	{
 		delete[] _values;
-		free(_valuesConsecutive);
+		delete[] _valuesConsecutive;
 		_width = rhs._width;
 		_height = rhs._height;
 		_stride = rhs._stride;
@@ -93,19 +93,19 @@ Mask2D& Mask2D::operator=(Mask2D&& rhs) noexcept
 	return *this;
 }
 
-Mask2D *Mask2D::CreateUnsetMask(const Image2D &templateImage)
+Mask2D* Mask2D::CreateUnsetMask(const Image2D &templateImage)
 {
 	return new Mask2D(templateImage.Width(), templateImage.Height());
 }
 
 template <bool InitValue>
-Mask2D *Mask2D::CreateSetMask(const class Image2D &templateImage)
+Mask2D* Mask2D::CreateSetMask(const class Image2D &templateImage)
 {
 	size_t
 		width = templateImage.Width(),
 		height = templateImage.Height();
 
-	Mask2D *newMask = new Mask2D(width, height);
+	Mask2D* newMask = new Mask2D(width, height);
 	memset(newMask->_valuesConsecutive, InitValue, newMask->_stride * height * sizeof(bool));
 	return newMask;
 }

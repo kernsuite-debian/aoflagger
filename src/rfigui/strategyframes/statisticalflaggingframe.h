@@ -8,13 +8,13 @@
 #include <gtkmm/label.h>
 #include <gtkmm/scale.h>
 
-#include "../../strategy/actions/statisticalflagaction.h"
+#include "../../strategy/actions/morphologicalflagaction.h"
 
 #include "../editstrategywindow.h"
 
-class StatisticalFlaggingFrame : public Gtk::Frame {
+class MorphologicalFlaggingFrame : public Gtk::Frame {
 	public:
-		StatisticalFlaggingFrame(rfiStrategy::StatisticalFlagAction &action, EditStrategyWindow &editStrategyWindow)
+		MorphologicalFlaggingFrame(rfiStrategy::MorphologicalFlagAction &action, EditStrategyWindow &editStrategyWindow)
 		: Gtk::Frame("Statistical flagging"),
 		_editStrategyWindow(editStrategyWindow), _action(action),
 		_dilluteTimeSizeLabel("Dillution time size:"),
@@ -31,6 +31,7 @@ class StatisticalFlaggingFrame : public Gtk::Frame {
 		_minTimeRatioScale(Gtk::ORIENTATION_HORIZONTAL),
 		_minFreqRatioLabel("SIR-operator frequency extension:"),
 		_minFreqRatioScale(Gtk::ORIENTATION_HORIZONTAL),
+		_excludeOriginalFlags("Exclude original flags"),
 		_applyButton("Apply")
 		{
 			_box.pack_start(_dilluteTimeSizeLabel);
@@ -81,9 +82,12 @@ class StatisticalFlaggingFrame : public Gtk::Frame {
 			_minFreqRatioScale.set_value(_action.MinimumGoodFrequencyRatio()*100.0);
 			_minFreqRatioScale.set_increments(.25, 5);
 			_box.pack_start(_minFreqRatioScale);
+			
+			_excludeOriginalFlags.set_active(_action.ExcludeOriginalFlags());
+			_box.pack_start(_excludeOriginalFlags);
 
 			_buttonBox.pack_start(_applyButton);
-			_applyButton.signal_clicked().connect(sigc::mem_fun(*this, &StatisticalFlaggingFrame::onApplyClicked));
+			_applyButton.signal_clicked().connect(sigc::mem_fun(*this, &MorphologicalFlaggingFrame::onApplyClicked));
 
 			_box.pack_start(_buttonBox);
 
@@ -92,7 +96,7 @@ class StatisticalFlaggingFrame : public Gtk::Frame {
 		}
 	private:
 		EditStrategyWindow &_editStrategyWindow;
-		rfiStrategy::StatisticalFlagAction &_action;
+		rfiStrategy::MorphologicalFlagAction &_action;
 
 		Gtk::VBox _box;
 		Gtk::ButtonBox _buttonBox;
@@ -113,6 +117,8 @@ class StatisticalFlaggingFrame : public Gtk::Frame {
 		Gtk::Label _minFreqRatioLabel;
 		Gtk::Scale _minFreqRatioScale;
 		
+		Gtk::CheckButton _excludeOriginalFlags;
+		
 		Gtk::Button _applyButton;
 
 		void onApplyClicked()
@@ -124,6 +130,7 @@ class StatisticalFlaggingFrame : public Gtk::Frame {
 			_action.SetMinAvailableTFRatio(_minTFAvailableRatioScale.get_value()/100.0);
 			_action.SetMinimumGoodTimeRatio(_minTimeRatioScale.get_value()/100.0);
 			_action.SetMinimumGoodFrequencyRatio(_minFreqRatioScale.get_value()/100.0);
+			_action.SetExcludeOriginalFlags(_excludeOriginalFlags.get_active());
 			_editStrategyWindow.UpdateAction(&_action);
 		}
 };

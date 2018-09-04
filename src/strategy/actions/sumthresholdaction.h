@@ -4,6 +4,7 @@
 #include "../algorithms/thresholdconfig.h"
 
 #include "action.h"
+
 #include "../control/artifactset.h"
 #include "../control/actionblock.h"
 
@@ -14,7 +15,8 @@ namespace rfiStrategy {
 			public:
 				SumThresholdAction() :
 					_timeDirectionSensitivity(1.0), _frequencyDirectionSensitivity(1.0),
-					_inTimeDirection(true), _inFrequencyDirection(true)
+					_inTimeDirection(true), _inFrequencyDirection(true),
+					_excludeOriginalFlags(false)
 				{
 				}
 				
@@ -36,7 +38,14 @@ namespace rfiStrategy {
 					TimeFrequencyData& contaminated = artifacts.ContaminatedData();
 					Mask2DPtr mask(new Mask2D(*contaminated.GetSingleMask()));
 					const Image2DCPtr image = contaminated.GetSingleImage();
-					thresholdConfig.Execute(image.get(), mask.get(), false, artifacts.Sensitivity() * _timeDirectionSensitivity, artifacts.Sensitivity() * _frequencyDirectionSensitivity);
+					if(_excludeOriginalFlags)
+					{
+						const Mask2DCPtr originalMask(artifacts.OriginalData().GetSingleMask());
+						thresholdConfig.ExecuteWithMissing(image.get(), mask.get(), originalMask.get(), false, artifacts.Sensitivity() * _timeDirectionSensitivity, artifacts.Sensitivity() * _frequencyDirectionSensitivity);
+					}
+					else {
+						thresholdConfig.Execute(image.get(), mask.get(), false, artifacts.Sensitivity() * _timeDirectionSensitivity, artifacts.Sensitivity() * _frequencyDirectionSensitivity);
+					}
 					contaminated.SetGlobalMask(mask);
 				}
 				
@@ -60,11 +69,15 @@ namespace rfiStrategy {
 				bool FrequencyDirectionFlagging() const { return _inFrequencyDirection; }
 				void SetFrequencyDirectionFlagging(bool frequencyDirection) { _inFrequencyDirection = frequencyDirection; }
 				
+				bool ExcludeOriginalFlags() const { return _excludeOriginalFlags; }
+				void SetExcludeOriginalFlags(bool exclude) { _excludeOriginalFlags = exclude; }
+				
 			private:
 				num_t _timeDirectionSensitivity;
 				num_t _frequencyDirectionSensitivity;
 				bool _inTimeDirection;
 				bool _inFrequencyDirection;
+				bool _excludeOriginalFlags;
 	};
 
 } // namespace

@@ -5,6 +5,8 @@
 
 #include "../algorithms/interpolatenansalgorithm.h"
 
+#include "action.h"
+
 #include "../control/actioncontainer.h"
 #include "../control/artifactset.h"
 
@@ -71,6 +73,7 @@ namespace rfiStrategy {
 				_add = add;
 			}
 			virtual ActionType Type() const final override { return SetImageActionType; }
+			
 		private:
 			void PerformSet(class ArtifactSet &artifacts, class ProgressListener &)
 			{

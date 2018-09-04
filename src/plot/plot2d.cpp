@@ -72,7 +72,7 @@ void Plot2D::SavePng(const std::string &filename)
 	surface->write_to_png(filename);
 }
 
-void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
+void Plot2D::render(Cairo::RefPtr<Cairo::Context>& cr)
 {
 	_system.Clear();
 	for(std::unique_ptr<Plot2DPointSet>& set : _pointSets)
@@ -86,8 +86,6 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 
 	if(!_pointSets.empty())
 	{
-		size_t c = 0;
-	
 		Plot2DPointSet &refPointSet = **_pointSets.begin();
 		
 		double verticalScaleWidth, horiScaleHeight;
@@ -100,6 +98,7 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 			_title.SetPlotDimensions(_width, _height, _topMargin);
 			titleHeight = _title.GetHeight(cr);
 		}
+		
 		if(_showAxes)
 			_topMargin += std::max(10.0, titleHeight);
 		else
@@ -113,20 +112,28 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 				_horizontalScale.InitializeTextTicks(refPointSet.TickLabels());
 			else if(refPointSet.XIsTime())
 				_horizontalScale.InitializeTimeTicks(_system.XRangeMin(refPointSet), _system.XRangeMax(refPointSet));
-			else if(_logarithmicXAxis)
-				_horizontalScale.InitializeLogarithmicTicks(MinPositiveX(), MaxPositiveX());
-			else
-				_horizontalScale.InitializeNumericTicks(MinX(), MaxX());
+			else if(_logarithmicXAxis) {
+				auto range = RangePositiveX();
+				_horizontalScale.InitializeLogarithmicTicks(range.first, range.second);
+			}
+			else {
+				auto range = RangeX();
+				_horizontalScale.InitializeNumericTicks(range.first, range.second);
+			}
 			_horizontalScale.SetUnitsCaption(_customHAxisDescription.empty() ? refPointSet.XUnits() : _customHAxisDescription);
 			_horizontalScale.SetPlotDimensions(_width, _height, 0.0, _topMargin, false);
 			horiScaleHeight = _horizontalScale.GetHeight(cr);
 			
 			double rightMargin = _horizontalScale.GetRightMargin(cr);
 			_verticalScale.SetDrawWithDescription(_showAxisDescriptions);
-			if(_logarithmicYAxis)
-				_verticalScale.InitializeLogarithmicTicks(MinPositiveY(), MaxPositiveY());
-			else
-				_verticalScale.InitializeNumericTicks(MinY(), MaxY());
+			if(_logarithmicYAxis) {
+				auto range = RangePositiveY();
+				_verticalScale.InitializeLogarithmicTicks(range.first, range.second);
+			}
+			else {
+				auto range = RangeY();
+				_verticalScale.InitializeNumericTicks(range.first, range.second);
+			}
 			_verticalScale.SetUnitsCaption(_customVAxisDescription.empty() ? refPointSet.YUnits() : _customVAxisDescription);
 			_verticalScale.SetPlotDimensions(_width - rightMargin, _height - horiScaleHeight - _topMargin, _topMargin, false);
 
@@ -138,22 +145,11 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 			horiScaleHeight = 0.0;
 		}
 		
-		for(std::unique_ptr<Plot2DPointSet>& set : _pointSets)
+		for(size_t i=0; i!=_pointSets.size(); ++i)
 		{
-			switch(c)
-			{
-				case 0: cr->set_source_rgba(1, 0, 0, 1); break;
-				case 1: cr->set_source_rgba(0, 1, 0, 1); break;
-				case 2: cr->set_source_rgba(0, 0, 1, 1); break;
-				case 3: cr->set_source_rgba(0, 0, 0, 1); break;
-				case 4: cr->set_source_rgba(1, 1, 0, 1); break;
-				case 5: cr->set_source_rgba(1, 0, 1, 1); break;
-				case 6: cr->set_source_rgba(0, 1, 1, 1); break;
-				case 7: cr->set_source_rgba(0.5, 0.5, 0.5, 1); break;
-			}
-			c = (c+1)%8;
-
-			render(cr, *set);
+			auto c = _pointSets[i]->GetColor();
+			cr->set_source_rgba(c.r, c.g, c.b, c.a);
+			render(cr, *_pointSets[i]);
 		}
 		
 		double rightMargin;
@@ -165,6 +161,11 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 		} else {
 			rightMargin = 0.0;
 		}
+		_legend.Initialize(cr, *this);
+		// For top left:
+		//_legend.SetPosition(verticalScaleWidth+10, _topMargin+10);
+		_legend.SetPosition(_width - rightMargin-10 - _legend.Width(), _topMargin+10);
+		
 		if(!_title.Text().empty())
 		{
 			_title.Draw(cr);
@@ -173,18 +174,20 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr)
 		cr->set_source_rgb(0.0, 0.0, 0.0);
 		cr->rectangle(verticalScaleWidth, _topMargin, _width - verticalScaleWidth - rightMargin, _height - horiScaleHeight - _topMargin);
 		cr->stroke();
+		
+		_legend.Draw(cr, *this);
 	}
 }
 
-void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet)
+void Plot2D::render(Cairo::RefPtr<Cairo::Context>& cr, Plot2DPointSet& pointSet)
 {
 	pointSet.Sort();
 
-	double
-		xLeft = _logarithmicXAxis ? MinPositiveX() : MinX(),
-		xRight = _logarithmicXAxis ? MaxPositiveX() : MaxX(),
-		yMin = _logarithmicYAxis ? MinPositiveY() : MinY(),
-		yMax = _logarithmicYAxis ? MaxPositiveY() : MaxY();
+	auto xRange = _logarithmicXAxis ? RangePositiveX() : RangeX();
+	auto yRange = _logarithmicYAxis ? RangePositiveY() : RangeY();
+	double xLeft = xRange.first, xRight = xRange.second;
+	double yMin = yRange.first, yMax = yRange.second;
+		
 	if(!std::isfinite(xLeft) || !std::isfinite(xRight))
 	{
 		xLeft = -1;
@@ -337,5 +340,6 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet)
 		cr->line_to(plotWidth + plotLeftMargin, yMax * plotHeight / (yMax - yMin) + _topMargin);
 		cr->stroke();
 	}
+	
 	cr->reset_clip();
 }

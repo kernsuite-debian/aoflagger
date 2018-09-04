@@ -75,12 +75,13 @@ namespace rfiStrategy {
 			void writeSetFlaggingAction(const class SetFlaggingAction &action);
 			void writeSetImageAction(const class SetImageAction &action);
 			void writeSlidingWindowFitAction(const class SlidingWindowFitAction &action);
-			void writeStatisticalFlagAction(const class StatisticalFlagAction &action);
+			void writeMorphologicalFlagAction(const class MorphologicalFlagAction &action);
 			void writeStrategy(const class Strategy &action);
 			void writeSVDAction(const class SVDAction &action);
 			void writeSumThresholdAction(const class SumThresholdAction &action);
 			void writeTimeConvolutionAction(const class TimeConvolutionAction &action);
 			void writeTimeSelectionAction(const class TimeSelectionAction &action);
+			void writeVisualizeAction(const class VisualizeAction &action);
 			void writeWriteDataAction(const class WriteDataAction &action);
 			void writeWriteFlagsAction(const class WriteFlagsAction &action);
 

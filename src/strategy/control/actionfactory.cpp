@@ -1,39 +1,6 @@
 #include "actionfactory.h"
 
-#include "../actions/absthresholdaction.h"
-#include "../actions/action.h"
-#include "../actions/baselineselectionaction.h"
-#include "../actions/calibratepassbandaction.h"
-#include "../actions/changeresolutionaction.h"
-#include "../actions/combineflagresultsaction.h"
-#include "../actions/cutareaaction.h"
-#include "../actions/eigenvalueverticalaction.h"
-#include "../actions/foreachbaselineaction.h"
-#include "../actions/foreachcomplexcomponentaction.h"
-#include "../actions/foreachpolarisationaction.h"
-#include "../actions/foreachsimulatedbaselineaction.h"
-#include "../actions/foreachmsaction.h"
-#include "../actions/frequencyconvolutionaction.h"
-#include "../actions/frequencyselectionaction.h"
-#include "../actions/fringestopaction.h"
-#include "../actions/imageraction.h"
-#include "../actions/iterationaction.h"
-#include "../actions/highpassfilteraction.h"
-#include "../actions/normalizevarianceaction.h"
-#include "../actions/plotaction.h"
-#include "../actions/quickcalibrateaction.h"
-#include "../actions/resamplingaction.h"
-#include "../actions/saveheatmapaction.h"
-#include "../actions/setflaggingaction.h"
-#include "../actions/setimageaction.h"
-#include "../actions/slidingwindowfitaction.h"
-#include "../actions/statisticalflagaction.h"
-#include "../actions/svdaction.h"
-#include "../actions/sumthresholdaction.h"
-#include "../actions/timeconvolutionaction.h"
-#include "../actions/timeselectionaction.h"
-#include "../actions/writedataaction.h"
-#include "../actions/writeflagsaction.h"
+#include "../actions/all.h"
 
 namespace rfiStrategy {
 
@@ -72,6 +39,7 @@ const std::vector<std::string> ActionFactory::GetActionList()
 	list.push_back("SumThreshold");
 	list.push_back("Time convolution");
 	list.push_back("Time selection");
+	list.push_back("Visualization");
 	list.push_back("Write data");
 	list.push_back("Write flags");
 	return list;
@@ -134,13 +102,15 @@ std::unique_ptr<Action> ActionFactory::CreateAction(const std::string &action)
 	else if(action == "Sliding window fit")
 		return make<SlidingWindowFitAction>();
 	else if(action == "Statistical flagging")
-		return make<StatisticalFlagAction>();
+		return make<MorphologicalFlagAction>();
 	else if(action == "SumThreshold")
 		return make<SumThresholdAction>();
 	else if(action == "Time convolution")
 		return make<TimeConvolutionAction>();
 	else if(action == "Time selection")
 		return make<TimeSelectionAction>();
+	else if(action == "Visualization")
+		return make<VisualizeAction>();
 	else if(action == "Write data")
 		return make<WriteDataAction>();
 	else if(action == "Write flags")

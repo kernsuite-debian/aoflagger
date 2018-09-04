@@ -72,33 +72,39 @@ void AOQPlotPageController::plotStatistic(QualityTablesFormatter::StatisticKind 
 	const std::map<double, DefaultStatistics> &statistics = getStatistics();
 	std::ostringstream s;
 	int polIndex = -1;
-	if(pol == PolI) {
-		s << "Polarization I";
-	}
-	else {
-		s << "Polarization " << pol;
-	}
+	s << StatisticsDerivator::GetDescription(kind);
 	switch(pol)
 	{
 	case PolI:
+		s << ", pol I";
+		polIndex = 0;
+		break;
 	case PolPP:
+		s << ", pol PP";
 		polIndex = 0;
 		break;
 	case PolPQ:
+		s << ", pol PQ";
 		if(polCount == 4)
 			polIndex = 1;
 		break;
 	case PolQP:
+		s << ", pol QP";
 		if(polCount == 4)
 			polIndex = 2;
 		break;
 	case PolQQ:
+		s << ", pol QQ";
 		if(polCount == 4)
 			polIndex = 3;
 		else if(polCount == 2)
 			polIndex = 1;
 		break;
 	}
+	if(phase == RealPhaseType)
+		s << " (real)";
+	else if(phase == ImaginaryPhaseType)
+		s << " (imag)";
 	if(polIndex >= 0)
 	{
 		startLine(_plot, s.str(), lineIndex, yDesc);

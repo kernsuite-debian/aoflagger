@@ -11,10 +11,10 @@
 
 #include "../strategy/control/defaultstrategy.h"
 
-MSOptionWindow::MSOptionWindow(class RFIGuiController &controller, const std::string &filename) :
+MSOptionWindow::MSOptionWindow(class RFIGuiController &controller, const std::vector<std::string>& filenames) :
 	Gtk::Window(),
 	_controller(controller),
-	_filename(filename),
+	_filenames(filenames),
 	_openButton("_Open", true),
 	_dataKindFrame("Columns to read"),
 	_polarisationFrame("Polarisation to read"),
@@ -140,7 +140,7 @@ void MSOptionWindow::onOpen()
 	
 	bool loadStrategy = _loadOptimizedStrategy.get_active();
 	
-	_controller.Open(_filename, ioMode, readUVW, dataColumnName, subtractModel, polCount, loadStrategy, combineSPWs);
+	_controller.Open(_filenames, ioMode, readUVW, dataColumnName, subtractModel, polCount, loadStrategy, combineSPWs);
 	
 	hide();
 }

@@ -23,13 +23,13 @@ class VerticalPlotScale final {
 			_metricsAreInitialized = false;
 		}
 		
-		double GetWidth(Cairo::RefPtr<Cairo::Context> cairo)
+		double GetWidth(const Cairo::RefPtr<Cairo::Context>& cairo)
 		{
 			initializeMetrics(cairo);
 			return _width;
 		}
 		
-		double GetTextHeight(Cairo::RefPtr<Cairo::Context> cairo);
+		double GetTextHeight(const Cairo::RefPtr<Cairo::Context>& cairo);
 		
 		void SetDrawWithDescription(bool drawWithDescription)
 		{
@@ -52,16 +52,16 @@ class VerticalPlotScale final {
 			_metricsAreInitialized = false;
 		}
 		
-		void Draw(Cairo::RefPtr<Cairo::Context> cairo, double offsetX, double offsetY);
+		void Draw(const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX, double offsetY);
 		void InitializeNumericTicks(double min, double max);
 		void InitializeLogarithmicTicks(double min, double max);
 		double UnitToAxis(double unitValue) const;
 		double AxisToUnit(double axisValue) const;
 		
 	private:
-		void drawUnits(Cairo::RefPtr<Cairo::Context> cairo, double offsetX, double offsetY);
-		bool ticksFit(Cairo::RefPtr<Cairo::Context> cairo);
-		void initializeMetrics(Cairo::RefPtr<Cairo::Context> cairo); 
+		void drawUnits(const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX, double offsetY);
+		bool ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo);
+		void initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo); 
 		double getTickYPosition(const Tick& tick);
 
 		double _plotWidth, _plotHeight, _fromTop;

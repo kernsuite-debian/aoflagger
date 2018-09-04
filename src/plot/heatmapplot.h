@@ -31,7 +31,7 @@ public:
 	TFMap GetColorMap() const { return _colorMap; }
 	void SetColorMap(TFMap colorMap) { _colorMap = colorMap; }
 	
-	void Draw(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height, bool isInvalidated); 
+	void Draw(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height, bool isInvalidated); 
 
 	Image2DCPtr Image() const { return _image; }
 	void SetImage(Image2DCPtr image) { _image = image; }
@@ -58,22 +58,13 @@ public:
 	}
 	enum ScaleOption ScaleOption() const { return _scaleOption; }
 	
-	void SetHorizontalDomain(double start, double end)
-	{
-		_startHorizontal = start;
-		_endHorizontal = end;
-		_onZoomChanged.emit();
-	}
-	void SetVerticalDomain(double start, double end)
-	{
-		_startVertical = start;
-		_endVertical = end;
-		_onZoomChanged.emit();
-	}
 	void ZoomFit();
 	void ZoomIn();
 	void ZoomInOn(size_t x, size_t y);
 	void ZoomOut();
+	void ZoomTo(size_t x1, size_t y1, size_t x2, size_t y2);
+	void Pan(int xDisplacement, int yDisplacement);
+	
 	double StartHorizontal() const { return _startHorizontal; }
 	double EndHorizontal() const { return _endHorizontal; }
 	double StartVertical() const { return _startVertical; }
@@ -199,9 +190,10 @@ public:
 	sigc::signal<void> &OnZoomChanged() { return _onZoomChanged; }
 
 	bool ConvertToUnits(double mouseX, double mouseY, int &posX, int &posY) const;
+	bool ConvertToScreen(int posX, int posY, double& mouseX, double& mouseY) const;
 	
 private:
-	void redrawWithoutChanges(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height);
+	void redrawWithoutChanges(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height);
 
 	bool _isInitialized;
 	unsigned _initializedWidth, _initializedHeight;
@@ -240,7 +232,7 @@ private:
 	std::unique_ptr<class ThresholdConfig> _highlightConfig;
 	
 	void findMinMax(const Image2D* image, const Mask2D* mask, num_t& min, num_t& max);
-	void update(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height);
+	void update(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height);
 	void downsampleImageBuffer(unsigned newWidth, unsigned newHeight);
 	std::unique_ptr<class ColorMap> createColorMap();
 	std::string actualTitleText() const

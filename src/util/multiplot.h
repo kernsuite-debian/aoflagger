@@ -10,11 +10,10 @@
 class MultiPlot {
 	public:
 		MultiPlot(Plot2D &plot, size_t plotCount);
-		~MultiPlot();
 
 		void AddPoint(size_t plotIndex, num_t x, num_t y)
 		{
-			_points[plotIndex]->push_back(Point(x, y));
+			_points[plotIndex].push_back(Point(x, y));
 		}
 		void SetLegend(int index, const std::string &title)
 		{
@@ -38,8 +37,8 @@ class MultiPlot {
 			num_t x, y;
 		};
 		typedef std::vector<struct Point> PointList;
-		std::string *_legends;
-		PointList **_points;
+		std::vector<std::string> _legends;
+		std::vector<PointList> _points;
 		size_t _plotCount;
 		Plot2D &_plot;
 		std::string _xAxisText, _yAxisText;

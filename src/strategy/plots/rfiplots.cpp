@@ -134,8 +134,6 @@ void RFIPlots::MakePowerSpectrumPlot(Plot2DPointSet &pointSet, Image2DCPtr image
 		pointSet.SetYDesc("Power (undefined units)");
 	}
 
-	long double min = 1e100, max = 0.0;
-
 	for(size_t y=0;y<image->Height();++y) {
 		long double sum = 0.0L;
 		size_t count = 0;
@@ -145,18 +143,16 @@ void RFIPlots::MakePowerSpectrumPlot(Plot2DPointSet &pointSet, Image2DCPtr image
 				++count;
 			}
 		}
+		long double v;
 		if(count > 0)
-		{
-			long double v = sum/count;
-			if(v < min) min = v;
-			if(v > max) max = v;
-			if(hasBandInfo)
-				pointSet.PushDataPoint(metaData->Band().channels[y].frequencyHz/1000000.0, v);
-			else
-				pointSet.PushDataPoint(y, v);
-		}
+			v = sum/count;
+		else
+			v = std::numeric_limits<long double>::quiet_NaN();
+		if(hasBandInfo)
+			pointSet.PushDataPoint(metaData->Band().channels[y].frequencyHz/1000000.0, v);
+		else
+			pointSet.PushDataPoint(y, v);
 	}
-	pointSet.SetYRange(min * 0.9, max / 0.9);
 }
 
 void RFIPlots::MakePowerTimePlot(Plot2DPointSet &pointSet, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData)
@@ -423,43 +419,4 @@ void RFIPlots::MakeRMSSpectrumPlot(Plot2DPointSet &pointSet, Image2DCPtr image, 
 		}
 	}
 	pointSet.SetYRange(min, max);
-}
-
-void RFIPlots::MakeSNRSpectrumPlot(Plot2DPointSet &plot, Image2DCPtr image, Image2DCPtr model, Mask2DCPtr mask)
-{
-	plot.SetXDesc("Channel");
-	plot.SetYDesc("Visibility RMS");
-
-	long double min = 1e100, max = 0.0;
-
-	for(size_t y=0;y<image->Height();++y) {
-		num_t v = FrequencySNR(image, model, mask, y);
-
-		if(v < min) min = v;
-		if(v > max) max = v;
-		plot.PushDataPoint(y, v);
-	}
-	plot.SetYRange(min, max);
-}
-
-num_t RFIPlots::FrequencySNR(Image2DCPtr image, Image2DCPtr model, Mask2DCPtr mask, unsigned channel)
-{
-	num_t sum = 0.0;
-	size_t count = 0;
-	for(unsigned x=0;x<image->Width();++x)
-	{
-		if(!mask->Value(x, channel))
-		{
-			num_t noise = fabsn(image->Value(x, channel) - model->Value(x, channel));
-			num_t signal = fabsn(model->Value(x, channel));
-			if(std::isfinite(signal) && std::isfinite(noise))
-			{
-				num_t snr = logn(signal / noise);
-				sum += snr;
-	
-				++count;
-			}
-		}
-	}
-	return expn(sum / count);
 }

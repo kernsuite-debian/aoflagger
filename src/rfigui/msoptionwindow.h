@@ -13,7 +13,7 @@
 
 class MSOptionWindow : public Gtk::Window {
 	public:
-		MSOptionWindow(class RFIGuiController &controller, const std::string &filename);
+		MSOptionWindow(class RFIGuiController &controller, const std::vector<std::string>& filenames);
 		~MSOptionWindow();
 		void onOpen();
 	private:
@@ -21,7 +21,7 @@ class MSOptionWindow : public Gtk::Window {
 		void initPolarisationButtons();
 
 		class RFIGuiController &_controller;
-		const std::string _filename;
+		const std::vector<std::string> _filenames;
 
 		Gtk::ButtonBox _bottomButtonBox;
 		Gtk::VBox _leftVBox, _rightVBox;

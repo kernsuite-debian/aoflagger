@@ -31,10 +31,13 @@ class StrategyReader {
 
 		xmlNode *getTextNode(xmlNode *node, const char *subNodeName, bool allowEmpty = false) const;
 		int getInt(xmlNode *node, const char *name) const;
+		int getIntOr(xmlNode *node, const char *name, int alternative) const;
 		double getDouble(xmlNode *node, const char *name) const;
 		double getDoubleOr(xmlNode *node, const char *name, double alternative) const;
 		std::string getString(xmlNode *node, const char *name) const;
 		bool getBool(xmlNode *node, const char *name) const { return getInt(node,name) != 0; }
+		bool getBoolOr(xmlNode *node, const char *name, bool alternative) const
+		{ return getIntOr(node, name, alternative ? 1 : 0) != 0; }
 
 		class Action *parseAbsThresholdAction(xmlNode *node);
 		//class Action *parseAddStatistics(xmlNode *node);
@@ -60,11 +63,12 @@ class StrategyReader {
 		class Action *parseSetFlaggingAction(xmlNode *node);
 		class Action *parseSetImageAction(xmlNode *node);
 		class Action *parseSlidingWindowFitAction(xmlNode *node);
-		class Action *parseStatisticalFlagAction(xmlNode *node);
+		class Action *parseMorphologicalFlagAction(xmlNode *node);
 		class Action *parseSVDAction(xmlNode *node);
 		class Action *parseSumThresholdAction(xmlNode *node);
 		class Action *parseTimeConvolutionAction(xmlNode *node);
 		class Action *parseTimeSelectionAction(xmlNode *node);
+		class Action *parseVisualizeAction(xmlNode *node);
 		class Action *parseWriteDataAction(xmlNode *node);
 		class Action *parseWriteFlagsAction(xmlNode *node);
 

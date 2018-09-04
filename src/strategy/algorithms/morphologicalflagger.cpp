@@ -1,15 +1,6 @@
-#include "statisticalflagger.h"
+#include "morphologicalflagger.h"
 
-StatisticalFlagger::StatisticalFlagger()
-{
-}
-
-
-StatisticalFlagger::~StatisticalFlagger()
-{
-}
-
-bool StatisticalFlagger::SquareContainsFlag(const Mask2D* mask, size_t xLeft, size_t yTop, size_t xRight, size_t yBottom)
+bool MorphologicalFlagger::SquareContainsFlag(const Mask2D* mask, size_t xLeft, size_t yTop, size_t xRight, size_t yBottom)
 {
 	for(size_t y=yTop;y<=yBottom;++y)
 	{
@@ -22,7 +13,7 @@ bool StatisticalFlagger::SquareContainsFlag(const Mask2D* mask, size_t xLeft, si
 	return false;
 }
 
-void StatisticalFlagger::DilateFlagsHorizontally(Mask2D* mask, size_t timeSize)
+void MorphologicalFlagger::DilateFlagsHorizontally(Mask2D* mask, size_t timeSize)
 {
 	if(timeSize != 0)
 	{
@@ -66,7 +57,7 @@ void StatisticalFlagger::DilateFlagsHorizontally(Mask2D* mask, size_t timeSize)
 	}
 }
 
-void StatisticalFlagger::DilateFlagsVertically(Mask2D* mask, size_t frequencySize)
+void MorphologicalFlagger::DilateFlagsVertically(Mask2D* mask, size_t frequencySize)
 {
 	if(frequencySize != 0)
 	{
@@ -110,7 +101,7 @@ void StatisticalFlagger::DilateFlagsVertically(Mask2D* mask, size_t frequencySiz
 	}
 }
 
-void StatisticalFlagger::LineRemover(Mask2D* mask, size_t maxTimeContamination, size_t maxFreqContamination)
+void MorphologicalFlagger::LineRemover(Mask2D* mask, size_t maxTimeContamination, size_t maxFreqContamination)
 {
 	for(size_t x=0;x<mask->Width();++x)
 	{
@@ -137,7 +128,7 @@ void StatisticalFlagger::LineRemover(Mask2D* mask, size_t maxTimeContamination, 
 	}
 }
 
-void StatisticalFlagger::FlagTime(Mask2D* mask, size_t x)
+void MorphologicalFlagger::FlagTime(Mask2D* mask, size_t x)
 {
 	for(size_t y=0;y<mask->Height();++y)
 	{
@@ -145,7 +136,7 @@ void StatisticalFlagger::FlagTime(Mask2D* mask, size_t x)
 	}
 }
 
-void StatisticalFlagger::FlagFrequency(Mask2D* mask, size_t y)
+void MorphologicalFlagger::FlagFrequency(Mask2D* mask, size_t y)
 {
 	for(size_t x=0;x<mask->Width();++x)
 	{
@@ -153,7 +144,7 @@ void StatisticalFlagger::FlagFrequency(Mask2D* mask, size_t y)
 	}
 }
 
-void StatisticalFlagger::MaskToInts(const Mask2D* mask, int **maskAsInt)
+void MorphologicalFlagger::MaskToInts(const Mask2D* mask, int **maskAsInt)
 {
 	for(size_t y=0;y<mask->Height();++y)
 	{
@@ -165,7 +156,7 @@ void StatisticalFlagger::MaskToInts(const Mask2D* mask, int **maskAsInt)
 	}
 }
 
-void StatisticalFlagger::SumToLeft(const Mask2D* mask, int **sums, size_t width, size_t step, bool reverse)
+void MorphologicalFlagger::SumToLeft(const Mask2D* mask, int **sums, size_t width, size_t step, bool reverse)
 {
 	if(reverse)
 	{
@@ -191,7 +182,7 @@ void StatisticalFlagger::SumToLeft(const Mask2D* mask, int **sums, size_t width,
 	}
 }
 
-void StatisticalFlagger::SumToTop(const Mask2D* mask, int **sums, size_t width, size_t step, bool reverse)
+void MorphologicalFlagger::SumToTop(const Mask2D* mask, int **sums, size_t width, size_t step, bool reverse)
 {
 	if(reverse)
 	{
@@ -217,7 +208,7 @@ void StatisticalFlagger::SumToTop(const Mask2D* mask, int **sums, size_t width, 
 	}
 }
 
-void StatisticalFlagger::ThresholdTime(const Mask2D* mask, int **flagMarks, int **sums, int thresholdLevel, int width)
+void MorphologicalFlagger::ThresholdTime(const Mask2D* mask, int **flagMarks, int **sums, int thresholdLevel, int width)
 {
 	int halfWidthL = (width-1) / 2;
 	int halfWidthR = (width-1) / 2;
@@ -237,7 +228,7 @@ void StatisticalFlagger::ThresholdTime(const Mask2D* mask, int **flagMarks, int 
 	}
 }
 
-void StatisticalFlagger::ThresholdFrequency(const Mask2D* mask, int **flagMarks, int **sums, int thresholdLevel, int width)
+void MorphologicalFlagger::ThresholdFrequency(const Mask2D* mask, int **flagMarks, int **sums, int thresholdLevel, int width)
 {
 	int halfWidthT = (width-1) / 2;
 	int halfWidthB = (width-1) / 2;
@@ -257,7 +248,7 @@ void StatisticalFlagger::ThresholdFrequency(const Mask2D* mask, int **flagMarks,
 	}
 }
 
-void StatisticalFlagger::ApplyMarksInTime(Mask2D* mask, int **flagMarks)
+void MorphologicalFlagger::ApplyMarksInTime(Mask2D* mask, int **flagMarks)
 {
 	for(size_t y=0;y<mask->Height();++y)
 	{
@@ -271,7 +262,7 @@ void StatisticalFlagger::ApplyMarksInTime(Mask2D* mask, int **flagMarks)
 	}
 }
 
-void StatisticalFlagger::ApplyMarksInFrequency(Mask2D* mask, int **flagMarks)
+void MorphologicalFlagger::ApplyMarksInFrequency(Mask2D* mask, int **flagMarks)
 {
 	for(size_t x=0;x<mask->Width();++x)
 	{
@@ -285,7 +276,7 @@ void StatisticalFlagger::ApplyMarksInFrequency(Mask2D* mask, int **flagMarks)
 	}
 }
 
-void StatisticalFlagger::DensityTimeFlagger(Mask2D* mask, num_t minimumGoodDataRatio)
+void MorphologicalFlagger::DensityTimeFlagger(Mask2D* mask, num_t minimumGoodDataRatio)
 {
 	num_t width = 2.0;
 	size_t iterations = 0, step = 1;
@@ -336,7 +327,7 @@ void StatisticalFlagger::DensityTimeFlagger(Mask2D* mask, num_t minimumGoodDataR
 	delete[] flagMarks;
 }
 
-void StatisticalFlagger::DensityFrequencyFlagger(Mask2D* mask, num_t minimumGoodDataRatio)
+void MorphologicalFlagger::DensityFrequencyFlagger(Mask2D* mask, num_t minimumGoodDataRatio)
 {
 	num_t width = 2.0;
 	size_t iterations = 0, step = 1;

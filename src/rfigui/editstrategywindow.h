@@ -20,8 +20,7 @@
 class EditStrategyWindow : public Gtk::Window
 {
 	public:
-		explicit EditStrategyWindow(class StrategyController &strategyController);
-		~EditStrategyWindow();
+		explicit EditStrategyWindow(class RFIGuiController& guiController, class StrategyController &strategyController);
 
 		void AddAction(std::unique_ptr<rfiStrategy::Action> newAction);
 		void UpdateAction(rfiStrategy::Action *action);
@@ -42,7 +41,6 @@ class EditStrategyWindow : public Gtk::Window
 		void onOpenClicked();
 
 		void onLoadEmptyClicked();
-		void onLoadDefaultClicked();
 		void onWizardClicked();
 		
 		void onStrategyChanged();
@@ -79,16 +77,17 @@ class EditStrategyWindow : public Gtk::Window
 		Gtk::ButtonBox _strategyEditButtonBox, _strategyFileButtonBox, _strategyLoadDefaultsButtonBox;
 		Gtk::MenuToolButton _addActionButton;
 		Gtk::Button _removeActionButton, _moveUpButton, _moveDownButton;
-		Gtk::Button _loadEmptyButton, _loadDefaultButton, _wizardButton, _saveButton, _openButton;
+		Gtk::Button _loadEmptyButton, _wizardButton, _saveButton, _openButton;
 		ModelColumns _columns;
 		Gtk::ScrolledWindow _viewScrollWindow;
 		Gtk::TreeView _view;
 		Glib::RefPtr<Gtk::TreeStore> _store;
-		Gtk::Menu *_addMenu;
+		std::unique_ptr<Gtk::Menu> _addMenu;
 		bool _disableUpdates;
 
+		class RFIGuiController& _guiController;
 		Gtk::Frame *_rightFrame;
-		Gtk::Window *_wizardWindow;
+		std::unique_ptr<Gtk::Window> _wizardWindow;
 };
 
 #endif

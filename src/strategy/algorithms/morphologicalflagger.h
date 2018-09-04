@@ -1,15 +1,12 @@
-#ifndef STATISTICALFLAGGER_H
-#define STATISTICALFLAGGER_H
+#ifndef MORPHOLOGICAL_FLAGGER_H
+#define MORPHOLOGICAL_FLAGGER_H
 
 #include <string>
 
 #include "../../structures/mask2d.h"
 
-class StatisticalFlagger{
+class MorphologicalFlagger {
 	public:
-		StatisticalFlagger();
-		~StatisticalFlagger();
-		
 		static inline bool SquareContainsFlag(const Mask2D* mask, size_t xLeft, size_t yTop, size_t xRight, size_t yBottom);
 		static void DilateFlags(Mask2D* mask, size_t timeSize, size_t frequencySize)
 		{

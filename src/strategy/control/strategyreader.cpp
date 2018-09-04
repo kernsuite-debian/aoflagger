@@ -2,38 +2,7 @@
 
 #include "../../util/numberparser.h"
 
-#include "../actions/absthresholdaction.h"
-#include "../actions/action.h"
-#include "../actions/baselineselectionaction.h"
-#include "../actions/calibratepassbandaction.h"
-#include "../actions/changeresolutionaction.h"
-#include "../actions/combineflagresultsaction.h"
-#include "../actions/cutareaaction.h"
-#include "../actions/eigenvalueverticalaction.h"
-#include "../actions/foreachbaselineaction.h"
-#include "../actions/foreachcomplexcomponentaction.h"
-#include "../actions/foreachmsaction.h"
-#include "../actions/foreachpolarisationaction.h"
-#include "../actions/frequencyconvolutionaction.h"
-#include "../actions/frequencyselectionaction.h"
-#include "../actions/fringestopaction.h"
-#include "../actions/highpassfilteraction.h"
-#include "../actions/imageraction.h"
-#include "../actions/iterationaction.h"
-#include "../actions/normalizevarianceaction.h"
-#include "../actions/plotaction.h"
-#include "../actions/quickcalibrateaction.h"
-#include "../actions/setflaggingaction.h"
-#include "../actions/setimageaction.h"
-#include "../actions/slidingwindowfitaction.h"
-#include "../actions/statisticalflagaction.h"
-#include "../actions/strategy.h"
-#include "../actions/svdaction.h"
-#include "../actions/sumthresholdaction.h"
-#include "../actions/timeconvolutionaction.h"
-#include "../actions/timeselectionaction.h"
-#include "../actions/writedataaction.h"
-#include "../actions/writeflagsaction.h"
+#include "../actions/all.h"
 
 #define ENCODING "UTF-8"
 
@@ -92,7 +61,7 @@ std::unique_ptr<Strategy> StrategyReader::CreateStrategyFromFile(const std::stri
 			if(formatVersion < STRATEGY_FILE_FORMAT_VERSION_REQUIRED)
 			{
 				std::stringstream s;
-				s << "This file is too old for the software, please recreate the strategy. File format version: " << formatVersion << ", oldest version that this software understands: " << STRATEGY_FILE_FORMAT_VERSION_REQUIRED << " (these versions are numbered differently from the software).";
+				s << "This file is too old for the software, please recreate the strategy. File format version: " << formatVersion << ", oldest version that this software understands: " << STRATEGY_FILE_FORMAT_VERSION_REQUIRED << " (these numbered are for the file format version, which is different from the version of the software).";
 				throw StrategyReaderError(s.str());
 			}
 			
@@ -196,6 +165,15 @@ int StrategyReader::getInt(xmlNode *node, const char *name) const
 	return atoi((const char *) valNode->content);
 }
 
+int StrategyReader::getIntOr(xmlNode *node, const char *name, int alternative) const 
+{
+	xmlNode *valNode = getTextNode(node, name, true);
+	if(valNode == nullptr)
+		return alternative;
+	else
+		return atoi((const char *) valNode->content);
+}
+
 double StrategyReader::getDouble(xmlNode *node, const char *name) const 
 {
 	xmlNode *valNode = getTextNode(node, name);
@@ -205,7 +183,7 @@ double StrategyReader::getDouble(xmlNode *node, const char *name) const
 double StrategyReader::getDoubleOr(xmlNode *node, const char *name, double alternative) const 
 {
 	xmlNode *valNode = getTextNode(node, name, true);
-	if(valNode == 0)
+	if(valNode == nullptr)
 		return alternative;
 	else
 		return NumberParser::ToDouble((const char *) valNode->content);
@@ -222,7 +200,7 @@ std::string StrategyReader::getString(xmlNode *node, const char *name) const
 
 Action *StrategyReader::parseAction(xmlNode *node)
 {
-	Action *newAction = 0;
+	Action *newAction = nullptr;
 	xmlChar *typeCh = xmlGetProp(node, BAD_CAST "type");
 	if(typeCh == 0)
 		throw StrategyReaderError("Action tag did not have 'type' parameter");
@@ -274,7 +252,7 @@ Action *StrategyReader::parseAction(xmlNode *node)
 	else if(typeStr == "SlidingWindowFitAction")
 		newAction = parseSlidingWindowFitAction(node);
 	else if(typeStr == "StatisticalFlagAction")
-		newAction = parseStatisticalFlagAction(node);
+		newAction = parseMorphologicalFlagAction(node);
 	else if(typeStr == "SVDAction")
 		newAction = parseSVDAction(node);
 	else if(typeStr == "Strategy")
@@ -285,12 +263,14 @@ Action *StrategyReader::parseAction(xmlNode *node)
 		newAction = parseTimeConvolutionAction(node);
 	else if(typeStr == "TimeSelectionAction")
 		newAction = parseTimeSelectionAction(node);
+	else if(typeStr == "VisualizeAction")
+		newAction = parseVisualizeAction(node);
 	else if(typeStr == "WriteDataAction")
 		newAction = parseWriteDataAction(node);
 	else if(typeStr == "WriteFlagsAction")
 		newAction = parseWriteFlagsAction(node);
 	xmlFree(typeCh);
-	if(newAction == 0)
+	if(newAction == nullptr)
 	{
 		std::stringstream s;
 		s << "Unknown action type '" << typeStr << "' in xml file";
@@ -576,9 +556,9 @@ class Action *StrategyReader::parseSlidingWindowFitAction(xmlNode *node)
 	return newAction;
 }
 
-class Action *StrategyReader::parseStatisticalFlagAction(xmlNode *node)
+class Action *StrategyReader::parseMorphologicalFlagAction(xmlNode *node)
 {
-	StatisticalFlagAction *newAction = new StatisticalFlagAction();
+	MorphologicalFlagAction* newAction = new MorphologicalFlagAction();
 	newAction->SetEnlargeFrequencySize(getInt(node, "enlarge-frequency-size"));
 	newAction->SetEnlargeTimeSize(getInt(node, "enlarge-time-size"));
 	newAction->SetMinAvailableFrequenciesRatio(getDoubleOr(node, "min-available-frequencies-ratio", 0.0));
@@ -586,6 +566,7 @@ class Action *StrategyReader::parseStatisticalFlagAction(xmlNode *node)
 	newAction->SetMinAvailableTFRatio(getDoubleOr(node, "min-available-tf-ratio", 0.0));
 	newAction->SetMinimumGoodFrequencyRatio(getDouble(node, "minimum-good-frequency-ratio"));
 	newAction->SetMinimumGoodTimeRatio(getDouble(node, "minimum-good-time-ratio"));
+	newAction->SetExcludeOriginalFlags(getBoolOr(node, "exclude-original-flags", false));
 	return newAction;
 }
 
@@ -610,6 +591,7 @@ class Action *StrategyReader::parseSumThresholdAction(xmlNode *node)
 	newAction->SetFrequencyDirectionSensitivity(freqSensitivity);
 	newAction->SetTimeDirectionFlagging(getBool(node, "time-direction-flagging"));
 	newAction->SetFrequencyDirectionFlagging(getBool(node, "frequency-direction-flagging"));
+	newAction->SetExcludeOriginalFlags(getBoolOr(node, "exclude-original-flags", false));
 	return newAction;
 }
 
@@ -630,6 +612,23 @@ class Action *StrategyReader::parseTimeSelectionAction(xmlNode *node)
 {
 	TimeSelectionAction *newAction = new TimeSelectionAction();
 	newAction->SetThreshold(getDouble(node, "threshold"));
+	return newAction;
+}
+
+class Action *StrategyReader::parseVisualizeAction(xmlNode *node)
+{
+	VisualizeAction* newAction = new VisualizeAction();
+	newAction->SetLabel(getString(node, "label"));
+	std::string sourceStr = getString(node, "source");
+	if(sourceStr == "original")
+		newAction->SetSource(VisualizeAction::FromOriginal);
+	else if(sourceStr == "revised")
+		newAction->SetSource(VisualizeAction::FromRevised);
+	else if(sourceStr == "contaminated")
+		newAction->SetSource(VisualizeAction::FromContaminated);
+	else
+		throw StrategyReaderError("Incorrect 'source' given in visualize action");
+	newAction->SetSortingIndex(getInt(node, "sorting-index"));
 	return newAction;
 }
 

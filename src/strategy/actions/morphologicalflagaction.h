@@ -7,18 +7,19 @@
 
 namespace rfiStrategy {
 
-	class StatisticalFlagAction : public Action
+	class MorphologicalFlagAction : public Action
 	{
 		public:
-			StatisticalFlagAction()
+			MorphologicalFlagAction()
 			: _enlargeTimeSize(0), _enlargeFrequencySize(0),
 			_minAvailableTimesRatio(0.0), _minAvailableFrequenciesRatio(0.0),
 			_minAvailableTFRatio(0.0),
-			_minimumGoodTimeRatio(0.2), _minimumGoodFrequencyRatio(0.2) { }
-			virtual ~StatisticalFlagAction() { }
+			_minimumGoodTimeRatio(0.2), _minimumGoodFrequencyRatio(0.2),
+			_excludeOriginalFlags(false)
+			{ }
 			virtual std::string Description() final override
 			{
-				return "Statistical flagging";
+				return "Morphological flagging";
 			}
 			virtual void Perform(class ArtifactSet &artifacts, class ProgressListener &listener) final override;
 			virtual ActionType Type() const final override { return StatisticalFlagActionType; }
@@ -40,6 +41,9 @@ namespace rfiStrategy {
 			num_t MinimumGoodFrequencyRatio() const { return _minimumGoodFrequencyRatio; }
 			void SetMinimumGoodFrequencyRatio(num_t newValue) { _minimumGoodFrequencyRatio = newValue; }
 			
+			bool ExcludeOriginalFlags() const { return _excludeOriginalFlags; }
+			void SetExcludeOriginalFlags(bool newValue) { _excludeOriginalFlags = newValue; }
+			
 		private:
 			size_t _enlargeTimeSize;
 			size_t _enlargeFrequencySize;
@@ -48,6 +52,7 @@ namespace rfiStrategy {
 			num_t _minAvailableTFRatio;
 			num_t _minimumGoodTimeRatio;
 			num_t _minimumGoodFrequencyRatio;
+			bool _excludeOriginalFlags;
 	};
 
 }

@@ -1,6 +1,7 @@
 #include "imageset.h"
 
 #include "bhfitsimageset.h"
+#include "coaddedimageset.h"
 #include "filterbankset.h"
 #include "fitsimageset.h"
 #include "msimageset.h"
@@ -11,28 +12,35 @@
 #include <boost/algorithm/string.hpp>
 
 namespace rfiStrategy {
-	ImageSet *ImageSet::Create(const std::string &file, BaselineIOMode ioMode)
+	ImageSet *ImageSet::Create(const std::vector<std::string>& files, BaselineIOMode ioMode)
 	{
-		if(IsFitsFile(file))
-			return new FitsImageSet(file);
-		else if(IsBHFitsFile(file))
-			return new BHFitsImageSet(file);
-		else if(IsRCPRawFile(file))
-			throw std::runtime_error("Don't know how to open RCP raw files");
-		else if(IsTKPRawFile(file))
-			throw std::runtime_error("Don't know how to open TKP raw files");
-		else if(IsRawDescFile(file))
-			throw std::runtime_error("Don't know how to open RCP desc files");
-		else if(IsParmFile(file))
-			return new ParmImageSet(file);
-		else if(IsPngFile(file))
-			return new PngReader(file);
-		else if(IsFilterBankFile(file))
-			return new FilterBankSet(file);
-		else if(IsQualityStatSet(file))
-			return new QualityStatImageSet(file);
-		else
-			return new MSImageSet(file, ioMode);
+		if(files.size() == 1)
+		{
+			const std::string& file = files.front();
+			if(IsFitsFile(file))
+				return new FitsImageSet(file);
+			else if(IsBHFitsFile(file))
+				return new BHFitsImageSet(file);
+			else if(IsRCPRawFile(file))
+				throw std::runtime_error("Don't know how to open RCP raw files");
+			else if(IsTKPRawFile(file))
+				throw std::runtime_error("Don't know how to open TKP raw files");
+			else if(IsRawDescFile(file))
+				throw std::runtime_error("Don't know how to open RCP desc files");
+			else if(IsParmFile(file))
+				return new ParmImageSet(file);
+			else if(IsPngFile(file))
+				return new PngReader(file);
+			else if(IsFilterBankFile(file))
+				return new FilterBankSet(file);
+			else if(IsQualityStatSet(file))
+				return new QualityStatImageSet(file);
+			else
+				return new MSImageSet(file, ioMode);
+		}
+		else {
+			return new CoaddedImageSet(files, ioMode);
+		}
 	}
 	
 	bool ImageSet::IsBHFitsFile(const std::string &file)
@@ -88,11 +96,6 @@ namespace rfiStrategy {
 		return
 		file.find("noise-statistics-tf") != std::string::npos &&
 		file.find("txt") != std::string::npos;
-	}
-	
-	bool ImageSet::IsHarishFile(const std::string &file)
-	{
-		return file.substr(file.size()-4) == ".har";
 	}
 	
 	bool ImageSet::IsPngFile(const std::string &file)

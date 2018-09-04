@@ -17,11 +17,11 @@
 #include "../../strategy/actions/frequencyselectionaction.h"
 #include "../../strategy/actions/highpassfilteraction.h"
 #include "../../strategy/actions/iterationaction.h"
+#include "../../strategy/actions/morphologicalflagaction.h"
 #include "../../strategy/actions/plotaction.h"
 #include "../../strategy/actions/setflaggingaction.h"
 #include "../../strategy/actions/setimageaction.h"
 #include "../../strategy/actions/slidingwindowfitaction.h"
-#include "../../strategy/actions/statisticalflagaction.h"
 #include "../../strategy/actions/strategy.h"
 #include "../../strategy/actions/sumthresholdaction.h"
 #include "../../strategy/actions/timeselectionaction.h"
@@ -130,8 +130,9 @@ inline void DefaultStrategySpeedTest::TimeStrategy::operator()()
 	rfiStrategy::ArtifactSet artifacts(0);
 	artifacts.SetPolarizationStatistics(std::unique_ptr<PolarizationStatistics>(
 		new PolarizationStatistics() ));
-	std::unique_ptr<rfiStrategy::Strategy> strategy = rfiStrategy::DefaultStrategy::CreateStrategy(
-		rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE
+	std::unique_ptr<rfiStrategy::Strategy> strategy(new rfiStrategy::Strategy());
+	rfiStrategy::DefaultStrategy::LoadSingleStrategy(*strategy, rfiStrategy::DefaultStrategy::DetermineSetup(
+		rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE, 0.0, 0.0, 0.0)
 	);
 	prepareStrategy(artifacts);
 	DummyProgressListener progressListener;
@@ -372,7 +373,7 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 		Stopwatch watchA(true);
 		for(size_t j=0; j!=N; ++j) {
 			maskInp = maskA;
-			CombinatorialThresholder::HorizontalSumThresholdLargeReference(input.get(), &maskInp, &scratch, length, threshold);
+			SumThreshold::HorizontalLargeReference(input.get(), &maskInp, &scratch, length, threshold);
 		}
 		hor += watchA.Seconds();
 		Logger::Info << "Horizontal, length " << length << ": " << watchA.ToString() << '\n';
@@ -382,7 +383,7 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 		Stopwatch watchE(true);
 		for(size_t j=0; j!=N; ++j) {
 			maskInp = maskE;
-			CombinatorialThresholder::HorizontalSumThresholdLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
+			SumThreshold::HorizontalLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
 		}
 		sseHor += watchE.Seconds();
 		Logger::Info << "SSE Horizontal, length " << length << ": " << watchE.ToString() << '\n';
@@ -403,7 +404,7 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 		Stopwatch watchB(true);
 		for(size_t j=0; j!=N; ++j) {
 			maskInp = maskB;
-			CombinatorialThresholder::VerticalSumThresholdLargeReference(input.get(), &maskInp, &scratch, length, threshold);
+			SumThreshold::VerticalLargeReference(input.get(), &maskInp, &scratch, length, threshold);
 		}
 		vert += watchB.Seconds();
 		Logger::Info << "Vertical, length " << length << ": " << watchB.ToString() << '\n';
@@ -413,7 +414,7 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 		Stopwatch watchD(true);
 		for(size_t j=0; j!=N; ++j) {
 			maskInp = maskD;
-			CombinatorialThresholder::VerticalSumThresholdLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
+			SumThreshold::VerticalLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
 		}
 		sseVert += watchD.Seconds();
 		Logger::Info << "SSE Vertical, length " << length << ": " << watchD.ToString() << '\n';
@@ -424,7 +425,7 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 		Stopwatch watchF(true);
 		for(size_t j=0; j!=N; ++j) {
 			maskInp = maskF;
-			CombinatorialThresholder::VerticalSumThresholdLargeAVX(input.get(), &maskF, &scratch, length, threshold);
+			SumThreshold::VerticalLargeAVX(input.get(), &maskF, &scratch, length, threshold);
 		}
 		avxVert += watchF.Seconds();
 		Logger::Info << "AVX Vertical, length " << length << ": " << watchF.ToString() << '\n';
@@ -444,8 +445,9 @@ inline void DefaultStrategySpeedTest::TimeRankOperator::operator()()
 	artifacts.SetPolarizationStatistics(std::unique_ptr<PolarizationStatistics>(
 		new PolarizationStatistics() ));
 
-	std::unique_ptr<rfiStrategy::Strategy> strategy = rfiStrategy::DefaultStrategy::CreateStrategy(
-		rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE
+	std::unique_ptr<rfiStrategy::Strategy> strategy(new rfiStrategy::Strategy());
+	rfiStrategy::DefaultStrategy::LoadSingleStrategy(*strategy, rfiStrategy::DefaultStrategy::DetermineSetup(
+		rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE, 0.0, 0.0, 0.0)
 	);
 	prepareStrategy(artifacts);
 	DummyProgressListener progressListener;
@@ -457,8 +459,8 @@ inline void DefaultStrategySpeedTest::TimeRankOperator::operator()()
 	Mask2DPtr input(new Mask2D(*artifacts.ContaminatedData().GetSingleMask()));
 	
 	Stopwatch operatorTimer(true);
-	SIROperator::OperateHorizontally(input.get(), 0.2);
-	SIROperator::OperateVertically(input.get(), 0.2);
+	SIROperator::OperateHorizontally(*input, 0.2);
+	SIROperator::OperateVertically(*input, 0.2);
 	operatorTimer.Pause();
 	
 	long double operatorTime = operatorTimer.Seconds();
@@ -540,7 +542,7 @@ inline void DefaultStrategySpeedTest::TimeSSEHighPassFilterStrategy::operator()(
 	setFlagsInAllPolarizations->SetNewFlagging(rfiStrategy::SetFlaggingAction::PolarisationsEqual);
 	
 	block.Add(std::move(setFlagsInAllPolarizations));
-	block.Add(std::unique_ptr<rfiStrategy::StatisticalFlagAction>(new rfiStrategy::StatisticalFlagAction()));
+	block.Add(std::unique_ptr<rfiStrategy::MorphologicalFlagAction>(new rfiStrategy::MorphologicalFlagAction()));
 	block.Add(std::unique_ptr<rfiStrategy::TimeSelectionAction>(new rfiStrategy::TimeSelectionAction()));
 
 	std::unique_ptr<rfiStrategy::BaselineSelectionAction>
