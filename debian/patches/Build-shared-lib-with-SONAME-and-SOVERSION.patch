@@ -7,7 +7,7 @@ Subject: Build shared lib with SONAME and SOVERSION
  1 file changed, 20 insertions(+), 11 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 7b9424d..eb48e2b 100644
+index eadc3a2..772fa89 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -232,18 +232,14 @@ set(PYTHON_FILES
@@ -60,9 +60,9 @@ index 7b9424d..eb48e2b 100644
  add_library(python_aoflagger SHARED python/pyinterface.cpp)
  set_target_properties(python_aoflagger PROPERTIES SOVERSION 0)
 @@ -328,5 +336,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
- 	install (TARGETS aoquality aoremoteclient DESTINATION bin)
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  
+ install (TARGETS aoflagger-bin DESTINATION bin)
 -install (TARGETS aoflagger DESTINATION lib) 
 +install (TARGETS aoflagger-shared DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
 +install (TARGETS aoflagger-lib DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
