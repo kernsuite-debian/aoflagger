@@ -1,23 +1,33 @@
 #include "../../util/progresslistener.h"
 
-#include "statisticalflagaction.h"
+#include "morphologicalflagaction.h"
 
-#include "../algorithms/statisticalflagger.h"
+#include "../algorithms/morphologicalflagger.h"
 #include "../algorithms/siroperator.h"
 
 #include "../control/artifactset.h"
 
 namespace rfiStrategy {
 
-	void StatisticalFlagAction::Perform(ArtifactSet &artifacts, class ProgressListener &)
+	void MorphologicalFlagAction::Perform(ArtifactSet& artifacts, class ProgressListener &)
 	{
-		TimeFrequencyData &data = artifacts.ContaminatedData();
+		TimeFrequencyData& data = artifacts.ContaminatedData();
 			
 		Mask2DPtr mask(new Mask2D(*data.GetSingleMask()));
 		
-		StatisticalFlagger::DilateFlags(mask.get(), _enlargeTimeSize, _enlargeFrequencySize);
-		SIROperator::OperateHorizontally(mask.get(), _minimumGoodTimeRatio);
-		SIROperator::OperateVertically(mask.get(), _minimumGoodFrequencyRatio);
+		MorphologicalFlagger::DilateFlags(mask.get(), _enlargeTimeSize, _enlargeFrequencySize);
+		
+		if(_excludeOriginalFlags)
+		{
+			TimeFrequencyData& original = artifacts.OriginalData();
+			Mask2DCPtr originalMask = original.GetSingleMask();
+			SIROperator::OperateHorizontallyMissing(*mask, *originalMask, _minimumGoodTimeRatio);
+			SIROperator::OperateVerticallyMissing(*mask, *originalMask, _minimumGoodFrequencyRatio);
+		}
+		else {
+			SIROperator::OperateHorizontally(*mask, _minimumGoodTimeRatio);
+			SIROperator::OperateVertically(*mask, _minimumGoodFrequencyRatio);
+		}
 		
 		if(_minAvailableTimesRatio > 0)
 		{

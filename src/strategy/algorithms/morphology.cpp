@@ -1,5 +1,5 @@
 #include "morphology.h"
-#include "statisticalflagger.h"
+#include "morphologicalflagger.h"
 
 #include "../../util/logger.h"
 
@@ -70,10 +70,10 @@ void Morphology::SegmentByLengthRatio(const Mask2D* mask, SegmentedImagePtr outp
 		for(size_t x=0;x<mask->Width();++x)
 			output->SetValue(x, y, 0);
 	}
-	StatisticalFlagger::DilateFlags(matrices[0].get(), _hLineEnlarging, 0);
-	StatisticalFlagger::DilateFlags(matrices[2].get(), 0, _vLineEnlarging);
-	StatisticalFlagger::DensityTimeFlagger(matrices[0].get(), _hDensityEnlargeRatio);
-	StatisticalFlagger::DensityFrequencyFlagger(matrices[2].get(), _vDensityEnlargeRatio);
+	MorphologicalFlagger::DilateFlags(matrices[0].get(), _hLineEnlarging, 0);
+	MorphologicalFlagger::DilateFlags(matrices[2].get(), 0, _vLineEnlarging);
+	MorphologicalFlagger::DensityTimeFlagger(matrices[0].get(), _hDensityEnlargeRatio);
+	MorphologicalFlagger::DensityFrequencyFlagger(matrices[2].get(), _vDensityEnlargeRatio);
 
 	// Calculate counts again with new matrices
 	calculateHorizontalCounts(matrices[0].get(), hCounts);

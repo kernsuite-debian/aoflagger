@@ -23,6 +23,7 @@ class SumThresholdFrame : public Gtk::Frame {
 		_frequencyDirectionButton("In frequency direction (sensitive to temporal RFI)"),
 		_frequencySensitivityLabel("Frequency-direction base sensitivity: (low = sensitive)"),
 		_frequencySensitivityScale(Gtk::ORIENTATION_HORIZONTAL),
+		_excludeOriginalFlags("Exclude original flags"),
 		_applyButton("Apply")
 		{
 			_timeDirectionButton.set_active(_action.TimeDirectionFlagging());
@@ -43,6 +44,9 @@ class SumThresholdFrame : public Gtk::Frame {
 			_frequencySensitivityScale.set_increments(0.1, 1.0);
 			_frequencySensitivityScale.set_value(_action.FrequencyDirectionSensitivity());
 
+			_excludeOriginalFlags.set_active(_action.ExcludeOriginalFlags());
+			_box.pack_start(_excludeOriginalFlags);
+			
 			_buttonBox.pack_start(_applyButton);
 			_applyButton.signal_clicked().connect(sigc::mem_fun(*this, &SumThresholdFrame::onApplyClicked));
 
@@ -63,6 +67,7 @@ class SumThresholdFrame : public Gtk::Frame {
 		Gtk::CheckButton _frequencyDirectionButton;
 		Gtk::Label _frequencySensitivityLabel;
 		Gtk::Scale _frequencySensitivityScale;
+		Gtk::CheckButton _excludeOriginalFlags;
 		Gtk::Button _applyButton;
 
 		void onApplyClicked()
@@ -71,6 +76,7 @@ class SumThresholdFrame : public Gtk::Frame {
 			_action.SetTimeDirectionSensitivity(_timeSensitivityScale.get_value());
 			_action.SetFrequencyDirectionFlagging(_frequencyDirectionButton.get_active());
 			_action.SetFrequencyDirectionSensitivity(_frequencySensitivityScale.get_value());
+			_action.SetExcludeOriginalFlags(_excludeOriginalFlags.get_active());
 			_editStrategyWindow.UpdateAction(&_action);
 		}
 };

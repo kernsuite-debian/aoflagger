@@ -257,6 +257,60 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D*
 		stddev = 0.0;
 }
 
+void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* maskA, const Mask2D* maskB, num_t &mean, num_t &stddev)
+{
+	std::unique_ptr<num_t[]> data(new num_t[image->Width() * image->Height()]);
+	size_t unflaggedCount = 0;
+	for(size_t y=0;y<image->Height();++y)
+	{
+		for(size_t x=0;x<image->Width();++x)
+		{
+			num_t val = image->Value(x, y);
+			if(!maskA->Value(x, y) && !maskB->Value(x, y) && std::isfinite(val))
+			{
+				data[unflaggedCount] = image->Value(x, y);
+				++unflaggedCount;
+			}
+		}
+	}
+	size_t lowIndex = (size_t) floor(0.1 * unflaggedCount);
+	size_t highIndex = (size_t) ceil(0.9 * unflaggedCount);
+	if(highIndex > 0) --highIndex;
+	std::nth_element(data.get(), data.get() + lowIndex, data.get() + unflaggedCount, numLessThanOperator);
+	num_t lowValue = data[lowIndex];
+	std::nth_element(data.get(), data.get() + highIndex, data.get() + unflaggedCount, numLessThanOperator);
+	num_t highValue = data[highIndex];
+
+	// Calculate mean
+	mean = 0.0;
+	for(size_t i = 0;i<unflaggedCount;++i) {
+		num_t value = data[i];
+		if(value < lowValue)
+			mean += lowValue;
+		else if(value > highValue)
+			mean += highValue;
+		else
+			mean += value;
+	}
+	if(unflaggedCount > 0)
+		mean /= (num_t) unflaggedCount;
+	// Calculate variance
+	stddev = 0.0;
+	for(size_t i = 0;i<unflaggedCount;++i) {
+		num_t value = data[i];
+		if(value < lowValue)
+			stddev += (lowValue-mean)*(lowValue-mean);
+		else if(value > highValue)
+			stddev += (highValue-mean)*(highValue-mean);
+		else
+			stddev += (value-mean)*(value-mean);
+	}
+	if(unflaggedCount > 0)
+		stddev = sqrtn(1.54 * stddev / (num_t) unflaggedCount);
+	else
+		stddev = 0.0;
+}
+
 num_t ThresholdTools::MinValue(const Image2D* image, const Mask2D* mask)
 {
 	num_t minValue = std::numeric_limits<num_t>::max();
@@ -465,6 +519,40 @@ num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* mask)
 	// It corresponds with the correction factor needed when winsorizing 10% of the 
 	// data, meaning that the highest 10% is set to the value exactly at the
 	// 90%/10% limit.
+	if(unflaggedCount > 0)
+		return sqrtn(mode / (2.0 * (num_t) unflaggedCount)) * 1.0541;
+	else
+		return 0.0;
+}
+
+num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* maskA, const Mask2D* maskB)
+{
+	std::unique_ptr<num_t[]> data(new num_t[image->Width() * image->Height()]);
+	size_t unflaggedCount = 0;
+	for(size_t y=0;y<image->Height();++y)
+	{
+		for(size_t x=0;x<image->Width();++x)
+		{
+			num_t val = image->Value(x, y);
+			if(!maskA->Value(x, y) && !maskB->Value(x, y) && std::isfinite(val))
+			{
+				data[unflaggedCount] = val;
+				++unflaggedCount;
+			}
+		}
+	}
+	size_t highIndex = (size_t) floor(0.9 * unflaggedCount);
+	std::nth_element(data.get(), data.get() + highIndex, data.get() + unflaggedCount);
+	num_t highValue = data[highIndex];
+	
+	num_t mode = 0.0;
+	for(size_t i = 0; i < unflaggedCount; ++i) {
+		num_t value = data[i];
+		if(value > highValue)
+			mode += highValue * highValue;
+		else
+			mode += value * value;
+	}
 	if(unflaggedCount > 0)
 		return sqrtn(mode / (2.0 * (num_t) unflaggedCount)) * 1.0541;
 	else

@@ -15,7 +15,6 @@ class RFIPlots{
 		static void MakeMeanSpectrumPlot(class Plot2DPointSet &pointSet, const TimeFrequencyData &data, const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
 		static void MakePowerSpectrumPlot(class Plot2DPointSet &pointSet, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData);
 		static void MakeRMSSpectrumPlot(class Plot2DPointSet &plot, Image2DCPtr image, Mask2DCPtr mask);
-		static void MakeSNRSpectrumPlot(class Plot2DPointSet &plot, Image2DCPtr image, Image2DCPtr model, Mask2DCPtr mask);
 		static void MakePowerTimePlot(class Plot2DPointSet &plot, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData);
 		static void MakeComplexPlanePlot(class Plot2DPointSet &plot, const class TimeFrequencyData &data, size_t xStart, size_t length, size_t y, size_t yAvgSize, Mask2DCPtr mask, bool realVersusImaginary, bool imaginary);
 		static void MakeFittedComplexPlot(class Plot2DPointSet &plot, const TimeFrequencyData &data, size_t xStart, size_t length, size_t y, size_t yAvgSize, Mask2DCPtr mask, num_t sampleFringeFrequency, bool realVersusImaginary, bool imaginary);
@@ -40,8 +39,6 @@ class RFIPlots{
 		 * @param stretch A factor that is applied to all pixel-values before binning
 		 */
 		static void Bin(Image2DCPtr image, Mask2DCPtr mask, std::vector<size_t> &valuesOutput, std::vector<long double> &binsOutput, size_t binCount, long double start=0.0, long double end=0.0, long double factor=1.0, long double stretch=1.0) throw();
-
-		static num_t FrequencySNR(Image2DCPtr image, Image2DCPtr model, Mask2DCPtr mask, unsigned channel);
 
 		RFIPlots() = delete;
 };

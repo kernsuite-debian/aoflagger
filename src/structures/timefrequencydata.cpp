@@ -131,19 +131,15 @@ TimeFrequencyData TimeFrequencyData::MakeFromPolarizationCombination(const TimeF
 	return data;
 }
 
-TimeFrequencyData TimeFrequencyData::MakeFromPolarizationCombination(const TimeFrequencyData &xx, const TimeFrequencyData &yy)
+TimeFrequencyData TimeFrequencyData::MakeFromPolarizationCombination(const TimeFrequencyData &first, const TimeFrequencyData &second)
 {
-	if(xx.ComplexRepresentation() != yy.ComplexRepresentation())
-		throw BadUsageException("Trying to create auto dipole time frequency combination from data with different phase representations!");
+	if(first.ComplexRepresentation() != second.ComplexRepresentation())
+		throw BadUsageException("Trying to create polarization combination from data with different phase representations!");
 
 	TimeFrequencyData data;
-	data._data.resize(2);
-	data._complexRepresentation = xx._complexRepresentation;
-	for(size_t i=0; i!=xx._data.size(); ++i)
-	{
-		data._data[0] = xx._data[0];
-		data._data[1] = yy._data[0];
-	}
+	data._data = first._data;
+	data._complexRepresentation = first._complexRepresentation;
+	data._data.insert(data._data.end(), second._data.begin(), second._data.end());
 	return data;
 }
 

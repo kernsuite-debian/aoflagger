@@ -26,8 +26,8 @@ GoToWindow::GoToWindow(RFIGuiWindow &rfiGuiWindow) : Gtk::Window(),
 	const std::vector<MeasurementSet::Sequence> &_sequences =
 		_imageSet->Reader()->Set().GetSequences();
 
-	const rfiStrategy::MSImageSetIndex &setIndex =
-		static_cast<rfiStrategy::MSImageSetIndex&>(_rfiGuiWindow.Controller().GetImageSetIndex());
+	const rfiStrategy::ImageSetIndex &setIndex =
+		static_cast<rfiStrategy::ImageSetIndex&>(_rfiGuiWindow.Controller().GetImageSetIndex());
 	const unsigned antenna1Index = _imageSet->GetAntenna1(setIndex);
 	const unsigned antenna2Index = _imageSet->GetAntenna2(setIndex);
 	const unsigned bandIndex = _imageSet->GetBand(setIndex);

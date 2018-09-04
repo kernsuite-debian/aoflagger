@@ -5,9 +5,9 @@
 #include "../../../structures/mask2d.h"
 #include "../../../structures/timefrequencydata.h"
 
-#include "../../../strategy/algorithms/combinatorialthresholder.h"
 #include "../../../strategy/algorithms/testsetgenerator.h"
 #include "../../../strategy/algorithms/thresholdconfig.h"
+#include "../../../strategy/algorithms/sumthreshold.h"
 
 #include "../../testingtools/asserter.h"
 #include "../../testingtools/maskasserter.h"
@@ -88,8 +88,8 @@ void SumThresholdTest::VerticalSumThresholdSSE::operator()()
 		const unsigned length = config.GetHorizontalLength(i);
 		const double threshold = config.GetHorizontalThreshold(i);
 		
-		CombinatorialThresholder::VerticalSumThresholdLargeReference(image.get(), &mask1, &scratch, length, threshold);
-		CombinatorialThresholder::VerticalSumThresholdLargeSSE(image.get(), &mask2, &scratch, length, threshold);
+		SumThreshold::VerticalLargeReference(image.get(), &mask1, &scratch, length, threshold);
+		SumThreshold::VerticalLargeSSE(image.get(), &mask2, &scratch, length, threshold);
 		
 		if(length != 32) {
 		  std::stringstream s;
@@ -132,8 +132,8 @@ void SumThresholdTest::HorizontalSumThresholdSSE::operator()()
 		const unsigned length = config.GetHorizontalLength(i);
 		const double threshold = config.GetHorizontalThreshold(i);
 		
-		CombinatorialThresholder::HorizontalSumThresholdLargeReference(image.get(), &mask1, &scratch, length, threshold);
-		CombinatorialThresholder::HorizontalSumThresholdLargeSSE(image.get(), &mask2, &scratch, length, threshold);
+		SumThreshold::HorizontalLargeReference(image.get(), &mask1, &scratch, length, threshold);
+		SumThreshold::HorizontalLargeSSE(image.get(), &mask2, &scratch, length, threshold);
 		
 		std::stringstream s;
 		s << "Equal SSE and reference masks produced by SumThreshold length " << length << ", threshold " << threshold;
@@ -161,14 +161,14 @@ void SumThresholdTest::StabilitySSE::operator()()
 	for(unsigned i=0;i<9;++i)
 	{
 		const unsigned length = config.GetHorizontalLength(i);
-		CombinatorialThresholder::HorizontalSumThresholdLargeSSE(&realA, &maskA, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeSSE(&realA, &maskA, &scratch, length, 1.0);
-		CombinatorialThresholder::HorizontalSumThresholdLargeSSE(&realA, &maskB, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeSSE(&realA, &maskB, &scratch, length, 1.0);
-		CombinatorialThresholder::HorizontalSumThresholdLargeSSE(&realA, &maskC, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeSSE(&realA, &maskC, &scratch, length, 1.0);
-		CombinatorialThresholder::HorizontalSumThresholdLargeSSE(&realA, &maskD, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeSSE(&realA, &maskD, &scratch, length, 1.0);
+		SumThreshold::HorizontalLargeSSE(&realA, &maskA, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeSSE(&realA, &maskA, &scratch, length, 1.0);
+		SumThreshold::HorizontalLargeSSE(&realA, &maskB, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeSSE(&realA, &maskB, &scratch, length, 1.0);
+		SumThreshold::HorizontalLargeSSE(&realA, &maskC, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeSSE(&realA, &maskC, &scratch, length, 1.0);
+		SumThreshold::HorizontalLargeSSE(&realA, &maskD, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeSSE(&realA, &maskD, &scratch, length, 1.0);
 	}
 }
 #endif // __SSE__
@@ -201,8 +201,8 @@ void SumThresholdTest::VerticalSumThresholdAVX::operator()()
 		const unsigned length = config.GetHorizontalLength(i);
 		const double threshold = config.GetHorizontalThreshold(i);
 		
-		CombinatorialThresholder::VerticalSumThresholdLargeReference(image.get(), &mask1, &scratch, length, threshold);
-		CombinatorialThresholder::VerticalSumThresholdLargeAVX(image.get(), &mask2, &scratch, length, threshold);
+		SumThreshold::VerticalLargeReference(image.get(), &mask1, &scratch, length, threshold);
+		SumThreshold::VerticalLargeAVX(image.get(), &mask2, &scratch, length, threshold);
 		
 		if(length != 32) {
 		  std::stringstream s;
@@ -229,7 +229,7 @@ void SumThresholdTest::SimpleVerticalSumThresholdAVX::operator()()
 		image.SetValue(x, 4, 1.0);
 	}
 		
-	CombinatorialThresholder::VerticalSumThresholdLargeAVX(&image, &mask, &scratch, 2, 0.8);
+	SumThreshold::VerticalLargeAVX(&image, &mask, &scratch, 2, 0.8);
 		
 	for(size_t x=0; x!=width; ++x)
 	{
@@ -275,14 +275,14 @@ void SumThresholdTest::StabilityAVX::operator()()
 	for(unsigned i=0;i<9;++i)
 	{
 		const unsigned length = config.GetHorizontalLength(i);
-		//CombinatorialThresholder::HorizontalSumThresholdLargeAVX(&realA, &maskA, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeAVX(&realA, &maskA, &scratch, length, 1.0);
-		//CombinatorialThresholder::HorizontalSumThresholdLargeAVX(&realA, &maskB, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeAVX(&realA, &maskB, &scratch, length, 1.0);
-		//CombinatorialThresholder::HorizontalSumThresholdLargeAVX(&realA, &maskC, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeAVX(&realA, &maskC, &scratch, length, 1.0);
-		//CombinatorialThresholder::HorizontalSumThresholdLargeAVX(&realA, &maskD, &scratch, length, 1.0);
-		CombinatorialThresholder::VerticalSumThresholdLargeAVX(&realA, &maskD, &scratch, length, 1.0);
+		//SumThreshold::HorizontalLargeAVX(&realA, &maskA, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeAVX(&realA, &maskA, &scratch, length, 1.0);
+		//SumThreshold::HorizontalLargeAVX(&realA, &maskB, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeAVX(&realA, &maskB, &scratch, length, 1.0);
+		//SumThreshold::HorizontalLargeAVX(&realA, &maskC, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeAVX(&realA, &maskC, &scratch, length, 1.0);
+		//SumThreshold::HorizontalLargeAVX(&realA, &maskD, &scratch, length, 1.0);
+		SumThreshold::VerticalLargeAVX(&realA, &maskD, &scratch, length, 1.0);
 	}
 }
 #endif // __AVX2__

@@ -1,18 +1,19 @@
 #include "imagecomparisoncontroller.h"
 
 ImageComparisonController::ImageComparisonController() :
-	_visualizedImage(TFOriginalImage),
 	_showPP(true),
 	_showPQ(false),
 	_showQP(false),
-	_showQQ(true)
+	_showQQ(true),
+	_visualizedImage(0)
 {
+	_dataList.emplace_back("No data", TimeFrequencyData());
 }
 
 TimeFrequencyData ImageComparisonController::GetActiveData() const
 {
-	TimeFrequencyData data(getActiveDataWithOriginalFlags());
-	setActiveMask(data);
+	TimeFrequencyData data(_dataList[_visualizedImage].data);
+	getActiveMask(data);
 	if(_plot.StartHorizontal() != 0.0 ||
 		_plot.EndHorizontal() != 1.0 ||
 		_plot.StartVertical() != 0.0 ||
@@ -30,66 +31,38 @@ void ImageComparisonController::SetNewData(const TimeFrequencyData &data, TimeFr
 {
 	_plot.Clear();
 	
-	_original = data;
-	_revised = _original;
-	_revised.SetImagesToZero();
-	_contaminated = _original;
-	_contaminated.SetNoMask();
+	_dataList.clear();
+	_dataList.emplace_back("Original data", data);
+	_visualizedImage = 0;
 	updateVisualizedImage();
 	
 	_plot.SetOriginalMask(data.GetSingleMask());
 	_plot.SetMetaData(metaData);
 	_plot.ZoomFit();
-}
-
-TimeFrequencyData* ImageComparisonController::getSelectedData()
-{
-  switch(_visualizedImage)
-	{
-	default:
-	case TFOriginalImage:
-		return &_original;
-	case TFRevisedImage:
-		return &_revised;
-	case TFContaminatedImage:
-		return &_contaminated;
-	}
-}
-
-const TimeFrequencyData* ImageComparisonController::getSelectedData() const
-{
-  switch(_visualizedImage)
-	{
-	default:
-	case TFOriginalImage:
-		return &_original;
-	case TFRevisedImage:
-		return &_revised;
-	case TFContaminatedImage:
-		return &_contaminated;
-	}
+	
+	_visualizationListChange.emit();
 }
 
 void ImageComparisonController::getFirstAvailablePolarization(bool& pp, bool& pq, bool& qp, bool& qq) const
 {
-	const TimeFrequencyData* selectedData = getSelectedData();
-	if(selectedData->IsEmpty()) {
+	const TimeFrequencyData& selectedData = _dataList[_visualizedImage].data;
+	if(selectedData.IsEmpty()) {
 		pp = true; pq = false; qp = false; qq = true;
 	}
 	else {
 		bool
-			hasXX = selectedData->HasPolarization(Polarization::XX),
-			hasXY = selectedData->HasPolarization(Polarization::XY),
-			hasYX = selectedData->HasPolarization(Polarization::YX),
-			hasYY = selectedData->HasPolarization(Polarization::YY),
-			hasRR = selectedData->HasPolarization(Polarization::RR),
-			hasRL = selectedData->HasPolarization(Polarization::RL),
-			hasLR = selectedData->HasPolarization(Polarization::LR),
-			hasLL = selectedData->HasPolarization(Polarization::LL),
-			hasI = selectedData->HasPolarization(Polarization::StokesI),
-			hasQ = selectedData->HasPolarization(Polarization::StokesQ),
-			hasU = selectedData->HasPolarization(Polarization::StokesU),
-			hasV = selectedData->HasPolarization(Polarization::StokesV);
+			hasXX = selectedData.HasPolarization(Polarization::XX),
+			hasXY = selectedData.HasPolarization(Polarization::XY),
+			hasYX = selectedData.HasPolarization(Polarization::YX),
+			hasYY = selectedData.HasPolarization(Polarization::YY),
+			hasRR = selectedData.HasPolarization(Polarization::RR),
+			hasRL = selectedData.HasPolarization(Polarization::RL),
+			hasLR = selectedData.HasPolarization(Polarization::LR),
+			hasLL = selectedData.HasPolarization(Polarization::LL),
+			hasI = selectedData.HasPolarization(Polarization::StokesI),
+			hasQ = selectedData.HasPolarization(Polarization::StokesQ),
+			hasU = selectedData.HasPolarization(Polarization::StokesU),
+			hasV = selectedData.HasPolarization(Polarization::StokesV);
 		if(hasXX || hasRR || hasI) {
 			pp = true; pq = false; qp = false; qq = false;
 		}
@@ -110,22 +83,22 @@ void ImageComparisonController::getFirstAvailablePolarization(bool& pp, bool& pq
 
 void ImageComparisonController::TryVisualizePolarizations(bool& pp, bool& pq, bool& qp, bool& qq) const
 {
-	const TimeFrequencyData* selectedData = getSelectedData();
-	if(!selectedData->IsEmpty())
+	const TimeFrequencyData& selectedData = _dataList[_visualizedImage].data;
+	if(!selectedData.IsEmpty())
 	{
 		bool
-			hasXX = selectedData->HasPolarization(Polarization::XX),
-			hasXY = selectedData->HasPolarization(Polarization::XY),
-			hasYX = selectedData->HasPolarization(Polarization::YX),
-			hasYY = selectedData->HasPolarization(Polarization::YY),
-			hasRR = selectedData->HasPolarization(Polarization::RR),
-			hasRL = selectedData->HasPolarization(Polarization::RL),
-			hasLR = selectedData->HasPolarization(Polarization::LR),
-			hasLL = selectedData->HasPolarization(Polarization::LL),
-			hasI = selectedData->HasPolarization(Polarization::StokesI),
-			hasQ = selectedData->HasPolarization(Polarization::StokesQ),
-			hasU = selectedData->HasPolarization(Polarization::StokesU),
-			hasV = selectedData->HasPolarization(Polarization::StokesV);
+			hasXX = selectedData.HasPolarization(Polarization::XX),
+			hasXY = selectedData.HasPolarization(Polarization::XY),
+			hasYX = selectedData.HasPolarization(Polarization::YX),
+			hasYY = selectedData.HasPolarization(Polarization::YY),
+			hasRR = selectedData.HasPolarization(Polarization::RR),
+			hasRL = selectedData.HasPolarization(Polarization::RL),
+			hasLR = selectedData.HasPolarization(Polarization::LR),
+			hasLL = selectedData.HasPolarization(Polarization::LL),
+			hasI = selectedData.HasPolarization(Polarization::StokesI),
+			hasQ = selectedData.HasPolarization(Polarization::StokesQ),
+			hasU = selectedData.HasPolarization(Polarization::StokesU),
+			hasV = selectedData.HasPolarization(Polarization::StokesV);
 		if(pp && qq)
 		{
 			pq = false; qp = false;
@@ -169,61 +142,71 @@ void ImageComparisonController::TryVisualizePolarizations(bool& pp, bool& pq, bo
 	}
 }
 
+void ImageComparisonController::updateVisualizedImageAndMask()
+{
+	if(_visualizedImage == 0)
+		_plot.SetAlternativeMask(_dataList.back().data.GetSingleMask());
+	else
+		_plot.SetAlternativeMask(_dataList[_visualizedImage].data.GetSingleMask());
+	_plot.SetOriginalMask(_dataList.front().data.GetSingleMask());
+	updateVisualizedImage();
+}
+
 void ImageComparisonController::updateVisualizedImage()
 {
   Image2DCPtr image;
-	const TimeFrequencyData* selectedData = getSelectedData();
-	if(!selectedData->IsEmpty())
+	const TimeFrequencyData& selectedData = _dataList[_visualizedImage].data;
+	if(!selectedData.IsEmpty())
 	{
 		if(_showPP && _showQQ)
 		{
-			if((selectedData->HasPolarization(Polarization::XX) && selectedData->HasPolarization(Polarization::YY)) ||
-				(selectedData->HasPolarization(Polarization::RR) && selectedData->HasPolarization(Polarization::LL)) ||
-				(selectedData->HasPolarization(Polarization::StokesI)) )
-			image = selectedData->Make(Polarization::StokesI).GetSingleImage();
+			if((selectedData.HasPolarization(Polarization::XX) && selectedData.HasPolarization(Polarization::YY)) ||
+				(selectedData.HasPolarization(Polarization::RR) && selectedData.HasPolarization(Polarization::LL)) ||
+				(selectedData.HasPolarization(Polarization::StokesI)) )
+			image = selectedData.Make(Polarization::StokesI).GetSingleImage();
 		}
 		else if(_showQP && _showPQ)
 		{
-			if(selectedData->HasPolarization(Polarization::XY) && selectedData->HasPolarization(Polarization::YX))
-				image = selectedData->Make(Polarization::StokesU).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::RL) && selectedData->HasPolarization(Polarization::LR))
-				image = selectedData->Make(Polarization::StokesQ).GetSingleImage();
+			if(selectedData.HasPolarization(Polarization::XY) && selectedData.HasPolarization(Polarization::YX))
+				image = selectedData.Make(Polarization::StokesU).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::RL) && selectedData.HasPolarization(Polarization::LR))
+				image = selectedData.Make(Polarization::StokesQ).GetSingleImage();
 		}
 		else if(_showPP)
 		{
-			if(selectedData->HasPolarization(Polarization::XX))
-				image = selectedData->Make(Polarization::XX).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::RR))
-				image = selectedData->Make(Polarization::RR).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::StokesI))
-				image = selectedData->Make(Polarization::StokesI).GetSingleImage();
+			if(selectedData.HasPolarization(Polarization::XX))
+				image = selectedData.Make(Polarization::XX).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::RR))
+				image = selectedData.Make(Polarization::RR).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::StokesI))
+				image = selectedData.Make(Polarization::StokesI).GetSingleImage();
 		}
 		else if(_showPQ)
 		{
-			if(selectedData->HasPolarization(Polarization::XY))
-				image = selectedData->Make(Polarization::XY).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::RL))
-				image = selectedData->Make(Polarization::RL).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::StokesQ))
-				image = selectedData->Make(Polarization::StokesQ).GetSingleImage();
+			if(selectedData.HasPolarization(Polarization::XY))
+				image = selectedData.Make(Polarization::XY).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::RL))
+				image = selectedData.Make(Polarization::RL).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::StokesQ))
+				image = selectedData.Make(Polarization::StokesQ).GetSingleImage();
 		}
 		else if(_showQP)
 		{
-			if(selectedData->HasPolarization(Polarization::YX))
-				image = selectedData->Make(Polarization::YX).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::LR))
-				image = selectedData->Make(Polarization::LR).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::StokesU))
-				image = selectedData->Make(Polarization::StokesU).GetSingleImage();
+			if(selectedData.HasPolarization(Polarization::YX))
+				image = selectedData.Make(Polarization::YX).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::LR))
+				image = selectedData.Make(Polarization::LR).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::StokesU))
+				image = selectedData.Make(Polarization::StokesU).GetSingleImage();
 		}
 		else if(_showQQ)
 		{
-			if(selectedData->HasPolarization(Polarization::YY))
-				image = selectedData->Make(Polarization::YY).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::LL))
-				image = selectedData->Make(Polarization::LL).GetSingleImage();
-			else if(selectedData->HasPolarization(Polarization::StokesV))
-				image = selectedData->Make(Polarization::StokesV).GetSingleImage();
+			if(selectedData.HasPolarization(Polarization::YY))
+				image = selectedData.Make(Polarization::YY).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::LL))
+				image = selectedData.Make(Polarization::LL).GetSingleImage();
+			else if(selectedData.HasPolarization(Polarization::StokesV))
+				image = selectedData.Make(Polarization::StokesV).GetSingleImage();
 		}
 	}
 	if(image == nullptr)
@@ -232,7 +215,12 @@ void ImageComparisonController::updateVisualizedImage()
 		_plot.SetImage(image);
 }
 
-void ImageComparisonController::ClearBackground()
+void ImageComparisonController::ClearAllButOriginal()
 {
-	_revised.SetImagesToZero();
+	if(_dataList.size() > 1)
+	{
+		_dataList.erase(_dataList.begin()+1, _dataList.end());
+		SetVisualization(0);
+		_visualizationListChange.emit();
+	}
 }

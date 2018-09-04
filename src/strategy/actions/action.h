@@ -42,6 +42,7 @@ namespace rfiStrategy {
 		SVDActionType,
 		TimeConvolutionActionType,
 		TimeSelectionActionType,
+		VisualizeActionType,
 		WriteDataActionType,
 		WriteFlagsActionType
 	};

@@ -43,11 +43,6 @@ ImagePropertiesWindow::ImagePropertiesWindow(HeatMapWidget &imageWidget, const s
 	_bestFilterButton("Best"),
 	_nearestFilterButton("Nearest"),
 	
-	_hStartScale(Gtk::ORIENTATION_HORIZONTAL),
-	_hStopScale(Gtk::ORIENTATION_HORIZONTAL),
-	_vStartScale(Gtk::ORIENTATION_VERTICAL),
-	_vStopScale(Gtk::ORIENTATION_VERTICAL),
-	
 	_axesFrame("Title & axes"),
 	_showXYAxes("Show XY axes"),
 	_showColorScale("Show color scale"),
@@ -67,7 +62,6 @@ ImagePropertiesWindow::ImagePropertiesWindow(HeatMapWidget &imageWidget, const s
 	initOptionsWidgets();
 	initFilterWidgets();
 	_framesHBox.pack_start(_filterAndOptionsBox);
-	initZoomWidgets();
 	initAxisWidgets();
 	
 	gtkmm_set_image_from_icon_name(_applyButton, "gtk-apply");
@@ -225,33 +219,8 @@ void ImagePropertiesWindow::initFilterWidgets()
 	_filterAndOptionsBox.pack_start(_filterFrame);
 }
 
-void ImagePropertiesWindow::initZoomWidgets()
-{
-	_zoomHBox.pack_start(_vStartScale, false, false, 10);
-	_vStartScale.set_inverted(true);
-	_vStartScale.set_range(0, 1.01);
-
-	_vStopScale.set_inverted(true);
-	_vStopScale.set_range(0, 1.01);
-	_vStopScale.set_value(1.0);
-	_zoomHBox.pack_start(_vStopScale, false, false, 10);
-
-	_hStartScale.set_range(0, 1.01);
-	_zoomVSubBox.pack_start(_hStartScale, false, false, 3);
-
-	_hStopScale.set_range(0, 1.01);
-	_hStopScale.set_value(1.0);
-	_zoomVSubBox.pack_start(_hStopScale, false, false, 3);
-
-	_zoomHBox.pack_start(_zoomVSubBox);
-
-	_zoomFrame.add(_zoomHBox);
-	_topVBox.pack_start(_zoomFrame);
-}
-
 void ImagePropertiesWindow::initAxisWidgets()
 {
-	
 	_showXYAxes.set_active(_imageWidget.Plot().ShowXYAxes());
 	_axesGeneralBox.pack_start(_showXYAxes);
 
@@ -361,15 +330,6 @@ void ImagePropertiesWindow::onApplyClicked()
 	else if(_nearestFilterButton.get_active())
 		_imageWidget.Plot().SetCairoFilter(Cairo::FILTER_NEAREST);
 	
-	double
-		timeStart = _hStartScale.get_value(),
-		timeEnd = _hStopScale.get_value(),
-		freqStart = _vStartScale.get_value(),
-		freqEnd = _vStopScale.get_value();
-		
-	_imageWidget.Plot().SetHorizontalDomain(timeStart, timeEnd);
-	_imageWidget.Plot().SetVerticalDomain(freqStart, freqEnd);
-		
 	_imageWidget.Plot().SetShowTitle(_showTitleButton.get_active());
 	_imageWidget.Plot().SetManualTitle(_manualTitle.get_active());
 	if(_manualTitle.get_active())

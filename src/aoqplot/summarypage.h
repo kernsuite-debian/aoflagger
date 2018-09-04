@@ -10,6 +10,12 @@
 
 #include "plotsheet.h"
 
+#include <cmath>
+
+#ifndef HAVE_EXP10
+#define exp10(x) exp( (2.3025850929940456840179914546844) * (x) )
+#endif
+
 class SummaryPageController : public AOQPageController
 {
 public:

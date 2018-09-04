@@ -7,19 +7,19 @@
 
 namespace rfiStrategy {
 
-	ArtifactSet *Strategy::JoinThread()
+	std::unique_ptr<ArtifactSet> Strategy::JoinThread()
 	{
-		ArtifactSet *artifact = 0;
+		std::unique_ptr<ArtifactSet> artifact;
 		if(_thread != 0)
 		{
 			_thread->join();
 			delete _thread;
-			artifact = new ArtifactSet(*_threadFunc->_artifacts);
+			artifact.reset(new ArtifactSet(*_threadFunc->_artifacts));
 			delete _threadFunc->_artifacts;
 			delete _threadFunc;
 		}
-		_thread = 0;
-		return artifact;
+		_thread = nullptr;
+		return std::move(artifact);
 	}
 
 	void Strategy::StartPerformThread(const ArtifactSet &artifacts, ProgressListener &progress)

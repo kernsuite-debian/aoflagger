@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <mutex>
+#include <tuple>
 #include <vector>
 
 #include "../../structures/types.h"
@@ -21,7 +22,8 @@ namespace rfiStrategy {
 	class	ArtifactSet
 	{
 		public:
-			explicit ArtifactSet(std::mutex *ioMutex) :
+			explicit ArtifactSet(std::mutex* ioMutex) :
+			_visualizationData(),
 			_metaData(),
 			_sensitivity(1.0L),
 			_projectedDirectionRad(0.0L),
@@ -70,6 +72,41 @@ namespace rfiStrategy {
 			const TimeFrequencyData &ContaminatedData() const { return _contaminatedData; }
 			TimeFrequencyData &ContaminatedData() { return _contaminatedData; }
 
+			void SetCanVisualize(bool canVisualize) { _canVisualize = canVisualize; }
+			void AddVisualization(const std::string& label, const TimeFrequencyData& data, size_t sortingIndex)
+			{
+				if(_canVisualize)
+				{
+					if(data.PolarizationCount() == 1)
+					{
+						PolarizationEnum p = data.GetPolarization(0);
+						for(auto& v : _visualizationData)
+						{
+							if(std::get<0>(v) == label)
+							{
+								if(std::get<1>(v).HasPolarization(p))
+								{
+									// Can't merge, just add like normal
+									_visualizationData.emplace_back(label, data, sortingIndex);
+									return;
+								}
+								else {
+									// Merge
+									std::get<1>(v) = TimeFrequencyData::MakeFromPolarizationCombination(std::get<1>(v), data);
+									return;
+								}
+							}
+						}
+						// Label not found, add
+						_visualizationData.emplace_back(label, data, sortingIndex);
+					}
+					else {
+						_visualizationData.emplace_back(label, data, sortingIndex);
+					}
+				}
+			}
+			const std::vector<std::tuple<std::string, TimeFrequencyData, size_t>>& Visualizations() const { return _visualizationData; }
+
 			class ImageSet& ImageSet() const { return *_imageSet; }
 			void SetImageSet(std::unique_ptr<class ImageSet> imageSet);
 			void SetNoImageSet();
@@ -94,7 +131,7 @@ namespace rfiStrategy {
 				_metaData = metaData;
 			}
 
-			std::mutex &IOMutex()
+			std::mutex& IOMutex()
 			{
 				return *_ioMutex;
 			}
@@ -164,6 +201,8 @@ namespace rfiStrategy {
 			TimeFrequencyData _originalData;
 			TimeFrequencyData _contaminatedData;
 			TimeFrequencyData _revisedData;
+			bool _canVisualize;
+			std::vector<std::tuple<std::string, TimeFrequencyData, size_t>> _visualizationData;
 			TimeFrequencyMetaDataCPtr _metaData;
 			numl_t _sensitivity;
 			numl_t _projectedDirectionRad;

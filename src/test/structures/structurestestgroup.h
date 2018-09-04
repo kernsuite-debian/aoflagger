@@ -4,6 +4,7 @@
 #include "../testingtools/testgroup.h"
 
 #include "image2dtest.h"
+#include "timefrequencydatatest.h"
 
 class StructuresTestGroup : public TestGroup {
 	public:
@@ -12,6 +13,7 @@ class StructuresTestGroup : public TestGroup {
 		virtual void Initialize() override
 		{
 			Add(new Image2DTest());
+			Add(new TimeFrequencyDataTest());
 		}
 };
 

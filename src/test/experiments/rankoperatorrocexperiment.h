@@ -7,7 +7,7 @@
 #include "../testingtools/unittest.h"
 
 #include "../../strategy/algorithms/siroperator.h"
-#include "../../strategy/algorithms/statisticalflagger.h"
+#include "../../strategy/algorithms/morphologicalflagger.h"
 #include "../../strategy/algorithms/testsetgenerator.h"
 #include "../../strategy/algorithms/thresholdtools.h"
 
@@ -336,7 +336,7 @@ void RankOperatorROCExperiment::executeTest(enum TestType testType)
 		{
 			const num_t eta = (num_t) i / (num_t) ETA_STEPS;
 			Mask2D resultMask = *input;
-			SIROperator::OperateVertically(&resultMask, eta);
+			SIROperator::OperateVertically(resultMask, eta);
 			
 			evaluateIterationResults(resultMask, mask, groundTruth, totalRFI, rocResults[i]);
 		}
@@ -348,7 +348,7 @@ void RankOperatorROCExperiment::executeTest(enum TestType testType)
 			const size_t dilSize = i * MAX_DILATION / DIL_STEPS;
 			
 			Mask2D resultMask = *input;
-			StatisticalFlagger::DilateFlagsVertically(&resultMask, dilSize);
+			MorphologicalFlagger::DilateFlagsVertically(&resultMask, dilSize);
 			
 			evaluateIterationResults(resultMask, mask, groundTruth, totalRFI, dilResults[i]);
 		}
@@ -450,7 +450,7 @@ inline void RankOperatorROCExperiment::TestNoisePerformance(size_t totalRFI, dou
 		{
 			Mask2D tempMask(*input);
 			const num_t eta = i/100.0;
-			SIROperator::OperateVertically(&tempMask, eta);
+			SIROperator::OperateVertically(tempMask, eta);
 			size_t falsePositives = tempMask.GetCount<true>();
 			tempMask.Invert();
 			num_t fpSum = ThresholdTools::Sum(&inputImage, &tempMask);
@@ -464,7 +464,7 @@ inline void RankOperatorROCExperiment::TestNoisePerformance(size_t totalRFI, dou
 		{
 			const size_t dilSize = i * height / (4 * DIL_STEPS);
 			Mask2D tempMask = *input;
-			StatisticalFlagger::DilateFlags(&tempMask, 0, dilSize);
+			MorphologicalFlagger::DilateFlags(&tempMask, 0, dilSize);
 			size_t falsePositives = tempMask.GetCount<true>();
 			tempMask.Invert();
 			num_t fpSum = ThresholdTools::Sum(&inputImage, &tempMask);

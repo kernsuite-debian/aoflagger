@@ -13,7 +13,7 @@ ColorScale::ColorScale()
 	_verticalPlotScale.SetUnitsCaption("z");
 }
 
-void ColorScale::initWidth(Cairo::RefPtr<Cairo::Context> cairo)
+void ColorScale::initWidth(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	if(_width == 0.0)
 	{
@@ -25,7 +25,7 @@ void ColorScale::initWidth(Cairo::RefPtr<Cairo::Context> cairo)
 	}
 }
 
-void ColorScale::Draw(Cairo::RefPtr<Cairo::Context> cairo)
+void ColorScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	initWidth(cairo);
 	const double textHeight = _verticalPlotScale.GetTextHeight(cairo);

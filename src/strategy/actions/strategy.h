@@ -25,8 +25,7 @@ namespace rfiStrategy {
 				
 			}
 			virtual ~Strategy() {
-				ArtifactSet* artifacts = JoinThread();
-				delete artifacts;
+				JoinThread();
 			}
 
 			virtual std::string Description() final override { return "Strategy"; }
@@ -35,7 +34,7 @@ namespace rfiStrategy {
 			static void SetDataColumnName(Strategy &strategy, const std::string &dataColumnName);
 			
 			void StartPerformThread(const class ArtifactSet &artifacts, class ProgressListener &progress);
-			ArtifactSet *JoinThread();
+			std::unique_ptr<ArtifactSet> JoinThread();
 
 			static void SyncAll(ActionContainer &root);
 

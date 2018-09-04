@@ -15,6 +15,8 @@
 #include "interfaces.h"
 #include "strategywizardwindow.h"
 
+#include "controllers/rfiguicontroller.h"
+
 #include "strategyframes/absthresholdframe.h"
 #include "strategyframes/baselineselectionframe.h"
 #include "strategyframes/changeresolutionframe.h"
@@ -41,19 +43,21 @@
 
 using namespace rfiStrategy;
 
-EditStrategyWindow::EditStrategyWindow(StrategyController &strategyController)
- : Gtk::Window(), _strategyController(strategyController),
+EditStrategyWindow::EditStrategyWindow(RFIGuiController& guiController, StrategyController &strategyController)
+ : Gtk::Window(), 
+	_strategyController(strategyController),
 	_addActionButton("Add"),
 	_removeActionButton("_Remove", true),
 	_moveUpButton("_Up", true),
 	_moveDownButton("_Down", true),
 	_loadEmptyButton("_New", true),
-	_loadDefaultButton("Default"),
 	_wizardButton("_Wizard...", true),
 	_saveButton("_Save As...", true),
 	_openButton("_Open", true),
 	_disableUpdates(false),
-	_rightFrame(0), _wizardWindow(0)
+	_guiController(guiController),
+	_rightFrame(nullptr),
+	_wizardWindow()
 {
 	_addActionButton.set_icon_name("list-add");
 	gtkmm_set_image_from_icon_name(_removeActionButton, "edit-delete");
@@ -90,16 +94,11 @@ EditStrategyWindow::EditStrategyWindow(StrategyController &strategyController)
 	fillStore();
 }
 
-EditStrategyWindow::~EditStrategyWindow()
-{
-	delete _addMenu;
-}
-
 void EditStrategyWindow::initEditButtons()
 {
 	_strategyEditButtonBox.pack_start(_addActionButton);
 	_addActionButton.set_sensitive(false);
-	_addMenu = new AddStrategyActionMenu(*this);
+	_addMenu.reset( new AddStrategyActionMenu(*this) );
 	_addActionButton.set_menu(*_addMenu);
 
 	_strategyEditButtonBox.pack_start(_moveUpButton);
@@ -130,9 +129,6 @@ void EditStrategyWindow::initLoadDefaultsButtons()
 	_strategyLoadDefaultsButtonBox.pack_start(_loadEmptyButton);
 	_loadEmptyButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onLoadEmptyClicked));
 
-	_strategyLoadDefaultsButtonBox.pack_start(_loadDefaultButton);
-	_loadDefaultButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onLoadDefaultClicked));
-	
 	_strategyLoadDefaultsButtonBox.pack_start(_wizardButton);
 	_wizardButton.signal_clicked().connect(sigc::mem_fun(*this, &EditStrategyWindow::onWizardClicked));
 
@@ -305,7 +301,7 @@ void EditStrategyWindow::onSelectionChanged()
 					showRight(new SetFlaggingFrame(*static_cast<rfiStrategy::SetFlaggingAction*>(selectedAction), *this));
 					break;
 				case StatisticalFlagActionType:
-					showRight(new StatisticalFlaggingFrame(*static_cast<rfiStrategy::StatisticalFlagAction*>(selectedAction), *this));
+					showRight(new MorphologicalFlaggingFrame(*static_cast<rfiStrategy::MorphologicalFlagAction*>(selectedAction), *this));
 					break;
 				case SumThresholdActionType:
 					showRight(new SumThresholdFrame(*static_cast<rfiStrategy::SumThresholdAction*>(selectedAction), *this));
@@ -431,14 +427,6 @@ void EditStrategyWindow::onLoadEmptyClicked()
 	fillStore();
 }
 
-void EditStrategyWindow::onLoadDefaultClicked()
-{
-	_store->clear();
-	_strategy->RemoveAll();
-	DefaultStrategy::LoadStrategy(*_strategy, rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_GUI_FRIENDLY);
-	fillStore();
-}
-
 void EditStrategyWindow::onSaveClicked()
 {
   Gtk::FileChooserDialog dialog(*this, "Save strategy", Gtk::FILE_CHOOSER_ACTION_SAVE);
@@ -507,12 +495,12 @@ void EditStrategyWindow::onOpenClicked()
 
 void EditStrategyWindow::onWizardClicked()
 {
-	if(_wizardWindow == 0)
+	if(_wizardWindow)
 	{
-		_wizardWindow = new StrategyWizardWindow(_strategyController);
-		_wizardWindow->show();
-	} else {
 		_wizardWindow->show();
 		_wizardWindow->raise();
+	} else {
+		_wizardWindow.reset(new StrategyWizardWindow(_guiController, _strategyController));
+		_wizardWindow->show();
 	}
 }

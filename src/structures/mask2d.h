@@ -118,6 +118,12 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 			memset(&_values[y][x], newValue, count * sizeof(bool));
 		}
 		
+		void SetVerticalValues(size_t x, size_t y, bool newValue, size_t count)
+		{
+			for(size_t i=0; i!=count; ++i)
+				_values[y + i][x] = newValue;;
+		}
+		
 		size_t Width() const { return _width; }
 		
 		size_t Height() const { return _height; }

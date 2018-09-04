@@ -19,6 +19,7 @@ class ThresholdConfig {
 		void InitializeThresholdsFromFirstThreshold(num_t firstThreshold, enum Distribution noiseDistribution);
 		
 		void Execute(const Image2D* image, Mask2D* mask, bool additive, num_t timeSensitivity, num_t frequencySensitivity) const;
+		void ExecuteWithMissing(const Image2D* image, Mask2D* mask, const Mask2D* missing, bool additive, num_t timeSensitivity, num_t frequencySensitivity) const;
 		void SetVerbose(bool verbose) { _verbose = verbose; }
 		void SetMethod(Method method) { _method = method; }
 		

@@ -122,8 +122,8 @@ void scale_invariant_rank_operator(Data& data, double level_horizontal, double l
 {
 	Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
 	
-	SIROperator::OperateHorizontally(mask.get(), level_horizontal);
-	SIROperator::OperateVertically(mask.get(), level_vertical);
+	SIROperator::OperateHorizontally(*mask, level_horizontal);
+	SIROperator::OperateVertically(*mask, level_vertical);
 	data.TFData().SetGlobalMask(mask);
 }
 

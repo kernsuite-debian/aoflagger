@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "legend.h"
 #include "plotable.h"
 #include "plot2dpointset.h"
 #include "system.h"
@@ -23,7 +24,7 @@ public:
 	void Clear();
 	Plot2DPointSet &StartLine(const std::string &label, const std::string &xDesc = "x", const std::string &yDesc = "y", bool xIsTime = false, enum Plot2DPointSet::DrawingStyle drawingStyle = Plot2DPointSet::DrawLines)
 	{
-		_pointSets.emplace_back(new Plot2DPointSet());
+		_pointSets.emplace_back(new Plot2DPointSet(_pointSets.size()));
 		Plot2DPointSet& newSet = *_pointSets.back();
 		newSet.SetLabel(label);
 		newSet.SetXIsTime(xIsTime);
@@ -94,92 +95,81 @@ public:
 		_hRangeDetermination = SpecifiedRange;
 		_specifiedMaxX = maxX;
 	}
-	double MaxX() const
+	std::pair<double, double> RangeX() const
 	{
 		if(_hRangeDetermination == SpecifiedRange)
-			return _specifiedMaxX;
+			return std::make_pair(_specifiedMinX, _specifiedMaxX);
 		else if(_pointSets.empty())
-			return 1.0;
-		else
-			return _system.XRangeMax(*_pointSets.front());
+			return std::make_pair(0.0, 1.0);
+		else {
+			double
+				maxX = _system.XRangeMax(*_pointSets.front()),
+				minX = _system.XRangeMin(*_pointSets.front());
+			return std::make_pair(minX, maxX);
+		}
 	}
-	double MaxPositiveX() const
+	std::pair<double, double> RangePositiveX() const
 	{
 		if(_hRangeDetermination == SpecifiedRange)
-			return _specifiedMaxX;
+			return std::make_pair(_specifiedMinX, _specifiedMaxX);
 		else if(_pointSets.empty())
-			return 1.0;
-		else
-			return _system.XRangePositiveMax(*_pointSets.front());
+			return std::make_pair(0.1, 1.0);
+		else {
+			double
+				maxX = _system.XRangePositiveMax(*_pointSets.front()),
+				minX = _system.XRangePositiveMin(*_pointSets.front());
+			return std::make_pair(minX, maxX);
+		}
 	}
 	void SetMinX(double minX)
 	{
 		_hRangeDetermination = SpecifiedRange;
 		_specifiedMinX = minX;
 	}
-	double MinX() const
-	{
-		if(_hRangeDetermination == SpecifiedRange)
-			return _specifiedMinX;
-		else if(_pointSets.empty())
-			return 0.1;
-		else
-			return _system.XRangeMin(*_pointSets.front());
-	}
-	double MinPositiveX() const
-	{
-		if(_hRangeDetermination == SpecifiedRange)
-			return _specifiedMinX;
-		else if(_pointSets.empty())
-			return 0.1;
-		else
-			return _system.XRangePositiveMin(*_pointSets.front());
-	}
 	void SetMaxY(double maxY)
 	{
 		_vRangeDetermination = SpecifiedRange;
 		_specifiedMaxY = maxY;
 	}
-	double MaxY() const
+	std::pair<double, double> RangeY() const
 	{
 		if(_vRangeDetermination == SpecifiedRange)
-			return _specifiedMaxY;
+			return std::make_pair(_specifiedMinY, _specifiedMaxY);
 		else if(_pointSets.empty())
-			return 1.0;
-		else
-			return _system.YRangeMax(*_pointSets.front());
+			return std::make_pair(0.0, 1.0);
+		else {
+			double
+				minY = _system.YRangeMin(*_pointSets.front()),
+				maxY = _system.YRangeMax(*_pointSets.front()),
+				extMin = minY*1.07 - maxY*0.07,
+				extMax = maxY*1.07 - minY*0.07;
+			if(extMin < 0.0 && minY >= 0.0)
+			{
+				extMax -= extMin;
+				extMin = 0.0;
+			}
+			return std::make_pair(extMin, extMax);
+		}
 	}
-	double MaxPositiveY() const
+	std::pair<double, double> RangePositiveY() const
 	{
 		if(_vRangeDetermination == SpecifiedRange)
-			return _specifiedMaxY;
+			return std::make_pair(_specifiedMinY, _specifiedMaxY);
 		else if(_pointSets.empty())
-			return 1.0;
-		else
-			return _system.YRangePositiveMax(*_pointSets.front());
+			return std::make_pair(0.0, 1.0);
+		else {
+			double
+				maxY = log(_system.YRangePositiveMax(*_pointSets.front())),
+				minY = log(_system.YRangePositiveMin(*_pointSets.front())),
+				extMin = exp(minY*1.07 - maxY*0.07),
+				extMax = exp(maxY*1.07 - minY*0.07);
+			return std::make_pair(extMin, extMax);
+		}
 	}
 	void SetMinY(double minY)
 	{
 		_vRangeDetermination = SpecifiedRange;
 		_specifiedMinY = minY;
-	}
-	double MinY() const
-	{
-		if(_vRangeDetermination == SpecifiedRange)
-			return _specifiedMinY;
-		else if(_pointSets.empty())
-			return -1.0;
-		else
-			return _system.YRangeMin(*_pointSets.front());
-	}
-	double MinPositiveY() const
-	{
-		if(_vRangeDetermination == SpecifiedRange)
-			return _specifiedMinY;
-		else if(_pointSets.empty())
-			return 0.1;
-		else
-			return _system.YRangePositiveMin(*_pointSets.front());
 	}
 	void SetShowAxes(bool showAxes) {
 		_showAxes = showAxes;
@@ -204,9 +194,10 @@ public:
 	
 	const std::string& Title() const { return _title.Text(); }
 private:
-	void render(Cairo::RefPtr<Cairo::Context> cr);
-	void render(Cairo::RefPtr<Cairo::Context> cr, Plot2DPointSet &pointSet);
+	void render(Cairo::RefPtr<Cairo::Context>& cr);
+	void render(Cairo::RefPtr<Cairo::Context>& cr, Plot2DPointSet &pointSet);
 
+	Legend _legend;
 	HorizontalPlotScale _horizontalScale;
 	VerticalPlotScale _verticalScale;
 	std::vector<std::unique_ptr<Plot2DPointSet>> _pointSets;

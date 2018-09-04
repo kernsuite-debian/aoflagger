@@ -16,13 +16,13 @@ HorizontalPlotScale::HorizontalPlotScale() :
 HorizontalPlotScale::~HorizontalPlotScale()
 { }
 
-double HorizontalPlotScale::GetHeight(Cairo::RefPtr<Cairo::Context> cairo)
+double HorizontalPlotScale::GetHeight(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	initializeMetrics(cairo);
 	return _height;
 }
 
-double HorizontalPlotScale::GetRightMargin(Cairo::RefPtr<Cairo::Context> cairo)
+double HorizontalPlotScale::GetRightMargin(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	initializeMetrics(cairo);
 	return _rightMargin;
@@ -38,7 +38,7 @@ double HorizontalPlotScale::AxisToUnit(double axisValue) const
 	return _tickSet->AxisToUnit(axisValue);
 }
 
-void HorizontalPlotScale::Draw(Cairo::RefPtr<Cairo::Context> cairo)
+void HorizontalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	initializeMetrics(cairo);
 	cairo->set_source_rgb(0.0, 0.0, 0.0);
@@ -77,7 +77,7 @@ void HorizontalPlotScale::Draw(Cairo::RefPtr<Cairo::Context> cairo)
 		drawDescription(cairo);
 }
 
-void HorizontalPlotScale::drawDescription(Cairo::RefPtr<Cairo::Context> cairo)
+void HorizontalPlotScale::drawDescription(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	double yPos = _isSecondAxis ? _fromTop : _fromTop + _plotHeight + _height;
 	
@@ -106,7 +106,7 @@ void HorizontalPlotScale::drawDescription(Cairo::RefPtr<Cairo::Context> cairo)
 	cairo->fill();
 }
 
-void HorizontalPlotScale::initializeMetrics(Cairo::RefPtr<Cairo::Context> cairo)
+void HorizontalPlotScale::initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	if(!_metricsAreInitialized)
 	{
@@ -187,14 +187,14 @@ void HorizontalPlotScale::InitializeTimeTicks(double timeMin, double timeMax)
 	_metricsAreInitialized = false;
 }
 
-void HorizontalPlotScale::InitializeTextTicks(const std::vector<std::string> &labels)
+void HorizontalPlotScale::InitializeTextTicks(const std::vector<std::string>& labels)
 {
 	_tickSet.reset(new TextTickSet(labels, 100));
 	_isLogarithmic = false;
 	_metricsAreInitialized = false;
 }
 
-bool HorizontalPlotScale::ticksFit(Cairo::RefPtr<Cairo::Context> cairo)
+bool HorizontalPlotScale::ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	cairo->set_font_size(16.0);
 	double prevEndX = 0.0;

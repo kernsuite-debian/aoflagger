@@ -27,20 +27,16 @@
 namespace aoflagger {
 	
 	const unsigned StrategyFlags::NONE                 =   0x00;
-	const unsigned StrategyFlags::LOW_FREQUENCY        =   0x01;
-	const unsigned StrategyFlags::HIGH_FREQUENCY       =   0x02;
-	const unsigned StrategyFlags::LARGE_BANDWIDTH      =   0x04;
-	const unsigned StrategyFlags::SMALL_BANDWIDTH      =   0x08;
-	const unsigned StrategyFlags::TRANSIENTS           =   0x10;
-	const unsigned StrategyFlags::ROBUST               =   0x20;
-	const unsigned StrategyFlags::FAST                 =   0x40;
-	const unsigned StrategyFlags::OFF_AXIS_SOURCES     =   0x80;
-	const unsigned StrategyFlags::UNSENSITIVE          =  0x100;
-	const unsigned StrategyFlags::SENSITIVE            =  0x200;
-	const unsigned StrategyFlags::GUI_FRIENDLY         =  0x400;
-	const unsigned StrategyFlags::CLEAR_FLAGS          =  0x800;
-	const unsigned StrategyFlags::AUTO_CORRELATION     = 0x1000;
-	const unsigned StrategyFlags::HIGH_TIME_RESOLUTION = 0x2000;
+	const unsigned StrategyFlags::LARGE_BANDWIDTH      =   0x01;
+	const unsigned StrategyFlags::SMALL_BANDWIDTH      =   0x02;
+	const unsigned StrategyFlags::TRANSIENTS           =   0x04;
+	const unsigned StrategyFlags::ROBUST               =   0x08;
+	const unsigned StrategyFlags::FAST                 =   0x10;
+	const unsigned StrategyFlags::INSENSITIVE          =   0x20;
+	const unsigned StrategyFlags::SENSITIVE            =   0x40;
+	const unsigned StrategyFlags::USE_ORIGINAL_FLAGS   =   0x80;
+	const unsigned StrategyFlags::AUTO_CORRELATION     =  0x100;
+	const unsigned StrategyFlags::HIGH_TIME_RESOLUTION =  0x200;
 
 	
 	class ImageSetData {
@@ -220,7 +216,18 @@ namespace aoflagger {
 	
 	FlagMask& FlagMask::operator=(const FlagMask& flagMask)
 	{
-		*_data = *flagMask._data;
+		if(flagMask._data == nullptr)
+		{
+			delete _data;
+			_data = nullptr;
+		}
+		else if(_data == nullptr)
+		{
+			_data = new FlagMaskData(*flagMask._data);
+		}
+		else {
+			*_data = *flagMask._data;
+		}
 		return *this;
 	}
 	
@@ -270,14 +277,17 @@ namespace aoflagger {
 			std::shared_ptr<rfiStrategy::Strategy> strategyPtr;
 	};
 	
-	Strategy::Strategy(enum TelescopeId telescopeId, unsigned strategyFlags, double frequency, double timeRes, double frequencyRes) :
-		_data(new StrategyData(rfiStrategy::DefaultStrategy::CreateStrategy(
+	Strategy::Strategy(enum TelescopeId telescopeId, unsigned strategyFlags, double frequency, double timeRes, double frequencyRes)
+	{
+		std::unique_ptr<rfiStrategy::Strategy> s(new rfiStrategy::Strategy());
+		rfiStrategy::DefaultStrategy::StrategySetup setup = rfiStrategy::DefaultStrategy::DetermineSetup(
 			(rfiStrategy::DefaultStrategy::TelescopeId) telescopeId,
 			strategyFlags,
+			frequency,
 			timeRes,
-			frequencyRes
-		)))
-	{
+			frequencyRes);
+		rfiStrategy::DefaultStrategy::LoadSingleStrategy(*s, setup);
+		_data = new StrategyData(std::move(s));
 	}
 
 	Strategy::Strategy(const std::string& filename)
@@ -427,42 +437,42 @@ namespace aoflagger {
 		Image2DPtr zeroImage = Image2D::CreateZeroImagePtr(input.Width(), input.Height());
 		switch(input.ImageCount())
 		{
-			case 1:
-				inputData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, input._data->images[0]);
-				inputData.SetGlobalMask(mask);
-				revisedData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, zeroImage);
-				revisedData.SetGlobalMask(mask);
-				break;
-			case 2:
-				inputData = TimeFrequencyData(Polarization::StokesI, input._data->images[0], input._data->images[1]);
-				inputData.SetGlobalMask(mask);
-				revisedData = TimeFrequencyData(Polarization::StokesI, zeroImage, zeroImage);
-				revisedData.SetGlobalMask(mask);
-				break;
-			case 4:
-				inputData = TimeFrequencyData(
-					Polarization::XX, input._data->images[0], input._data->images[1],
-					Polarization::YY, input._data->images[2], input._data->images[3]
-				);
-				inputData.SetIndividualPolarizationMasks(mask, mask);
-				revisedData = TimeFrequencyData(
-					Polarization::XX, zeroImage, zeroImage,
-					Polarization::YY, zeroImage, zeroImage);
-				revisedData.SetIndividualPolarizationMasks(mask, mask);
-				break;
-			case 8:
-				inputData = TimeFrequencyData::FromLinear(
-					input._data->images[0], input._data->images[1],
-					input._data->images[2], input._data->images[3],
-					input._data->images[4], input._data->images[5],
-					input._data->images[6], input._data->images[7]
-				);
-				inputData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
-				revisedData = TimeFrequencyData::FromLinear(
-					zeroImage, zeroImage, zeroImage, zeroImage,
-					zeroImage, zeroImage, zeroImage, zeroImage);
-				revisedData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
-				break;
+		case 1:
+			inputData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, input._data->images[0]);
+			inputData.SetGlobalMask(mask);
+			revisedData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, zeroImage);
+			revisedData.SetGlobalMask(mask);
+			break;
+		case 2:
+			inputData = TimeFrequencyData(Polarization::StokesI, input._data->images[0], input._data->images[1]);
+			inputData.SetGlobalMask(mask);
+			revisedData = TimeFrequencyData(Polarization::StokesI, zeroImage, zeroImage);
+			revisedData.SetGlobalMask(mask);
+			break;
+		case 4:
+			inputData = TimeFrequencyData(
+				Polarization::XX, input._data->images[0], input._data->images[1],
+				Polarization::YY, input._data->images[2], input._data->images[3]
+			);
+			inputData.SetIndividualPolarizationMasks(mask, mask);
+			revisedData = TimeFrequencyData(
+				Polarization::XX, zeroImage, zeroImage,
+				Polarization::YY, zeroImage, zeroImage);
+			revisedData.SetIndividualPolarizationMasks(mask, mask);
+			break;
+		case 8:
+			inputData = TimeFrequencyData::FromLinear(
+				input._data->images[0], input._data->images[1],
+				input._data->images[2], input._data->images[3],
+				input._data->images[4], input._data->images[5],
+				input._data->images[6], input._data->images[7]
+			);
+			inputData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
+			revisedData = TimeFrequencyData::FromLinear(
+				zeroImage, zeroImage, zeroImage, zeroImage,
+				zeroImage, zeroImage, zeroImage, zeroImage);
+			revisedData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
+			break;
 		}
 		artifacts.SetOriginalData(inputData);
 		artifacts.SetContaminatedData(inputData);
@@ -479,6 +489,11 @@ namespace aoflagger {
 		flagMask._data = 
 			new FlagMaskData(std::move(mask));
 		return flagMask;
+	}
+	
+	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input, const FlagMask& correlatorFlags)
+	{
+		return Run(strategy, input);
 	}
 	
 	QualityStatistics AOFlagger::MakeQualityStatistics(const double *scanTimes, size_t nScans, const double *channelFrequencies, size_t nChannels, size_t nPolarizations)

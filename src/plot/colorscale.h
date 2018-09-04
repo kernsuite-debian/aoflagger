@@ -20,13 +20,13 @@ class ColorScale {
 			_width = 0.0;
 			_textOnLeft = textOnLeft;
 		}
-		double GetWidth(Cairo::RefPtr<Cairo::Context> cairo)
+		double GetWidth(const Cairo::RefPtr<Cairo::Context>& cairo)
 		{
 			if(_width == 0.0)
 				initWidth(cairo);
 			return _width;
 		}
-		void Draw(Cairo::RefPtr<Cairo::Context> cairo);
+		void Draw(const Cairo::RefPtr<Cairo::Context>& cairo);
 		void InitializeNumericTicks(double min, double max)
 		{
 			_width = 0.0;
@@ -63,7 +63,7 @@ class ColorScale {
 		{
 			_verticalPlotScale.SetDrawWithDescription(drawWithDescription);
 		}
-		void SetUnitsCaption(const std::string &caption)
+		void SetUnitsCaption(const std::string& caption)
 		{
 			_verticalPlotScale.SetUnitsCaption(caption);
 		}
@@ -75,7 +75,7 @@ class ColorScale {
 			double red, green, blue;
 		};
 		
-		void initWidth(Cairo::RefPtr<Cairo::Context> cairo);
+		void initWidth(const Cairo::RefPtr<Cairo::Context>& cairo);
 		
 		double _plotWidth, _plotHeight, _topMargin;
 		double _scaleWidth, _width, _textHeight;

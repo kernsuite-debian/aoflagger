@@ -38,7 +38,8 @@ namespace rfiStrategy {
 				return std::move(index);
 			}
 			size_t SequenceIndex() const { return _sequenceIndex; }
-		private:
+
+	private:
 			size_t _sequenceIndex;
 			bool _isValid;
 	};
@@ -133,11 +134,11 @@ namespace rfiStrategy {
 				return _sequences[static_cast<const MSImageSetIndex&>(index)._sequenceIndex].sequenceId;
 			}
 	
-			virtual MSImageSetIndex *Index(size_t antenna1, size_t antenna2, size_t bandIndex, size_t sequenceId) final override
+			virtual std::unique_ptr<ImageSetIndex> Index(size_t antenna1, size_t antenna2, size_t bandIndex, size_t sequenceId) final override
 			{
-				MSImageSetIndex *index = new MSImageSetIndex(*this);
+				std::unique_ptr<MSImageSetIndex> index(new MSImageSetIndex(*this));
 				index->_sequenceIndex = FindBaselineIndex(antenna1, antenna2, bandIndex, sequenceId);
-				return index;
+				return std::move(index);
 			}
 			
 			const std::string &DataColumnName() const { return _dataColumnName; }
@@ -187,7 +188,7 @@ namespace rfiStrategy {
 			}
 			virtual size_t SequenceCount() const final override { return _sequencesPerBaselineCount; }
 			
-			size_t AntennaCount() { return _set.AntennaCount(); }
+			virtual size_t AntennaCount() const final override { return _set.AntennaCount(); }
 			virtual class ::FieldInfo GetFieldInfo(unsigned fieldIndex) override final
 			{
 				return _set.GetFieldInfo(fieldIndex);
@@ -202,6 +203,7 @@ namespace rfiStrategy {
 			const std::vector<MeasurementSet::Sequence>& Sequences() const {
 				return _sequences;
 			}
+			
 		private:
 			friend class MSImageSetIndex;
 			MSImageSet(const std::string &location, BaselineReaderPtr reader) :

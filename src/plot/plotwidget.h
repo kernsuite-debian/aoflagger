@@ -13,10 +13,6 @@ class PlotWidget : public Gtk::DrawingArea {
 			set_size_request(400, 300);
 		}
 		
-		~PlotWidget()
-		{
-		}
-
 		Plotable &Plot() const
 		{
 			return *_plot; 
@@ -24,43 +20,30 @@ class PlotWidget : public Gtk::DrawingArea {
 		void SetPlot(Plotable &plot)
 		{
 			_plot = &plot;
-			redraw();
+			queue_draw();
 		}
 		void Clear()
 		{
 			_plot = nullptr;
-			redraw();
+			queue_draw();
 		}
 		void Update()
 		{
-			redraw();
-			Glib::RefPtr<Gdk::Window> window = get_window();
-			if(window)
-				window->invalidate(false);
+			queue_draw();
 		}
 	private:
 		Plotable *_plot;
 
-		bool onDraw(const Cairo::RefPtr<Cairo::Context >& cr)
-		{
-			redraw();
-			return true;
-		}
-
-		void redraw()
+		bool onDraw(const Cairo::RefPtr<Cairo::Context>& cr)
 		{
 			if(_plot != nullptr)
 				_plot->Render(*this);
 			else {
-				Glib::RefPtr<Gdk::Window> window = get_window();
-				if(window)
-				{
-					Cairo::RefPtr<Cairo::Context> cr = window->create_cairo_context();
-					cr->set_source_rgba(1, 1, 1, 1);
-					cr->paint();
-					cr->fill();
-				}
+				cr->set_source_rgba(1, 1, 1, 1);
+				cr->paint();
+				cr->fill();
 			}
+			return true;
 		}
 };
 
