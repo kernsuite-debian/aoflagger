@@ -304,8 +304,7 @@ else()
 endif(GTKMM_FOUND)
 
 add_executable(aoflagger-bin aoflagger.cpp)
-set_target_properties(aoflagger-bin
-  PROPERTIES OUTPUT_NAME aoflagger)
+set_target_properties(aoflagger-bin PROPERTIES OUTPUT_NAME aoflagger)
 
 add_executable(msinfo msinfo.cpp)
 
@@ -319,6 +318,7 @@ add_executable(aotest EXCLUDE_FROM_ALL aotest.cpp)
 add_test(aotest aotest)
 add_custom_target(check COMMAND aotest DEPENDS aotest)
 
+# Installation commands
 if(GTKMM_FOUND)
 	install (TARGETS rfigui aoqplot DESTINATION bin)
 endif(GTKMM_FOUND)

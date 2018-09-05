@@ -1,14 +1,16 @@
 #include "sumthreshold.h"
 
+#include "../../structures/image2d.h"
+
+#include "../../util/logger.h"
+
 #ifdef __SSE__
 
 #include <stdint.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
-#include "../../structures/image2d.h"
-
-#include "../../util/logger.h"
+#endif
 
 template<size_t Length>
 void SumThreshold::Horizontal(const Image2D* input, Mask2D* mask, num_t threshold)
@@ -248,6 +250,7 @@ void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* 
 }
 #endif // AVX2
 
+#ifdef __SSE__
 /**
  * The SSE version of the Vertical SumThreshold algorithm using intrinsics.
  *
