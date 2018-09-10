@@ -1,3 +1,9 @@
+aoflagger (2.12.1-2) unstable; urgency=medium
+
+  * Use float-store=true instead of SSE on i386 (Closes: #908384)
+
+ -- Ole Streicher <olebole@debian.org>  Mon, 10 Sep 2018 10:55:18 +0200
+
 aoflagger (2.12.1-1) unstable; urgency=medium
 
   * New upstream version 2.12.1. Closes: #908008
