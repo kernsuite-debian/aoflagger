@@ -1,8 +1,16 @@
+aoflagger (2.12.1-2kern1) bionic; urgency=medium
+
+  [ Gijs Molenaar ]
+  * rebuild for KERN
+
+ -- KERN packaging <packaging@kernsuite.info>  Thu, 27 Sep 2018 14:58:27 +0200
+
 aoflagger (2.12.1-2) unstable; urgency=medium
 
+  [ Ole Streicher ]
   * Use float-store=true instead of SSE on i386 (Closes: #908384)
 
- -- Ole Streicher <olebole@debian.org>  Mon, 10 Sep 2018 10:55:18 +0200
+ -- KERN packaging <packaging@kernsuite.info>  Thu, 27 Sep 2018 14:58:23 +0200
 
 aoflagger (2.12.1-1) unstable; urgency=medium
 
