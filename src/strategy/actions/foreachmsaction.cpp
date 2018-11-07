@@ -23,7 +23,7 @@ namespace rfiStrategy {
 void ForEachMSAction::Initialize()
 {
 }
-	
+
 void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress)
 {
 	unsigned taskIndex = 0;
@@ -50,7 +50,7 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 		
 		if(!skip)
 		{
-			std::unique_ptr<ImageSet> imageSet(ImageSet::Create(filename, _baselineIOMode));
+			std::unique_ptr<ImageSet> imageSet(ImageSet::Create(std::vector<std::string>{filename}, _baselineIOMode));
 			bool isMS = dynamic_cast<MSImageSet*>(&*imageSet) != 0;
 			if(isMS)
 			{ 
@@ -74,19 +74,15 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 				unsigned flags;
 				double frequency, timeResolution, frequencyResolution;
 				rfiStrategy::DefaultStrategy::DetermineSettings(*imageSet, telescopeId, flags, frequency, timeResolution, frequencyResolution);
+				rfiStrategy::DefaultStrategy::StrategySetup setup = rfiStrategy::DefaultStrategy::DetermineSetup(telescopeId, flags, frequency, timeResolution, frequencyResolution);
 				RemoveAll();
-				rfiStrategy::DefaultStrategy::LoadFullStrategy(
-					*this,
-					telescopeId,
-					flags,
-					frequency,
-					timeResolution,
-					frequencyResolution
-				);
+				rfiStrategy::DefaultStrategy::LoadFullStrategy(*this, setup);
 			}
 			
 			if(_threadCount != 0)
 				rfiStrategy::Strategy::SetThreadCount(*this, _threadCount);
+			if(!_bandpassFilename.empty())
+				rfiStrategy::Strategy::SetBandpassFilename(*this, _bandpassFilename);
 			
 			if(!_fields.empty() || !_bands.empty())
 			{
@@ -98,7 +94,7 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 					fobAction->Fields() = _fields;
 				}
 			}
-				
+			
 			std::unique_ptr<ImageSetIndex> index(imageSet->StartIndex());
 			artifacts.SetImageSet(std::move(imageSet));
 			artifacts.SetImageSetIndex(std::move(index));

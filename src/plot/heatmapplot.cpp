@@ -5,6 +5,7 @@
 #include "verticalplotscale.h"
 #include "title.h"
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 
@@ -16,6 +17,10 @@
 #include "../util/logger.h"
 
 #include <boost/algorithm/string.hpp>
+
+#ifndef HAVE_EXP10
+#define exp10(x) exp( (2.3025850929940456840179914546844) * (x) )
+#endif
 
 HeatMapPlot::HeatMapPlot() :
 	_isInitialized(false),
@@ -77,7 +82,7 @@ void HeatMapPlot::Clear()
 	_isInitialized = false;
 }
 
-void HeatMapPlot::redrawWithoutChanges(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height)
+void HeatMapPlot::redrawWithoutChanges(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height)
 {
 	cairo->set_source_rgb(1.0, 1.0, 1.0);
 	cairo->set_line_width(1.0);
@@ -201,7 +206,40 @@ void HeatMapPlot::ZoomOut()
 	}
 }
 
-void HeatMapPlot::Draw(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height, bool isInvalidated)
+void HeatMapPlot::ZoomTo(size_t x1, size_t y1, size_t x2, size_t y2)
+{
+	if(x1 > x2)
+		std::swap(x1, x2);
+	if(y1 > y2)
+		std::swap(y1, y2);
+	_startHorizontal = std::max(0.0, std::min(1.0, double(x1) / _image->Width()));
+	_endHorizontal = std::max(0.0, std::min(1.0, double(x2+1) / _image->Width()));
+	_startVertical = std::max(0.0, std::min(1.0, double(y1) / _image->Height()));
+	_endVertical = std::max(0.0, std::min(1.0, double(y2+1) / _image->Height()));
+	_onZoomChanged.emit();
+}
+	
+void HeatMapPlot::Pan(int xDisplacement, int yDisplacement)
+{
+	double
+		dx = double(xDisplacement) / _image->Width(),
+		dy = double(yDisplacement) / _image->Height();
+	if(_startHorizontal + dx < 0.0)
+		dx = -_startHorizontal;
+	if(_startVertical + dy < 0.0)
+		dy = -_startVertical;
+	if(_endHorizontal + dx > 1.0)
+		dx = 1.0 - _endHorizontal;
+	if(_endVertical + dy > 1.0)
+		dy = 1.0 - _endVertical;
+	_startHorizontal += dx;
+	_endHorizontal += dx;
+	_startVertical += dy;
+	_endVertical += dy;
+	_onZoomChanged.emit();
+}
+
+void HeatMapPlot::Draw(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height, bool isInvalidated)
 {
 	if(!isInvalidated && width == _initializedWidth && height == _initializedHeight)
 		redrawWithoutChanges(cairo, width, height);
@@ -297,7 +335,7 @@ void HeatMapPlot::SaveText(const std::string &filename)
 	}
 }
 
-void HeatMapPlot::update(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, unsigned height)
+void HeatMapPlot::update(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height)
 {
 	Mask2DCPtr mask = GetActiveMask(), originalMask = _originalMask, alternativeMask = _alternativeMask;
 	
@@ -305,7 +343,26 @@ void HeatMapPlot::update(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, un
 		startX = (unsigned int) round(_startHorizontal * _image->Width()),
 		startY = (unsigned int) round(_startVertical * _image->Height()),
 		endX = (unsigned int) round(_endHorizontal * _image->Width()),
-		endY = (unsigned int) round(_endVertical * _image->Height()),
+		endY = (unsigned int) round(_endVertical * _image->Height());
+	if(startX >= endX)
+	{
+		endX = startX+1;
+		if(endX >= _image->Width())
+		{
+			startX -= endX - _image->Width();
+			endX = _image->Width();
+		}
+	}
+	if(startY >= endY)
+	{
+		endY = startY+1;
+		if(endY >= _image->Height())
+		{
+			startY -= endY - _image->Height();
+			endY = _image->Height();
+		}
+	}
+	unsigned int
 		startTimestep = startX,
 		endTimestep = endX;
 	size_t
@@ -458,7 +515,7 @@ void HeatMapPlot::update(Cairo::RefPtr<Cairo::Context> cairo, unsigned width, un
 	if(_highlighting)
 	{
 		highlightMask = Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
-		_highlightConfig->Execute(image.get(), highlightMask.get(), true, 10.0);
+		_highlightConfig->Execute(image.get(), highlightMask.get(), true, 10.0, 10.0);
 	}
 	const bool
 		originalActive = _showOriginalMask && originalMask != 0,
@@ -564,6 +621,10 @@ std::unique_ptr<ColorMap> HeatMapPlot::createColorMap()
 			return CM(new class FireMap());
 		case BlackRedMap:
 			return CM(new class BlackRedMap());
+		case CubeHelixMap:
+			return CM(new class CubeHelixMap());
+		case CubeHelixColourfulMap:
+			return CM(new class CubeHelixColourfulMap());
 		case ViridisMap:
 			return CM(new class ViridisMap());
 		default:
@@ -731,11 +792,15 @@ TimeFrequencyMetaDataCPtr HeatMapPlot::GetSelectedMetaData() const
 
 bool HeatMapPlot::ConvertToUnits(double mouseX, double mouseY, int &posX, int &posY) const
 {
-	const unsigned int
+	unsigned int
 		startX = (unsigned int) round(_startHorizontal * _image->Width()),
 		startY = (unsigned int) round(_startVertical * _image->Height()),
 		endX = (unsigned int) round(_endHorizontal * _image->Width()),
 		endY = (unsigned int) round(_endVertical * _image->Height());
+	if(endX <= startX)
+		endX = startX+1;
+	if(endY <= startY)
+		endY = startY+1;
 	const unsigned
 		width = endX - startX,
 		height = endY - startY;
@@ -747,4 +812,23 @@ bool HeatMapPlot::ConvertToUnits(double mouseX, double mouseY, int &posX, int &p
 	return inDomain;
 }
 
-
+bool HeatMapPlot::ConvertToScreen(int posX, int posY, double& mouseX, double& mouseY) const
+{
+	unsigned int
+		startX = (unsigned int) round(_startHorizontal * _image->Width()),
+		startY = (unsigned int) round(_startVertical * _image->Height()),
+		endX = (unsigned int) round(_endHorizontal * _image->Width()),
+		endY = (unsigned int) round(_endVertical * _image->Height());
+	if(endX <= startX)
+		endX = startX+1;
+	if(endY <= startY)
+		endY = startY+1;
+	const unsigned
+		width = endX - startX,
+		height = endY - startY;
+	posX -= startX;
+	posY = endY - posY - 1;
+	mouseX = (posX + 0.5) * (_initializedWidth - _rightBorderSize - _leftBorderSize) / width + _leftBorderSize;
+	mouseY = (posY + 0.5) *(_initializedHeight - _bottomBorderSize - _topBorderSize) / height + _topBorderSize;
+	return true;
+}

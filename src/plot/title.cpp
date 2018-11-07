@@ -1,6 +1,6 @@
 #include "title.h"
 
-void Title::Draw(Cairo::RefPtr< Cairo::Context >& cairo)
+void Title::Draw(const Cairo::RefPtr< Cairo::Context >& cairo)
 {
 	initializeMetrics(cairo);
 
@@ -13,7 +13,7 @@ void Title::Draw(Cairo::RefPtr< Cairo::Context >& cairo)
 	cairo->show_text(_text);
 }
 
-void Title::initializeMetrics(Cairo::RefPtr< Cairo::Context >& cairo)
+void Title::initializeMetrics(const Cairo::RefPtr< Cairo::Context >& cairo)
 {
 	if(!_metricsAreInitialized)
 	{

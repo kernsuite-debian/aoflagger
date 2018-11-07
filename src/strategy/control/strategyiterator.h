@@ -25,7 +25,7 @@ namespace rfiStrategy
 			StrategyIterator &operator++()
 			{
 				ActionContainer *container = dynamic_cast<ActionContainer*>(_currentAction);
-				if(container != 0 && container->GetChildCount()!=0)
+				if(container != nullptr && container->GetChildCount()!=0)
 				{
 					_currentAction = &container->GetFirstChild();
 					_indices.push(0);
@@ -45,11 +45,11 @@ namespace rfiStrategy
 					}
 
 					_indices.push(index);
-					if(parent != 0 && index < parent->GetChildCount())
+					if(parent != nullptr && index < parent->GetChildCount())
 					{
 						_currentAction = &parent->GetChild(index);
 					} else {
-						while(_currentAction->Parent() != 0)
+						while(_currentAction->Parent() != nullptr)
 							_currentAction = _currentAction->Parent();
 					}
 				}
@@ -78,12 +78,12 @@ namespace rfiStrategy
 				}
 			}
 
-			static StrategyIterator NewStartIterator(ActionContainer &action)
+			static StrategyIterator NewStartIterator(ActionContainer& action)
 			{
 				return StrategyIterator(&action, 0);
 			}
 
-			static StrategyIterator NewEndIterator(ActionContainer &action)
+			static StrategyIterator NewEndIterator(ActionContainer& action)
 			{
 				return StrategyIterator(&action, action.GetChildCount());
 			}

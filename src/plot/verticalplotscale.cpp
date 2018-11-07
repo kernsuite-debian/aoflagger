@@ -15,7 +15,7 @@ VerticalPlotScale::VerticalPlotScale() :
 VerticalPlotScale::~VerticalPlotScale()
 { }
 
-double VerticalPlotScale::GetTextHeight(Cairo::RefPtr<Cairo::Context> cairo)
+double VerticalPlotScale::GetTextHeight(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	Cairo::TextExtents extents;
 	cairo->get_text_extents("M", extents);
@@ -32,7 +32,7 @@ double VerticalPlotScale::AxisToUnit(double axisValue) const
 	return _tickSet->AxisToUnit(axisValue);
 }
 
-void VerticalPlotScale::Draw(Cairo::RefPtr<Cairo::Context> cairo, double offsetX, double offsetY)
+void VerticalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX, double offsetY)
 {
 	offsetY += _fromTop;
 	initializeMetrics(cairo);
@@ -62,7 +62,7 @@ void VerticalPlotScale::Draw(Cairo::RefPtr<Cairo::Context> cairo, double offsetX
 		drawUnits(cairo, offsetX, offsetY);
 }
 
-void VerticalPlotScale::drawUnits(Cairo::RefPtr<Cairo::Context> cairo, double offsetX, double offsetY)
+void VerticalPlotScale::drawUnits(const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX, double offsetY)
 {
 	cairo->save();
 	cairo->set_font_size(_descriptionFontSize);
@@ -90,7 +90,7 @@ void VerticalPlotScale::drawUnits(Cairo::RefPtr<Cairo::Context> cairo, double of
 	cairo->fill();
 }
 
-void VerticalPlotScale::initializeMetrics(Cairo::RefPtr<Cairo::Context> cairo)
+void VerticalPlotScale::initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	if(!_metricsAreInitialized)
 	{
@@ -142,12 +142,12 @@ void VerticalPlotScale::InitializeLogarithmicTicks(double min, double max)
 	_metricsAreInitialized = false;
 }
 
-double VerticalPlotScale::getTickYPosition(const Tick &tick)
+double VerticalPlotScale::getTickYPosition(const Tick& tick)
 {
 	return (1.0-tick.first) * _plotHeight;
 }
 
-bool VerticalPlotScale::ticksFit(Cairo::RefPtr<Cairo::Context> cairo)
+bool VerticalPlotScale::ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo)
 {
 	cairo->set_font_size(16.0);
 	double prevTopY = _plotHeight*2.0;

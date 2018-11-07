@@ -17,7 +17,7 @@ namespace rfiStrategy {
 			}
 			virtual std::string Description() final override
 			{
-				return "Calibrate passband";
+				return "Calibrate bandpass";
 			}
 			virtual void Perform(ArtifactSet &artifacts, ProgressListener &progress) final override
 			{

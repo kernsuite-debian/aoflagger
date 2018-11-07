@@ -127,14 +127,13 @@ class RFIGuiController
 		void PlotPowerSpectrumComparison();
 		void PlotFrequencyScatter();
 		void PlotPowerRMS();
-		void PlotPowerSNR();
 		void PlotPowerTime();
 		void PlotPowerTimeComparison();
 		void PlotTimeScatter();
 		void PlotTimeScatterComparison();
 		void PlotSingularValues();
 		
-		void Open(const std::string& filename, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW);
+		void Open(const std::vector<std::string>& filenames, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW);
 		
 		void OpenTestSet(unsigned index, bool gaussianTestSets);
 		
@@ -142,8 +141,6 @@ class RFIGuiController
 		
 		TimeFrequencyData ActiveData() const;
 		TimeFrequencyData OriginalData() const;
-		TimeFrequencyData RevisedData() const;
-		TimeFrequencyData ContaminatedData() const;
 		
 		TimeFrequencyMetaDataCPtr SelectedMetaData() const;
 		
@@ -174,16 +171,16 @@ class RFIGuiController
 		
 		void LoadSpatialTime(const std::string& filename);
 		
-		void LoadPath(const std::string& filename);
+		void LoadPaths(const std::vector<std::string>& filenames);
 		
 		void CheckPolarizations(bool forceSignal = false);
 		
 		void GetAvailablePolarizations(bool& pp, bool& pq, bool& qp, bool& qq) const;
 		
 		void InterpolateFlagged();
+		
 	private:
 		void plotMeanSpectrum(bool weight);
-		
 		
 		bool _showOriginalFlags, _showAlternativeFlags;
 		bool _showPP, _showPQ, _showQP, _showQQ;

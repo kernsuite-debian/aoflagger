@@ -8,6 +8,10 @@
 
 #include "../../structures/measurementset.h"
 
+#ifndef HAVE_EXP10
+#define exp10(x) exp( (2.3025850929940456840179914546844) * (x) )
+#endif
+
 HistogramPageController::HistogramPageController() :
 	_page(nullptr),
 	_histograms(nullptr),
@@ -105,11 +109,11 @@ std::string HistogramPageController::SlopeText(const LogHistogram &histogram)
 		offset = histogram.NormalizedSlopeOffset(_slopeStart, _slopeEnd, slope),
 		error = histogram.NormalizedSlopeStdError(_slopeStart, _slopeEnd, slope),
 		errorB = histogram.NormalizedSlopeStdDevBySampling(_slopeStart, _slopeEnd, slope, _deltaS),
-		upperLimit = histogram.PowerLawUpperLimit(_slopeStart, slope, pow10(offset)),
-		lowerLimit = histogram.PowerLawLowerLimit(_slopeStart, slope, pow10(offset), _slopeRFIRatio),
-		lowerError = fabs(lowerLimit - histogram.PowerLawLowerLimit(_slopeStart, slope - error, pow10(offset), _slopeRFIRatio)),
-		lowerLimit2 = histogram.PowerLawLowerLimit2(_slopeStart, slope, pow10(offset), _slopeRFIRatio);
-	str << slope << "±" << error << "\n/±" << errorB << "\nb=" << pow10(offset)
+		upperLimit = histogram.PowerLawUpperLimit(_slopeStart, slope, exp10(offset)),
+		lowerLimit = histogram.PowerLawLowerLimit(_slopeStart, slope, exp10(offset), _slopeRFIRatio),
+		lowerError = fabs(lowerLimit - histogram.PowerLawLowerLimit(_slopeStart, slope - error, exp10(offset), _slopeRFIRatio)),
+		lowerLimit2 = histogram.PowerLawLowerLimit2(_slopeStart, slope, exp10(offset), _slopeRFIRatio);
+	str << slope << "±" << error << "\n/±" << errorB << "\nb=" << exp10(offset)
 		<< "\nPL:"
 		<< powerLawExp << "±" << powerLawExpError << "\n["
 		<< log10(lowerLimit) << "±" << lowerError << ';' << log10(upperLimit) << ']' << '\n'
@@ -132,10 +136,10 @@ void HistogramPageController::plotSlope(const LogHistogram &histogram, const std
 		rfiRatio = _slopeRFIRatio,
 		slope = histogram.NormalizedSlope(start, end),
 		offset = histogram.NormalizedSlopeOffset(start, end, slope),
-		upperLimit = log10(histogram.PowerLawUpperLimit(start, slope, pow10(offset))),
+		upperLimit = log10(histogram.PowerLawUpperLimit(start, slope, exp10(offset))),
 		lowerLimit = useLowerLimit2 ?
-			log10(histogram.PowerLawLowerLimit2(start, slope, pow10(offset), rfiRatio)) :
-			log10(histogram.PowerLawLowerLimit(start, slope, pow10(offset), rfiRatio));
+			log10(histogram.PowerLawLowerLimit2(start, slope, exp10(offset), rfiRatio)) :
+			log10(histogram.PowerLawLowerLimit(start, slope, exp10(offset), rfiRatio));
 	double xStart, xEnd;
 	if(std::isfinite(lowerLimit))
 		xStart = lowerLimit;
@@ -254,7 +258,7 @@ void HistogramPageController::addRayleighToPlot(const LogHistogram &histogram, d
 		const double logx = log10(x);
 		if(derivative)
 		{
-			const double dc = -(pow10(2.0*x)-sigmaP2)/sigmaP2;
+			const double dc = -(exp10(2.0*x)-sigmaP2)/sigmaP2;
 			if(std::isfinite(logx) && std::isfinite(dc))
 				_plot.PushDataPoint(logx, dc);
 		} else {

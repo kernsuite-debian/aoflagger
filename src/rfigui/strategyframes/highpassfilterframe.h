@@ -5,6 +5,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/frame.h>
 #include <gtkmm/label.h>
+#include <gtkmm/radiobutton.h>
 #include <gtkmm/scale.h>
 
 #include "../../strategy/actions/highpassfilteraction.h"
@@ -14,13 +15,14 @@
 class HighPassFilterFrame : public Gtk::Frame {
 	public:
 		HighPassFilterFrame(rfiStrategy::HighPassFilterAction &action, EditStrategyWindow &editStrategyWindow)
-		: Gtk::Frame("Sliding window fit"), _editStrategyWindow(editStrategyWindow), _action(action),
+		: Gtk::Frame("High pass filter"),
+		_editStrategyWindow(editStrategyWindow), _action(action),
 		_hWindowSizeScale(Gtk::ORIENTATION_HORIZONTAL),
 		_vWindowSizeScale(Gtk::ORIENTATION_HORIZONTAL),
 		_hKernelSigmaScale(Gtk::ORIENTATION_HORIZONTAL),
 		_vKernelSigmaScale(Gtk::ORIENTATION_HORIZONTAL),
-		_hWindowSizeLabel("Horizontal sliding window size:", Gtk::ALIGN_START),
-		_vWindowSizeLabel("Vertical sliding window size:", Gtk::ALIGN_START),
+		_hWindowSizeLabel("Horizontal window size:", Gtk::ALIGN_START),
+		_vWindowSizeLabel("Vertical window size:", Gtk::ALIGN_START),
 		_hKernelSigmaLabel("Horizontal kernel sigma:", Gtk::ALIGN_START),
 		_vKernelSigmaLabel("Vertical kernel sigma:", Gtk::ALIGN_START),
 		_modeContaminatedButton("Store result (i.e. high-pass filtered) in contaminated"),
@@ -50,25 +52,28 @@ class HighPassFilterFrame : public Gtk::Frame {
 		void initScales()
 		{
 			_box.pack_start(_hWindowSizeLabel);
-			_hWindowSizeScale.set_range(0.0, 400.0);
+			_hWindowSizeScale.set_range(0.0, 200.0);
 			_hWindowSizeScale.set_increments(1, 10);
-			_hWindowSizeScale.set_value(_action.WindowWidth());
+			_hWindowSizeScale.set_round_digits(0);
 			_hWindowSizeScale.set_value(_action.WindowWidth());
 			_box.pack_start(_hWindowSizeScale);
 		
 			_box.pack_start(_vWindowSizeLabel);
-			_vWindowSizeScale.set_range(0.0, 400.0);
+			_vWindowSizeScale.set_range(0.0, 200.0);
 			_vWindowSizeScale.set_value(_action.WindowHeight());
 			_vWindowSizeScale.set_increments(1, 10);
+			_vWindowSizeScale.set_round_digits(0);
 			_box.pack_start(_vWindowSizeScale);
 		
 			_box.pack_start(_hKernelSigmaLabel);
-			_hKernelSigmaScale.set_range(0.1, 1000.0);
+			_hKernelSigmaScale.set_range(0.1, 100.0);
+			_hKernelSigmaScale.set_increments(0.1, 2.5);
 			_hKernelSigmaScale.set_value(sqrt(_action.HKernelSigmaSq()));
 			_box.pack_start(_hKernelSigmaScale);
 		
 			_box.pack_start(_vKernelSigmaLabel);
-			_vKernelSigmaScale.set_range(0.1, 1000.0);
+			_vKernelSigmaScale.set_range(0.1, 100.0);
+			_vKernelSigmaScale.set_increments(0.1, 2.5);
 			_vKernelSigmaScale.set_value(sqrt(_action.VKernelSigmaSq()));
 			_box.pack_start(_vKernelSigmaScale);
 		}

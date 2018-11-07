@@ -40,12 +40,6 @@ GrayScalePlotPage::GrayScalePlotPage(HeatMapPageController* controller) :
 	_imageWidget(&controller->Plot()),
 	_imagePropertiesWindow(nullptr)
 {
-	_imageWidget.Plot().SetCairoFilter(Cairo::FILTER_NEAREST);
-	_imageWidget.Plot().SetColorMap(HeatMapPlot::HotColdMap);
-	_imageWidget.Plot().SetRange(HeatMapPlot::MinMax);
-	_imageWidget.Plot().SetScaleOption(HeatMapPlot::LogScale);
-	_imageWidget.Plot().SetZAxisDescription("Statistical value");
-	_imageWidget.Plot().SetManualZAxisDescription(true);
 	_imageWidget.set_size_request(300, 300);
 	
 	pack_start(_imageWidget);
@@ -127,7 +121,7 @@ void GrayScalePlotPage::initPolarizations(Gtk::Toolbar& toolbar)
 
 	_polQPButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));
 	_polQPButton.set_icon_name("showqp");
-	_polPQButton.set_tooltip_text("Display statistics for the QP polarization. Depending on the polarization configuration of the measurement set, this will show YX or LR.");
+	_polQPButton.set_tooltip_text("Display statistics for the QP polarization. Depending on the polarization configuration of the measurement set, this will show YX or LR.");
 	toolbar.append(_polQPButton);
 
 	_polQQButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::updateImage));

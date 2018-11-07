@@ -11,6 +11,7 @@ namespace rfiStrategy {
 	{
 		AbsThresholdActionType,
 		ActionBlockType,
+		ApplyBandpassType,
 		BaselineSelectionActionType,
 		CalibratePassbandActionType,
 		ChangeResolutionActionType,
@@ -42,6 +43,7 @@ namespace rfiStrategy {
 		SVDActionType,
 		TimeConvolutionActionType,
 		TimeSelectionActionType,
+		VisualizeActionType,
 		WriteDataActionType,
 		WriteFlagsActionType
 	};

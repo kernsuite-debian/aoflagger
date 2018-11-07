@@ -172,9 +172,8 @@ namespace rfiStrategy {
 				
 				metaData->SetBand(band);
 				
-				ImageSetIndex* index = Index(request->first.antenna1, request->first.antenna2, request->first.spw, request->first.sequenceId);
+				std::unique_ptr<ImageSetIndex> index = Index(request->first.antenna1, request->first.antenna2, request->first.spw, request->first.sequenceId);
 				BaselineData combinedData(tfData, metaData, *index);
-				delete index;
 				_baselineData.push_back(combinedData);
 			}
 			_requests.clear();
@@ -228,6 +227,11 @@ namespace rfiStrategy {
 		const std::map<Sequence, std::vector<std::pair<size_t, size_t>>>& JoinedSequences() const { return _joinedSequences; }
 		
 		MSImageSet& msImageSet() { return *_msImageSet; }
+		
+		virtual size_t AntennaCount() const override final
+		{
+			return _msImageSet->AntennaCount();
+		}
 		
 		virtual size_t GetAntenna1(const ImageSetIndex &index) override final
 		{
@@ -284,16 +288,16 @@ namespace rfiStrategy {
 			return _msImageSet->SequenceCount();
 		}
 		
-		virtual ImageSetIndex* Index(size_t antenna1, size_t antenna2, size_t bandIndex, size_t sequenceId) override final
+		virtual std::unique_ptr<ImageSetIndex> Index(size_t antenna1, size_t antenna2, size_t bandIndex, size_t sequenceId) override final
 		{
 			for(auto i=_joinedSequences.begin(); i != _joinedSequences.end() ; ++i)
 			{
 				bool antennaMatch = (i->first.antenna1 == antenna1 && i->first.antenna2 == antenna2) || (i->first.antenna1 == antenna2 && i->first.antenna2 == antenna1);
 				if(antennaMatch && i->first.sequenceId == sequenceId)
 				{
-					JoinedSPWSetIndex* index = new JoinedSPWSetIndex(*this);
+					std::unique_ptr<JoinedSPWSetIndex> index(new JoinedSPWSetIndex(*this));
 					index->_iterator = i;
-					return index;
+					return std::move(index);
 				}
 			}
 			std::stringstream str;
@@ -309,7 +313,7 @@ namespace rfiStrategy {
 			return _msImageSet->GetFieldInfo(fieldIndex);
 		}
 	private:
-		JoinedSPWSet() { }
+		JoinedSPWSet() = default;
 		
 		std::unique_ptr<MSImageSet> _msImageSet;
 		std::map<Sequence, std::vector<std::pair<size_t, size_t>>> _joinedSequences;

@@ -33,6 +33,7 @@ class ChangeResolutionFrame : public Gtk::Frame {
 			_timeDecreaseFactorScale.set_increments(1, 5);
 			_box.pack_start(_timeDecreaseFactorScale);
 			_timeDecreaseFactorScale.set_value(_action.TimeDecreaseFactor());
+			_timeDecreaseFactorScale.set_round_digits(0);
 
 			_box.pack_start(_frequencyDecreaseFactorLabel);
 
@@ -40,6 +41,7 @@ class ChangeResolutionFrame : public Gtk::Frame {
 			_frequencyDecreaseFactorScale.set_increments(1, 5);
 			_box.pack_start(_frequencyDecreaseFactorScale);
 			_frequencyDecreaseFactorScale.set_value(_action.FrequencyDecreaseFactor());
+			_frequencyDecreaseFactorScale.set_round_digits(0);
 
 			_box.pack_start(_setRevisedToChangedImage);
 			_setRevisedToChangedImage.set_active(_action.RestoreRevised());

@@ -59,6 +59,7 @@ TimeFrequencyData RFIGuiController::OriginalData() const
 	return _tfController.OriginalData();
 }
 
+/*
 TimeFrequencyData RFIGuiController::RevisedData() const
 {
 	return _tfController.RevisedData();
@@ -67,7 +68,7 @@ TimeFrequencyData RFIGuiController::RevisedData() const
 TimeFrequencyData RFIGuiController::ContaminatedData() const
 {
 	return _tfController.ContaminatedData();
-}
+}*/
 
 TimeFrequencyMetaDataCPtr RFIGuiController::SelectedMetaData() const
 {
@@ -157,13 +158,13 @@ void RFIGuiController::PlotPowerSpectrum()
 		Image2DCPtr image = data.GetSingleImage();
 		Mask2DPtr mask =
 			Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
-		Plot2DPointSet &beforeSet = plot.StartLine("Before");
+		Plot2DPointSet &beforeSet = plot.StartLine("Flags not applied");
 		RFIPlots::MakePowerSpectrumPlot(beforeSet, image, mask, SelectedMetaData());
 
 		mask = Mask2D::MakePtr(*data.GetSingleMask());
 		if(!mask->AllFalse())
 		{
-			Plot2DPointSet &afterSet = plot.StartLine("After");
+			Plot2DPointSet &afterSet = plot.StartLine("Flags applied");
 			RFIPlots::MakePowerSpectrumPlot(afterSet, image, mask, SelectedMetaData());
 		}
 		
@@ -183,7 +184,7 @@ void RFIGuiController::PlotPowerSpectrumComparison()
 		Plot2DPointSet &originalSet = plot.StartLine("Original");
 		RFIPlots::MakePowerSpectrumPlot(originalSet, image, mask, SelectedMetaData());
 
-		data = ContaminatedData();
+		data = ActiveData();
 		image = data.GetSingleImage();
 		mask = data.GetSingleMask();
 		Plot2DPointSet &alternativeSet = plot.StartLine("Alternative");
@@ -233,36 +234,6 @@ void RFIGuiController::PlotPowerRMS()
 	}
 }
 
-void RFIGuiController::PlotPowerSNR()
-{
-	Image2DCPtr
-		image = ActiveData().GetSingleImage(),
-		model = RevisedData().GetSingleImage();
-	if(IsImageLoaded())
-	{
-		Plot2D &plot = _plotManager->NewPlot2D("SNR spectrum");
-		plot.SetLogarithmicYAxis(true);
-
-		Mask2DPtr mask =
-			Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
-		Plot2DPointSet &totalPlot = plot.StartLine("Total");
-		RFIPlots::MakeSNRSpectrumPlot(totalPlot, image, model, mask);
-
-		mask = Mask2D::MakePtr(*ActiveData().GetSingleMask());
-		if(!mask->AllFalse())
-		{
-			Plot2DPointSet &uncontaminatedPlot = plot.StartLine("Uncontaminated");
-			RFIPlots::MakeSNRSpectrumPlot(uncontaminatedPlot, image, model, mask);
-	
-			mask->Invert();
-			Plot2DPointSet &rfiPlot = plot.StartLine("RFI");
-			RFIPlots::MakeSNRSpectrumPlot(rfiPlot, image, model, mask);
-		}
-
-		_plotManager->Update();
-	}
-}
-
 void RFIGuiController::PlotPowerTime()
 {
 	if(IsImageLoaded())
@@ -304,7 +275,7 @@ void RFIGuiController::PlotPowerTimeComparison()
 		Plot2DPointSet &originalPlot = plot.StartLine("Original");
 		RFIPlots::MakePowerTimePlot(originalPlot, image, mask, SelectedMetaData());
 
-		data = ContaminatedData();
+		data = ActiveData();
 		mask = data.GetSingleMask();
 		image = data.GetSingleImage();
 		Plot2DPointSet &alternativePlot = plot.StartLine("Original");
@@ -332,7 +303,7 @@ void RFIGuiController::PlotTimeScatterComparison()
 	{
 		MultiPlot plot(_plotManager->NewPlot2D("Time scatter comparison"), 8);
 		RFIPlots::MakeTimeScatterPlot(plot, OriginalData(), SelectedMetaData(), 0);
-		RFIPlots::MakeTimeScatterPlot(plot, ContaminatedData(), SelectedMetaData(), 4);
+		RFIPlots::MakeTimeScatterPlot(plot, ActiveData(), SelectedMetaData(), 4);
 		plot.Finish();
 		_plotManager->Update();
 	}
@@ -349,12 +320,15 @@ void RFIGuiController::PlotSingularValues()
 	}
 }
 
-void RFIGuiController::Open(const std::string& filename, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW)
+void RFIGuiController::Open(const std::vector<std::string>& filenames, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW)
 {
-	Logger::Info << "Opening " << filename << '\n';
+	if(filenames.size() == 1)
+		Logger::Info << "Opening " << filenames[0] << '\n';
+	else
+		Logger::Info << "Opening multiple files.\n";
 	try
 	{
-		std::unique_ptr<rfiStrategy::ImageSet> imageSet(rfiStrategy::ImageSet::Create(filename, ioMode));
+		std::unique_ptr<rfiStrategy::ImageSet> imageSet(rfiStrategy::ImageSet::Create(filenames, ioMode));
 		rfiStrategy::MSImageSet* msImageSet =
 			dynamic_cast<rfiStrategy::MSImageSet*>(imageSet.get());
 		if(msImageSet != nullptr)
@@ -388,14 +362,13 @@ void RFIGuiController::Open(const std::string& filename, BaselineIOMode ioMode, 
 			double frequency, timeResolution, frequencyResolution;
 			rfiStrategy::DefaultStrategy::DetermineSettings(*imageSet, telescopeId, flags, frequency, timeResolution, frequencyResolution);
 			_strategyController->Strategy().RemoveAll();
-			rfiStrategy::DefaultStrategy::LoadStrategy(
-				_strategyController->Strategy(),
+			rfiStrategy::DefaultStrategy::LoadSingleStrategy(_strategyController->Strategy(), rfiStrategy::DefaultStrategy::DetermineSetup(
 				telescopeId,
-				flags | rfiStrategy::DefaultStrategy::FLAG_GUI_FRIENDLY,
+				flags,
 				frequency,
 				timeResolution,
 				frequencyResolution
-			);
+			));
 			_strategyController->NotifyChange();
 		}
 	
@@ -435,9 +408,12 @@ void RFIGuiController::OpenTestSet(unsigned index, bool gaussianTestSets)
 
 void RFIGuiController::ExecutePythonStrategy()
 {
+	_tfController.ClearAllButOriginal();
 	TimeFrequencyData data = OriginalData(); 
+	
 	_pythonStrategy.Execute(data);
-	_tfController.SetContaminatedData(data);
+	
+	_tfController.AddVisualization("Script result", data);
 	_rfiGuiWindow->GetTimeFrequencyWidget().Update();
 }
 
@@ -506,15 +482,10 @@ void RFIGuiController::LoadCurrentTFData()
 	}
 }
 
-void RFIGuiController::SetRevisedData(const TimeFrequencyData& data)
-{
-	_tfController.SetRevisedData(data);
-}
-
-void RFIGuiController::LoadPath(const std::string& filename)
+void RFIGuiController::LoadPaths(const std::vector<std::string>& filenames)
 {
 	std::unique_lock<std::mutex> lock(_ioMutex);
-	std::unique_ptr<rfiStrategy::ImageSet> imageSet(rfiStrategy::ImageSet::Create(filename, DirectReadMode));
+	std::unique_ptr<rfiStrategy::ImageSet> imageSet(rfiStrategy::ImageSet::Create(filenames, DirectReadMode));
 	imageSet->Initialize();
 	lock.unlock();
 	
@@ -523,14 +494,13 @@ void RFIGuiController::LoadPath(const std::string& filename)
 	double frequency, timeResolution, frequencyResolution;
 	rfiStrategy::DefaultStrategy::DetermineSettings(*imageSet, telescopeId, flags, frequency, timeResolution, frequencyResolution);
 	_strategyController->Strategy().RemoveAll();
-	rfiStrategy::DefaultStrategy::LoadStrategy(
-		_strategyController->Strategy(),
+	rfiStrategy::DefaultStrategy::LoadSingleStrategy(_strategyController->Strategy(), rfiStrategy::DefaultStrategy::DetermineSetup(
 		telescopeId,
-		flags | rfiStrategy::DefaultStrategy::FLAG_GUI_FRIENDLY,
+		flags,
 		frequency,
 		timeResolution,
 		frequencyResolution
-	);
+	));
 	_strategyController->NotifyChange();
 	
 	SetImageSet(std::move(imageSet));

@@ -16,7 +16,7 @@ Logger::LogWriter<Logger::ErrorLevel> Logger::Error;
 
 Logger::LogWriter<Logger::FatalLevel> Logger::Fatal;
 
-Logger::LogWriter<Logger::NoLevel, true> Logger::Progress;
+Logger::LogWriter<Logger::NoLevel> Logger::Progress;
 
 void Logger::SetVerbosity(VerbosityLevel verbosityLevel)
 {

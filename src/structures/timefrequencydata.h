@@ -369,6 +369,16 @@ class TimeFrequencyData
 							break;
 						}
 					}
+					else {
+						switch(polarization)
+						{
+						case Polarization::StokesI:
+							newData = TimeFrequencyData(_complexRepresentation, Polarization::StokesI, getFirstSum(rrPol, llPol));
+							break;
+						default:
+							throw BadUsageException("Requested conversion is not implemented for circular polarizations");
+						}
+					}
 				}
 				else
 					throw BadUsageException("Trying to convert the polarization in time frequency data in an invalid way");
@@ -565,6 +575,7 @@ class TimeFrequencyData
 			msg << "Invalid mask index of " << maskIndex << " in GetMask(): mask count is " << MaskCount();
 			throw BadUsageException(msg.str());
 		}
+		
 		void SetImage(size_t imageIndex, const Image2DCPtr& image)
 		{
 			size_t index = 0;
@@ -591,7 +602,35 @@ class TimeFrequencyData
 			}
 			throw BadUsageException("Invalid image index in SetImage()");
 		}
-		void SetMask(size_t maskIndex, const Mask2DCPtr &mask)
+		
+		void SetImage(size_t imageIndex, Image2DCPtr&& image)
+		{
+			size_t index = 0;
+			for(PolarizedTimeFrequencyData& data : _data)
+			{
+				if(data._images[0])
+				{
+					if(index == imageIndex)
+					{
+						data._images[0] = std::move(image);
+						return;
+					}
+					++index;
+				}
+				if(data._images[1])
+				{
+					if(index == imageIndex)
+					{
+						data._images[1] = std::move(image);
+						return;
+					}
+					++index;
+				}
+			}
+			throw BadUsageException("Invalid image index in SetImage()");
+		}
+		
+		void SetMask(size_t maskIndex, const Mask2DCPtr& mask)
 		{
 			size_t index = 0;
 			for(PolarizedTimeFrequencyData& data : _data)
@@ -608,6 +647,25 @@ class TimeFrequencyData
 			}
 			throw BadUsageException("Invalid mask index in SetMask()");
 		}
+		
+		void SetMask(size_t maskIndex, Mask2DCPtr&& mask)
+		{
+			size_t index = 0;
+			for(PolarizedTimeFrequencyData& data : _data)
+			{
+				if(data._flagging)
+				{
+					if(index == maskIndex)
+					{
+						data._flagging = std::move(mask);
+						return;
+					}
+					++index;
+				}
+			}
+			throw BadUsageException("Invalid mask index in SetMask()");
+		}
+		
 		void SetMask(const TimeFrequencyData& source)
 		{
 			source.CopyFlaggingTo(this);
@@ -617,7 +675,7 @@ class TimeFrequencyData
 
 		static TimeFrequencyData MakeFromPolarizationCombination(const TimeFrequencyData &xx, const TimeFrequencyData &xy, const TimeFrequencyData &yx, const TimeFrequencyData &yy);
 
-		static TimeFrequencyData MakeFromPolarizationCombination(const TimeFrequencyData &xx, const TimeFrequencyData &yy);
+		static TimeFrequencyData MakeFromPolarizationCombination(const TimeFrequencyData &first, const TimeFrequencyData &second);
 
 		void SetImagesToZero();
 		template<bool Value>

@@ -4,6 +4,7 @@
 #include "../algorithms/thresholdconfig.h"
 
 #include "action.h"
+
 #include "../control/artifactset.h"
 #include "../control/actionblock.h"
 
@@ -12,7 +13,10 @@ namespace rfiStrategy {
 	class SumThresholdAction : public Action
 	{
 			public:
-				SumThresholdAction() : _baseSensitivity(1.0), _inTimeDirection(true), _inFrequencyDirection(true)
+				SumThresholdAction() :
+					_timeDirectionSensitivity(1.0), _frequencyDirectionSensitivity(1.0),
+					_inTimeDirection(true), _inFrequencyDirection(true),
+					_excludeOriginalFlags(false)
 				{
 				}
 				
@@ -31,17 +35,30 @@ namespace rfiStrategy {
 					if(!_inFrequencyDirection)
 						thresholdConfig.RemoveVerticalOperations();
 					
-					TimeFrequencyData &contaminated = artifacts.ContaminatedData();
+					TimeFrequencyData& contaminated = artifacts.ContaminatedData();
 					Mask2DPtr mask(new Mask2D(*contaminated.GetSingleMask()));
-					const Image2D* image = contaminated.GetSingleImage().get();
-					thresholdConfig.Execute(image, mask.get(), false, artifacts.Sensitivity() * _baseSensitivity);
+					const Image2DCPtr image = contaminated.GetSingleImage();
+					if(_excludeOriginalFlags)
+					{
+						const Mask2DCPtr originalMask(artifacts.OriginalData().GetSingleMask());
+						thresholdConfig.ExecuteWithMissing(image.get(), mask.get(), originalMask.get(), false, artifacts.Sensitivity() * _timeDirectionSensitivity, artifacts.Sensitivity() * _frequencyDirectionSensitivity);
+					}
+					else {
+						thresholdConfig.Execute(image.get(), mask.get(), false, artifacts.Sensitivity() * _timeDirectionSensitivity, artifacts.Sensitivity() * _frequencyDirectionSensitivity);
+					}
 					contaminated.SetGlobalMask(mask);
 				}
 				
-				num_t BaseSensitivity() const { return _baseSensitivity; }
-				void SetBaseSensitivity(num_t baseSensitivity)
+				num_t TimeDirectionSensitivity() const { return _timeDirectionSensitivity; }
+				void SetTimeDirectionSensitivity(num_t sensitivity)
 				{
-					_baseSensitivity = baseSensitivity;
+					_timeDirectionSensitivity = sensitivity;
+				}
+				
+				num_t FrequencyDirectionSensitivity() const { return _frequencyDirectionSensitivity; }
+				void SetFrequencyDirectionSensitivity(num_t sensitivity)
+				{
+					_frequencyDirectionSensitivity = sensitivity;
 				}
 				
 				ActionType Type() const final override { return SumThresholdActionType; }
@@ -52,10 +69,15 @@ namespace rfiStrategy {
 				bool FrequencyDirectionFlagging() const { return _inFrequencyDirection; }
 				void SetFrequencyDirectionFlagging(bool frequencyDirection) { _inFrequencyDirection = frequencyDirection; }
 				
+				bool ExcludeOriginalFlags() const { return _excludeOriginalFlags; }
+				void SetExcludeOriginalFlags(bool exclude) { _excludeOriginalFlags = exclude; }
+				
 			private:
-				num_t _baseSensitivity;
+				num_t _timeDirectionSensitivity;
+				num_t _frequencyDirectionSensitivity;
 				bool _inTimeDirection;
 				bool _inFrequencyDirection;
+				bool _excludeOriginalFlags;
 	};
 
 } // namespace

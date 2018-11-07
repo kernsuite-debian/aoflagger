@@ -28,6 +28,21 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 		
 		Mask2D& operator=(Mask2D&& rhs) noexcept;
 		
+		bool operator==(const Mask2D& rhs) const
+		{
+			if(_width != rhs._width || _height != rhs._height)
+				return false;
+			for(size_t y=0;y<_height;++y)
+			{
+				for(size_t x=0;x<_width;++x)
+					if(_values[y][x] != rhs._values[y][x])
+						return false;
+			}
+			return true;
+		}
+		
+		bool operator!=(const Mask2D& rhs) const { return !(*this == rhs); }
+
 		template<typename... Args>
 		static Mask2DPtr MakePtr(Args&&... args)
 		{
@@ -101,6 +116,12 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 		void SetHorizontalValues(size_t x, size_t y, bool newValue, size_t count)
 		{
 			memset(&_values[y][x], newValue, count * sizeof(bool));
+		}
+		
+		void SetVerticalValues(size_t x, size_t y, bool newValue, size_t count)
+		{
+			for(size_t i=0; i!=count; ++i)
+				_values[y + i][x] = newValue;;
 		}
 		
 		size_t Width() const { return _width; }
@@ -248,17 +269,6 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 			return count;
 		}
 		
-		bool Equals(Mask2DCPtr other) const
-		{
-			for(size_t y=0;y<_height;++y)
-			{
-				for(size_t x=0;x<_width;++x)
-					if(_values[y][x] != other->_values[y][x])
-						return false;
-			}
-			return true;
-		}
-
 		Mask2D ShrinkHorizontally(int factor) const;
 		Mask2D ShrinkHorizontallyForAveraging(int factor) const;
 		

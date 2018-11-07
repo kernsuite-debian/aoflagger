@@ -7,8 +7,11 @@
 #include <gtkmm/actiongroup.h>
 #include <gtkmm/box.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/menu.h>
+#include <gtkmm/menutoolbutton.h>
 #include <gtkmm/paned.h>
 #include <gtkmm/radioaction.h>
+#include <gtkmm/radiomenuitem.h>
 #include <gtkmm/statusbar.h>
 #include <gtkmm/toggleaction.h>
 #include <gtkmm/window.h>
@@ -20,8 +23,8 @@
 
 #include "../plot/plotwidget.h"
 
+#include "heatmapwidget.h"
 #include "plotframe.h"
-#include "imagecomparisonwidget.h"
 #include "interfaces.h"
 
 #include "../imaging/defaultmodels.h"
@@ -37,23 +40,23 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		}
 		bool HasImage() const { return _timeFrequencyWidget.Plot().HasImage(); }
 		Mask2DCPtr Mask() const { return GetOriginalData().GetSingleMask(); }
-		Mask2DCPtr AltMask() const { return GetContaminatedData().GetSingleMask(); }
+		Mask2DCPtr AltMask() const { return GetActiveData().GetSingleMask(); }
 		
 		TimeFrequencyData GetActiveData() const;
 		const TimeFrequencyData &GetOriginalData() const;
-		const TimeFrequencyData &GetContaminatedData() const;
+		//const TimeFrequencyData &GetContaminatedData() const;
 
-		class ImageComparisonWidget &GetTimeFrequencyWidget()
+		class HeatMapWidget& GetTimeFrequencyWidget()
 		{
 			return _timeFrequencyWidget;
 		}
 		
-		class ThresholdConfig &HighlightConfig();
+		class ThresholdConfig& HighlightConfig();
 		void SetHighlighting(bool newValue);
 		TimeFrequencyMetaDataCPtr SelectedMetaData();
 		
 		void onExecuteStrategyFinished();
-		void OpenPath(const std::string &path);
+		void OpenPaths(const std::vector<std::string>& paths);
 		void ShowHistogram(class HistogramCollection &histogramCollection);
 		
 		class RFIGuiController& Controller() { return *_controller; }
@@ -61,6 +64,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void UpdateImageSetIndex();
 		void OpenGotoWindow() { onGoToPressed(); }
 		void SetBaselineInfo(bool multipleBaselines, const std::string& name, const std::string& description);
+		
 	private:
 		rfiStrategy::Strategy &Strategy() final override { return *_strategy; }
 		void SetStrategy(std::unique_ptr<rfiStrategy::Strategy> newStrategy) final override;
@@ -72,6 +76,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onToggleFlags();
 		void onTogglePolarizations();
 		void onToggleImage();
+		void onSelectImage();
 		void onQuit() { hide(); }
 		void onActionFileOpen();
 		void onActionDirectoryOpen();
@@ -84,9 +89,9 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onShowImagePlane();
 		void onSetAndShowImagePlane();
 		void onAddToImagePlane();
+		void onClearOriginalFlagsPressed();
 		void onClearAltFlagsPressed();
-		void onDifferenceToOriginalPressed();
-		void onBackgroundToOriginalPressed();
+		void onVisualizedToOriginalPressed();
 		void onHightlightPressed();
 		void keepPhasePart(enum TimeFrequencyData::ComplexRepresentation phaseRepresentation);
 		void onKeepRealPressed() { keepPhasePart(TimeFrequencyData::RealPart); }
@@ -137,6 +142,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onSetToOne();
 		void onSetToI();
 		void onSetToOnePlusI();
+		void onAddCorrelatorFault();
 		void onShowStats();
 		void onPlotDistPressed();
 		void onPlotLogLogDistPressed();
@@ -147,7 +153,6 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onPlotPowerSpectrumComparisonPressed();
 		void onPlotFrequencyScatterPressed();
 		void onPlotPowerRMSPressed();
-		void onPlotPowerSNRPressed();
 		void onPlotPowerTimePressed();
 		void onPlotPowerTimeComparisonPressed();
 		void onPlotTimeScatterPressed();
@@ -161,6 +166,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onLoadShortestBaselinePressed();
 		void onTFWidgetMouseMoved(size_t x, size_t y);
 		void onTFWidgetButtonReleased(size_t x, size_t y);
+		void onTFScroll(size_t x, size_t y, int direction);
 		void onMultiplyData();
 		void onSegment();
 		void onCluster();
@@ -204,11 +210,14 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		
 		void updatePolarizations();
 		
+		void updateTFVisualizationMenu();
+		size_t getActiveTFVisualization();
+		
 		class RFIGuiController* _controller;
 		
 		Gtk::Box _mainVBox;
 		Gtk::Paned _panedArea;
-		ImageComparisonWidget _timeFrequencyWidget;
+		HeatMapWidget _timeFrequencyWidget;
 		Glib::RefPtr<Gtk::ActionGroup> _actionGroup;
 		Gtk::Statusbar _statusbar;
 		PlotFrame _plotFrame;
@@ -217,11 +226,12 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		Glib::RefPtr<Gtk::Action>
 			_previousButton, _reloadButton, _nextButton,
 			_zoomToFitButton, _zoomInButton, _zoomOutButton;
+		Gtk::MenuToolButton _selectVisualizationButton;
 		Glib::RefPtr<Gtk::ToggleAction>
 			_originalFlagsButton, _altFlagsButton,
 			_showPPButton, _showPQButton,
 			_showQPButton, _showQQButton,
-			_originalImageButton, _backgroundImageButton, _diffImageButton,
+			_backgroundImageButton, _diffImageButton,
 			_timeGraphButton, _simFixBandwidthButton,
 			_closeExecuteFrameButton;
 		std::vector<sigc::connection> _toggleConnections;
@@ -244,6 +254,8 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		std::vector<double> _horProfile, _vertProfile;
 		TimeFrequencyData _storedData;
 		TimeFrequencyMetaDataCPtr _storedMetaData;
+		Gtk::Menu _tfVisualizationMenu;
+		std::vector<std::unique_ptr<Gtk::RadioMenuItem>> _tfVisualizationMenuItems;
 };
 
 #endif

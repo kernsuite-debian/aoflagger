@@ -193,23 +193,25 @@ void PlotPropertiesWindow::initAxesDescriptionWidgets()
 
 void PlotPropertiesWindow::updateHMinMaxEntries()
 {
+	auto range = _plot.RangeX();
 	std::stringstream minStr;
-	minStr << _plot.MinX();
+	minStr << range.first;
 	_hRangeMinEntry.set_text(minStr.str());
 	
 	std::stringstream maxStr;
-	maxStr << _plot.MaxX();
+	maxStr << range.second;
 	_hRangeMaxEntry.set_text(maxStr.str());
 }
 
 void PlotPropertiesWindow::updateVMinMaxEntries()
 {
+	auto range = _plot.RangeY();
 	std::stringstream minStr;
-	minStr << _plot.MinY();
+	minStr << range.first;
 	_vRangeMinEntry.set_text(minStr.str());
 	
 	std::stringstream maxStr;
-	maxStr << _plot.MaxY();
+	maxStr << range.second;
 	_vRangeMaxEntry.set_text(maxStr.str());
 }
 

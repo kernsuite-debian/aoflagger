@@ -34,7 +34,6 @@ class ImagePropertiesWindow : public Gtk::Window {
 		void initScaleWidgets();
 		void initOptionsWidgets();
 		void initFilterWidgets();
-		void initZoomWidgets();
 		void initAxisWidgets();
 		
 		void updateMinMaxEntries();
@@ -48,7 +47,7 @@ class ImagePropertiesWindow : public Gtk::Window {
 		Gtk::Button _applyButton, _exportButton, _exportDataButton, _closeButton;
 		Gtk::Frame _colorMapFrame;
 		Gtk::VBox _colorMapBox;
-		Gtk::RadioButton _grayScaleButton, _invGrayScaleButton, _hotColdScaleButton, _redBlueScaleButton, _blackRedScaleButton, _redBlueYellowScaleButton, _fireScaleButton, _viridisScaleButton;
+		Gtk::RadioButton _grayScaleButton, _invGrayScaleButton, _hotColdScaleButton, _redBlueScaleButton, _blackRedScaleButton, _redBlueYellowScaleButton, _fireScaleButton, _cubeHelixScaleButton, _cubeHelixColourfulScaleButton, _viridisScaleButton;
 		
 		Gtk::Frame _scaleFrame;
 		Gtk::VBox _scaleBox;
@@ -65,12 +64,6 @@ class ImagePropertiesWindow : public Gtk::Window {
 		Gtk::Frame _filterFrame;
 		Gtk::VBox _filterBox;
 		Gtk::RadioButton _bestFilterButton, _nearestFilterButton;
-		
-		Gtk::Frame _zoomFrame;
-		Gtk::HBox _zoomHBox;
-		Gtk::VBox _zoomVSubBox;
-		Gtk::Scale _hStartScale, _hStopScale;
-		Gtk::Scale _vStartScale, _vStopScale;
 		
 		Gtk::Frame _axesFrame;
 		Gtk::HBox _axesHBox;

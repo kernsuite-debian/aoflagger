@@ -15,7 +15,7 @@ ClusteredObservation::ClusteredObservation()
 {
 }
 
-ClusteredObservation *ClusteredObservation::LoadFromVds(const std::string &vdsFilename)
+std::unique_ptr<ClusteredObservation> ClusteredObservation::LoadFromVds(const std::string &vdsFilename)
 {
 	VdsFile vdsFile(vdsFilename);
 	std::unique_ptr<ClusteredObservation> cObs(new ClusteredObservation());
@@ -24,7 +24,7 @@ ClusteredObservation *ClusteredObservation::LoadFromVds(const std::string &vdsFi
 	{
 		cObs->AddItem(ClusteredObservationItem(cObs->Size(), vdsFile.Filename(i), Hostname(vdsFile.Host(i))));
 	}
-	return cObs.release();
+	return cObs;
 	
 	
 	/*LOFAR::CEP::VdsDesc vdsDesc(vdsFilename);
@@ -49,7 +49,7 @@ ClusteredObservation *ClusteredObservation::LoadFromVds(const std::string &vdsFi
 	return cObs.release();*/
 }
 
-ClusteredObservation *ClusteredObservation::LoadFromRef(const std::string &refFilename)
+std::unique_ptr<ClusteredObservation> ClusteredObservation::LoadFromRef(const std::string &refFilename)
 {
 	AOTools::RefFile refFile(refFilename);
 	std::unique_ptr<ClusteredObservation> cObs(new ClusteredObservation());
@@ -58,10 +58,10 @@ ClusteredObservation *ClusteredObservation::LoadFromRef(const std::string &refFi
 		const AOTools::RefFileEntry &entry = *i;
 		cObs->AddItem(ClusteredObservationItem(cObs->Size(), entry.Path(), Hostname(entry.Node())));
 	}
-	return cObs.release();
+	return cObs;
 }
 
-ClusteredObservation *ClusteredObservation::Load(const std::string &filename)
+std::unique_ptr<ClusteredObservation> ClusteredObservation::Load(const std::string &filename)
 {
 	if(IsVdsFilename(filename))
 		return LoadFromVds(filename);

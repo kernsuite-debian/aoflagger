@@ -9,13 +9,13 @@ namespace rfiStrategy {
 	
 	void ChangeResolutionAction::Perform(class ArtifactSet &artifacts, class ProgressListener &listener)
 	{
+		TimeFrequencyData oldContaminated = artifacts.ContaminatedData();
+
 		if(_timeDecreaseFactor != 1)
 		{
 			ArtifactSet artifactsCopy(artifacts);
 			artifactsCopy.SetNoImageSet();
 	
-			TimeFrequencyData oldContaminated = artifacts.ContaminatedData();
-
 			DecreaseTime(artifactsCopy.OriginalData());
 			DecreaseTime(artifactsCopy.ContaminatedData());
 			DecreaseTime(artifactsCopy.RevisedData());
@@ -25,28 +25,27 @@ namespace rfiStrategy {
 			IncreaseTime(artifacts.OriginalData(), artifactsCopy.OriginalData(), false, false);
 			IncreaseTime(artifacts.ContaminatedData(), artifactsCopy.ContaminatedData(), _restoreContaminated, _restoreMasks);
 			IncreaseTime(artifacts.RevisedData(), artifactsCopy.RevisedData(), _restoreRevised, _restoreMasks);
-
-			if(_restoreRevised && !_restoreContaminated)
-			{
-				oldContaminated.Subtract(artifacts.RevisedData());
-				if(_restoreMasks)
-					oldContaminated.SetMask(artifacts.ContaminatedData());
-				artifacts.SetContaminatedData(oldContaminated);
-			}
 		} else {
 			PerformFrequencyChange(artifacts, listener);
+		}
+		if(_restoreRevised && !_restoreContaminated)
+		{
+			oldContaminated.Subtract(artifacts.RevisedData());
+			if(_restoreMasks)
+				oldContaminated.SetMask(artifacts.ContaminatedData());
+			artifacts.SetContaminatedData(oldContaminated);
 		}
 	}
 
 	void ChangeResolutionAction::PerformFrequencyChange(class ArtifactSet &artifacts, class ProgressListener &listener)
 	{
+		TimeFrequencyData oldContaminated = artifacts.ContaminatedData();
+
 		if(_frequencyDecreaseFactor != 1)
 		{
 			ArtifactSet artifactsCopy(artifacts);
 			artifactsCopy.SetNoImageSet();
 	
-			TimeFrequencyData oldContaminated = artifacts.ContaminatedData();
-
 			DecreaseFrequency(artifactsCopy.OriginalData());
 			DecreaseFrequency(artifactsCopy.ContaminatedData());
 			DecreaseFrequency(artifactsCopy.RevisedData());
@@ -56,16 +55,16 @@ namespace rfiStrategy {
 			IncreaseFrequency(artifacts.OriginalData(), artifactsCopy.OriginalData(), false, false);
 			IncreaseFrequency(artifacts.ContaminatedData(), artifactsCopy.ContaminatedData(), _restoreContaminated, _restoreMasks);
 			IncreaseFrequency(artifacts.RevisedData(), artifactsCopy.RevisedData(), _restoreRevised, _restoreMasks);
-
-			if(_restoreRevised && !_restoreContaminated)
-			{
-				oldContaminated.Subtract(artifacts.RevisedData());
-				if(_restoreMasks)
-					oldContaminated.SetMask(artifacts.ContaminatedData());
-				artifacts.SetContaminatedData(oldContaminated);
-			}
 		} else {
 			ActionBlock::Perform(artifacts, listener);
+		}
+
+		if(_restoreRevised && !_restoreContaminated)
+		{
+			oldContaminated.Subtract(artifacts.RevisedData());
+			if(_restoreMasks)
+				oldContaminated.SetMask(artifacts.ContaminatedData());
+			artifacts.SetContaminatedData(oldContaminated);
 		}
 	}
 

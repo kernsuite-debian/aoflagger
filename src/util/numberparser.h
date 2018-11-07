@@ -2,11 +2,9 @@
 
 #include <cmath>
 
-//# pow10 seems to be undefined on OS-X
-#ifdef __APPLE__
-# define pow10(x) pow(10., (x))
+#ifndef HAVE_EXP10
+#define exp10(x) exp( (2.3025850929940456840179914546844) * (x) )
 #endif
-
 
 class NumberParsingException : public std::runtime_error
 {
@@ -147,7 +145,7 @@ class NumberParser
 		{
 			// TODO this can be done a lot faster and more accurate with knowledge that
 			// par = int.
-			return pow10((double) par);
+			return exp10((double) par);
 		}
 		
 		static bool isDigit(char c)

@@ -50,6 +50,9 @@ namespace rfiStrategy {
 			
 			bool CombineSPWs() const { return _combineSPWs; }
 			void SetCombineSPWs(bool combineSPWs) { _combineSPWs = combineSPWs; }
+			
+			const std::string& BandpassFilename() const { return _bandpassFilename; }
+			void SetBandpassFilename(const std::string& bandpass) { _bandpassFilename = bandpass; };
 
 			bool SubtractModel() const { return _subtractModel; }
 			void SetSubtractModel(bool subtractModel) { _subtractModel = subtractModel; }
@@ -78,6 +81,7 @@ namespace rfiStrategy {
 			bool _subtractModel;
 			std::string _commandLineForHistory;
 			bool _combineSPWs;
+			std::string _bandpassFilename;
 			bool _skipIfAlreadyProcessed;
 			bool _loadOptimizedStrategy;
 			BaselineIOMode _baselineIOMode;

@@ -14,21 +14,21 @@ PythonStrategy::PythonStrategy() : _code(
 	"import aoflagger\n"
 	"\n"
 	"def flag(data):\n"
-	"  print \'In flag() function\'\n"
+	"  print(\'In flag() function\')\n"
 	"  processed_polarizations = data.polarizations()\n"
 	"  processed_representations = [ aoflagger.ComplexRepresentation.AmplitudePart ]\n"
 	"  \n"
 	"  for polarization in processed_polarizations:\n"
 	"    pol_data = data.convert_to_polarization(polarization)\n"
 	"    for representation in processed_representations:\n"
-	"      print \'Flagging polarization \' + str(polarization) + \' (\' + str(representation) + \')\'\n"
+	"      print(\'Flagging polarization \' + str(polarization) + \' (\' + str(representation) + \')\')\n"
 	"      repr_data = pol_data.convert_to_polarization(polarization)\n"
 	"      \n"
-	"      aoflagger.sumthreshold(repr_data, 1.0, True, True)\n"
+	"      aoflagger.sumthreshold(repr_data, 1.0, 1.0, True, True)\n"
 	"\n"
 	"aoflagger.set_flag_function(flag)\n"
 	"\n"
-	"print \'File parsed\'\n"
+	"print(\'File parsed\')\n"
 	)
 {
 	std::ifstream file("strategy.py");
@@ -47,7 +47,7 @@ PythonStrategy::PythonStrategy() : _code(
 	// The following statement add the curr path to the Python search path
 	boost::filesystem::path workingDir = boost::filesystem::current_path().normalize();
 	PyObject* sysPath = PySys_GetObject(const_cast<char*>("path"));
-	PyList_Insert( sysPath, 0, PyString_FromString(workingDir.string().c_str()));
+	PyList_Insert( sysPath, 0, PyUnicode_FromString(workingDir.string().c_str()));
 }
 
 PythonStrategy::~PythonStrategy()
@@ -83,7 +83,6 @@ void PythonStrategy::Execute(TimeFrequencyData& tfData)
 		object main = import("__main__");
 		object global(main.attr("__dict__"));
 		object result = exec(_code.c_str(), global, global);
-
 		object flagFunction = aoflagger_python::get_flag_function();
 
 		if(flagFunction.is_none())

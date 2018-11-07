@@ -490,6 +490,7 @@ class ViridisMap : public ColorMap {
 			return (unsigned char) (DATA_B[index(value)]*255.0);
 		}
 		unsigned char ValueToColorA(long double) const noexcept override { return 255; }
+
 private:
 	static size_t index(long double value)
 	{
@@ -503,5 +504,54 @@ private:
 	
 	const static double DATA_R[256], DATA_G[256], DATA_B[256];
 };
+
+template<int Saturation>
+class CubeHelixMapBase : public ColorMap {
+public:
+		unsigned char ValueToColorR(long double value) const noexcept override {
+			unsigned char r, g, b;
+			convertColour(value, r, g, b);
+			return r;
+		}
+		unsigned char ValueToColorG(long double value) const noexcept override {
+			unsigned char r, g, b;
+			convertColour(value, r, g, b);
+			return g;
+		}
+		unsigned char ValueToColorB(long double value) const noexcept override { 
+			unsigned char r, g, b;
+			convertColour(value, r, g, b);
+			return b;
+		}
+		unsigned char ValueToColorA(long double) const noexcept override { return 255; }
+private:
+  void convertColour(long double value, unsigned char& rv, unsigned char& gv, unsigned char& bv) const noexcept
+	{
+		value = value*0.5 + 0.5;
+		double start = 0.5, cycles = -1.5, gamma =1.5;
+		double phi = 2. * 3.14 * (start/3.0 + value * cycles);
+		if ( gamma != 1.0 )
+			value = pow(value, 1./gamma);
+		double a = (0.01*Saturation) * value * (1. - value) / 2.;
+		double r = value + a * (-0.14861 * cos(phi) + 1.78277 * sin(phi));
+		double g = value + a * (-0.29227 * cos(phi) - 0.90649 * sin(phi));
+		double b = value + a * ( 1.97294 * cos(phi));
+		int ri = r * 256;
+		int gi = g * 256;
+		int bi = b * 256;
+		if ( ri > 255 ) ri = 255;
+		if ( ri < 0 ) ri = 0;
+		if ( gi > 255 ) gi = 255;
+		if ( gi < 0 ) gi = 0;
+		if ( bi > 255 ) bi = 255;
+		if ( bi < 0 ) bi = 0;
+		rv = (unsigned char) ri;
+		gv = (unsigned char) gi;
+		bv = (unsigned char) bi;
+	}
+};
+
+class CubeHelixMap : public CubeHelixMapBase<100> { };
+class CubeHelixColourfulMap : public CubeHelixMapBase<150> { };
 
 #endif

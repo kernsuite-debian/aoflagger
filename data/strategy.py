@@ -12,7 +12,7 @@ def flag(input):
   threshold_factor_step = 2.0
   base_threshold = 1.4
   
-  # Use above values to calculate thresholds in iteration
+  # Use above values to calculate thresholds in each iteration
   r = range((iteration_count-1), 0, -1)
   threshold_factors = numpy.power(threshold_factor_step, r)
 
@@ -30,7 +30,7 @@ def flag(input):
       
       for threshold_factor in threshold_factors:
       
-        print 'Flagging polarization ' + str(polarization) + ' (' + str(representation) + ', ' + str(threshold_factor) + ')'
+        print('Flagging polarization ' + str(polarization) + ' (' + str(representation) + ', ' + str(threshold_factor) + ')')
 
         aoflagger.sumthreshold(data, threshold_factor * base_threshold, True, True)
         chdata = copy.copy(data)
@@ -87,4 +87,4 @@ def test_sumthreshold(input):
       
 aoflagger.set_flag_function(flag)
                                           
-print 'strategy.py parsed'
+print('strategy.py parsed')

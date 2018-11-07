@@ -37,7 +37,6 @@ int main(int argc, char *argv[])
 {
 	// We have to 'lie' about argc to create(..), because of a bug in older gtkmms.
 	int altArgc = 1;
-	Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(altArgc, argv, "", Gio::APPLICATION_HANDLES_OPEN);
 	AOQPlotController controller;
 	std::unique_ptr<AOQPlotWindow> window;
 	bool openGUI = true;
@@ -110,6 +109,7 @@ int main(int argc, char *argv[])
 	
 	if(openGUI)
 	{
+		Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(altArgc, argv, "", Gio::APPLICATION_HANDLES_OPEN);
 		window.reset(new AOQPlotWindow(&controller));
 		window->show_all();
 		if(files.empty())

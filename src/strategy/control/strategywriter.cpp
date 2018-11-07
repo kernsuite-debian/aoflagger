@@ -1,36 +1,6 @@
 #include "strategywriter.h"
 
-#include "../actions/absthresholdaction.h"
-#include "../actions/baselineselectionaction.h"
-#include "../actions/calibratepassbandaction.h"
-#include "../actions/changeresolutionaction.h"
-#include "../actions/combineflagresultsaction.h"
-#include "../actions/cutareaaction.h"
-#include "../actions/eigenvalueverticalaction.h"
-#include "../actions/foreachbaselineaction.h"
-#include "../actions/foreachcomplexcomponentaction.h"
-#include "../actions/foreachmsaction.h"
-#include "../actions/foreachpolarisationaction.h"
-#include "../actions/frequencyconvolutionaction.h"
-#include "../actions/frequencyselectionaction.h"
-#include "../actions/fringestopaction.h"
-#include "../actions/imageraction.h"
-#include "../actions/iterationaction.h"
-#include "../actions/highpassfilteraction.h"
-#include "../actions/normalizevarianceaction.h"
-#include "../actions/plotaction.h"
-#include "../actions/quickcalibrateaction.h"
-#include "../actions/setflaggingaction.h"
-#include "../actions/setimageaction.h"
-#include "../actions/slidingwindowfitaction.h"
-#include "../actions/statisticalflagaction.h"
-#include "../actions/strategy.h"
-#include "../actions/svdaction.h"
-#include "../actions/sumthresholdaction.h"
-#include "../actions/timeconvolutionaction.h"
-#include "../actions/timeselectionaction.h"
-#include "../actions/writedataaction.h"
-#include "../actions/writeflagsaction.h"
+#include "../actions/all.h"
 
 #include "../../version.h"
 
@@ -80,6 +50,9 @@ namespace rfiStrategy {
 				break;
 			case ActionBlockType:
 				throw std::runtime_error("Can not store action blocks");
+			case ApplyBandpassType:
+				writeApplyBandpassAction(static_cast<const ApplyBandpassAction&>(action));
+				break;
 			case BaselineSelectionActionType:
 				writeBaselineSelectionAction(static_cast<const BaselineSelectionAction&>(action));
 				break;
@@ -147,7 +120,7 @@ namespace rfiStrategy {
 				writeSlidingWindowFitAction(static_cast<const SlidingWindowFitAction&>(action));
 				break;
 			case StatisticalFlagActionType:
-				writeStatisticalFlagAction(static_cast<const StatisticalFlagAction&>(action));
+				writeMorphologicalFlagAction(static_cast<const MorphologicalFlagAction&>(action));
 				break;
 			case StrategyType:
 				writeStrategy(static_cast<const Strategy&>(action));
@@ -163,6 +136,9 @@ namespace rfiStrategy {
 			break;
 			case TimeSelectionActionType:
 				writeTimeSelectionAction(static_cast<const TimeSelectionAction&>(action));
+				break;
+			case VisualizeActionType:
+				writeVisualizeAction(static_cast<const VisualizeAction&>(action));
 				break;
 			case WriteDataActionType:
 				writeWriteDataAction(static_cast<const WriteDataAction&>(action));
@@ -187,6 +163,12 @@ namespace rfiStrategy {
 			writeAction(actionContainer.GetChild(i));
 		}
 		End();
+	}
+	
+	void StrategyWriter::writeApplyBandpassAction(const class ApplyBandpassAction& action)
+	{
+		Attribute("type", "ApplyBandpassAction");
+		Write("filename", action.Filename());
 	}
 	
 	void StrategyWriter::writeAbsThresholdAction(const AbsThresholdAction &action)
@@ -387,7 +369,7 @@ namespace rfiStrategy {
 		Write<int>("time-direction-window-size", action.Parameters().timeDirectionWindowSize);
 	}
 
-	void StrategyWriter::writeStatisticalFlagAction(const StatisticalFlagAction &action)
+	void StrategyWriter::writeMorphologicalFlagAction(const MorphologicalFlagAction &action)
 	{
 		Attribute("type", "StatisticalFlagAction");
 		Write<size_t>("enlarge-frequency-size", action.EnlargeFrequencySize());
@@ -397,6 +379,7 @@ namespace rfiStrategy {
 		Write<num_t>("min-available-tf-ratio", action.MinAvailableTFRatio());
 		Write<num_t>("minimum-good-frequency-ratio", action.MinimumGoodFrequencyRatio());
 		Write<num_t>("minimum-good-time-ratio", action.MinimumGoodTimeRatio());
+		Write<bool>("exclude-original-flags", action.ExcludeOriginalFlags());
 	}
 
 	void StrategyWriter::writeStrategy(const class Strategy &action)
@@ -414,9 +397,11 @@ namespace rfiStrategy {
 	void StrategyWriter::writeSumThresholdAction(const SumThresholdAction &action)
 	{
 		Attribute("type", "SumThresholdAction");
-		Write<num_t>("base-sensitivity", action.BaseSensitivity());
+		Write<num_t>("time-direction-sensitivity", action.TimeDirectionSensitivity());
+		Write<num_t>("frequency-direction-sensitivity", action.FrequencyDirectionSensitivity());
 		Write<bool>("time-direction-flagging", action.TimeDirectionFlagging());
 		Write<bool>("frequency-direction-flagging", action.FrequencyDirectionFlagging());
+		Write<bool>("exclude-original-flags", action.ExcludeOriginalFlags());
 	}
 
 	void StrategyWriter::writeTimeConvolutionAction(const TimeConvolutionAction &action)
@@ -435,6 +420,26 @@ namespace rfiStrategy {
 	{
 		Attribute("type", "TimeSelectionAction");
 		Write<double>("threshold", action.Threshold());
+	}
+	
+	void StrategyWriter::writeVisualizeAction(const VisualizeAction& action)
+	{
+		Attribute("type", "VisualizeAction");
+		Write("label", action.Label());
+		switch(action.Source())
+		{
+			default:
+			case VisualizeAction::FromOriginal:
+				Write("source", "original");
+				break;
+			case VisualizeAction::FromRevised:
+				Write("source", "revised");
+				break;
+			case VisualizeAction::FromContaminated:
+				Write("source", "contaminated");
+				break;
+		}
+		Write("sorting-index", action.SortingIndex());
 	}
 
 	void StrategyWriter::writeWriteDataAction(const WriteDataAction &)

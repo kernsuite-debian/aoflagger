@@ -7,7 +7,7 @@
 #include "../testingtools/unittest.h"
 
 #include "../../strategy/algorithms/siroperator.h"
-#include "../../strategy/algorithms/statisticalflagger.h"
+#include "../../strategy/algorithms/morphologicalflagger.h"
 
 #include "../../util/rng.h"
 
@@ -16,8 +16,8 @@ class ScaleInvariantDilationExperiment : public UnitTest {
 		ScaleInvariantDilationExperiment() : UnitTest("Scale invariant dilation experiments")
 		{
 			AddTest(TestTimingN(), "Timing O(N) algorithm");
-			AddTest(TestTimingNlogN(), "Timing O(N x log N) algorithm");
-			AddTest(TestTimingNsq(), "Timing O(N^2) algorithm");
+			//AddTest(TestTimingNlogN(), "Timing O(N x log N) algorithm");
+			//AddTest(TestTimingNsq(), "Timing O(N^2) algorithm");
 		}
 		
 	private:
@@ -27,17 +27,17 @@ class ScaleInvariantDilationExperiment : public UnitTest {
 		{
 			void operator()();
 		};
-		struct TestTimingNlogN : public Asserter
+		/*struct TestTimingNlogN : public Asserter
 		{
 			void operator()();
 		};
 		struct TestTimingNsq : public Asserter
 		{
 			void operator()();
-		};
+		};*/
 };
 
-const unsigned ScaleInvariantDilationExperiment::_repeatCount = 100;
+const unsigned ScaleInvariantDilationExperiment::_repeatCount = 3;
 
 inline void ScaleInvariantDilationExperiment::TestTimingN::operator()()
 {
@@ -71,10 +71,10 @@ inline void ScaleInvariantDilationExperiment::TestTimingN::operator()()
 	delete[] prototypeFlags;
 }
 
-inline void ScaleInvariantDilationExperiment::TestTimingNlogN::operator()()
+/*inline void ScaleInvariantDilationExperiment::TestTimingNlogN::operator()()
 {
 	const double maxX = 6.5;
-	bool *prototypeFlags = new bool[(unsigned) round(exp10(maxX))];
+	std::unique_ptr<bool[]> prototypeFlags(new bool[(unsigned) round(exp10(maxX))]);
 	for(unsigned i=0;i<(unsigned) round(exp10(maxX));++i)
 	{
 		prototypeFlags[i] = RNG::Uniform() > 0.9;
@@ -85,20 +85,18 @@ inline void ScaleInvariantDilationExperiment::TestTimingNlogN::operator()()
 	for(double x=0.0;x<=maxX;x+=0.05)
 	{
 		const unsigned n = (unsigned) round(exp10(x));
-		bool *flags = new bool[n];
+		std::unique_ptr<bool[]> flags(new bool[n]);
 		Stopwatch watch(true);
 		for(unsigned repeat=0;repeat<_repeatCount;++repeat)
 		{
 			for(unsigned i=0;i<n;++i) flags[i] = prototypeFlags[i];
-			StatisticalFlagger::ScaleInvDilationQuick(flags, n, eta);
+			StatisticalFlagger::ScaleInvDilationQuick(flags.get(), n, eta);
 		}
 		file << n << '\t' << (watch.Seconds()/(double) _repeatCount) << '\t' << x << std::endl;
-		delete[] flags;
 	}
-	delete[] prototypeFlags;
-}
+}*/
 
-inline void ScaleInvariantDilationExperiment::TestTimingNsq::operator()()
+/*inline void ScaleInvariantDilationExperiment::TestTimingNsq::operator()()
 {
 	const double maxX = 5;
 	bool *prototypeFlags = new bool[(unsigned) round(exp10(maxX))];
@@ -123,6 +121,6 @@ inline void ScaleInvariantDilationExperiment::TestTimingNsq::operator()()
 		delete[] flags;
 	}
 	delete[] prototypeFlags;
-}
+}*/
 
 #endif

@@ -11,7 +11,7 @@ CHECK_CXX_SYMBOL_EXISTS(exp10 "cmath" HAVE_EXP10)
 # -march=native speeds up the flagger with about 6% - 7%, but is not supported prior gcc 4.2.
 # Hence, only enable it if it is supported.
 if(PORTABLE)
-  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance")
+  message(STATUS "Portable build requested; a generic build will be created with slightly decreased performance.")
 else()	
 	CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 	if(COMPILER_SUPPORTS_MARCH_NATIVE)
@@ -51,8 +51,6 @@ if(GSL_LIB AND GSL_CBLAS_LIB AND GSL_INCLUDE_DIR)
   message(STATUS "GSL found.")
 endif(GSL_LIB AND GSL_CBLAS_LIB AND GSL_INCLUDE_DIR)
 
-add_executable(rficonsole rficonsole.cpp)
-
 set(AOQPLOT_FILES
   aoqplot/aoqplotwindow.cpp
   aoqplot/baselineplotpage.cpp
@@ -72,6 +70,7 @@ set(PLOT_FILES
   plot/colorscale.cpp
   plot/heatmapplot.cpp
   plot/horizontalplotscale.cpp
+  plot/legend.cpp
   plot/plot2d.cpp
   plot/plotpropertieswindow.cpp
   plot/title.cpp
@@ -84,7 +83,6 @@ set(GUI_FILES
   rfigui/editstrategywindow.cpp
   rfigui/gotowindow
   rfigui/highlightwindow.cpp
-  rfigui/imagecomparisonwidget.cpp
   rfigui/imageplanewindow
   rfigui/imagepropertieswindow.cpp
   rfigui/heatmapwidget.cpp
@@ -146,14 +144,16 @@ set(STRATEGY_ACTION_FILES
   strategy/actions/plotaction.cpp
   strategy/actions/saveheatmapaction.cpp
   strategy/actions/slidingwindowfitaction.cpp
-  strategy/actions/statisticalflagaction.cpp
+  strategy/actions/morphologicalflagaction.cpp
   strategy/actions/strategy.cpp
   strategy/actions/svdaction.cpp
   strategy/actions/timeconvolutionaction.cpp
   strategy/actions/timeselectionaction.cpp
+  strategy/actions/visualizeaction.cpp
   strategy/actions/writeflagsaction.cpp)
 
 set(STRATEGY_ALGORITHMS_FILES
+  strategy/algorithms/antennaselector.cpp
   strategy/algorithms/baselineselector.cpp
 	strategy/algorithms/baselinetimeplaneimager.cpp
   strategy/algorithms/combinatorialthresholder.cpp
@@ -164,8 +164,9 @@ set(STRATEGY_ALGORITHMS_FILES
   strategy/algorithms/localfitmethod.cpp
   strategy/algorithms/morphology.cpp
   strategy/algorithms/sinusfitter.cpp
-  strategy/algorithms/statisticalflagger.cpp
+  strategy/algorithms/morphologicalflagger.cpp
   strategy/algorithms/sumthreshold.cpp
+  strategy/algorithms/sumthresholdmissing.cpp
   strategy/algorithms/svdmitigater.cpp
   strategy/algorithms/testsetgenerator.cpp
   strategy/algorithms/thresholdconfig.cpp
@@ -233,25 +234,30 @@ set(PYTHON_FILES
 set(ALL_LIBRARIES
 	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
 	${Boost_SYSTEM_LIBRARY}
-	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_PYTHON_LIBRARIES} ${Boost_SIGNALS_LIBRARY}
+	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
+#	${Boost_PYTHON-PY36_LIBRARIES}
+	${Boost_PYTHON_LIBRARIES}
+	${Boost_SIGNALS_LIBRARY}
 	${FFTW3_LIB}
 	${CASACORE_LIBRARIES}
 	${LAPACK_lapack_LIBRARY}
 	${CFITSIO_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT}
 	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
-	${PYTHON_LIBRARY})
+	${PYTHON_LIBRARIES})
 
-message(STATUS "GTKMM found.") 
-include_directories(${GTKMM_INCLUDE_DIRS} ${GLIBMM_INCLUDE_DIRS})
-link_directories(${GTKMM_LIBDIR} ${GLIBMM_LIBDIR})
-set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GTKMM_LIBRARIES} ${GLIBMM_LIBRARIES})
+if(GTKMM_FOUND)
+	message(STATUS "GTKMM found.") 
+	include_directories(${GTKMM_INCLUDE_DIRS})
+	link_directories(${GTKMM_LIBDIR})
+	set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GTKMM_LIBRARIES})
+endif(GTKMM_FOUND)
 
 if(SIGCXX_FOUND)
-  message(STATUS "SIGCXX found.") 
-  include_directories(${SIGCXX_INCLUDE_DIRS})
-  link_directories(${SIGCXX_LIBDIR})
-  set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
+	message(STATUS "SIGCXX found.") 
+	include_directories(${SIGCXX_INCLUDE_DIRS})
+	link_directories(${SIGCXX_LIBDIR})
+	set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SIGCXX_LIBRARIES})
 endif(SIGCXX_FOUND)
 
 if(GTKMM_FOUND)
@@ -298,8 +304,7 @@ else()
 endif(GTKMM_FOUND)
 
 add_executable(aoflagger-bin aoflagger.cpp)
-set_target_properties(aoflagger-bin
-  PROPERTIES OUTPUT_NAME aoflagger)
+set_target_properties(aoflagger-bin PROPERTIES OUTPUT_NAME aoflagger)
 
 add_executable(msinfo msinfo.cpp)
 
@@ -313,7 +318,7 @@ add_executable(aotest EXCLUDE_FROM_ALL aotest.cpp)
 add_test(aotest aotest)
 add_custom_target(check COMMAND aotest DEPENDS aotest)
 
-install (TARGETS rficonsole aoflagger-bin DESTINATION bin)
+# Installation commands
 if(GTKMM_FOUND)
 	install (TARGETS rfigui aoqplot DESTINATION bin)
 endif(GTKMM_FOUND)
@@ -322,5 +327,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
 	install (TARGETS aoquality aoremoteclient DESTINATION bin)
 endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
 
+install (TARGETS aoflagger-bin DESTINATION bin)
 install (TARGETS aoflagger DESTINATION lib) 
 install (FILES interface/aoflagger.h DESTINATION include)

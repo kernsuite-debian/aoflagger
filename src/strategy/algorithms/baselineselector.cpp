@@ -79,16 +79,16 @@ void BaselineSelector::Search(std::vector<BaselineSelector::SingleBaselineInfo> 
 	do {
 		std::sort(_baselines.begin(), _baselines.end());
 
-		Plot *plot = 0;
+		std::unique_ptr<Plot> plot;
 		if(_makePlot)
 		{
-			plot = new Plot("baselineSelection.pdf");
+			plot.reset(new Plot("baselineSelection.pdf"));
 			plot->SetXAxisText("Baseline length (meters)");
 			plot->SetYAxisText("Percentage RFI");
 		}
 
 		size_t unmarkedBaselineCount = _baselines.size();
-		double *values = new double[unmarkedBaselineCount];
+		std::vector<double> values(unmarkedBaselineCount);
 
 		// Calculate the smoothed values
 		if(_makePlot)
@@ -176,10 +176,7 @@ void BaselineSelector::Search(std::vector<BaselineSelector::SingleBaselineInfo> 
 				plot->PushDataPoint(i->length, 100.0 * (double) i->rfiCount / (double) i->totalCount);
 			}
 			plot->Close();
-			delete plot;
 		}
-
-		delete[] values;
 	} while(foundMoreBaselines);
 }
 

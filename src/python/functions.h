@@ -26,7 +26,7 @@ namespace aoflagger_python
 	
 	Data shrink(const Data& data, size_t horizontalFactor, size_t verticalFactor);
 	
-	void sumthreshold(Data& data, double thresholdFactor, bool horizontal, bool vertical);
+	void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor, bool horizontal, bool vertical);
 	
 	void threshold_channel_rms(Data& data, double threshold, bool thresholdLowValues);
 	

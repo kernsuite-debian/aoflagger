@@ -31,13 +31,15 @@ void AOQPlotPageController::updatePlotForSettings(
 	{
 		_plot.Clear();
 		
+		int index = 0;
 		for(QualityTablesFormatter::StatisticKind k : kinds)
 		{
 			for(SelectedPol p : pols)
 			{
 				for(PhaseType ph : phases)
 				{
-					plotStatistic(k, p, ph, getYDesc(kinds));
+					plotStatistic(k, p, ph, index, getYDesc(kinds));
+					++index;
 				}
 			}
 		}
@@ -63,43 +65,49 @@ double AOQPlotPageController::getValue(enum PhaseType phase, const std::complex<
 	}
 }
 
-void AOQPlotPageController::plotStatistic(QualityTablesFormatter::StatisticKind kind, SelectedPol pol, PhaseType phase, const std::string& yDesc)
+void AOQPlotPageController::plotStatistic(QualityTablesFormatter::StatisticKind kind, SelectedPol pol, PhaseType phase, int lineIndex, const std::string& yDesc)
 {
 	StatisticsDerivator derivator(*_statCollection);
 	size_t polCount = _statCollection->PolarizationCount();
 	const std::map<double, DefaultStatistics> &statistics = getStatistics();
 	std::ostringstream s;
 	int polIndex = -1;
-	if(pol == PolI) {
-		s << "Polarization I";
-	}
-	else {
-		s << "Polarization " << pol;
-	}
+	s << StatisticsDerivator::GetDescription(kind);
 	switch(pol)
 	{
 	case PolI:
+		s << ", pol I";
+		polIndex = 0;
+		break;
 	case PolPP:
+		s << ", pol PP";
 		polIndex = 0;
 		break;
 	case PolPQ:
+		s << ", pol PQ";
 		if(polCount == 4)
 			polIndex = 1;
 		break;
 	case PolQP:
+		s << ", pol QP";
 		if(polCount == 4)
 			polIndex = 2;
 		break;
 	case PolQQ:
+		s << ", pol QQ";
 		if(polCount == 4)
 			polIndex = 3;
 		else if(polCount == 2)
 			polIndex = 1;
 		break;
 	}
+	if(phase == RealPhaseType)
+		s << " (real)";
+	else if(phase == ImaginaryPhaseType)
+		s << " (imag)";
 	if(polIndex >= 0)
 	{
-		startLine(_plot, s.str(), yDesc);
+		startLine(_plot, s.str(), lineIndex, yDesc);
 		for(std::map<double, DefaultStatistics>::const_iterator i=statistics.begin();i!=statistics.end();++i)
 		{
 			const double x = i->first;
