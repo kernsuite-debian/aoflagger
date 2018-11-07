@@ -13,7 +13,7 @@
 class HeatMapPlot
 {
 public:
-	enum TFMap { BWMap, InvertedMap, HotColdMap, RedBlueMap, RedYellowBlueMap, FireMap, BlackRedMap, ViridisMap };
+	enum TFMap { BWMap, InvertedMap, HotColdMap, RedBlueMap, RedYellowBlueMap, FireMap, BlackRedMap, CubeHelixMap, CubeHelixColourfulMap, ViridisMap };
 	enum Range { MinMax, Winsorized, Specified };
 	enum ScaleOption { NormalScale, LogScale, ZeroSymmetricScale };
 	

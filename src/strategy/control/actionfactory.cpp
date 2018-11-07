@@ -8,6 +8,7 @@ const std::vector<std::string> ActionFactory::GetActionList()
 {
 	std::vector<std::string> list;
 	list.push_back("Absolute threshold");
+	list.push_back("Apply bandpass");
 	list.push_back("Baseline selection");
 	list.push_back("Calibrate passband");
 	list.push_back("Change resolution");
@@ -49,6 +50,8 @@ std::unique_ptr<Action> ActionFactory::CreateAction(const std::string &action)
 {
 	if(action == "Absolute threshold")
 		return make<AbsThresholdAction>();
+	else if(action == "Apply bandpass")
+		return make<ApplyBandpassAction>();
 	else if(action == "Baseline selection")
 		return make<BaselineSelectionAction>();
 	else if(action == "Calibrate passband")

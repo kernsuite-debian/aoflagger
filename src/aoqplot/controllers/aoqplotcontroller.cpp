@@ -175,7 +175,7 @@ void AOQPlotController::Save(const AOQPlotController::PlotSavingData& data, size
 	
 	std::cout << "Saving " << prefix << "-baselines.pdf...\n";
 	BaselinePageController baselController;
-	BaselinePlotPage baselPage(&baselController);
+	//BaselinePlotPage baselPage(&baselController);
 	baselController.SetStatistics(_statCollection.get(), _antennas);
 	baselController.SavePdf(prefix+"-baselines.pdf", kind, width, height);
 	

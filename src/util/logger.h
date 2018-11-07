@@ -90,7 +90,7 @@ class Logger
 		static class LogWriter<WarningLevel> Warn;
 		static class LogWriter<ErrorLevel> Error;
 		static class LogWriter<FatalLevel> Fatal;
-		static class LogWriter<NoLevel, true> Progress;
+		static class LogWriter<NoLevel> Progress;
 	private:
 		Logger()
 		{

@@ -228,7 +228,8 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context>& cr, Plot2DPointSet& pointSet)
 	bool hasPrevPoint = false;
 	
 	unsigned iterationCount = pointSet.Size();
-	if(pointSet.DrawingStyle() == Plot2DPointSet::DrawLines && iterationCount!=0)
+	bool isNextPointRequired = pointSet.DrawingStyle() == Plot2DPointSet::DrawLines && iterationCount!=0;
+	if(isNextPointRequired)
 		--iterationCount;
 
 	for(size_t i=0;i<iterationCount;++i)
@@ -236,41 +237,67 @@ void Plot2D::render(Cairo::RefPtr<Cairo::Context>& cr, Plot2DPointSet& pointSet)
 		double
 			x1Val, x2Val,
 			y1Val, y2Val;
-		
+			
+		double
+			px = pointSet.GetX(i),
+			py = pointSet.GetY(i);
 		if(_logarithmicXAxis)
 		{
-			if(pointSet.GetX(i) <= 0.0)
+			if(px <= 0.0)
 				x1Val = 0.0;
 			else
-				x1Val = (log10(pointSet.GetX(i)) - minXLog10) / (maxXLog10 - minXLog10);
-			if(pointSet.GetX(i+1) <= 0.0)
-				x2Val = 0.0;
-			else
-				x2Val = (log10(pointSet.GetX(i+1)) - minXLog10) / (maxXLog10 - minXLog10);
+				x1Val = (log10(px) - minXLog10) / (maxXLog10 - minXLog10);
 		}
 		else {
-			x1Val = (pointSet.GetX(i) - xLeft) / (xRight - xLeft);
-			x2Val = (pointSet.GetX(i+1) - xLeft) / (xRight - xLeft);
+			x1Val = (px - xLeft) / (xRight - xLeft);
 		}
 		
 		if(_logarithmicYAxis)
 		{
-			if(pointSet.GetY(i) <= 0.0)
+			if(py <= 0.0)
 				y1Val = 0.0;
 			else
-				y1Val = (log10(pointSet.GetY(i)) - minYLog10) / (maxYLog10 - minYLog10);
-			if(pointSet.GetY(i+1) <= 0.0)
-				y2Val = 0.0;
-			else
-				y2Val = (log10(pointSet.GetY(i+1)) - minYLog10) / (maxYLog10 - minYLog10);
+				y1Val = (log10(py) - minYLog10) / (maxYLog10 - minYLog10);
 		} else {
-			y1Val = (pointSet.GetY(i) - yMin) / (yMax - yMin);
-			y2Val = (pointSet.GetY(i+1) - yMin) / (yMax - yMin);
+			y1Val = (py - yMin) / (yMax - yMin);
 		}
 		if(y1Val < 0.0) y1Val = 0.0;
 		if(y1Val > 1.0) y1Val = 1.0;
-		if(y2Val < 0.0) y2Val = 0.0;
-		if(y2Val > 1.0) y2Val = 1.0;
+		
+		if(isNextPointRequired)
+		{
+			double
+				pxn = pointSet.GetX(i+1),
+				pyn = pointSet.GetY(i+1);
+			if(_logarithmicXAxis)
+			{
+				if(pxn <= 0.0)
+					x2Val = 0.0;
+				else
+					x2Val = (log10(pxn) - minXLog10) / (maxXLog10 - minXLog10);
+			}
+			else {
+				x2Val = (pxn - xLeft) / (xRight - xLeft);
+			}
+			
+			if(_logarithmicYAxis)
+			{
+				if(pyn <= 0.0)
+					y2Val = 0.0;
+				else
+					y2Val = (log10(pyn) - minYLog10) / (maxYLog10 - minYLog10);
+			}
+			else {
+				y2Val = (pyn - yMin) / (yMax - yMin);
+			}
+			
+			if(y2Val < 0.0) y2Val = 0.0;
+			if(y2Val > 1.0) y2Val = 1.0;
+		}
+		else {
+			x2Val = 0.0;
+			y2Val = 0.0;
+		}
 		
 		double
 			x1 = x1Val * plotWidth + plotLeftMargin,

@@ -12,7 +12,14 @@ HeatMapPageController::HeatMapPageController() :
 	_statisticKind(QualityTablesFormatter::StandardDeviationStatistic),
 	_polarization(Polarization::StokesI),
 	_phase(TimeFrequencyData::AmplitudePart)
-{ }
+{ 
+	_heatMap.SetCairoFilter(Cairo::FILTER_NEAREST);
+	_heatMap.SetColorMap(HeatMapPlot::HotColdMap);
+	_heatMap.SetRange(HeatMapPlot::MinMax);
+	_heatMap.SetScaleOption(HeatMapPlot::LogScale);
+	_heatMap.SetZAxisDescription("Statistical value");
+	_heatMap.SetManualZAxisDescription(true);
+}
 
 void HeatMapPageController::updateImageImpl(QualityTablesFormatter::StatisticKind statisticKind, PolarizationEnum polarisation, enum TimeFrequencyData::ComplexRepresentation phase)
 {

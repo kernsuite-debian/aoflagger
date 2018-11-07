@@ -353,6 +353,11 @@ namespace aoflagger {
 			std::shared_ptr<QualityStatisticsDataImp> _implementation;
 	};
 
+	QualityStatistics::QualityStatistics() :
+		_data(nullptr)
+	{
+	}
+	
 	QualityStatistics::QualityStatistics(const double* scanTimes, size_t nScans, const double* channelFrequencies, size_t nChannels, size_t nPolarizations, bool computeHistograms) :
 		_data(new QualityStatisticsData(scanTimes, nScans, nPolarizations, computeHistograms))
 	{
@@ -360,13 +365,14 @@ namespace aoflagger {
 	}
 	
 	QualityStatistics::QualityStatistics(const QualityStatistics& sourceQS) :
-		_data(new QualityStatisticsData(sourceQS._data->_implementation))
+		_data(sourceQS._data==nullptr ? nullptr : new QualityStatisticsData(sourceQS._data->_implementation))
 	{
 	}
 	
 	QualityStatistics::QualityStatistics(QualityStatistics&& sourceQS) :
-		_data(new QualityStatisticsData(std::move(sourceQS._data->_implementation)))
+		_data(sourceQS._data)
 	{
+		sourceQS._data = nullptr;
 	}
 	
 	QualityStatistics::~QualityStatistics()
@@ -376,13 +382,31 @@ namespace aoflagger {
 	
 	QualityStatistics& QualityStatistics::operator=(const QualityStatistics& sourceQS)
 	{
-		_data->_implementation = sourceQS._data->_implementation;
+		if(_data == nullptr)
+		{
+			if(sourceQS._data != nullptr)
+				_data = new QualityStatisticsData(sourceQS._data->_implementation);
+		}
+		else {
+			if(sourceQS._data != nullptr)
+				_data->_implementation = sourceQS._data->_implementation;
+			else {
+				delete _data;
+				_data = nullptr;
+			}
+		}
 		return *this;
 	}
 	
 	QualityStatistics& QualityStatistics::operator=(QualityStatistics&& sourceQS)
 	{
-		_data->_implementation = std::move(sourceQS._data->_implementation);
+		if(_data == nullptr || sourceQS._data == nullptr)
+		{
+			std::swap(_data, sourceQS._data);
+		}
+		else {
+			_data->_implementation = std::move(sourceQS._data->_implementation);
+		}
 		return *this;
 	}
 	

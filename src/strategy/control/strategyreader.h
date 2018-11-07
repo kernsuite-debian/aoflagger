@@ -22,55 +22,56 @@ class StrategyReader {
 		~StrategyReader();
 
 		std::unique_ptr<class Strategy> CreateStrategyFromFile(const std::string &filename);
+		
 	private:
-		std::unique_ptr<class Action> parseChild(xmlNode *node);
-		class Strategy *parseStrategy(xmlNode *node);
-		std::unique_ptr<class Strategy> parseRootChildren(xmlNode *rootNode);
-		void parseChildren(xmlNode *node, class ActionContainer *parent);
-		class Action *parseAction(xmlNode *node);
+		std::unique_ptr<class Action> parseChild(xmlNode* node);
+		std::unique_ptr<class Strategy> parseStrategy(xmlNode* node);
+		std::unique_ptr<class Strategy> parseRootChildren(xmlNode* rootNode);
+		void parseChildren(xmlNode* node, class ActionContainer& parent);
+		std::unique_ptr<Action> parseAction(xmlNode* node);
 
-		xmlNode *getTextNode(xmlNode *node, const char *subNodeName, bool allowEmpty = false) const;
-		int getInt(xmlNode *node, const char *name) const;
-		int getIntOr(xmlNode *node, const char *name, int alternative) const;
-		double getDouble(xmlNode *node, const char *name) const;
-		double getDoubleOr(xmlNode *node, const char *name, double alternative) const;
-		std::string getString(xmlNode *node, const char *name) const;
-		bool getBool(xmlNode *node, const char *name) const { return getInt(node,name) != 0; }
-		bool getBoolOr(xmlNode *node, const char *name, bool alternative) const
+		xmlNode* getTextNode(xmlNode* node, const char *subNodeName, bool allowEmpty = false) const;
+		int getInt(xmlNode* node, const char *name) const;
+		int getIntOr(xmlNode* node, const char *name, int alternative) const;
+		double getDouble(xmlNode* node, const char *name) const;
+		double getDoubleOr(xmlNode* node, const char *name, double alternative) const;
+		std::string getString(xmlNode* node, const char *name) const;
+		bool getBool(xmlNode* node, const char *name) const { return getInt(node,name) != 0; }
+		bool getBoolOr(xmlNode* node, const char *name, bool alternative) const
 		{ return getIntOr(node, name, alternative ? 1 : 0) != 0; }
 
-		class Action *parseAbsThresholdAction(xmlNode *node);
-		//class Action *parseAddStatistics(xmlNode *node);
-		class Action *parseBaselineSelectionAction(xmlNode *node);
-		class Action *parseCalibratePassbandAction(xmlNode *node);
-		class Action *parseChangeResolutionAction(xmlNode *node);
-		class Action *parseCombineFlagResults(xmlNode *node);
-		class Action *parseCutAreaAction(xmlNode *node);
-		class Action *parseEigenValueVerticalAction(xmlNode *node);
-		class Action *parseForEachBaselineAction(xmlNode *node);
-		class Action *parseForEachComplexComponentAction(xmlNode *node);
-		class Action *parseForEachMSAction(xmlNode *node);
-		class Action *parseForEachPolarisationBlock(xmlNode *node);
-		class Action *parseFrequencyConvolutionAction(xmlNode *node);
-		class Action *parseFrequencySelectionAction(xmlNode *node);
-		class Action *parseFringeStopAction(xmlNode *node);
-		class Action *parseHighPassFilterAction(xmlNode *node);
-		class Action *parseImagerAction(xmlNode *node);
-		class Action *parseIterationBlock(xmlNode *node);
-		class Action *parseNormalizeVarianceAction(xmlNode *node);
-		class Action *parsePlotAction(xmlNode *node);
-		class Action *parseQuickCalibrateAction(xmlNode *node);
-		class Action *parseSetFlaggingAction(xmlNode *node);
-		class Action *parseSetImageAction(xmlNode *node);
-		class Action *parseSlidingWindowFitAction(xmlNode *node);
-		class Action *parseMorphologicalFlagAction(xmlNode *node);
-		class Action *parseSVDAction(xmlNode *node);
-		class Action *parseSumThresholdAction(xmlNode *node);
-		class Action *parseTimeConvolutionAction(xmlNode *node);
-		class Action *parseTimeSelectionAction(xmlNode *node);
-		class Action *parseVisualizeAction(xmlNode *node);
-		class Action *parseWriteDataAction(xmlNode *node);
-		class Action *parseWriteFlagsAction(xmlNode *node);
+		std::unique_ptr<Action> parseAbsThresholdAction(xmlNode* node);
+		std::unique_ptr<Action> parseApplyBandpassAction(xmlNode* node);
+		std::unique_ptr<Action> parseBaselineSelectionAction(xmlNode* node);
+		std::unique_ptr<Action> parseCalibratePassbandAction(xmlNode* node);
+		std::unique_ptr<Action> parseChangeResolutionAction(xmlNode* node);
+		std::unique_ptr<Action> parseCombineFlagResults(xmlNode* node);
+		std::unique_ptr<Action> parseCutAreaAction(xmlNode* node);
+		std::unique_ptr<Action> parseEigenValueVerticalAction(xmlNode* node);
+		std::unique_ptr<Action> parseForEachBaselineAction(xmlNode* node);
+		std::unique_ptr<Action> parseForEachComplexComponentAction(xmlNode* node);
+		std::unique_ptr<Action> parseForEachMSAction(xmlNode* node);
+		std::unique_ptr<Action> parseForEachPolarisationBlock(xmlNode* node);
+		std::unique_ptr<Action> parseFrequencyConvolutionAction(xmlNode* node);
+		std::unique_ptr<Action> parseFrequencySelectionAction(xmlNode* node);
+		std::unique_ptr<Action> parseFringeStopAction(xmlNode* node);
+		std::unique_ptr<Action> parseHighPassFilterAction(xmlNode* node);
+		std::unique_ptr<Action> parseImagerAction(xmlNode* node);
+		std::unique_ptr<Action> parseIterationBlock(xmlNode* node);
+		std::unique_ptr<Action> parseNormalizeVarianceAction(xmlNode* node);
+		std::unique_ptr<Action> parsePlotAction(xmlNode* node);
+		std::unique_ptr<Action> parseQuickCalibrateAction(xmlNode* node);
+		std::unique_ptr<Action> parseSetFlaggingAction(xmlNode* node);
+		std::unique_ptr<Action> parseSetImageAction(xmlNode* node);
+		std::unique_ptr<Action> parseSlidingWindowFitAction(xmlNode* node);
+		std::unique_ptr<Action> parseMorphologicalFlagAction(xmlNode* node);
+		std::unique_ptr<Action> parseSVDAction(xmlNode* node);
+		std::unique_ptr<Action> parseSumThresholdAction(xmlNode* node);
+		std::unique_ptr<Action> parseTimeConvolutionAction(xmlNode* node);
+		std::unique_ptr<Action> parseTimeSelectionAction(xmlNode* node);
+		std::unique_ptr<Action> parseVisualizeAction(xmlNode* node);
+		std::unique_ptr<Action> parseWriteDataAction(xmlNode* node);
+		std::unique_ptr<Action> parseWriteFlagsAction(xmlNode* node);
 
 		xmlDocPtr _xmlDocument;
 

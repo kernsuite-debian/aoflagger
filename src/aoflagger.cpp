@@ -104,22 +104,35 @@ int main(int argc, char **argv)
 		"  -v will produce verbose output\n"
 		"  -j overrides the number of threads specified in the strategy\n"
 		"     (default: one thread for each CPU core)\n"
-		"  -strategy specifies a possible customized strategy\n"
-		"  -direct-read will perform the slowest IO but will always work.\n"
-		"  -indirect-read will reorder the measurement set before starting, which is normally\n"
-		"     faster but requires free disk space to reorder the data to.\n"
-		"  -memory-read will read the entire measurement set in memory. This is the fastest, but\n"
-		"     requires much memory.\n"
-		"  -auto-read-mode will select either memory or direct mode based on available memory (default).\n"
-		"  -skip-flagged will skip an ms if it has already been processed by AOFlagger according\n"
-		"     to its HISTORY table.\n"
-		"  -uvw reads uvw values (some exotic strategies require these)\n"
-		"  -column <name> specify column to flag\n"
-		"  -bands <list> comma separated list of (zero-indexed) band ids to process\n"
-		"  -fields <list> comma separated list of (zero-indexed) field ids to process\n"
-		"  -combine-spws Join all SPWs together in frequency direction before flagging\n"
+		"  -strategy <strategy>\n"
+		"     specifies a customized strategy\n"
+		"  -direct-read\n"
+		"     Will perform the slowest IO but will always work.\n"
+		"  -indirect-read\n"
+		"     Will reorder the measurement set before starting, which is normally faster but requires\n"
+		"     free disk space to reorder the data to.\n"
+		"  -memory-read\n"
+		"     Will read the entire measurement set in memory. This is the fastest, but requires much\n"
+		"     memory.\n"
+		"  -auto-read-mode\n"
+		"     Will select either memory or direct mode based on available memory (default).\n"
+		"  -skip-flagged\n"
+		"     Will skip an ms if it has already been processed by AOFlagger according to its HISTORY\n"
+		"     table.\n"
+		"  -uvw\n"
+		"     Reads uvw values (some exotic strategies require these)\n"
+		"  -column <name>\n"
+		"     Specify column to flag\n"
+		"  -bands <list>\n"
+		"     Comma separated list of (zero-indexed) band ids to process\n"
+		"  -fields <list>\n"
+		"     Comma separated list of (zero-indexed) field ids to process\n"
+		"  -combine-spws\n"
+		"     Join all SPWs together in frequency direction before flagging\n"
+		"  -bandpass <filename>\n"
+		"     Set bandpass correction file for any 'Apply passband' action\n"
 		"\n"
-		"This tool supports at least the Casa measurement set, the SDFITS and Filterbank formats. See\n"
+		"This tool supports the Casacore measurement set, the SDFITS and Filterbank formats and some more. See\n"
 		"the documentation for support of other file types.\n";
 		
 		checkRelease();
@@ -139,6 +152,7 @@ int main(int argc, char **argv)
 	Parameter<bool> skipFlagged;
 	Parameter<std::string> dataColumn;
 	Parameter<bool> combineSPWs;
+	Parameter<std::string> bandpass;
 	std::set<size_t> bands, fields;
 
 	size_t parameterIndex = 1;
@@ -196,8 +210,7 @@ int main(int argc, char **argv)
 		else if(flag == "column")
 		{
 			parameterIndex++;
-			std::string columnStr(argv[parameterIndex]);
-			dataColumn = columnStr; 
+			dataColumn = std::string(argv[parameterIndex]); 
 		}
 		else if(flag == "bands")
 		{
@@ -212,6 +225,11 @@ int main(int argc, char **argv)
 		else if(flag == "combine-spws")
 		{
 			combineSPWs = true;
+		}
+		else if(flag == "bandpass")
+		{
+			++parameterIndex;
+			bandpass = std::string(argv[parameterIndex]);
 		}
 		else
 		{
@@ -248,6 +266,8 @@ int main(int argc, char **argv)
 			fomAction->Fields() = fields;
 		if(combineSPWs.IsSet())
 			fomAction->SetCombineSPWs(combineSPWs);
+		if(bandpass.IsSet())
+			fomAction->SetBandpassFilename(bandpass);
 		std::stringstream commandLineStr;
 		commandLineStr << argv[0];
 		for(int i=1;i<argc;++i)

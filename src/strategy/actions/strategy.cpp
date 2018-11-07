@@ -2,6 +2,7 @@
 
 #include "foreachmsaction.h"
 #include "writeflagsaction.h"
+#include "applybandpassaction.h"
 
 #include "../control/strategyiterator.h"
 
@@ -42,12 +43,12 @@ namespace rfiStrategy {
 		{
 			if(i->Type() == ForEachBaselineActionType)
 			{
-				ForEachBaselineAction &fobAction = static_cast<ForEachBaselineAction&>(*i);
+				ForEachBaselineAction& fobAction = static_cast<ForEachBaselineAction&>(*i);
 				fobAction.SetThreadCount(threadCount);
 			}
 			if(i->Type() == WriteFlagsActionType)
 			{
-				WriteFlagsAction &writeAction = static_cast<WriteFlagsAction&>(*i);
+				WriteFlagsAction& writeAction = static_cast<WriteFlagsAction&>(*i);
 				writeAction.SetMaxBufferItems(threadCount*5);
 				writeAction.SetMinBufferItemsForWriting(threadCount*4);
 			}
@@ -62,8 +63,22 @@ namespace rfiStrategy {
 		{
 			if(i->Type() == ForEachMSActionType)
 			{
-				ForEachMSAction &action = static_cast<ForEachMSAction&>(*i);
+				ForEachMSAction& action = static_cast<ForEachMSAction&>(*i);
 				action.SetDataColumnName(dataColumnName);
+			}
+			++i;
+		}
+	}
+
+	void Strategy::SetBandpassFilename(ActionContainer &strategy, const std::string &bandpassFilename)
+	{
+		StrategyIterator i = StrategyIterator::NewStartIterator(strategy);
+		while(!i.PastEnd())
+		{
+			if(i->Type() == ApplyBandpassType)
+			{
+				ApplyBandpassAction& action = static_cast<ApplyBandpassAction&>(*i);
+				action.SetFilename(bandpassFilename);
 			}
 			++i;
 		}

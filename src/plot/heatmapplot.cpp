@@ -621,6 +621,10 @@ std::unique_ptr<ColorMap> HeatMapPlot::createColorMap()
 			return CM(new class FireMap());
 		case BlackRedMap:
 			return CM(new class BlackRedMap());
+		case CubeHelixMap:
+			return CM(new class CubeHelixMap());
+		case CubeHelixColourfulMap:
+			return CM(new class CubeHelixColourfulMap());
 		case ViridisMap:
 			return CM(new class ViridisMap());
 		default:

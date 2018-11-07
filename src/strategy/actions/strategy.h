@@ -30,8 +30,9 @@ namespace rfiStrategy {
 
 			virtual std::string Description() final override { return "Strategy"; }
 
-			static void SetThreadCount(ActionContainer &strategy, size_t threadCount);
-			static void SetDataColumnName(Strategy &strategy, const std::string &dataColumnName);
+			static void SetThreadCount(ActionContainer& strategy, size_t threadCount);
+			static void SetDataColumnName(Strategy& strategy, const std::string& dataColumnName);
+			static void SetBandpassFilename(ActionContainer& strategy, const std::string& bandPassFilename);
 			
 			void StartPerformThread(const class ArtifactSet &artifacts, class ProgressListener &progress);
 			std::unique_ptr<ArtifactSet> JoinThread();

@@ -12,7 +12,7 @@ def flag(input):
   threshold_factor_step = 2.0
   base_threshold = 1.4
   
-  # Use above values to calculate thresholds in iteration
+  # Use above values to calculate thresholds in each iteration
   r = range((iteration_count-1), 0, -1)
   threshold_factors = numpy.power(threshold_factor_step, r)
 

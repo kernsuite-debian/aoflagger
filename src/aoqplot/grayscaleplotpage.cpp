@@ -40,12 +40,6 @@ GrayScalePlotPage::GrayScalePlotPage(HeatMapPageController* controller) :
 	_imageWidget(&controller->Plot()),
 	_imagePropertiesWindow(nullptr)
 {
-	_imageWidget.Plot().SetCairoFilter(Cairo::FILTER_NEAREST);
-	_imageWidget.Plot().SetColorMap(HeatMapPlot::HotColdMap);
-	_imageWidget.Plot().SetRange(HeatMapPlot::MinMax);
-	_imageWidget.Plot().SetScaleOption(HeatMapPlot::LogScale);
-	_imageWidget.Plot().SetZAxisDescription("Statistical value");
-	_imageWidget.Plot().SetManualZAxisDescription(true);
 	_imageWidget.set_size_request(300, 300);
 	
 	pack_start(_imageWidget);

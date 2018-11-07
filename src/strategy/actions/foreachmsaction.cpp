@@ -23,7 +23,7 @@ namespace rfiStrategy {
 void ForEachMSAction::Initialize()
 {
 }
-	
+
 void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress)
 {
 	unsigned taskIndex = 0;
@@ -81,6 +81,8 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 			
 			if(_threadCount != 0)
 				rfiStrategy::Strategy::SetThreadCount(*this, _threadCount);
+			if(!_bandpassFilename.empty())
+				rfiStrategy::Strategy::SetBandpassFilename(*this, _bandpassFilename);
 			
 			if(!_fields.empty() || !_bands.empty())
 			{
@@ -92,7 +94,7 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 					fobAction->Fields() = _fields;
 				}
 			}
-				
+			
 			std::unique_ptr<ImageSetIndex> index(imageSet->StartIndex());
 			artifacts.SetImageSet(std::move(imageSet));
 			artifacts.SetImageSetIndex(std::move(index));

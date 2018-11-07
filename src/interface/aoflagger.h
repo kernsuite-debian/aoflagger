@@ -399,6 +399,13 @@ namespace aoflagger {
 		public:
 			friend class AOFlagger;
 			
+			/** Construct a QualityStatistics with null state.
+			 * 
+			 * An object created by this constructor can only be assigned to.
+			 * @since Version 2.13
+			 */
+			QualityStatistics();
+			
 			/** @brief Copy the object. This is fast; only references are copied. */
 			QualityStatistics(const QualityStatistics& sourceQS);
 			
@@ -538,15 +545,16 @@ namespace aoflagger {
 	 * To decide how to split, keep in mind that the flagger
 	 * works best when both a lot of channels and a lot of
 	 * timesteps are available. As an example: LOFAR splits into subbands of 256 channels, and
-	 * the default processing with NDPPP loads as much as possible
-	 * timesteps in memory for flagging with this flagger. Typically, this means at least a
+	 * the default processing with NDPPP loads as many as possible
+	 * timesteps in memory for flagging. Typically, this means at least a
 	 * few hundred of timesteps are processed at a time (with 1-3s per timestep), and
 	 * this seems to work fine.
 	 * 
 	 * The 'aoflagger' executable always flags on the full measurement set, which is the
 	 * most accurate way. For sets that are larger than memory, a mode is used in
 	 * which the data is reordered to disk before the actual flagging starts. It turns
-	 * out that this is much faster than reading each baseline directly from the set, so
+	 * out that this is much faster than reading each baseline directly from the set, and
+	 * it simultaneously produces the best flagging accuracy, so
 	 * if enough processing power is available to do so, that should be the preferred
 	 * way.
 	 */
