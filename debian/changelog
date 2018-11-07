@@ -1,3 +1,10 @@
+aoflagger (2.13.0-1) bionic; urgency=medium
+
+  [ Gijs Molenaar ]
+  * New upstream version 2.13.0
+
+ -- KERN packaging <packaging@kernsuite.info>  Wed, 07 Nov 2018 17:02:36 +0100
+
 aoflagger (2.12.1-2kern1) bionic; urgency=medium
 
   [ Gijs Molenaar ]
