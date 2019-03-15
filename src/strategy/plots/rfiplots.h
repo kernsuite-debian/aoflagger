@@ -13,7 +13,7 @@ class RFIPlots{
 		static void MakeDistPlot(class Plot2DPointSet &pointSet, Image2DCPtr image, Mask2DCPtr mask);
 		template <bool Weight>
 		static void MakeMeanSpectrumPlot(class Plot2DPointSet &pointSet, const TimeFrequencyData &data, const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
-		static void MakePowerSpectrumPlot(class Plot2DPointSet &pointSet, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData);
+		static void MakePowerSpectrumPlot(class Plot2DPointSet& pointSet, const Image2D& real, const Image2D& imag, const Mask2D& mask, const TimeFrequencyMetaData* metaData);
 		static void MakeRMSSpectrumPlot(class Plot2DPointSet &plot, Image2DCPtr image, Mask2DCPtr mask);
 		static void MakePowerTimePlot(class Plot2DPointSet &plot, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData);
 		static void MakeComplexPlanePlot(class Plot2DPointSet &plot, const class TimeFrequencyData &data, size_t xStart, size_t length, size_t y, size_t yAvgSize, Mask2DCPtr mask, bool realVersusImaginary, bool imaginary);

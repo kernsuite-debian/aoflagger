@@ -116,7 +116,7 @@ namespace rfiStrategy {
 				_reader->PerformDataWriteTask(realImages, imaginaryImages, GetAntenna1(msIndex), GetAntenna2(msIndex), GetBand(msIndex), GetSequenceId(msIndex));
 			}
 			
-			virtual BaselineReaderPtr Reader() override final { return _reader; }
+			virtual BaselineReaderPtr Reader() const override final { return _reader; }
 			
 			virtual size_t GetAntenna1(const ImageSetIndex &index) override final {
 				return _sequences[static_cast<const MSImageSetIndex&>(index)._sequenceIndex].antenna1;

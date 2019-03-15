@@ -17,7 +17,7 @@ namespace rfiStrategy {
 	void MSImageSet::Initialize()
 	{
 		Logger::Debug << "Initializing image set...\n";
-		Logger::Debug << "Antenna's: " << _set.AntennaCount() << '\n';
+		Logger::Debug << "Antennas: " << _set.AntennaCount() << '\n';
 		_sequences = _set.GetSequences();
 		Logger::Debug << "Unique sequences: " << _sequences.size() << '\n';
 		if(_sequences.empty())
@@ -221,7 +221,7 @@ namespace rfiStrategy {
 		{
 			if(flags.size() == 1)
 				for(size_t i=0;i<_reader->Polarizations().size();++i)
-					allFlags.push_back(flags[0]);
+					allFlags.emplace_back(flags[0]);
 			else
 				throw std::runtime_error("Incorrect number of polarizations in write action");
 		}
@@ -234,5 +234,4 @@ namespace rfiStrategy {
 	{
 		_reader->PerformFlagWriteRequests();
 	}
-
 }

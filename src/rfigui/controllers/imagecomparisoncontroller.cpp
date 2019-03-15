@@ -22,7 +22,7 @@ TimeFrequencyData ImageComparisonController::GetActiveData() const
 		data.Trim(round(_plot.StartHorizontal() * data.ImageWidth()),
 							round(_plot.StartVertical() * data.ImageHeight()),
 							round(_plot.EndHorizontal() * data.ImageWidth()),
-							round(_plot.EndVertical() * data.ImageHeight())); 
+							round(_plot.EndVertical() * data.ImageHeight()));
 	}
 	return data;
 }
@@ -142,13 +142,59 @@ void ImageComparisonController::TryVisualizePolarizations(bool& pp, bool& pq, bo
 	}
 }
 
+Mask2DCPtr ImageComparisonController::getSelectedPolarizationMask(const TimeFrequencyData& data) const
+{
+	if(data.MaskCount() <= 1)
+		return data.GetSingleMask();
+	else {
+		if(data.MaskCount() == 4)
+		{
+			if(_showPP && _showQQ)
+			{
+				Mask2DPtr mask = Mask2D::MakePtr(*data.GetMask(0));
+				mask->Join(*data.GetMask(3));
+				return mask;
+			}
+			else if(_showPQ && _showQP)
+			{
+				Mask2DPtr mask = Mask2D::MakePtr(*data.GetMask(1));
+				mask->Join(*data.GetMask(2));
+				return mask;
+			}
+			else if(_showPP)
+				return data.GetMask(0);
+			else if(_showPQ)
+				return data.GetMask(1);
+			else if(_showQP)
+				return data.GetMask(2);
+			else //if(_showQQ)
+				return data.GetMask(3);
+		}
+		else // data->MaskCount() == 2
+		{
+			if(_showPP && _showQQ)
+			{
+				Mask2DPtr mask = Mask2D::MakePtr(*data.GetMask(0));
+				mask->Join(*data.GetMask(1));
+				return mask;
+			}
+			else if(_showPP)
+				return data.GetMask(0);
+			else //if(_showQQ)
+				return data.GetMask(1);
+		}
+	}
+}
+
 void ImageComparisonController::updateVisualizedImageAndMask()
 {
+	TimeFrequencyData* data;
 	if(_visualizedImage == 0)
-		_plot.SetAlternativeMask(_dataList.back().data.GetSingleMask());
+		data = &_dataList.back().data;
 	else
-		_plot.SetAlternativeMask(_dataList[_visualizedImage].data.GetSingleMask());
-	_plot.SetOriginalMask(_dataList.front().data.GetSingleMask());
+		data = &_dataList[_visualizedImage].data;
+	_plot.SetAlternativeMask(getSelectedPolarizationMask(*data));
+	_plot.SetOriginalMask(getSelectedPolarizationMask(_dataList.front().data));
 	updateVisualizedImage();
 }
 

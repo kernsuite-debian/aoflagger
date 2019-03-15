@@ -11,6 +11,7 @@
 
 #include "../../structures/spatialmatrixmetadata.h"
 #include "../../structures/measurementset.h"
+#include "../control/defaultstrategy.h"
 
 #include "../../msio/baselinematrixloader.h"
 
@@ -78,6 +79,10 @@ namespace rfiStrategy {
 			{
 				return _set.Path(); 
 			}
+			virtual std::string TelescopeName() final override
+			{
+				return DefaultStrategy::TelescopeName(DefaultStrategy::GENERIC_TELESCOPE);
+			}			
 			virtual void LoadFlags(const ImageSetIndex &/*index*/, TimeFrequencyData &/*destination*/)
 			{
 			}

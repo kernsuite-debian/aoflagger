@@ -193,7 +193,7 @@ namespace rfiStrategy {
 		antennaInfo.name = RangeName(index._imageIndex);
 		antennaInfo.diameter = 0.0;
 		antennaInfo.mount = "Unknown";
-		antennaInfo.station = GetTelescopeName();
+		antennaInfo.station = TelescopeName();
 		metaData->SetAntenna1(antennaInfo);
 		metaData->SetAntenna2(antennaInfo);
   }

@@ -3,6 +3,8 @@
 #include "../../structures/date.h"
 #include "../../structures/system.h"
 
+#include "../control/defaultstrategy.h"
+
 #include <fstream>
 
 namespace rfiStrategy {
@@ -178,6 +180,11 @@ void FilterBankSet::AddWriteFlagsTask(const ImageSetIndex& index, std::vector<Ma
 		file.seekp(pos);
 		file.write(reinterpret_cast<char*>(&buffer[0]), _channelCount*sizeof(float));
 	}
+}
+
+std::string FilterBankSet::TelescopeName()
+{
+	return DefaultStrategy::TelescopeName(DefaultStrategy::GENERIC_TELESCOPE);
 }
 
 void FilterBankSet::Initialize()

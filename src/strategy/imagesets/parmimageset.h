@@ -10,6 +10,8 @@
 #include "../../structures/timefrequencydata.h"
 #include "../../structures/timefrequencymetadata.h"
 
+#include "../control/defaultstrategy.h"
+
 #include "imageset.h"
 
 namespace rfiStrategy {
@@ -67,6 +69,11 @@ namespace rfiStrategy {
 			
 			virtual std::string File() final override { return _path; }
 			
+			virtual std::string TelescopeName() final override
+			{
+				return DefaultStrategy::TelescopeName(DefaultStrategy::GENERIC_TELESCOPE);
+			}
+	
 			TimeFrequencyData *LoadData(const ImageSetIndex &index);
 			
 			virtual void AddReadRequest(const ImageSetIndex &index) final override

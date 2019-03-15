@@ -52,6 +52,8 @@ namespace rfiStrategy {
 			
 			virtual std::string File() final override { return _location; }
 			
+			virtual std::string TelescopeName() final override;
+			
 			virtual void AddReadRequest(const ImageSetIndex &index) final override;
 			
 			virtual void PerformReadRequests() final override;

@@ -33,8 +33,12 @@
 class ConsoleProgressHandler : public ProgressListener {
 	private:
 		std::mutex _mutex;
+		bool _exceptionOccurred;
 		
 	public:
+		ConsoleProgressHandler() : _exceptionOccurred(false) { }
+		
+		bool ExceptionOccurred() const { return _exceptionOccurred; }
 		
 		virtual void OnStartTask(const rfiStrategy::Action &action, size_t taskNo, size_t taskCount, const std::string &description, size_t weight) final override
 		{
@@ -65,10 +69,12 @@ class ConsoleProgressHandler : public ProgressListener {
 
 		virtual void OnException(const rfiStrategy::Action &, std::exception &thrownException) final override
 		{
+			std::lock_guard<std::mutex> lock(_mutex);
 			Logger::Error <<
 				"An exception occured during execution of the strategy!\n"
 				"Your set might not be fully flagged. Exception was:\n"
 				<< thrownException.what() << '\n';
+			_exceptionOccurred = true;
 		}
 };
 
@@ -350,7 +356,10 @@ int main(int argc, char **argv)
 
 		Logger::Debug << "Time: " << watch.ToString() << "\n";
 		
-		return RETURN_SUCCESS;
+		if(progress.ExceptionOccurred())
+			return RETURN_UNHANDLED_EXCEPTION;
+		else
+			return RETURN_SUCCESS;
 	} catch(std::exception& exception)
 	{
 		std::cerr

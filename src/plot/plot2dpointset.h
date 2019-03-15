@@ -131,17 +131,18 @@ class Plot2DPointSet{
 		
 		double MinPositiveY() const
 		{
-			std::vector<Point2D>::const_iterator i;
-			double min = -1.0;
-			// Find first positive element
+			bool hasValue = false;
+			double min = 0.0;
+			// Find lowest positive element
 			for(const Point2D& p : _points)
 			{
-				if(std::isfinite(p.y) && p.y > 0.0 && p.y > min)
+				if(std::isfinite(p.y) && p.y > 0.0 && (p.y < min || !hasValue))
 				{
 					min = p.y;
+					hasValue = true;
 				}
 			}
-			if(min == -1.0)
+			if(!hasValue)
 				return std::numeric_limits<double>::quiet_NaN();
 			else
 				return min;

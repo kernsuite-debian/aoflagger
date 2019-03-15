@@ -13,7 +13,6 @@ GrayScalePlotPage::GrayScalePlotPage(HeatMapPageController* controller) :
 	_countButton(_statisticGroup, "#"),
 	_meanButton(_statisticGroup, "μ"),
 	_stdDevButton(_statisticGroup, "σ"),
-	_dCountButton(_statisticGroup, "Δ#"),
 	_dMeanButton(_statisticGroup, "Δμ"),
 	_dStdDevButton(_statisticGroup, "Δσ"),
 	_rfiPercentageButton(_statisticGroup, "%"),
@@ -85,10 +84,6 @@ void GrayScalePlotPage::initStatisticKinds(Gtk::Toolbar& toolbar)
 	_stdDevButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectStdDev));
 	_stdDevButton.set_tooltip_text("Standard deviation");
 	toolbar.append(_stdDevButton);
-	
-	//_dCountButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectDCount));
-	//_dCountButton.set_tooltip_text("Visibility count in differential statistics");
-	//toolbar.append(_dCountButton);
 	
 	_dMeanButton.signal_clicked().connect(sigc::mem_fun(*this, &GrayScalePlotPage::onSelectDMean));
 	_dMeanButton.set_tooltip_text("Frequency-differential (difference between channels) mean value");

@@ -6,7 +6,6 @@
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/frame.h>
 #include <gtkmm/label.h>
-#include <gtkmm/scale.h>
 #include <gtkmm/filechooserdialog.h>
 
 #include "../../strategy/actions/applybandpassaction.h"

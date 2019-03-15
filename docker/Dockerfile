@@ -8,7 +8,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && \
     casacore-data casacore-dev \
     libblas-dev liblapack-dev \
     libpython-dev \
-    libboost-date-time-dev libboost-signals-dev libboost-python-dev libboost-test-dev libboost-system-dev libboost-filesystem-dev \
+    libboost-date-time-dev libboost-python-dev libboost-test-dev libboost-system-dev libboost-filesystem-dev \
     libgtkmm-3.0-dev \
     libcfitsio-dev \
     libfftw3-dev \

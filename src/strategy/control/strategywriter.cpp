@@ -56,8 +56,8 @@ namespace rfiStrategy {
 			case BaselineSelectionActionType:
 				writeBaselineSelectionAction(static_cast<const BaselineSelectionAction&>(action));
 				break;
-			case CalibratePassbandActionType:
-				writeCalibratePassbandAction(static_cast<const CalibratePassbandAction&>(action));
+			case CalibrateBandpassActionType:
+				writeCalibrateBandpassAction(static_cast<const CalibrateBandpassAction&>(action));
 				break;
 			case ChangeResolutionActionType:
 				writeChangeResolutionAction(static_cast<const ChangeResolutionAction&>(action));
@@ -188,9 +188,12 @@ namespace rfiStrategy {
 		Write<bool>("make-plot", action.MakePlot());
 	}
 
-	void StrategyWriter::writeCalibratePassbandAction(const CalibratePassbandAction &action)
+	void StrategyWriter::writeCalibrateBandpassAction(const CalibrateBandpassAction &action)
 	{
+		// Note that the 'CalibrateBandpassAction' was unfortunately misnamed in the xml
+		// strategy files. Due to backward compatibility it is better not to fix this.
 		Attribute("type", "CalibratePassbandAction");
+		Write<int>("method", int(action.GetMethod()));
 		Write<int>("steps", action.Steps());
 	}
 
@@ -201,6 +204,7 @@ namespace rfiStrategy {
 		Write<int>("frequency-decrease-factor", action.FrequencyDecreaseFactor());
 		Write<bool>("restore-revised", action.RestoreRevised());
 		Write<bool>("restore-masks", action.RestoreMasks());
+		Write<bool>("use-mask-in-averaging", action.UseMaskInAveraging());
 		writeContainerItems(action);
 	}
 

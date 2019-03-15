@@ -80,14 +80,14 @@ namespace rfiStrategy {
 			{
 				Image2DCPtr image = timeFrequencyData.GetImage(i);
 				Image2DPtr newImage(new Image2D(image->ShrinkHorizontally(_timeDecreaseFactor)));
-				timeFrequencyData.SetImage(i, newImage);
+				timeFrequencyData.SetImage(i, std::move(newImage));
 			}
 			size_t maskCount = timeFrequencyData.MaskCount();
 			for(size_t i=0;i<maskCount;++i)
 			{
 				Mask2DCPtr mask = timeFrequencyData.GetMask(i);
 				Mask2DPtr newMask(new Mask2D(mask->ShrinkHorizontally(_timeDecreaseFactor)));
-				timeFrequencyData.SetMask(i, newMask);
+				timeFrequencyData.SetMask(i, std::move(newMask));
 			}
 		}
 	}
@@ -98,41 +98,71 @@ namespace rfiStrategy {
 		for(size_t i=0;i<polCount;++i)
 		{
 			TimeFrequencyData polData(data.MakeFromPolarizationIndex(i));
-			const Mask2D* mask = polData.GetSingleMask().get();
+			const Mask2DCPtr mask = polData.GetSingleMask();
 			for(unsigned j=0;j<polData.ImageCount();++j)
 			{
-				const Image2D* image = polData.GetImage(j).get();
-				polData.SetImage(j, ThresholdTools::ShrinkHorizontally(_timeDecreaseFactor, image, mask));
+				const Image2DCPtr image = polData.GetImage(j);
+				polData.SetImage(j, ThresholdTools::ShrinkHorizontally(_timeDecreaseFactor, image.get(), mask.get()));
 			}
+			data.SetPolarizationData(i, std::move(polData));
 		}
 		size_t maskCount = data.MaskCount();
 		for(size_t i=0;i<maskCount;++i)
 		{
 			Mask2DCPtr mask = data.GetMask(i);
 			Mask2DPtr newMask(new Mask2D(mask->ShrinkHorizontallyForAveraging(_timeDecreaseFactor)));
-			data.SetMask(i, newMask);
+			data.SetMask(i, std::move(newMask));
 		}
 	}
 
-	void ChangeResolutionAction::DecreaseFrequency(TimeFrequencyData &timeFrequencyData)
+	void ChangeResolutionAction::DecreaseFrequency(TimeFrequencyData& timeFrequencyData)
 	{
-		size_t imageCount = timeFrequencyData.ImageCount();
-		for(size_t i=0;i<imageCount;++i)
+		if(_useMaskInAveraging)
 		{
-			Image2DCPtr image = timeFrequencyData.GetImage(i);
-			Image2DPtr newImage(new Image2D(image->ShrinkVertically(_frequencyDecreaseFactor)));
-			timeFrequencyData.SetImage(i, newImage);
+			DecreaseFrequencyWithMask(timeFrequencyData);
 		}
-		size_t maskCount = timeFrequencyData.MaskCount();
+		else {
+      size_t imageCount = timeFrequencyData.ImageCount();
+      for(size_t i=0;i<imageCount;++i)
+      {
+        Image2DCPtr image = timeFrequencyData.GetImage(i);
+        Image2DPtr newImage(new Image2D(image->ShrinkVertically(_frequencyDecreaseFactor)));
+        timeFrequencyData.SetImage(i, std::move(newImage));
+      }
+      size_t maskCount = timeFrequencyData.MaskCount();
+      for(size_t i=0;i<maskCount;++i)
+      {
+        Mask2DCPtr mask = timeFrequencyData.GetMask(i);
+        Mask2DPtr newMask(new Mask2D(mask->ShrinkVertically(_frequencyDecreaseFactor)));
+        timeFrequencyData.SetMask(i, std::move(newMask));
+      }
+    }
+	}
+	
+	void ChangeResolutionAction::DecreaseFrequencyWithMask(TimeFrequencyData& data)
+  {
+		size_t polCount = data.PolarizationCount();
+		for(size_t i=0;i<polCount;++i)
+		{
+			TimeFrequencyData polData(data.MakeFromPolarizationIndex(i));
+			const Mask2DCPtr mask = polData.GetSingleMask();
+			for(unsigned j=0;j<polData.ImageCount();++j)
+			{
+				const Image2DCPtr image = polData.GetImage(j);
+				polData.SetImage(j, ThresholdTools::ShrinkVertically(_frequencyDecreaseFactor, image.get(), mask.get()));
+			}
+			data.SetPolarizationData(i, std::move(polData));
+		}
+		size_t maskCount = data.MaskCount();
 		for(size_t i=0;i<maskCount;++i)
 		{
-			Mask2DCPtr mask = timeFrequencyData.GetMask(i);
-			Mask2DPtr newMask(new Mask2D(mask->ShrinkVertically(_frequencyDecreaseFactor)));
-			timeFrequencyData.SetMask(i, newMask);
+			Mask2DCPtr mask = data.GetMask(i);
+			Mask2DPtr newMask(new Mask2D(mask->ShrinkVerticallyForAveraging(_frequencyDecreaseFactor)));
+			data.SetMask(i, std::move(newMask));
 		}
-	}
+  }
 
-	void ChangeResolutionAction::IncreaseTime(TimeFrequencyData &originalData, TimeFrequencyData &changedData, bool restoreImage, bool restoreMask)
+	void ChangeResolutionAction::IncreaseTime(TimeFrequencyData &originalData, const TimeFrequencyData &changedData, bool restoreImage, bool restoreMask)
 	{
 		if(restoreImage)
 		{
@@ -160,7 +190,7 @@ namespace rfiStrategy {
 		}
 	}
 
-	void ChangeResolutionAction::IncreaseFrequency(TimeFrequencyData &originalData, TimeFrequencyData &changedData, bool restoreImage, bool restoreMask)
+	void ChangeResolutionAction::IncreaseFrequency(TimeFrequencyData &originalData, const TimeFrequencyData &changedData, bool restoreImage, bool restoreMask)
 	{
 		if(restoreImage)
 		{

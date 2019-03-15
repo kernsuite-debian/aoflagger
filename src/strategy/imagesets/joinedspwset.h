@@ -219,7 +219,7 @@ namespace rfiStrategy {
 			_msImageSet->PerformWriteFlagsTask();
 		}
 		
-		virtual BaselineReaderPtr Reader() override final
+		virtual BaselineReaderPtr Reader() const override final
 		{
 			return _msImageSet->Reader();
 		}

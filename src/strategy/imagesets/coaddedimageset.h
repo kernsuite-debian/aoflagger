@@ -140,7 +140,7 @@ namespace rfiStrategy {
 		{
 		}
 		
-		virtual BaselineReaderPtr Reader() override final
+		virtual BaselineReaderPtr Reader() const override final
 		{
 			return _msImageSets.front()->Reader();
 		}

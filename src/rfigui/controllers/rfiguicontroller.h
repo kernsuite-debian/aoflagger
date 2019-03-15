@@ -179,6 +179,8 @@ class RFIGuiController
 		
 		void InterpolateFlagged();
 		
+		void SaveBaseline(const std::string& filename);
+		
 	private:
 		void plotMeanSpectrum(bool weight);
 		

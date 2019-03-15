@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <complex>
 
 #include "../../structures/image2d.h"
 #include "../../structures/mask2d.h"
@@ -20,9 +21,13 @@ class ThresholdTools {
 		static void TrimmedMeanAndStdDev(const std::vector<T> &input, T &mean, T &stddev);
 		template<typename T>
 		static void WinsorizedMeanAndStdDev(const std::vector<T> &input, T &mean, T &stddev);
-		static void WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* mask, num_t &mean, num_t &variance);
-		static void WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* maskA, const Mask2D* maskB, num_t &mean, num_t &variance);
-		static void WinsorizedMeanAndStdDev(const Image2D* image, num_t &mean, num_t &variance);
+		static void WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* mask, num_t &mean, num_t &stddev);
+		static void WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D* maskA, const Mask2D* maskB, num_t &mean, num_t &stddev);
+		static void WinsorizedMeanAndStdDev(const Image2D* image, num_t &mean, num_t &stddev);
+		
+		template<typename T>
+		static double WinsorizedRMS(const std::vector<std::complex<T>> &input);
+		
 		static num_t MinValue(const Image2D* image, const Mask2D* mask);
 		static num_t MaxValue(const Image2D* image, const Mask2D* mask);
 		static void SetFlaggedValuesToZero(Image2D* dest, const Mask2D* mask);
@@ -32,6 +37,7 @@ class ThresholdTools {
 		static void FilterConnectedSample(Mask2D* mask, size_t x, size_t y, size_t minConnectedSampleArea, bool eightConnected=true);
 		static void UnrollPhase(Image2D* image);
 		static Image2DPtr ShrinkHorizontally(size_t factor, const Image2D* input, const Mask2D* mask);
+		static Image2DPtr ShrinkVertically(size_t factor, const Image2D* input, const Mask2D* mask);
 
 		static Image2DPtr FrequencyRectangularConvolution(const Image2D* source, size_t convolutionSize)
 		{
@@ -85,6 +91,17 @@ class ThresholdTools {
 			if(std::isfinite(a)) {
 				if(std::isfinite(b))
 					return a < b;
+				else
+					return true;
+			}
+			return false;
+		}
+		
+		template<typename T>
+		static bool complexLessThanOperator(const std::complex<T>& a, const std::complex<T>& b) {
+			if(std::isfinite(a.real()) && std::isfinite(a.imag())) {
+				if(std::isfinite(b.real()) && std::isfinite(b.imag()))
+					return (a*std::conj(a)).real() < (b*std::conj(b)).real();
 				else
 					return true;
 			}

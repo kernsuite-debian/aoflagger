@@ -2,7 +2,7 @@
 #include "absthresholdaction.h"
 #include "applybandpassaction.h"
 #include "baselineselectionaction.h"
-#include "calibratepassbandaction.h"
+#include "calibratebandpassaction.h"
 #include "changeresolutionaction.h"
 #include "combineflagresultsaction.h"
 #include "cutareaaction.h"

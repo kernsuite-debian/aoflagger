@@ -214,8 +214,8 @@ std::unique_ptr<Action> StrategyReader::parseAction(xmlNode* node)
 		newAction = parseApplyBandpassAction(node);
 	else if(typeStr == "BaselineSelectionAction")
 		newAction = parseBaselineSelectionAction(node);
-	else if(typeStr == "CalibratePassbandAction")
-		newAction = parseCalibratePassbandAction(node);
+	else if(typeStr == "CalibratePassbandAction") // Note the unfortunate misspelling
+		newAction = parseCalibrateBandpassAction(node);
 	else if(typeStr == "ChangeResolutionAction")
 		newAction = parseChangeResolutionAction(node);
 	else if(typeStr == "CombineFlagResults")
@@ -310,10 +310,11 @@ std::unique_ptr<Action> StrategyReader::parseBaselineSelectionAction(xmlNode* no
 	return std::move(newAction);
 }
 
-std::unique_ptr<Action> StrategyReader::parseCalibratePassbandAction(xmlNode* node)
+std::unique_ptr<Action> StrategyReader::parseCalibrateBandpassAction(xmlNode* node)
 {
-	std::unique_ptr<CalibratePassbandAction> newAction(new CalibratePassbandAction());
+	std::unique_ptr<CalibrateBandpassAction> newAction(new CalibrateBandpassAction());
 	newAction->SetSteps(getInt(node, "steps"));
+	newAction->SetMethod((CalibrateBandpassAction::Method) getIntOr(node, "method", (int) CalibrateBandpassAction::StepwiseMethod));
 	return std::move(newAction);
 }
 
@@ -324,6 +325,7 @@ std::unique_ptr<Action> StrategyReader::parseChangeResolutionAction(xmlNode* nod
 	newAction->SetFrequencyDecreaseFactor(getInt(node, "frequency-decrease-factor"));
 	newAction->SetRestoreRevised(getBool(node, "restore-revised"));
 	newAction->SetRestoreMasks(getBool(node, "restore-masks"));
+	newAction->SetUseMaskInAveraging(getBoolOr(node, "use-mask-in-averaging", false));
 	parseChildren(node, *newAction);
 	return std::move(newAction);
 }

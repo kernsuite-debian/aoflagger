@@ -87,7 +87,7 @@ class ImageComparisonController {
 				_showPQ = pq;
 				_showQP = qp;
 				_showQQ = qq;
-				updateVisualizedImage();
+				updateVisualizedImageAndMask();
 			}
 		}
 		
@@ -102,6 +102,7 @@ class ImageComparisonController {
 		void getFirstAvailablePolarization(bool& pp, bool& pq, bool& qp, bool& qq) const;
 		void updateVisualizedImageAndMask();
 		void updateVisualizedImage();
+		Mask2DCPtr getSelectedPolarizationMask(const TimeFrequencyData& data) const;
 		void getActiveMask(TimeFrequencyData& data) const
 		{
 			bool orActive = _plot.ShowOriginalMask() && _dataList[0].data.MaskCount()!=0;

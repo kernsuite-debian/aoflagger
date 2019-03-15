@@ -23,6 +23,7 @@ namespace rfiStrategy {
 	{
 		public:
 			explicit ArtifactSet(std::mutex* ioMutex) :
+			_canVisualize(false),
 			_visualizationData(),
 			_metaData(),
 			_sensitivity(1.0L),

@@ -53,7 +53,7 @@ namespace rfiStrategy {
 			void writeAddStatisticsAction(const class AddStatisticsAction& action);
 			void writeApplyBandpassAction(const class ApplyBandpassAction& action);
 			void writeBaselineSelectionAction(const class BaselineSelectionAction& action);
-			void writeCalibratePassbandAction(const class CalibratePassbandAction& action);
+			void writeCalibrateBandpassAction(const class CalibrateBandpassAction& action);
 			void writeChangeResolutionAction(const class ChangeResolutionAction& action);
 			void writeCombineFlagResults(const class CombineFlagResults& action);
 			void writeCutAreaAction(const class CutAreaAction& action);
