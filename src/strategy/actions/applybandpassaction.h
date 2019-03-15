@@ -23,7 +23,7 @@ public:
 		return "Apply bandpass";
 	}
 	
-	virtual void Perform(ArtifactSet& artifacts, ProgressListener& progress) final override
+	virtual void Perform(ArtifactSet& artifacts, ProgressListener&) final override
 	{
 		if(!artifacts.HasMetaData() || !artifacts.MetaData()->HasAntenna1() || !artifacts.MetaData()->HasAntenna2())
 			throw std::runtime_error("No meta data available for bandpass correction");
@@ -63,6 +63,8 @@ private:
 		BandpassFile(const std::string& filename)
 		{
 			std::ifstream file(filename);
+			if(!file)
+				throw std::runtime_error("Can not find bandpasss file: '" + filename + '\'');
 			std::string antenna, pol;
 			size_t channel;
 			double value;

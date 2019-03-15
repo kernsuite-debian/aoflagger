@@ -524,6 +524,7 @@ public:
 			return b;
 		}
 		unsigned char ValueToColorA(long double) const noexcept override { return 255; }
+		
 private:
   void convertColour(long double value, unsigned char& rv, unsigned char& gv, unsigned char& bv) const noexcept
 	{

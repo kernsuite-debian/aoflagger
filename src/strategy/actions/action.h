@@ -13,7 +13,7 @@ namespace rfiStrategy {
 		ActionBlockType,
 		ApplyBandpassType,
 		BaselineSelectionActionType,
-		CalibratePassbandActionType,
+		CalibrateBandpassActionType,
 		ChangeResolutionActionType,
 		CombineFlagResultsType,
 		CutAreaActionType,

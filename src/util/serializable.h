@@ -93,6 +93,16 @@ class Serializable
 			destStr = std::string(str, size);
 			delete[] str;
 		}
+		
+		static std::string UnserializeString(std::istream &stream)
+		{
+			size_t size = UnserializeUInt64(stream);
+			char *str = new char[size];
+			stream.read(str, size);
+			std::string result = std::string(str, size);
+			delete[] str;
+			return result;
+		}
 	private:
 		template<typename T>
 		static T Unserialize(std::istream &stream)

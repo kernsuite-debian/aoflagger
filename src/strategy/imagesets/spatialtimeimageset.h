@@ -11,6 +11,7 @@
 
 #include "../../structures/measurementset.h"
 #include "../../msio/spatialtimeloader.h"
+#include "../control/defaultstrategy.h"
 
 namespace rfiStrategy {
 
@@ -75,6 +76,10 @@ namespace rfiStrategy {
 		{
 			return _set.Path(); 
 		}
+		virtual std::string TelescopeName() final override
+		{
+			return DefaultStrategy::TelescopeName(DefaultStrategy::GENERIC_TELESCOPE);
+		}			
 		size_t GetTimeIndexCount()
 		{
 			return _loader.TimestepsCount();

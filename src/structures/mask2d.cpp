@@ -191,6 +191,32 @@ Mask2D Mask2D::ShrinkVertically(int factor) const
 	return newMask;
 }
 
+Mask2D Mask2D::ShrinkVerticallyForAveraging(int factor) const
+{
+	size_t newHeight = (_height + factor - 1) / factor;
+
+	Mask2D newMask(_width, newHeight);
+
+	for(size_t y=0; y!=newHeight; ++y)
+	{
+		size_t binSize = factor;
+		if(binSize + y*factor > _height)
+			binSize = _height - y*factor;
+
+		for(size_t x=0; x!=_width; ++x)
+		{
+			bool value = true;
+			for(size_t binY=0; binY!=binSize; ++binY)
+			{
+				size_t curY = y*factor + binY;
+				value = value & Value(x, curY);
+			}
+			newMask.SetValue(x, y, value);
+		}
+	}
+	return newMask;
+}
+
 void Mask2D::EnlargeHorizontallyAndSet(const Mask2D& smallMask, int factor)
 {
 	for(size_t x=0;x<smallMask.Width();++x)

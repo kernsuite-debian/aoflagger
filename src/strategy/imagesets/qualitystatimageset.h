@@ -6,6 +6,7 @@
 #include "../../quality/qualitytablesformatter.h"
 #include "../../quality/statisticsderivator.h"
 #include "../../util/logger.h"
+#include "../control/defaultstrategy.h"
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
@@ -34,7 +35,13 @@ public:
 	{ return File(); }
 	virtual std::string File() final override
 	{ return _filename; }
-	
+	virtual std::string BaselineDescription() final override
+	{ return File(); }
+	virtual std::string TelescopeName() final override
+	{
+		return DefaultStrategy::TelescopeName(DefaultStrategy::GENERIC_TELESCOPE);
+	}
+
 	std::unique_ptr<BaselineData> Read() final override
 	{
 		QualityTablesFormatter formatter(_filename);

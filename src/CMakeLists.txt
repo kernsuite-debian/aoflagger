@@ -112,6 +112,7 @@ set(MSIO_FILES
   msio/memorybaselinereader.cpp
   msio/pngfile.cpp
   msio/rspreader.cpp
+  msio/singlebaselinefile.cpp
   msio/spatialtimeloader.cpp)
   
 set(STRUCTURES_FILES
@@ -132,7 +133,7 @@ set(QUALITY_FILES
 
 set(STRATEGY_ACTION_FILES
   strategy/actions/baselineselectionaction.cpp
-  strategy/actions/calibratepassbandaction.cpp
+  strategy/actions/calibratebandpassaction.cpp
   strategy/actions/changeresolutionaction.cpp
   strategy/actions/foreachbaselineaction.cpp
   strategy/actions/foreachmsaction.cpp
@@ -197,7 +198,8 @@ set(STRATEGY_IMAGESETS_FILES
   strategy/imagesets/imageset.cpp
   strategy/imagesets/msimageset.cpp
   strategy/imagesets/parmimageset.cpp
-  strategy/imagesets/pngreader.cpp)
+  strategy/imagesets/pngreader.cpp
+  strategy/imagesets/rfibaselineset.cpp)
 
 set(STRATEGY_FILES
   ${STRATEGY_ACTION_FILES}
@@ -237,7 +239,6 @@ set(ALL_LIBRARIES
 	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
 #	${Boost_PYTHON-PY36_LIBRARIES}
 	${Boost_PYTHON_LIBRARIES}
-	${Boost_SIGNALS_LIBRARY}
 	${FFTW3_LIB}
 	${CASACORE_LIBRARIES}
 	${LAPACK_lapack_LIBRARY}

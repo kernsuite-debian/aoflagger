@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <gtkmm/messagedialog.h>
+
 #include "../gtkmm-compat.h"
 
 #include "../strategy/actions/iterationaction.h"
@@ -20,6 +21,7 @@
 #include "strategyframes/absthresholdframe.h"
 #include "strategyframes/applybandpassframe.h"
 #include "strategyframes/baselineselectionframe.h"
+#include "strategyframes/calibratebandpassframe.h"
 #include "strategyframes/changeresolutionframe.h"
 #include "strategyframes/cutareaframe.h"
 #include "strategyframes/foreachbaselineframe.h"
@@ -252,6 +254,9 @@ void EditStrategyWindow::onSelectionChanged()
 					break;
 				case BaselineSelectionActionType:
 					showRight(new BaselineSelectionFrame(*static_cast<rfiStrategy::BaselineSelectionAction*>(selectedAction), *this));
+					break;
+				case CalibrateBandpassActionType:
+					showRight(new CalibrateBandpassFrame(*static_cast<rfiStrategy::CalibrateBandpassAction*>(selectedAction), *this));
 					break;
 				case ChangeResolutionActionType:
 					showRight(new ChangeResolutionFrame(*static_cast<rfiStrategy::ChangeResolutionAction*>(selectedAction), *this));

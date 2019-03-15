@@ -650,7 +650,7 @@ namespace rfiStrategy {
 		return _file->Filename();
 	}
 	
-	std::string FitsImageSet::ReadTelescopeName()
+	std::string FitsImageSet::TelescopeName()
 	{
 		for(int hduIndex=2; hduIndex <= _file->GetHDUCount(); hduIndex++)
 		{

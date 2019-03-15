@@ -273,6 +273,7 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 		Mask2D ShrinkHorizontallyForAveraging(int factor) const;
 		
 		Mask2D ShrinkVertically(int factor) const;
+		Mask2D ShrinkVerticallyForAveraging(int factor) const;
 
 		void EnlargeHorizontallyAndSet(const Mask2D& smallMask, int factor);
 		void EnlargeVerticallyAndSet(const Mask2D& smallMask, int factor);

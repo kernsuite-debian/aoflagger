@@ -15,8 +15,8 @@ protected:
 		_antennas = antennas;
 		const BaselineStatisticsMap &map = statCollection->BaselineStatistics();
 		
-		vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
-		for(vector<std::pair<unsigned, unsigned> >::const_iterator i=baselines.begin();i!=baselines.end();++i)
+		std::vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
+		for(std::vector<std::pair<unsigned, unsigned> >::const_iterator i=baselines.begin();i!=baselines.end();++i)
 		{
 			if(i->first != i->second)
 			{

@@ -9,6 +9,8 @@
 
 #include "../../structures/types.h"
 
+#include "../control/defaultstrategy.h"
+
 #include "singleimageset.h"
 
 #include "../../util/logger.h"
@@ -32,7 +34,7 @@ namespace rfiStrategy {
 
 			virtual std::string Name() final override
 			{
-				return "Png format";
+				return "Png file";
 			}
 			
 			virtual std::string File() final override
@@ -40,6 +42,14 @@ namespace rfiStrategy {
 				return _path;
 			}
 			
+			virtual std::string BaselineDescription() final override
+			{ return Name(); }
+	
+			virtual std::string TelescopeName() final override
+			{
+				return DefaultStrategy::TelescopeName(DefaultStrategy::GENERIC_TELESCOPE);
+			}
+	
 			virtual std::unique_ptr<BaselineData> Read() final override;
 
 		private:

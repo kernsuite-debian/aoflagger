@@ -178,6 +178,27 @@ void RFIGuiWindow::onActionDirectoryOpenForST()
 	}
 }
 
+void RFIGuiWindow::onSaveBaseline()
+{
+  Gtk::FileChooserDialog dialog("Select baseline file", Gtk::FILE_CHOOSER_ACTION_SAVE);
+  dialog.set_transient_for(*this);
+  dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
+  dialog.add_button("_Save", Gtk::RESPONSE_ACCEPT);
+
+  auto filter_text = Gtk::FileFilter::create();
+  filter_text->set_name("Baseline files (*.rfibl)");
+  filter_text->add_mime_type("application/rfibl");
+  dialog.add_filter(filter_text);
+	dialog.set_do_overwrite_confirmation(true);
+	
+	int result = dialog.run();
+
+  if(result == Gtk::RESPONSE_ACCEPT)
+	{
+		_controller->SaveBaseline(dialog.get_filename());
+	}
+}
+
 void RFIGuiWindow::onActionFileOpen()
 {
   Gtk::FileChooserDialog dialog("Select a measurement set");
@@ -303,7 +324,7 @@ void RFIGuiWindow::onExecuteStrategyPressed()
 		artifacts.SetRevisedData(zero);
 	}
 	if(_timeFrequencyWidget.Plot().GetFullMetaData() != nullptr)
-			artifacts.SetMetaData(_timeFrequencyWidget.Plot().GetFullMetaData());
+		artifacts.SetMetaData(_timeFrequencyWidget.Plot().GetFullMetaData());
 	if(_controller->HasImageSet())
 	{
 		artifacts.SetImageSet(_controller->GetImageSet().Clone());
@@ -415,8 +436,77 @@ void RFIGuiWindow::createToolbar()
   sigc::mem_fun(*this, &RFIGuiWindow::onActionDirectoryOpenForSpatial) );
 	_actionGroup->add( Gtk::Action::create("OpenDirectoryST", "Open _directory as spatial/time"),
   sigc::mem_fun(*this, &RFIGuiWindow::onActionDirectoryOpenForST) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSet", "Open _testset") );
+	_actionGroup->add( Gtk::Action::create("SaveBaseline", "Save baseline as..."),
+	sigc::mem_fun(*this, &RFIGuiWindow::onSaveBaseline) );
+	action = Gtk::Action::create("Quit", "_Quit");
+	action->set_icon_name("application-exit");
+	_actionGroup->add(action, Gtk::AccelKey("<control>Q"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onQuit) );
 
+	_actionGroup->add( Gtk::Action::create("ImageProperties", "Plot properties..."),
+		Gtk::AccelKey("<control>P"),
+  	sigc::mem_fun(*this, &RFIGuiWindow::onImagePropertiesPressed) );
+	_timeGraphButton = Gtk::ToggleAction::create("TimeGraph", "Time graph");
+	_timeGraphButton->set_active(false); 
+	_actionGroup->add(_timeGraphButton, sigc::mem_fun(*this, &RFIGuiWindow::onTimeGraphButtonPressed) );
+	
+	_actionGroup->add( Gtk::Action::create("PlotDist", "Plot _distribution"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onPlotDistPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotLogLogDist", "Plot _log-log dist"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onPlotLogLogDistPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotComplexPlane", "Plot _complex plane"),
+		Gtk::AccelKey("<alt>C"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotComplexPlanePressed) );
+	_actionGroup->add( Gtk::Action::create("PlotMeanSpectrum", "Plot _mean spectrum"),
+		Gtk::AccelKey("<alt>M"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotMeanSpectrumPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotSumSpectrum", "Plot s_um spectrum"),
+		Gtk::AccelKey("<alt>U"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotSumSpectrumPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrum", "Plot _power spectrum"),
+		Gtk::AccelKey("<alt>W"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotFrequencyScatter", "Plot _frequency scatter"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotFrequencyScatterPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrumComparison", "Power _spectrum"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumComparisonPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotRMSSpectrum", "Plot _rms spectrum"),
+		Gtk::AccelKey("<alt>R"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerRMSPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotPowerTime", "Plot power vs _time"),
+		Gtk::AccelKey("<alt>T"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerTimePressed) );
+	_actionGroup->add( Gtk::Action::create("PlotPowerTimeComparison", "Po_wer vs time"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerTimeComparisonPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotTimeScatter", "Plot t_ime scatter"),
+ 		Gtk::AccelKey("<alt>I"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onPlotTimeScatterPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotTimeScatterComparison", "Time _scatter"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onPlotTimeScatterComparisonPressed) );
+	_actionGroup->add( Gtk::Action::create("PlotSingularValues", "Plot _singular values"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onPlotSingularValuesPressed) );
+	_zoomToFitButton = Gtk::Action::create("ZoomFit", "Zoom _fit");
+	_zoomToFitButton->set_icon_name("zoom-fit-best");
+	_actionGroup->add(_zoomToFitButton, Gtk::AccelKey("<control>0"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onZoomFit) );
+	_zoomInButton = Gtk::Action::create("ZoomIn", "Zoom in");
+	_zoomInButton->set_icon_name("zoom-in");
+	_actionGroup->add(_zoomInButton, Gtk::AccelKey("<control>equal"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onZoomIn) );
+	_zoomOutButton = Gtk::Action::create("ZoomOut", "Zoom out");
+	_zoomOutButton->set_icon_name("zoom-out");
+	_actionGroup->add(_zoomOutButton, Gtk::AccelKey("<control>minus"),
+	sigc::mem_fun(*this, &RFIGuiWindow::onZoomOut) );
+	_actionGroup->add( Gtk::Action::create("ShowImagePlane", "_Show image plane"),
+		Gtk::AccelKey("<control>I"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onShowImagePlane) );
+	_actionGroup->add( Gtk::Action::create("SetAndShowImagePlane", "S_et & show image plane"),
+		Gtk::AccelKey("<control><shift>I"),
+		sigc::mem_fun(*this, &RFIGuiWindow::onSetAndShowImagePlane) );
+	_actionGroup->add( Gtk::Action::create("AddToImagePlane", "Add to _image plane"),
+  sigc::mem_fun(*this, &RFIGuiWindow::onAddToImagePlane) );
+	
+	_actionGroup->add( Gtk::Action::create("OpenTestSet", "Open _testset") );
 	Gtk::RadioButtonGroup testSetGroup;
 	_gaussianTestSetsButton = Gtk::RadioAction::create(testSetGroup, "GaussianTestSets", "Gaussian");
 	_gaussianTestSetsButton->set_active(true);
@@ -487,73 +577,6 @@ void RFIGuiWindow::createToolbar()
 	sigc::mem_fun(*this, &RFIGuiWindow::onAddCorrelatorFault) );
 	_actionGroup->add( Gtk::Action::create("MultiplyData", "Multiply data..."),
 	sigc::mem_fun(*this, &RFIGuiWindow::onMultiplyData) );
-	action = Gtk::Action::create("Quit", "_Quit");
-	action->set_icon_name("application-exit");
-	_actionGroup->add(action, Gtk::AccelKey("<control>Q"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onQuit) );
-
-	_actionGroup->add( Gtk::Action::create("ImageProperties", "Plot properties..."),
-		Gtk::AccelKey("<control>P"),
-  	sigc::mem_fun(*this, &RFIGuiWindow::onImagePropertiesPressed) );
-	_timeGraphButton = Gtk::ToggleAction::create("TimeGraph", "Time graph");
-	_timeGraphButton->set_active(false); 
-	_actionGroup->add(_timeGraphButton, sigc::mem_fun(*this, &RFIGuiWindow::onTimeGraphButtonPressed) );
-	
-	_actionGroup->add( Gtk::Action::create("PlotDist", "Plot _distribution"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotDistPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotLogLogDist", "Plot _log-log dist"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotLogLogDistPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotComplexPlane", "Plot _complex plane"),
-		Gtk::AccelKey("<alt>C"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotComplexPlanePressed) );
-	_actionGroup->add( Gtk::Action::create("PlotMeanSpectrum", "Plot _mean spectrum"),
-		Gtk::AccelKey("<alt>M"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotMeanSpectrumPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotSumSpectrum", "Plot s_um spectrum"),
-		Gtk::AccelKey("<alt>U"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotSumSpectrumPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrum", "Plot _power spectrum"),
-		Gtk::AccelKey("<alt>W"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotFrequencyScatter", "Plot _frequency scatter"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotFrequencyScatterPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrumComparison", "Power _spectrum"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumComparisonPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotRMSSpectrum", "Plot _rms spectrum"),
-		Gtk::AccelKey("<alt>R"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerRMSPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerTime", "Plot power vs _time"),
-		Gtk::AccelKey("<alt>T"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerTimePressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerTimeComparison", "Po_wer vs time"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerTimeComparisonPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotTimeScatter", "Plot t_ime scatter"),
- 		Gtk::AccelKey("<alt>I"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotTimeScatterPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotTimeScatterComparison", "Time _scatter"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotTimeScatterComparisonPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotSingularValues", "Plot _singular values"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotSingularValuesPressed) );
-	_zoomToFitButton = Gtk::Action::create("ZoomFit", "Zoom _fit");
-	_zoomToFitButton->set_icon_name("zoom-fit-best");
-	_actionGroup->add(_zoomToFitButton, Gtk::AccelKey("<control>0"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onZoomFit) );
-	_zoomInButton = Gtk::Action::create("ZoomIn", "Zoom in");
-	_zoomInButton->set_icon_name("zoom-in");
-	_actionGroup->add(_zoomInButton, Gtk::AccelKey("<control>equal"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onZoomIn) );
-	_zoomOutButton = Gtk::Action::create("ZoomOut", "Zoom out");
-	_zoomOutButton->set_icon_name("zoom-out");
-	_actionGroup->add(_zoomOutButton, Gtk::AccelKey("<control>minus"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onZoomOut) );
-	_actionGroup->add( Gtk::Action::create("ShowImagePlane", "_Show image plane"),
-		Gtk::AccelKey("<control>I"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowImagePlane) );
-	_actionGroup->add( Gtk::Action::create("SetAndShowImagePlane", "S_et & show image plane"),
-		Gtk::AccelKey("<control><shift>I"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onSetAndShowImagePlane) );
-	_actionGroup->add( Gtk::Action::create("AddToImagePlane", "Add to _image plane"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onAddToImagePlane) );
 	
 	Gtk::RadioButtonGroup setGroup;
 	_ncpSetButton = Gtk::RadioAction::create(setGroup, "NCPSet", "Use NCP set");
@@ -790,44 +813,7 @@ void RFIGuiWindow::createToolbar()
     "      <menuitem action='OpenDirectory'/>"
     "      <menuitem action='OpenDirectorySpatial'/>"
     "      <menuitem action='OpenDirectoryST'/>"
-    "      <menu action='OpenTestSet'>"
-		"        <menuitem action='GaussianTestSets'/>"
-		"        <menuitem action='RayleighTestSets'/>"
-		"        <menuitem action='ZeroTestSets'/>"
-    "        <separator/>"
-		"        <menuitem action='OpenTestSetA'/>"
-		"        <menuitem action='OpenTestSetB'/>"
-		"        <menuitem action='OpenTestSetC'/>"
-		"        <menuitem action='OpenTestSetD'/>"
-		"        <menuitem action='OpenTestSetE'/>"
-		"        <menuitem action='OpenTestSetF'/>"
-		"        <menuitem action='OpenTestSetG'/>"
-		"        <menuitem action='OpenTestSetH'/>"
-		"        <menuitem action='OpenTestSetNoise'/>"
-		"        <menuitem action='OpenTestSetModel3'/>"
-		"        <menuitem action='OpenTestSetModel5'/>"
-		"        <menuitem action='OpenTestSetNoiseModel3'/>"
-		"        <menuitem action='OpenTestSetNoiseModel5'/>"
-		"        <menuitem action='OpenTestSetBStrong'/>"
-		"        <menuitem action='OpenTestSetBWeak'/>"
-		"        <menuitem action='OpenTestSetBAligned'/>"
-		"        <menuitem action='OpenTestSetGaussianBroadband'/>"
-		"        <menuitem action='OpenTestSetSinusoidalBroadband'/>"
-		"        <menuitem action='OpenTestSetSlewedGaussianBroadband'/>"
-		"        <menuitem action='OpenTestSetBurstBroadband'/>"
-		"        <menuitem action='OpenTestSetRFIDistributionLow'/>"
-		"        <menuitem action='OpenTestSetRFIDistributionMid'/>"
-		"        <menuitem action='OpenTestSetRFIDistributionHigh'/>"
-		"      </menu>"
-		"      <menu action='AddTestModification'>"
-		"        <menuitem action='AddStaticFringe'/>"
-		"        <menuitem action='Add1SigmaStaticFringe'/>"
-		"        <menuitem action='SetToOne'/>"
-		"        <menuitem action='SetToI'/>"
-		"        <menuitem action='SetToOnePlusI'/>"
-		"        <menuitem action='AddCorrelatorFault'/>"
-		"        <menuitem action='MultiplyData'/>"
-		"      </menu>"
+		"      <menuitem action='SaveBaseline'/>"
     "      <menuitem action='Quit'/>"
     "    </menu>"
 	  "    <menu action='MenuView'>"
@@ -878,6 +864,45 @@ void RFIGuiWindow::createToolbar()
     "      <menuitem action='LoadShortestBaseline'/>"
     "    </menu>"
 	  "    <menu action='MenuSimulate'>"
+    "      <menu action='OpenTestSet'>"
+		"        <menuitem action='GaussianTestSets'/>"
+		"        <menuitem action='RayleighTestSets'/>"
+		"        <menuitem action='ZeroTestSets'/>"
+    "        <separator/>"
+		"        <menuitem action='OpenTestSetA'/>"
+		"        <menuitem action='OpenTestSetB'/>"
+		"        <menuitem action='OpenTestSetC'/>"
+		"        <menuitem action='OpenTestSetD'/>"
+		"        <menuitem action='OpenTestSetE'/>"
+		"        <menuitem action='OpenTestSetF'/>"
+		"        <menuitem action='OpenTestSetG'/>"
+		"        <menuitem action='OpenTestSetH'/>"
+		"        <menuitem action='OpenTestSetNoise'/>"
+		"        <menuitem action='OpenTestSetModel3'/>"
+		"        <menuitem action='OpenTestSetModel5'/>"
+		"        <menuitem action='OpenTestSetNoiseModel3'/>"
+		"        <menuitem action='OpenTestSetNoiseModel5'/>"
+		"        <menuitem action='OpenTestSetBStrong'/>"
+		"        <menuitem action='OpenTestSetBWeak'/>"
+		"        <menuitem action='OpenTestSetBAligned'/>"
+		"        <menuitem action='OpenTestSetGaussianBroadband'/>"
+		"        <menuitem action='OpenTestSetSinusoidalBroadband'/>"
+		"        <menuitem action='OpenTestSetSlewedGaussianBroadband'/>"
+		"        <menuitem action='OpenTestSetBurstBroadband'/>"
+		"        <menuitem action='OpenTestSetRFIDistributionLow'/>"
+		"        <menuitem action='OpenTestSetRFIDistributionMid'/>"
+		"        <menuitem action='OpenTestSetRFIDistributionHigh'/>"
+		"      </menu>"
+		"      <menu action='AddTestModification'>"
+		"        <menuitem action='AddStaticFringe'/>"
+		"        <menuitem action='Add1SigmaStaticFringe'/>"
+		"        <menuitem action='SetToOne'/>"
+		"        <menuitem action='SetToI'/>"
+		"        <menuitem action='SetToOnePlusI'/>"
+		"        <menuitem action='AddCorrelatorFault'/>"
+		"        <menuitem action='MultiplyData'/>"
+		"      </menu>"
+		"      <separator/>"
     "      <menuitem action='NCPSet'/>"
     "      <menuitem action='B1834Set'/>"
     "      <menuitem action='EmptySet'/>"

@@ -175,7 +175,7 @@ class StatisticsCollection : public Serializable
 		std::map<size_t, DefaultStatistics> GetAntennaStatistics() const
 		{
 			const BaselineStatisticsMap& map = BaselineStatistics();
-			vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
+			std::vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
 			
 			std::map<size_t, DefaultStatistics> antStatistics;
 			
@@ -798,8 +798,8 @@ class StatisticsCollection : public Serializable
 				const double frequency = i->first;
 				const BaselineStatisticsMap &map = i->second;
 				
-				vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
-				for(vector<std::pair<unsigned, unsigned> >::const_iterator j=baselines.begin();j!=baselines.end();++j)
+				std::vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
+				for(std::vector<std::pair<unsigned, unsigned> >::const_iterator j=baselines.begin();j!=baselines.end();++j)
 				{
 					const unsigned antenna1 = j->first;
 					const unsigned antenna2 = j->second;

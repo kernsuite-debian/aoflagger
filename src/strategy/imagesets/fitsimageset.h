@@ -75,6 +75,7 @@ namespace rfiStrategy {
 			{
 				throw BadUsageException("Not implemented");
 			}
+			virtual std::string TelescopeName() final override;
 			const std::vector<std::pair<size_t,size_t> > &Baselines() const
 			{
 				return _baselines;
@@ -87,7 +88,6 @@ namespace rfiStrategy {
 			{
 				return _antennaInfos[antennaIndex];
 			}
-			std::string ReadTelescopeName();
 			
 		private:
 			FitsImageSet(const FitsImageSet &source);

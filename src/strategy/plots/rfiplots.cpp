@@ -120,26 +120,28 @@ void RFIPlots::MakeMeanSpectrumPlot(Plot2DPointSet &pointSet, const TimeFrequenc
 template void RFIPlots::MakeMeanSpectrumPlot<true>(class Plot2DPointSet &pointSet, const TimeFrequencyData &data, const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
 template void RFIPlots::MakeMeanSpectrumPlot<false>(class Plot2DPointSet &pointSet, const TimeFrequencyData &data, const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
 
-void RFIPlots::MakePowerSpectrumPlot(Plot2DPointSet &pointSet, Image2DCPtr image, Mask2DCPtr mask, TimeFrequencyMetaDataCPtr metaData)
+void RFIPlots::MakePowerSpectrumPlot(Plot2DPointSet& pointSet, const Image2D& real, const Image2D& imag, const Mask2D& mask, const TimeFrequencyMetaData* metaData)
 {
-	bool hasBandInfo = metaData != 0 && metaData->HasBand();
+	bool hasBandInfo = metaData!=nullptr && metaData->HasBand();
 	if(hasBandInfo)
 	{
 		pointSet.SetXDesc("Frequency (MHz)");
 		std::stringstream yDesc;
-		yDesc << metaData->ValueDescription() << " (" << metaData->ValueUnits() << ')';
+		yDesc << metaData->ValueDescription() << "^2 (" << metaData->ValueUnits() << "^2)";
 		pointSet.SetYDesc(yDesc.str());
-	} else {
+	}
+	else {
 		pointSet.SetXDesc("Index");
 		pointSet.SetYDesc("Power (undefined units)");
 	}
 
-	for(size_t y=0;y<image->Height();++y) {
+	for(size_t y=0;y<real.Height();++y) {
 		long double sum = 0.0L;
 		size_t count = 0;
-		for(size_t x=0;x<image->Width();++x) {
-			if(!mask->Value(x, y) && std::isnormal(image->Value(x, y))) {
-				sum += image->Value(x, y);
+		for(size_t x=0;x<real.Width();++x) {
+			if(!mask.Value(x, y) && std::isfinite(real.Value(x, y))) {
+				std::complex<num_t> val(real.Value(x, y), imag.Value(x, y));
+				sum += (val * std::conj(val)).real();
 				++count;
 			}
 		}

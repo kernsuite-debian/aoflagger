@@ -79,7 +79,7 @@ namespace rfiStrategy {
 			{
 				throw BadUsageException("Not implemented");
 			}
-			std::string GetTelescopeName() const {
+			virtual std::string TelescopeName() final override {
 			  return "Bighorns";
 			}
 		private:

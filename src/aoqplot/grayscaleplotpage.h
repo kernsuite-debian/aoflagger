@@ -81,7 +81,7 @@ class GrayScalePlotPage : public PlotSheet {
 		Gtk::SeparatorToolItem _separator1, _separator2, _separator3, _separator4, _separator5, _separator6;
 		
 		Gtk::RadioButtonGroup _statisticGroup;
-		Gtk::RadioToolButton _countButton, _meanButton, _stdDevButton, _dCountButton, _dMeanButton, _dStdDevButton, _rfiPercentageButton;
+		Gtk::RadioToolButton _countButton, _meanButton, _stdDevButton, _dMeanButton, _dStdDevButton, _rfiPercentageButton;
 		
 		Gtk::RadioButtonGroup _polGroup;
 		Gtk::RadioToolButton _polPPButton, _polPQButton, _polQPButton, _polQQButton, _polIButton;

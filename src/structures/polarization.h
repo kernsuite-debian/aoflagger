@@ -105,6 +105,26 @@ public:
 		}
 	}
 	
+	static int EnumToAipsIndex(enum PolarizationEnum pol)
+	{
+		switch(pol)
+		{
+			case StokesI: return 1;
+			case StokesQ: return 2;
+			case StokesU: return 3;
+			case StokesV: return 4;
+			case RR: return 5;
+			case RL: return 6;
+			case LR: return 7;
+			case LL: return 8;
+			case XX: return 9;
+			case XY: return 10;
+			case YX: return 11;
+			case YY: return 12;
+			default: throw std::runtime_error("EnumToAipsIndex(): unknown polarization");
+		}
+	}
+	
 	static bool TypeToIndex(enum PolarizationEnum polarization, const std::vector<PolarizationEnum>& polList, size_t& index)
 	{
 		for(size_t i=0; i!=polList.size(); ++i)

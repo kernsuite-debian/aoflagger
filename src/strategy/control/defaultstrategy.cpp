@@ -2,7 +2,7 @@
 #include "strategyiterator.h"
 
 #include "../actions/baselineselectionaction.h"
-#include "../actions/calibratepassbandaction.h"
+#include "../actions/calibratebandpassaction.h"
 #include "../actions/changeresolutionaction.h"
 #include "../actions/combineflagresultsaction.h"
 #include "../actions/foreachbaselineaction.h"
@@ -270,7 +270,7 @@ namespace rfiStrategy {
 		current = focActionPtr;
 		
 		if(setup.calPassband)
-			current->Add(std::unique_ptr<CalibratePassbandAction>(new CalibratePassbandAction()));
+			current->Add(std::unique_ptr<CalibrateBandpassAction>(new CalibrateBandpassAction()));
 		
 		std::unique_ptr<SumThresholdAction> t2(new SumThresholdAction());
 		t2->SetTimeDirectionSensitivity(setup.sumThresholdSensitivity);
@@ -454,7 +454,7 @@ namespace rfiStrategy {
 		BHFitsImageSet *bhFitsImageSet = dynamic_cast<BHFitsImageSet*>(&imageSet);
 		FilterBankSet *fbImageSet = dynamic_cast<FilterBankSet*>(&imageSet);
 
-		if(indexableSet != 0)
+		if(indexableSet != nullptr)
 		{
 			DetermineSettings(
 				indexableSet->Reader()->Set(),
@@ -465,53 +465,37 @@ namespace rfiStrategy {
 				frequencyRes
 			);
 		}
-		else if(fitsImageSet != 0) {
-		  std::string telescopeName = fitsImageSet->ReadTelescopeName();
-		  telescopeId = TelescopeIdFromName(telescopeName);
-		  warnIfUnknownTelescope(telescopeId, telescopeName);
-		  if(telescopeId != GENERIC_TELESCOPE)
-		    Logger::Info <<
-		      "The strategy will be optimized for telescope " << TelescopeName(telescopeId) << ". Telescope-specific\n"
-		      "settings will be left to their defaults, which might not be optimal for all cases.\n";
-		  flags = 0;
-		  frequency = 0.0;
-		  timeRes = 0.0;
-		  frequencyRes = 0.0;
-		}
-		else if(bhFitsImageSet != 0) {
-		  std::string telescopeName = bhFitsImageSet->GetTelescopeName();
-		  telescopeId = TelescopeIdFromName(telescopeName);
-		  warnIfUnknownTelescope(telescopeId, telescopeName);
-		  if(telescopeId != GENERIC_TELESCOPE)
-		    Logger::Info <<
-		      "The strategy will be optimized for telescope " << TelescopeName(telescopeId) << ". Telescope-specific\n"
-		      "settings will be left to their defaults, which might not be optimal for all cases.\n";
-		  flags = 0;
-		  frequency = 0.0;
-		  timeRes = 0.0;
-		  frequencyRes = 0.0;
-		} else if(fbImageSet != 0) {
-		  telescopeId = GENERIC_TELESCOPE;
-			flags = 0;
-			frequency = fbImageSet->CentreFrequency();
-			timeRes = fbImageSet->TimeResolution();
-			frequencyRes = fbImageSet->ChannelWidth();
-			Logger::Info <<
-				"The strategy will be optimized for the following settings specified by the FilterBankSet:\n"
-				"Telescope=" << TelescopeName(telescopeId) << ", flags=NONE, frequency="
-				<< Frequency::ToString(frequency) << ",\n"
-				"time resolution=" << timeRes*1e6 << " µs, frequency resolution=" << Frequency::ToString(frequencyRes) << '\n';
-			Logger::Warn <<
-				"** Determined some settings from FilterBankSet, but telescope name cannot be determined.\n";
-		} else {
-		  telescopeId = GENERIC_TELESCOPE;
-		  flags = 0;
-		  frequency = 0.0;
-		  timeRes = 0.0;
-		  frequencyRes = 0.0;
-		  Logger::Warn <<
-		    "** Could not determine telescope name from set, because it has not\n"
-		    "** been implemented for this file format. A generic strategy will be used!\n";
+		else {
+		  std::string telescopeName = imageSet.TelescopeName();
+			telescopeId = TelescopeIdFromName(telescopeName);
+		
+			warnIfUnknownTelescope(telescopeId, telescopeName);
+						
+			if(fitsImageSet != nullptr || bhFitsImageSet != nullptr) {
+				if(telescopeId != GENERIC_TELESCOPE)
+					Logger::Info <<
+						"The strategy will be optimized for telescope " << TelescopeName(telescopeId) << ". Telescope-specific\n"
+						"settings will be left to their defaults, which might not be optimal for all cases.\n";
+				flags = 0;
+				frequency = 0.0;
+				timeRes = 0.0;
+				frequencyRes = 0.0;
+			} else if(fbImageSet != nullptr) {
+				flags = 0;
+				frequency = fbImageSet->CentreFrequency();
+				timeRes = fbImageSet->TimeResolution();
+				frequencyRes = fbImageSet->ChannelWidth();
+				Logger::Info <<
+					"The strategy will be optimized for the following settings specified by the FilterBankSet:\n"
+					"Telescope=" << TelescopeName(telescopeId) << ", flags=NONE, frequency="
+					<< Frequency::ToString(frequency) << ",\n"
+					"time resolution=" << timeRes*1e6 << " µs, frequency resolution=" << Frequency::ToString(frequencyRes) << '\n';
+			} else {
+				flags = 0;
+				frequency = 0.0;
+				timeRes = 0.0;
+				frequencyRes = 0.0;
+			}
 		}
 	}
 

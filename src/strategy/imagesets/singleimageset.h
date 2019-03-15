@@ -36,7 +36,7 @@ namespace rfiStrategy {
 			
 			virtual std::unique_ptr<ImageSetIndex> StartIndex() override
 			{
-				return std::unique_ptr<ImageSetIndex>(new SingleImageSetIndex(*this, Name()));
+				return std::unique_ptr<ImageSetIndex>(new SingleImageSetIndex(*this, BaselineDescription()));
 			}
 			
 			virtual std::string Name() override = 0;
@@ -88,6 +88,7 @@ namespace rfiStrategy {
 				
 				_writeFlagsIndex.reset();
 			}
+			virtual std::string BaselineDescription() = 0;
 			
 		private:
 			int _readCount;

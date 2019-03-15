@@ -16,13 +16,15 @@
 #include "../../strategy/imagesets/spatialmsimageset.h"
 #include "../../strategy/imagesets/spatialtimeimageset.h"
 
-#include "../../quality/histogramcollection.h"
-
-#include "../../util/multiplot.h"
+#include "../../msio/singlebaselinefile.h"
 
 #include "../../plot/plotmanager.h"
 
+#include "../../quality/histogramcollection.h"
+
 #include "../../structures/spatialmatrixmetadata.h"
+
+#include "../../util/multiplot.h"
 
 #include "../rfiguiwindow.h"
 
@@ -58,17 +60,6 @@ TimeFrequencyData RFIGuiController::OriginalData() const
 {
 	return _tfController.OriginalData();
 }
-
-/*
-TimeFrequencyData RFIGuiController::RevisedData() const
-{
-	return _tfController.RevisedData();
-}
-
-TimeFrequencyData RFIGuiController::ContaminatedData() const
-{
-	return _tfController.ContaminatedData();
-}*/
 
 TimeFrequencyMetaDataCPtr RFIGuiController::SelectedMetaData() const
 {
@@ -155,17 +146,17 @@ void RFIGuiController::PlotPowerSpectrum()
 		plot.SetLogarithmicYAxis(true);
 
 		TimeFrequencyData data = ActiveData();
-		Image2DCPtr image = data.GetSingleImage();
+		std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
 		Mask2DPtr mask =
-			Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
+			Mask2D::CreateSetMaskPtr<false>(images[0]->Width(), images[0]->Height());
 		Plot2DPointSet &beforeSet = plot.StartLine("Flags not applied");
-		RFIPlots::MakePowerSpectrumPlot(beforeSet, image, mask, SelectedMetaData());
+		RFIPlots::MakePowerSpectrumPlot(beforeSet, *images[0], *images[1], *mask, SelectedMetaData().get());
 
 		mask = Mask2D::MakePtr(*data.GetSingleMask());
 		if(!mask->AllFalse())
 		{
 			Plot2DPointSet &afterSet = plot.StartLine("Flags applied");
-			RFIPlots::MakePowerSpectrumPlot(afterSet, image, mask, SelectedMetaData());
+			RFIPlots::MakePowerSpectrumPlot(afterSet, *images[0], *images[1], *mask, SelectedMetaData().get());
 		}
 		
 		_plotManager->Update();
@@ -179,16 +170,16 @@ void RFIGuiController::PlotPowerSpectrumComparison()
 		Plot2D &plot = _plotManager->NewPlot2D("Power spectrum comparison");
 
 		TimeFrequencyData data = OriginalData();
-		Image2DCPtr image = data.GetSingleImage();
+		std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
 		Mask2DCPtr mask = data.GetSingleMask();
 		Plot2DPointSet &originalSet = plot.StartLine("Original");
-		RFIPlots::MakePowerSpectrumPlot(originalSet, image, mask, SelectedMetaData());
+		RFIPlots::MakePowerSpectrumPlot(originalSet, *images[0], *images[1], *mask, SelectedMetaData().get());
 
 		data = ActiveData();
-		image = data.GetSingleImage();
+		images = data.GetSingleComplexImage();
 		mask = data.GetSingleMask();
 		Plot2DPointSet &alternativeSet = plot.StartLine("Alternative");
-		RFIPlots::MakePowerSpectrumPlot(alternativeSet, image, mask, SelectedMetaData());
+		RFIPlots::MakePowerSpectrumPlot(alternativeSet, *images[0], *images[1], *mask, SelectedMetaData().get());
 	
 		_plotManager->Update();
 	}
@@ -570,4 +561,14 @@ void RFIGuiController::InterpolateFlagged()
 		_tfController.SetNewData(activeData, SelectedMetaData());
 		_rfiGuiWindow->GetTimeFrequencyWidget().Update();
 	}
+}
+
+void RFIGuiController::SaveBaseline(const std::string& filename)
+{
+	SingleBaselineFile file;
+	file.data = _tfController.OriginalData();
+	file.metaData = *_tfController.Plot().GetFullMetaData();
+	file.telescopeName = _imageSet->TelescopeName();
+	std::ofstream stream(filename);
+	file.Write(stream);
 }

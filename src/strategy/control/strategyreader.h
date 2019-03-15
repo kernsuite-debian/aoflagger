@@ -43,7 +43,7 @@ class StrategyReader {
 		std::unique_ptr<Action> parseAbsThresholdAction(xmlNode* node);
 		std::unique_ptr<Action> parseApplyBandpassAction(xmlNode* node);
 		std::unique_ptr<Action> parseBaselineSelectionAction(xmlNode* node);
-		std::unique_ptr<Action> parseCalibratePassbandAction(xmlNode* node);
+		std::unique_ptr<Action> parseCalibrateBandpassAction(xmlNode* node);
 		std::unique_ptr<Action> parseChangeResolutionAction(xmlNode* node);
 		std::unique_ptr<Action> parseCombineFlagResults(xmlNode* node);
 		std::unique_ptr<Action> parseCutAreaAction(xmlNode* node);

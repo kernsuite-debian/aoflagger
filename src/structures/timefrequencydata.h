@@ -211,10 +211,17 @@ class TimeFrequencyData
 			if(_complexRepresentation != ComplexParts)
 				throw BadUsageException("Trying to create single complex image, but no complex data available");
 			if(_data.size() != 1)
-				throw BadUsageException("Not implemented");
-			if(_data[0]._images[0] == nullptr || _data[0]._images[1] == nullptr)
-				throw BadUsageException("Requesting non-existing image");
-			return std::array<Image2DCPtr,2>{{ _data[0]._images[0], _data[0]._images[1] }};
+			{
+				return std::array<Image2DCPtr,2>{{
+					Make(TimeFrequencyData::RealPart).GetSingleImage(),
+					Make(TimeFrequencyData::ImaginaryPart).GetSingleImage()
+				}};
+			}
+			else {
+				if(_data[0]._images[0] == nullptr || _data[0]._images[1] == nullptr)
+					throw BadUsageException("Requesting non-existing image");
+				return std::array<Image2DCPtr,2>{{ _data[0]._images[0], _data[0]._images[1] }};
+			}
 		}
 		
 		void Set(PolarizationEnum polarizationType,
@@ -325,7 +332,7 @@ class TimeFrequencyData
 				}
 				else // _complexRepresentation != ComplexParts
 				{
-					// TODO should be done on real or imaginary
+					// TODO should be done on only real or imaginary
 					switch(polarization)
 					{
 						case Polarization::StokesI:
@@ -333,6 +340,10 @@ class TimeFrequencyData
 							break;
 						case Polarization::StokesQ:
 							newData = TimeFrequencyData(_complexRepresentation, Polarization::StokesQ, getFirstDiff(xxPol, yyPol));
+							break;
+						// this is not correct, but it is useful for visualization
+						case Polarization::StokesU:
+							newData = TimeFrequencyData(_complexRepresentation, Polarization::StokesU, getFirstSum(xyPol, yxPol));
 							break;
 						default:
 							throw BadUsageException("Requested polarization type not available in time frequency data");

@@ -311,6 +311,44 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, const Mask2D*
 		stddev = 0.0;
 }
 
+template<typename T>
+double ThresholdTools::WinsorizedRMS(const std::vector<std::complex<T>> &input)
+{
+	if(input.empty())
+	{
+		return 0.0;
+	} else {
+		std::vector<std::complex<T>> data(input);
+		std::sort(data.begin(), data.end(), complexLessThanOperator<T>);
+		size_t lowIndex = (size_t) floor(0.1 * data.size());
+		size_t highIndex = (size_t) ceil(0.9 * data.size())-1;
+		std::complex<T> lowValue = data[lowIndex];
+		std::complex<T> highValue = data[highIndex];
+
+		// Calculate RMS
+		double rms = 0.0;
+		size_t count = 0;
+		for(const std::complex<T>& val : data) {
+			if(std::isfinite(val.real()) && std::isfinite(val.imag())) {
+				if(complexLessThanOperator<T>(val, lowValue))
+					rms += (lowValue*std::conj(lowValue)).real();
+				else if(complexLessThanOperator<T>(highValue, val))
+					rms += (highValue*std::conj(highValue)).real();
+				else
+					rms += (val * std::conj(val)).real();
+				count++;
+			}
+		}
+		if(count > 0)
+			return sqrt(1.54 * rms / (T) count);
+		else
+			return 0.0;
+	}
+}
+
+template double ThresholdTools::WinsorizedRMS(const std::vector<std::complex<float>> &input);
+template double ThresholdTools::WinsorizedRMS(const std::vector<std::complex<double>> &input);
+
 num_t ThresholdTools::MinValue(const Image2D* image, const Mask2D* mask)
 {
 	num_t minValue = std::numeric_limits<num_t>::max();
@@ -672,17 +710,17 @@ Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor, const Image2D* inpu
 	size_t oldWidth = input->Width();
 	size_t newWidth = (oldWidth + factor - 1) / factor;
 
-	Image2D *newImage = Image2D::CreateUnsetImage(newWidth, input->Height());
+	Image2DPtr newImage = Image2D::CreateUnsetImagePtr(newWidth, input->Height());
 
 	for(size_t x=0;x<newWidth;++x)
 	{
 		size_t avgSize = factor;
 		if(avgSize + x*factor > oldWidth)
 			avgSize = oldWidth - x*factor;
-		size_t count = 0;
 
 		for(size_t y=0;y<input->Height();++y)
 		{
+			size_t count = 0;
 			num_t sum = 0.0;
 			for(size_t binX=0;binX<avgSize;++binX)
 			{
@@ -706,5 +744,47 @@ Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor, const Image2D* inpu
 			newImage->SetValue(x, y, sum / (num_t) count);
 		}
 	}
-	return Image2DPtr(newImage);
+	return newImage;
+}
+
+Image2DPtr ThresholdTools::ShrinkVertically(size_t factor, const Image2D* input, const Mask2D* mask)
+{
+	size_t oldHeight = input->Height();
+	size_t newHeight = (oldHeight + factor - 1) / factor;
+
+	Image2DPtr newImage = Image2D::CreateUnsetImagePtr(input->Width(), newHeight);
+
+	for(size_t y=0; y!=newHeight; ++y)
+	{
+		size_t avgSize = factor;
+		if(avgSize + y*factor > oldHeight)
+			avgSize = oldHeight - y*factor;
+
+		for(size_t x=0; x!=input->Width(); ++x)
+		{
+			size_t count = 0;
+			num_t sum = 0.0;
+			for(size_t binY=0; binY!=avgSize; ++binY)
+			{
+				size_t curY = y*factor + binY;
+				if(!mask->Value(x, curY))
+				{
+					sum += input->Value(x, curY);
+					++count;
+				}
+			}
+			if(count == 0)
+			{
+				sum = 0.0;
+				for(size_t binY=0; binY!=avgSize; ++binY)
+				{
+					size_t curY = y*factor + binY;
+					sum += input->Value(x, curY);
+					++count;
+				}
+			}
+			newImage->SetValue(x, y, sum / (num_t) count);
+		}
+	}
+	return newImage;
 }

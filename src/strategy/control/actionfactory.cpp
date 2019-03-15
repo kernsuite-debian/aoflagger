@@ -55,7 +55,7 @@ std::unique_ptr<Action> ActionFactory::CreateAction(const std::string &action)
 	else if(action == "Baseline selection")
 		return make<BaselineSelectionAction>();
 	else if(action == "Calibrate passband")
-		return make<CalibratePassbandAction>();
+		return make<CalibrateBandpassAction>();
 	else if(action == "Change resolution")
 		return make<ChangeResolutionAction>();
 	else if(action == "Combine flag results")

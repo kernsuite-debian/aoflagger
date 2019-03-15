@@ -82,6 +82,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onActionDirectoryOpen();
 		void onActionDirectoryOpenForSpatial();
 		void onActionDirectoryOpenForST();
+		void onSaveBaseline();
 		void onTFZoomChanged();
 		void onZoomFit();
 		void onZoomIn();
