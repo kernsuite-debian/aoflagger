@@ -1,2 +1,2 @@
-Build-shared-lib-with-SONAME-and-SOVERSION.patch
+#Build-shared-lib-with-SONAME-and-SOVERSION.patch
 Disable-special-RPATH-handling.patch
