@@ -1,3 +1,9 @@
+aoflagger (2.14.0-1kern2) bionic; urgency=medium
+
+  * add all binaries
+
+ -- KERN packaging <packaging@kernsuite.info>  Fri, 22 Mar 2019 10:57:39 +0100
+
 aoflagger (2.14.0-1) bionic; urgency=medium
 
   [ Gijs Molenaar ]
