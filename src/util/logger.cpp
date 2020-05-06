@@ -12,9 +12,9 @@ Logger::LogWriter<Logger::InfoLevel> Logger::Info;
 
 Logger::LogWriter<Logger::WarningLevel> Logger::Warn;
 
-Logger::LogWriter<Logger::ErrorLevel> Logger::Error;
+Logger::LogWriter<Logger::ErrorLevel, true> Logger::Error;
 
-Logger::LogWriter<Logger::FatalLevel> Logger::Fatal;
+Logger::LogWriter<Logger::FatalLevel, true> Logger::Fatal;
 
 Logger::LogWriter<Logger::NoLevel> Logger::Progress;
 

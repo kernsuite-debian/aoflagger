@@ -36,6 +36,7 @@ public:
 	}
 	HeatMapPlot& Plot() { return *_plot; }
 	const HeatMapPlot& Plot() const { return *_plot; }
+	
 private:
 	void update(bool invalidated);
 	bool onDraw(const Cairo::RefPtr<Cairo::Context>& cr);

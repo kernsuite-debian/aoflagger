@@ -77,7 +77,7 @@ std::string PythonStrategy::getPythonError()
 	return extract<std::string>(formatted);
 }
 
-void PythonStrategy::Execute(TimeFrequencyData& tfData)
+void PythonStrategy::Execute(TimeFrequencyData& tfData, TimeFrequencyMetaDataCPtr metaData, class ScriptData& scriptData)
 {
 	try {
 		object main = import("__main__");
@@ -88,7 +88,7 @@ void PythonStrategy::Execute(TimeFrequencyData& tfData)
 		if(flagFunction.is_none())
 			throw std::runtime_error("Incorrect Python strategy: strategy did not provide a flag method. Make sure your strategy uses aoflagger.set_flag_function() to provide the flag function to the caller");
 		else {
-			aoflagger_python::Data data(tfData);
+			aoflagger_python::Data data(tfData, metaData);
 			flagFunction(boost::ref(data));
 			tfData = data.TFData();
 		}

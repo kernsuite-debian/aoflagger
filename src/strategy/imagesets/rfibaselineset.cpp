@@ -40,4 +40,19 @@ std::string RFIBaselineSet::BaselineDescription()
 	else return File();
 }
 
+void RFIBaselineSet::Write(const std::vector<Mask2DCPtr>& masks)
+{
+	SingleBaselineFile file;
+	{
+		std::ifstream str(_path);
+		file.Read(str);
+	}
+	if(file.data.MaskCount() != masks.size())
+		throw std::runtime_error("Number of masks in flag writing action don't match rfibl file");
+	for(size_t i=0; i!=masks.size(); ++i)
+		file.data.SetMask(i, masks[i]);
+	std::ofstream outstr(_path);
+	file.Write(outstr);
+}
+
 }

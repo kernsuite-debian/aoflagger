@@ -23,8 +23,8 @@ GoToWindow::GoToWindow(RFIGuiWindow &rfiGuiWindow) : Gtk::Window(),
 	_bandStore = Gtk::ListStore::create(_bandModelColumns);
 	_sequenceStore = Gtk::ListStore::create(_sequenceModelColumns);
 
-	const std::vector<MeasurementSet::Sequence> &_sequences =
-		_imageSet->Reader()->Set().GetSequences();
+	const std::vector<MSMetaData::Sequence> &_sequences =
+		_imageSet->Reader()->MetaData().GetSequences();
 
 	const rfiStrategy::ImageSetIndex &setIndex =
 		static_cast<rfiStrategy::ImageSetIndex&>(_rfiGuiWindow.Controller().GetImageSetIndex());
@@ -35,11 +35,10 @@ GoToWindow::GoToWindow(RFIGuiWindow &rfiGuiWindow) : Gtk::Window(),
 
 	// First, the sequences are iterated to get all antenna indices.
 	std::set<size_t> set;
-	for(std::vector<MeasurementSet::Sequence>::const_iterator i=_sequences.begin();
-		i != _sequences.end() ; ++i)
+	for(const MSMetaData::Sequence& seq : _sequences)
 	{
-		set.insert(i->antenna1);
-		set.insert(i->antenna2);
+		set.insert(seq.antenna1);
+		set.insert(seq.antenna2);
 	}
 
 	Gtk::TreeModel::iterator a1Row, a2Row, bandRow, sequenceRow;

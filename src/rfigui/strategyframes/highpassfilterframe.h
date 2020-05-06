@@ -23,8 +23,8 @@ class HighPassFilterFrame : public Gtk::Frame {
 		_vKernelSigmaScale(Gtk::ORIENTATION_HORIZONTAL),
 		_hWindowSizeLabel("Horizontal window size:", Gtk::ALIGN_START),
 		_vWindowSizeLabel("Vertical window size:", Gtk::ALIGN_START),
-		_hKernelSigmaLabel("Horizontal kernel sigma:", Gtk::ALIGN_START),
-		_vKernelSigmaLabel("Vertical kernel sigma:", Gtk::ALIGN_START),
+		_hKernelSigmaLabel("Horizontal kernel sigma^2:", Gtk::ALIGN_START),
+		_vKernelSigmaLabel("Vertical kernel sigma^2:", Gtk::ALIGN_START),
 		_modeContaminatedButton("Store result (i.e. high-pass filtered) in contaminated"),
 		_modeRevisedButton("Store residual (i.e. low-pass filtered) in revised"),
 		_applyButton("Apply")
@@ -68,13 +68,13 @@ class HighPassFilterFrame : public Gtk::Frame {
 			_box.pack_start(_hKernelSigmaLabel);
 			_hKernelSigmaScale.set_range(0.1, 100.0);
 			_hKernelSigmaScale.set_increments(0.1, 2.5);
-			_hKernelSigmaScale.set_value(sqrt(_action.HKernelSigmaSq()));
+			_hKernelSigmaScale.set_value(_action.HKernelSigmaSq());
 			_box.pack_start(_hKernelSigmaScale);
 		
 			_box.pack_start(_vKernelSigmaLabel);
 			_vKernelSigmaScale.set_range(0.1, 100.0);
 			_vKernelSigmaScale.set_increments(0.1, 2.5);
-			_vKernelSigmaScale.set_value(sqrt(_action.VKernelSigmaSq()));
+			_vKernelSigmaScale.set_value(_action.VKernelSigmaSq());
 			_box.pack_start(_vKernelSigmaScale);
 		}
 
@@ -95,8 +95,8 @@ class HighPassFilterFrame : public Gtk::Frame {
 		{
 			_action.SetWindowWidth((unsigned) _hWindowSizeScale.get_value());
 			_action.SetWindowHeight((unsigned) _vWindowSizeScale.get_value());
-			_action.SetHKernelSigmaSq(_hKernelSigmaScale.get_value()*_hKernelSigmaScale.get_value());
-			_action.SetVKernelSigmaSq(_vKernelSigmaScale.get_value()*_vKernelSigmaScale.get_value());
+			_action.SetHKernelSigmaSq(_hKernelSigmaScale.get_value());
+			_action.SetVKernelSigmaSq(_vKernelSigmaScale.get_value());
 			if(_modeContaminatedButton.get_active())
 				_action.SetMode(rfiStrategy::HighPassFilterAction::StoreContaminated);
 			else

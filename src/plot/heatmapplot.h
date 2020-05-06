@@ -5,6 +5,7 @@
 
 #include <sigc++/signal.h>
 
+#include "../structures/colormap.h"
 #include "../structures/image2d.h"
 #include "../structures/timefrequencydata.h"
 #include "../structures/timefrequencymetadata.h"
@@ -13,7 +14,6 @@
 class HeatMapPlot
 {
 public:
-	enum TFMap { BWMap, InvertedMap, HotColdMap, RedBlueMap, RedYellowBlueMap, FireMap, BlackRedMap, CubeHelixMap, CubeHelixColourfulMap, ViridisMap };
 	enum Range { MinMax, Winsorized, Specified };
 	enum ScaleOption { NormalScale, LogScale, ZeroSymmetricScale };
 	
@@ -28,8 +28,8 @@ public:
 	bool ShowAlternativeMask() const { return _showAlternativeMask; }
 	void SetShowAlternativeMask(bool newValue) { _showAlternativeMask = newValue; }
 
-	TFMap GetColorMap() const { return _colorMap; }
-	void SetColorMap(TFMap colorMap) { _colorMap = colorMap; }
+	ColorMap::Type GetColorMap() const { return _colorMap; }
+	void SetColorMap(ColorMap::Type colorMap) { _colorMap = colorMap; }
 	
 	void Draw(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height, bool isInvalidated); 
 
@@ -198,7 +198,7 @@ private:
 	bool _isInitialized;
 	unsigned _initializedWidth, _initializedHeight;
 	bool _showOriginalMask, _showAlternativeMask;
-	enum TFMap _colorMap;
+	ColorMap::Type _colorMap;
 	TimeFrequencyMetaDataCPtr _metaData;
 	Image2DCPtr _image;
 	Mask2DCPtr _originalMask, _alternativeMask;
@@ -234,7 +234,6 @@ private:
 	void findMinMax(const Image2D* image, const Mask2D* mask, num_t& min, num_t& max);
 	void update(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned width, unsigned height);
 	void downsampleImageBuffer(unsigned newWidth, unsigned newHeight);
-	std::unique_ptr<class ColorMap> createColorMap();
 	std::string actualTitleText() const
 	{
 		if(_manualTitle)

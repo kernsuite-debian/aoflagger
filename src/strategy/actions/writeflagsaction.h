@@ -64,7 +64,7 @@ namespace rfiStrategy {
 				std::unique_lock<std::mutex> lock(_mutex);
 				while(_buffer.size() >= _maxBufferItems)
 					_bufferChange.wait(lock);
-				_buffer.push(newItem);
+				_buffer.emplace(newItem);
 				_bufferChange.notify_all();
 			}
 

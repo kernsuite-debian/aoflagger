@@ -26,12 +26,9 @@ namespace rfiStrategy {
 				_artifacts(nullptr),
 				_resultSet(nullptr),
 				_finishedBaselines(false),
-				_progressTaskNo(nullptr),
-				_progressTaskCount(nullptr),
 				_exceptionOccured(false),
 				_baselineProgress(0),
-				_hasInitAntennae(false),
-				_initPartIndex(0)
+				_hasInitAntennae(false)
 			{
 			}
 			virtual ~ForEachBaselineAction()
@@ -160,21 +157,24 @@ namespace rfiStrategy {
 			BaselineSelection _selection;
 
 			std::unique_ptr<ImageSetIndex> _loopIndex;
-			ArtifactSet *_artifacts, *_resultSet;
+			ArtifactSet *_artifacts;
+			std::unique_ptr<ArtifactSet> _resultSet;
 			
 			std::mutex _mutex;
 			std::condition_variable _dataAvailable, _dataProcessed;
 			std::stack<std::unique_ptr<BaselineData>> _baselineBuffer;
 			bool _finishedBaselines;
 
-			int *_progressTaskNo, *_progressTaskCount;
+			struct ThreadInfo {
+				int progressTaskNo, progressTaskCount;
+			};
+			std::vector<ThreadInfo> _threadInfo;
 			bool _exceptionOccured;
 			size_t _baselineProgress;
 			
 			// Initial data
 			AntennaInfo _initAntenna1, _initAntenna2;
 			bool _hasInitAntennae;
-			size_t _initPartIndex;
 			std::set<size_t> _antennaeToInclude;
 			std::set<size_t> _antennaeToSkip;
 			std::set<size_t> _fields;

@@ -14,7 +14,7 @@ namespace rfiStrategy {
 
 			virtual std::unique_ptr<ImageSet> Clone() final override
 			{
-				return nullptr;
+				return std::unique_ptr<ImageSet>(new RFIBaselineSet(_path));
 			}
 
 			virtual void Initialize() final override
@@ -35,6 +35,8 @@ namespace rfiStrategy {
 			}
 			
 			virtual std::unique_ptr<BaselineData> Read() final override;
+			
+			virtual void Write(const std::vector<Mask2DCPtr>& masks) final override;
 
 		private:
 			std::string _path;

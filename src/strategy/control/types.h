@@ -71,12 +71,13 @@ class Observatorium;
 //        to statistical flagging action.
 // 3.92 : Add method to CalibrateBandpassAction
 // 3.93 : Add 'use-mask-in-averaging' property to ChangeResolutionAction
-#define STRATEGY_FILE_FORMAT_VERSION 3.93
+// 3.94 : Add RestoreChannelRangeAction
+#define STRATEGY_FILE_FORMAT_VERSION 3.94
 
 // The earliest format version which can be read by this version of the software
 #define STRATEGY_FILE_FORMAT_VERSION_REQUIRED 3.4
 
 // The earliest software version which is required to read the written files
-#define STRATEGY_FILE_READER_VERSION_REQUIRED 3.93
+#define STRATEGY_FILE_READER_VERSION_REQUIRED 3.94
 
 #endif // RFI_STRATEGY_TYPES

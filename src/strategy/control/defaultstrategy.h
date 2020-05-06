@@ -8,7 +8,7 @@
 
 #include "../../interface/aoflagger.h"
 
-class MeasurementSet;
+class MSMetaData;
 
 namespace rfiStrategy {
 	
@@ -79,9 +79,9 @@ namespace rfiStrategy {
 		
 		static DefaultStrategy::TelescopeId TelescopeIdFromName(const std::string &name);
 		
-		static void DetermineSettings(ImageSet &measurementSet, enum TelescopeId &telescopeId, unsigned &flags, double &frequency, double &timeRes, double &frequencyRes);
+		static void DetermineSettings(MSMetaData& msMetaData, enum TelescopeId &telescopeId, unsigned &flags, double &frequency, double &timeRes, double &frequencyRes);
 		
-		static void DetermineSettings(MeasurementSet &measurementSet, enum TelescopeId &telescopeId, unsigned &flags, double &frequency, double &timeRes, double &frequencyRes);
+		static void DetermineSettings(ImageSet& ms, enum TelescopeId &telescopeId, unsigned &flags, double &frequency, double &timeRes, double &frequencyRes);
 		
 		static bool StrategyContainsAction(Strategy& strategy, ActionType actionType);
 		

@@ -22,6 +22,7 @@
 #include "plotaction.h"
 #include "quickcalibrateaction.h"
 #include "resamplingaction.h"
+#include "restorechannelrangeaction.h"
 #include "saveheatmapaction.h"
 #include "setflaggingaction.h"
 #include "setimageaction.h"

@@ -73,6 +73,7 @@ namespace rfiStrategy {
 			void writePlotAction(const class PlotAction& action);
 			void writeQuickCalibrateAction(const class QuickCalibrateAction& action);
 			void writeRawAppenderAction(const class RawAppenderAction& action);
+			void writeRestoreChannelRangeAction(const class RestoreChannelRangeAction& action);
 			void writeSetFlaggingAction(const class SetFlaggingAction& action);
 			void writeSetImageAction(const class SetImageAction& action);
 			void writeSlidingWindowFitAction(const class SlidingWindowFitAction& action);

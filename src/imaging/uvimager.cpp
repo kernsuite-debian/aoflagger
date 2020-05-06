@@ -2,12 +2,17 @@
 
 #include "../structures/image2d.h"
 #include "../structures/mask2d.h"
-#include "../structures/timefrequencydata.h"
+#include "../structures/msmetadata.h"
 #include "../structures/spatialmatrixmetadata.h"
+#include "../structures/timefrequencydata.h"
 
 #include "../util/integerdomain.h"
 #include "../util/stopwatch.h"
 #include "../util/ffttools.h"
+
+#include <casacore/ms/MeasurementSets/MeasurementSet.h>
+#include <casacore/tables/Tables/ArrayColumn.h>
+#include <casacore/tables/Tables/ScalarColumn.h>
 
 UVImager::UVImager(unsigned long xRes, unsigned long yRes, ImageKind imageKind) : _xRes(xRes), _yRes(yRes), _xResFT(xRes), _yResFT(yRes), _uvReal(), _uvImaginary(), _uvWeights(), _uvFTReal(), _uvFTImaginary(), _antennas(0), _fields(0), _imageKind(imageKind), _invertFlagging(false), _directFT(false), _ignoreBoundWarnings(false)
 {
@@ -43,20 +48,20 @@ void UVImager::Empty()
 	_uvFTImaginary = Image2D::MakeZeroImage(_xRes, _yRes);
 }
 
-void UVImager::Image(class MeasurementSet &measurementSet, unsigned band)
+void UVImager::Image(MSMetaData& msMetaData, unsigned band)
 {
-	unsigned frequencyCount = measurementSet.FrequencyCount(band);
+	unsigned frequencyCount = msMetaData.FrequencyCount(band);
 	IntegerDomain frequencies(0, frequencyCount);
-	_measurementSet = &measurementSet;
-	_band = _measurementSet->GetBandInfo(band);
+	_msMetaData = &msMetaData;
+	_band = _msMetaData->GetBandInfo(band);
 
 	Image(frequencies);
 }
 
-void UVImager::Image(class MeasurementSet &measurementSet, unsigned band, const IntegerDomain &frequencies)
+void UVImager::Image(class MSMetaData &msMetaData, unsigned band, const IntegerDomain &frequencies)
 {
-	_measurementSet = &measurementSet;
-	_band = _measurementSet->GetBandInfo(band);
+	_msMetaData = &msMetaData;
+	_band = _msMetaData->GetBandInfo(band);
 
 	Image(frequencies);
 }
@@ -65,15 +70,15 @@ void UVImager::Image(const IntegerDomain &frequencies)
 {
 	Empty();
 
-	_antennaCount = _measurementSet->AntennaCount();
+	_antennaCount = _msMetaData->AntennaCount();
 	_antennas = new AntennaInfo[_antennaCount];
 	for(unsigned i=0;i<_antennaCount;++i)
-		_antennas[i] = _measurementSet->GetAntennaInfo(i);
+		_antennas[i] = _msMetaData->GetAntennaInfo(i);
 	
-	_fieldCount = _measurementSet->FieldCount();
+	_fieldCount = _msMetaData->FieldCount();
 	_fields = new FieldInfo[_fieldCount];
 	for(unsigned i=0;i<_fieldCount;++i)
-		_fields[i] = _measurementSet->GetFieldInfo(i);
+		_fields[i] = _msMetaData->GetFieldInfo(i);
 
 	unsigned parts = (frequencies.ValueCount()-1)/48 + 1;
 	for(unsigned i=0;i<parts;++i) {
@@ -88,7 +93,7 @@ void UVImager::Image(const IntegerDomain &frequencies)
  */
 void UVImager::Image(const IntegerDomain &frequencies, const IntegerDomain &antenna1Domain, const IntegerDomain &antenna2Domain)
 {
-	_scanCount = _measurementSet->TimestepCount();
+	_scanCount = _msMetaData->TimestepCount();
 	std::cout << "Requesting " << frequencies.ValueCount() << " x " << antenna1Domain.ValueCount() << " x " << antenna2Domain.ValueCount() << " x "
 		<< _scanCount << " x " << sizeof(SingleFrequencySingleBaselineData) << " = "
 		<< (frequencies.ValueCount() * antenna1Domain.ValueCount() * antenna2Domain.ValueCount() * _scanCount * sizeof(SingleFrequencySingleBaselineData) / (1024*1024))
@@ -111,20 +116,48 @@ void UVImager::Image(const IntegerDomain &frequencies, const IntegerDomain &ante
 
 	std::cout << "Reading all data for " << frequencies.ValueCount() << " frequencies..." << std::flush;
 	Stopwatch stopwatch(true);
-	MSIterator iterator(*_measurementSet);
-	size_t rows = _measurementSet->RowCount();
-	for(unsigned i=0;i<rows;++i,++iterator) {
-		unsigned a1 = iterator.Antenna1();
-		unsigned a2 = iterator.Antenna2();
-		if(antenna1Domain.IsIn(a1) && antenna2Domain.IsIn(a2)) {
-			unsigned scan = iterator.ScanNumber();
+	
+	casacore::MeasurementSet ms(_msMetaData->Path());
+	casacore::ScalarColumn<int> antenna1Col(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA1));
+	casacore::ScalarColumn<int> antenna2Col(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA2));
+	casacore::ScalarColumn<int> fieldIdCol(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::FIELD_ID));
+	casacore::ScalarColumn<int> dataDescIdCol(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::DATA_DESC_ID));
+	casacore::ScalarColumn<double> timeCol(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::TIME));
+	casacore::ScalarColumn<double> scanNumberCol(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::SCAN_NUMBER));
+	casacore::ArrayColumn<casacore::Complex> correctedDataCol(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::CORRECTED_DATA));
+	casacore::ArrayColumn<bool> flagCol(ms,
+		casacore::MeasurementSet::columnName(casacore::MeasurementSet::FLAG));
+
+	size_t rows = ms.nrow();
+	for(unsigned row=0; row!=rows; ++row)
+	{
+		unsigned a1 = antenna1Col(row);
+		unsigned a2 = antenna2Col(row);
+		if(antenna1Domain.IsIn(a1) && antenna2Domain.IsIn(a2))
+		{
+			unsigned scan = scanNumberCol(row);
 			unsigned index1 = antenna1Domain.Index(a1);
 			unsigned index2 = antenna1Domain.Index(a2);
-			int field = iterator.Field();
-			double time = iterator.Time();
-			casacore::Array<casacore::Complex>::const_iterator cdI = iterator.CorrectedDataIterator();
-			casacore::Array<bool>::const_iterator fI = iterator.FlagIterator();
-			for(int f=0;f<frequencies.GetValue(0);++f) { ++fI; ++fI; ++fI; ++fI; ++cdI; ++cdI; ++cdI; ++cdI; }
+			int field = fieldIdCol(row);
+			double time = timeCol(row);
+			casacore::Array<casacore::Complex> dataArr = correctedDataCol(row);
+			casacore::Array<bool> flagArr = flagCol(row);
+			casacore::Array<casacore::Complex>::const_iterator
+				cdI = dataArr.begin();
+			casacore::Array<bool>::const_iterator
+				fI = flagArr.begin();
+			for(int f=0;f<frequencies.GetValue(0);++f)
+			{
+				++fI; ++fI; ++fI; ++fI;
+				++cdI; ++cdI; ++cdI; ++cdI;
+			}
 			for(unsigned f=0;f<frequencies.ValueCount();++f) {
 				SingleFrequencySingleBaselineData &curData = data[f][index1][index2][scan];
 				casacore::Complex xxData = *cdI;
@@ -184,19 +217,10 @@ void UVImager::Image(unsigned frequencyIndex, AntennaInfo &antenna1, AntennaInfo
 	cache.dy = antenna1.position.y - antenna2.position.y;
 	cache.dz = antenna1.position.z - antenna2.position.z;
 
-	//MSIterator iterator(*_measurementSet);
-	//bool baselineProvided = false;
-	//Stopwatch stopwatch(false);
-	//Stopwatch calcTimer(false);
 	for(unsigned i=0;i<_scanCount;++i) {
-			if(data[i].available) {
-				//if(!baselineProvided) {
-					//std::cout << "Now processing frequency " << frequency << " Hz (index " << frequencyIndex << "), correlation between " << antenna1.station << " " << antenna1.name << " and " << antenna2.station << " " << antenna2.name << "..." << std::flush;
-					//baselineProvided = true;
-					//stopwatch.Start();
-				//}
-				switch(_imageKind) {
-				case Homogeneous:
+		if(data[i].available) {
+			switch(_imageKind) {
+			case Homogeneous:
 				if(!data[i].flag) {
 					num_t u,v;
 					GetUVPosition(u, v, data[i], cache);
@@ -205,7 +229,7 @@ void UVImager::Image(unsigned frequencyIndex, AntennaInfo &antenna1, AntennaInfo
 					//calcTimer.Pause();
 				} 
 				break;
-				case Flagging:
+			case Flagging:
 				if((data[i].flag && !_invertFlagging) ||
 						(!data[i].flag && _invertFlagging)) {
 					num_t u,v;
@@ -438,11 +462,10 @@ num_t UVImager::GetFringeCount(size_t timeIndexStart, size_t timeIndexEnd, unsig
 	return -(metaData->UVW()[timeIndexEnd].w - metaData->UVW()[timeIndexStart].w) * metaData->Band().channels[channelIndex].frequencyHz / 299792458.0L;
 }
 
-void UVImager::InverseImage(class MeasurementSet &prototype, unsigned band, const Image2D &/*uvReal*/, const Image2D &/*uvImaginary*/, unsigned antenna1Index, unsigned antenna2Index)
+void UVImager::InverseImage(MSMetaData &prototype, unsigned band, const Image2D &/*uvReal*/, const Image2D &/*uvImaginary*/, unsigned antenna1Index, unsigned antenna2Index)
 {
 	_timeFreq = Image2D::MakeZeroImage(prototype.TimestepCount(), prototype.FrequencyCount(band));
 	AntennaInfo antenna1, antenna2;
 	antenna1 = prototype.GetAntennaInfo(antenna1Index);
 	antenna2 = prototype.GetAntennaInfo(antenna2Index);
-	//Image2D *temp = Image2D::CreateEmptyImage(uvReal.Width(), uvReal.Height());
 }

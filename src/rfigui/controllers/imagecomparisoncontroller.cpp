@@ -193,7 +193,8 @@ void ImageComparisonController::updateVisualizedImageAndMask()
 		data = &_dataList.back().data;
 	else
 		data = &_dataList[_visualizedImage].data;
-	_plot.SetAlternativeMask(getSelectedPolarizationMask(*data));
+	if(_dataList.size() > 1)
+		_plot.SetAlternativeMask(getSelectedPolarizationMask(*data));
 	_plot.SetOriginalMask(getSelectedPolarizationMask(_dataList.front().data));
 	updateVisualizedImage();
 }

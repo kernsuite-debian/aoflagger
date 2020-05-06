@@ -16,7 +16,7 @@
 #include "processcommander.h"
 
 #include "../structures/antennainfo.h"
-#include "../structures/measurementset.h"
+#include "../structures/msmetadata.h"
 
 namespace aoRemote
 {
@@ -203,7 +203,7 @@ void Client::handleReadAntennaTables(unsigned dataSize)
 		std::ostringstream buffer;
 		
 		// Serialize the antennae info
-		MeasurementSet ms(options.msFilename);
+		MSMetaData ms(options.msFilename);
 		size_t polarizationCount = ms.PolarizationCount();
 		size_t antennas = ms.AntennaCount();
 		Serializable::SerializeToUInt32(buffer, polarizationCount);
@@ -232,7 +232,7 @@ void Client::handleReadBandTable(unsigned dataSize)
 		std::ostringstream buffer;
 		
 		// Serialize the band info
-		MeasurementSet ms(options.msFilename);
+		MSMetaData ms(options.msFilename);
 		if(ms.BandCount() != 1)
 			throw std::runtime_error("The number of bands in the measurement set was not 1");
 		BandInfo band = ms.GetBandInfo(0);

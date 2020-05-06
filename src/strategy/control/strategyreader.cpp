@@ -250,6 +250,8 @@ std::unique_ptr<Action> StrategyReader::parseAction(xmlNode* node)
 		newAction = parsePlotAction(node);
 	else if(typeStr == "QuickCalibrateAction")
 		newAction = parseQuickCalibrateAction(node);
+	else if(typeStr == "RestoreChannelRangeAction")
+		newAction = parseRestoreChannelRangeAction(node);
 	else if(typeStr == "SetFlaggingAction")
 		newAction = parseSetFlaggingAction(node);
 	else if(typeStr == "SetImageAction")
@@ -421,7 +423,7 @@ std::unique_ptr<Action> StrategyReader::parseForEachMSAction(xmlNode* node)
 {
 	std::unique_ptr<ForEachMSAction> newAction(new ForEachMSAction());
 	newAction->SetDataColumnName(getString(node, "data-column-name"));
-	newAction->SetSubtractModel(getBool(node, "subtract-model"));
+	//newAction->SetSubtractModel(getBool(node, "subtract-model"));
 
 	for (xmlNode* curNode=node->children; curNode!=NULL; curNode=curNode->next) {
 		if(curNode->type == XML_ELEMENT_NODE)
@@ -537,6 +539,14 @@ std::unique_ptr<Action> StrategyReader::parsePlotAction(xmlNode* node)
 std::unique_ptr<Action> StrategyReader::parseQuickCalibrateAction(xmlNode* )
 {
 	std::unique_ptr<QuickCalibrateAction> newAction(new QuickCalibrateAction());
+	return std::move(newAction);
+}
+
+std::unique_ptr<Action> StrategyReader::parseRestoreChannelRangeAction(xmlNode* node)
+{
+	std::unique_ptr<RestoreChannelRangeAction> newAction(new RestoreChannelRangeAction());
+	newAction->SetStartFrequencyMHz(getDouble(node, "start-frequency-mhz"));
+	newAction->SetEndFrequencyMHz(getDouble(node, "end-frequency-mhz"));
 	return std::move(newAction);
 }
 

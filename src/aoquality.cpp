@@ -4,7 +4,7 @@
 #include <casacore/tables/Tables/SetupNewTab.h>
 #include <casacore/tables/Tables/TableCopy.h>
 
-#include "structures/measurementset.h"
+#include "structures/msmetadata.h"
 
 #include "quality/defaultstatistics.h"
 #include "quality/histogramcollection.h"
@@ -42,7 +42,7 @@ enum CollectingMode
 
 void actionCollect(const std::string &filename, enum CollectingMode mode, StatisticsCollection &statisticsCollection, HistogramCollection &histogramCollection, bool mwaChannels, size_t flaggedTimesteps, const std::set<size_t> &flaggedAntennae, const char* dataColumnName, size_t intervalStart, size_t intervalEnd)
 {
-	std::unique_ptr<MeasurementSet> ms(new MeasurementSet(filename));
+	std::unique_ptr<MSMetaData> ms(new MSMetaData(filename));
 	const unsigned polarizationCount = ms->PolarizationCount();
 	const unsigned bandCount = ms->BandCount();
 	const bool ignoreChannelZero = ms->IsChannelZeroRubish() && mode!=CollectTimeFrequency;
@@ -316,10 +316,9 @@ void printStatistics(const DefaultStatistics &statistics)
 
 void actionQueryGlobalStat(const std::string &kindName, const std::string &filename)
 {
-	MeasurementSet *ms = new MeasurementSet(filename);
-	const unsigned polarizationCount = ms->PolarizationCount();
-	const BandInfo band = ms->GetBandInfo(0);
-	delete ms;
+	MSMetaData ms(filename);
+	const unsigned polarizationCount = ms.PolarizationCount();
+	const BandInfo band = ms.GetBandInfo(0);
 	
 	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
 	
@@ -345,10 +344,9 @@ void actionQueryGlobalStat(const std::string &kindName, const std::string &filen
 
 void actionQueryFrequencyRange(const std::string &kindName, const std::string &filename, double startFreqMHz, double endFreqMHz)
 {
-	MeasurementSet *ms = new MeasurementSet(filename);
-	const unsigned polarizationCount = ms->PolarizationCount();
-	const BandInfo band = ms->GetBandInfo(0);
-	delete ms;
+	MSMetaData ms(filename);
+	const unsigned polarizationCount = ms.PolarizationCount();
+	const BandInfo band = ms.GetBandInfo(0);
 	
 	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
 	
@@ -371,10 +369,9 @@ void actionQueryFrequencyRange(const std::string &kindName, const std::string &f
 
 void actionQueryBaselines(const std::string &kindName, const std::string &filename)
 {
-	MeasurementSet *ms = new MeasurementSet(filename);
-	const unsigned polarizationCount = ms->PolarizationCount();
-	delete ms;
-	
+	MSMetaData ms(filename);
+	const unsigned polarizationCount = ms.PolarizationCount();
+
 	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
 	
 	QualityTablesFormatter formatter(filename);
@@ -402,7 +399,7 @@ void actionQueryBaselines(const std::string &kindName, const std::string &filena
 
 void actionQueryFrequency(const std::string &kindName, const std::string &filename)
 {
-	const unsigned polarizationCount = MeasurementSet::PolarizationCount(filename);
+	const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
 	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
 	
 	QualityTablesFormatter formatter(filename);
@@ -430,7 +427,7 @@ void actionQueryFrequency(const std::string &kindName, const std::string &filena
 
 void actionQueryTime(const std::string &kindName, const std::string &filename)
 {
-	const unsigned polarizationCount = MeasurementSet::PolarizationCount(filename);
+	const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
 	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
 	
 	QualityTablesFormatter formatter(filename);
@@ -458,7 +455,7 @@ void actionQueryTime(const std::string &kindName, const std::string &filename)
 
 void actionQueryAntenna(const std::string &kindName, const std::string &filename)
 {
-	const unsigned polarizationCount = MeasurementSet::PolarizationCount(filename);
+	const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
 	const QualityTablesFormatter::StatisticKind kind = QualityTablesFormatter::NameToKind(kindName);
 	
 	QualityTablesFormatter formatter(filename);
@@ -498,9 +495,8 @@ void actionSummarize(const std::string &filename)
 		commander.Run();
 	}
 	else {
-		std::unique_ptr<MeasurementSet> ms(new MeasurementSet(filename));
-		const unsigned polarizationCount = ms->PolarizationCount();
-		ms.reset();
+		MSMetaData ms(filename);
+		const unsigned polarizationCount = ms.PolarizationCount();
 		
 		statisticsCollection.SetPolarizationCount(polarizationCount);
 		QualityTablesFormatter qualityData(filename);
@@ -531,10 +527,9 @@ void actionSummarize(const std::string &filename)
 
 void actionSummarizeRFI(const std::string &filename)
 {
-	MeasurementSet *ms = new MeasurementSet(filename);
-	const unsigned polarizationCount = ms->PolarizationCount();
-	const BandInfo band = ms->GetBandInfo(0);
-	delete ms;
+	MSMetaData ms(filename);
+	const unsigned polarizationCount = ms.PolarizationCount();
+	const BandInfo band = ms.GetBandInfo(0);
 	
 	StatisticsCollection statisticsCollection;
 	statisticsCollection.SetPolarizationCount(polarizationCount);
@@ -632,11 +627,10 @@ void actionCombine(const std::string& outFilename, const std::vector<std::string
 			antennae = commander.Antennas();
 		} else {
 			std::cout << "Reading antenna table...\n";
-			std::unique_ptr<MeasurementSet> ms(new MeasurementSet(firstInFilename));
-			antennae.resize(ms->AntennaCount());
-			for(size_t i=0; i!=ms->AntennaCount(); ++i)
-				antennae[i] = ms->GetAntennaInfo(i);
-			ms.reset();
+			MSMetaData msMeta(firstInFilename);
+			antennae.resize(msMeta.AntennaCount());
+			for(size_t i=0; i!=msMeta.AntennaCount(); ++i)
+				antennae[i] = msMeta.GetAntennaInfo(i);
 			
 			for(std::vector<std::string>::const_iterator i=inFilenames.begin(); i!=inFilenames.end(); ++i)
 			{
@@ -695,12 +689,12 @@ void printRFISlopeForHistogram(const std::map<HistogramCollection::AntennaPair, 
 void actionHistogram(const std::string &filename, const std::string &query, bool mwaChannels, const char* dataColumnName)
 {
 	HistogramTablesFormatter histogramFormatter(filename);
-	const unsigned polarizationCount = MeasurementSet::PolarizationCount(filename);
+	const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
 	if(query == "rfislope")
 	{
 		HistogramCollection collection(polarizationCount);
 		collection.Load(histogramFormatter);
-		MeasurementSet set(filename);
+		MSMetaData set(filename);
 		std::cout << set.GetBandInfo(0).CenterFrequencyHz();
 		for(unsigned p=0;p<polarizationCount;++p)
 		{
@@ -713,7 +707,7 @@ void actionHistogram(const std::string &filename, const std::string &query, bool
 	{
 		HistogramCollection collection;
 		actionCollectHistogram(filename, collection, mwaChannels, 0, std::set<size_t>(), dataColumnName);
-		MeasurementSet set(filename);
+		MSMetaData set(filename);
 		size_t antennaCount = set.AntennaCount();
 		std::vector<AntennaInfo> antennae(antennaCount);
 		for(size_t a=0;a<antennaCount;++a)

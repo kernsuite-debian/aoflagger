@@ -16,7 +16,6 @@ namespace rfiStrategy {
 	{
 	}
 	
-	
 	WriteFlagsAction::~WriteFlagsAction()
 	{
 		Finish();
@@ -44,8 +43,7 @@ namespace rfiStrategy {
 		std::vector<Mask2DCPtr> masks;
 		for(size_t i=0;i<artifacts.ContaminatedData().MaskCount();++i)
 		{
-			Mask2DCPtr mask = artifacts.ContaminatedData().GetMask(i);
-			masks.push_back(mask);
+			masks.emplace_back(artifacts.ContaminatedData().GetMask(i));
 		}
 		BufferItem newItem(masks, artifacts.ImageSetIndex());
 		pushInBuffer(newItem);
@@ -78,8 +76,12 @@ namespace rfiStrategy {
 			{
 				BufferItem item = bufferCopy.top();
 				bufferCopy.pop();
+				Logger::Debug << "Add writing " << item._masks.size() << " masks.\n";
+				Logger::Debug << "Desc: " << item._index->Description() << "\n";
+				Logger::Debug << "ImageSet: " << _parent->_imageSet->Name() << "\n";
 				_parent->_imageSet->AddWriteFlagsTask(*item._index, item._masks);
 			}
+				Logger::Debug << "Writing.\n";
 			_parent->_imageSet->PerformWriteFlagsTask();
 			ioLock.unlock();
 

@@ -27,6 +27,10 @@ class ImageComparisonController {
 		{
 			_dataList.emplace_back(label, data);
 			size_t v = _dataList.size() - 1;
+			// If the first image is visualized, adding a new last visualization
+			// affects the visualized flags on top of the first image.
+			if(_visualizedImage == 0)
+				updateVisualizedImageAndMask();
 			_visualizationListChange.emit();
 			return v;
 		}
@@ -49,7 +53,7 @@ class ImageComparisonController {
 			updateVisualizedImageAndMask();
 		}
 		
-		void SetAltMaskData(TimeFrequencyData& data) {
+		void SetAltMaskData(const TimeFrequencyData& data) {
 			if(_visualizedImage == 0)
 				_dataList.back().data = data;
 			else
@@ -57,10 +61,17 @@ class ImageComparisonController {
 			updateVisualizedImageAndMask();
 		}
 		
-		const TimeFrequencyData& AltMaskData() const {
+		TimeFrequencyData AltMaskData() const {
 			if(_visualizedImage == 0)
-				return _dataList.back().data;
-			else
+			{
+				if(_dataList.size() > 1)
+					return _dataList.back().data;
+				else {
+					TimeFrequencyData empty = _dataList.back().data;
+					empty.SetNoMask();
+					return empty;
+				}
+			} else
 				return _dataList[_visualizedImage].data;
 		}
 		
@@ -109,7 +120,7 @@ class ImageComparisonController {
 			size_t altMaskIndex = _visualizedImage;
 			if(altMaskIndex == 0)
 				altMaskIndex = _dataList.size()-1;
-			bool altActive = _plot.ShowAlternativeMask() && _dataList[altMaskIndex].data.MaskCount()!=0;
+			bool altActive = _plot.ShowAlternativeMask() && altMaskIndex!=0 && _dataList[altMaskIndex].data.MaskCount()!=0;
 			if(orActive && altActive)
 			{
 				data.SetMask(_dataList[0].data);

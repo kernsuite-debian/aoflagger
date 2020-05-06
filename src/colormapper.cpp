@@ -32,7 +32,7 @@ inline void ScaledWLtoRGB(long double position,long double &red,long double &gre
 	if(blue < 0.0) blue = 0.0;
 	if(blue > 1.0) blue = 1.0;
 }
-void ReportRMS(Image2D *image);
+void ReportRMS(const Image2D& image);
 
 int main(int argc, char *argv[])
 {
@@ -126,11 +126,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	Image2D
-		*red = nullptr,
-		*green = nullptr,
-		*blue = nullptr,
-		*mono = nullptr;
+	std::unique_ptr<Image2D>
+		red, green, blue, mono;
 
 	long double totalRed = 0.0, totalGreen = 0.0, totalBlue = 0.0;
 	unsigned addedCount = 0;
@@ -149,10 +146,10 @@ int main(int argc, char *argv[])
 		fitsfile.MoveToHDU(1);
 		unsigned images = Image2D::GetImageCountInHUD(fitsfile);
 
-		FitsFile *subtractFits = 0;
+		std::unique_ptr<FitsFile> subtractFits;
 		if(subtract) {
 			cout << "Opening " << subtractFile << "..." << endl;
-			subtractFits = new FitsFile(subtractFile);
+			subtractFits.reset(new FitsFile(subtractFile));
 			subtractFits->Open(FitsFile::ReadOnlyMode);
 			subtractFits->MoveToHDU(1);
 			unsigned sImages = Image2D::GetImageCountInHUD(fitsfile);
@@ -244,10 +241,9 @@ int main(int argc, char *argv[])
 					}
 				}
 				if(fft) {
-					Image2D *fft = FFTTools::CreateFFTImage(image, FFTTools::Absolute);
-					Image2D *fullfft = FFTTools::CreateFullImageFromFFT(*fft);
-					delete fft;
-					image = *fullfft;
+					std::unique_ptr<Image2D> fftImage(FFTTools::CreateFFTImage(image, FFTTools::Absolute));
+					fftImage.reset(FFTTools::CreateFullImageFromFFT(*fftImage));
+					image = *fftImage;
 				}
 				long double max;
 				if(individualMaximization) {
@@ -259,7 +255,7 @@ int main(int argc, char *argv[])
 				if(displayMax)
 					cout << "max=" << image.GetMinimum() << ":" << image.GetMaximum() << endl; 
 				if(rms)
-					ReportRMS(&image);
+					ReportRMS(image);
 				long double r=0.0,g=0.0,b=0.0;
 				if(blackWhite || mapColours) {
 					r = 1.0; b = 1.0; g = 1.0;
@@ -274,11 +270,11 @@ int main(int argc, char *argv[])
 				totalRed += r;
 				totalGreen += g;
 				totalBlue += b;
-				if(red == 0) {
-					red = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
-					green = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
-					blue = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
-					mono = new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height()));
+				if(!red) {
+					red.reset(new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height())));
+					green.reset(new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height())));
+					blue.reset(new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height())));
+					mono.reset(new Image2D(Image2D::MakeZeroImage(image.Width(), image.Height())));
 				}
 				size_t minY = image.Height(), minX = image.Width();
 				if(red->Height() < minY) minY = red->Height();
@@ -331,7 +327,7 @@ int main(int argc, char *argv[])
 		
 		if(subtract) {
 			subtractFits->Close();
-			delete subtractFits;
+			subtractFits.reset();
 		}
 	}
 		
@@ -346,7 +342,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(rms) {
-		ReportRMS(mono);
+		ReportRMS(*mono);
 	}
 	
 	if(saveFits)
@@ -407,11 +403,6 @@ int main(int argc, char *argv[])
 		file.Close();
 	}
 	
-	delete red;
-	delete green;
-	delete blue;
-	delete mono;
-
   return EXIT_SUCCESS;
 }
 
@@ -513,17 +504,17 @@ void WLtoRGB(long double wavelength,long double &red,long double &green, long do
  }
 }
 
-void ReportRMS(Image2D *image)
+void ReportRMS(const Image2D& image)
 {
-	unsigned squareWidth = image->Width()/5;
-	unsigned squareHeight = image->Height()/5;
+	unsigned squareWidth = image.Width()/5;
+	unsigned squareHeight = image.Height()/5;
 	cout << "Calculating rms... " << endl;
-	cout << "Total RMS=" << image->GetRMS()*1000.0L << "mJ" << endl;
-	cout << "Center RMS=" << image->GetRMS(image->Width()/2-squareWidth/2,image->Height()/2-squareHeight/2, squareWidth, squareHeight)*1000.0L << "mJ" << endl;
-	cout << "Upperleft RMS=" << image->GetRMS(0, 0, squareWidth, squareHeight)*1000.0L << "mJ" << endl;
-	cout << "Upperright RMS=" << image->GetRMS(image->Width()-squareWidth, 0, squareWidth, squareHeight) * 1000.0L << "mJ" << endl;
-	cout << "Lowerleft RMS=" << image->GetRMS(0, image->Height()-squareHeight, squareWidth, squareHeight) * 1000.0L << "mJ" << endl;
-	cout << "Lowerright RMS=" << image->GetRMS(image->Width()-squareWidth, image->Height()-squareHeight, squareWidth, squareHeight) *1000.0L << "mJ" << endl;
-	cout << "Minimum intensity=" << image->GetMinimum() * 1000.0L << "mJ" << endl;
-	cout << "Maximum intensity=" << image->GetMaximum() * 1000.0L << "mJ" << endl;
+	cout << "Total RMS=" << image.GetRMS()*1000.0L << "mJ" << endl;
+	cout << "Center RMS=" << image.GetRMS(image.Width()/2-squareWidth/2,image.Height()/2-squareHeight/2, squareWidth, squareHeight)*1000.0L << "mJ" << endl;
+	cout << "Upperleft RMS=" << image.GetRMS(0, 0, squareWidth, squareHeight)*1000.0L << "mJ" << endl;
+	cout << "Upperright RMS=" << image.GetRMS(image.Width()-squareWidth, 0, squareWidth, squareHeight) * 1000.0L << "mJ" << endl;
+	cout << "Lowerleft RMS=" << image.GetRMS(0, image.Height()-squareHeight, squareWidth, squareHeight) * 1000.0L << "mJ" << endl;
+	cout << "Lowerright RMS=" << image.GetRMS(image.Width()-squareWidth, image.Height()-squareHeight, squareWidth, squareHeight) *1000.0L << "mJ" << endl;
+	cout << "Minimum intensity=" << image.GetMinimum() * 1000.0L << "mJ" << endl;
+	cout << "Maximum intensity=" << image.GetMaximum() * 1000.0L << "mJ" << endl;
 }

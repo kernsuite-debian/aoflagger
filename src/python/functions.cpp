@@ -1,5 +1,7 @@
 #include "functions.h"
+#include "scriptdata.h"
 
+#include "../strategy/algorithms/applybandpass.h"
 #include "../strategy/algorithms/highpassfilter.h"
 #include "../strategy/algorithms/medianwindow.h"
 #include "../strategy/algorithms/siroperator.h"
@@ -14,6 +16,7 @@
 #endif
 
 #include "../strategy/algorithms/polarizationstatistics.h"
+#include "../strategy/algorithms/thresholdtools.h"
 
 #include <boost/python.hpp>
 
@@ -25,7 +28,22 @@ namespace aoflagger_python
 
 static object flagFunction;
 
-void enlarge(const Data& input, Data& destination, size_t horizontalFactor, size_t verticalFactor)
+void apply_bandpass(Data& data, const std::string& filename, ScriptData& scriptData)
+{
+	std::unique_ptr<BandpassFile>& bpFile = scriptData.GetBandpassFile();
+	{
+		std::lock_guard<std::mutex> lock(scriptData.BandpassMutex());
+		if(bpFile == nullptr)
+		{
+			bpFile.reset(new BandpassFile(filename));
+		}
+	}
+	ApplyBandpass::Apply(data.TFData(), *bpFile,
+		data.MetaData()->Antenna1().name,
+		data.MetaData()->Antenna2().name);
+}
+
+void upsample(const Data& input, Data& destination, size_t horizontalFactor, size_t verticalFactor)
 {
 	TimeFrequencyData timeFrequencyData = input.TFData();
 	const size_t
@@ -34,7 +52,7 @@ void enlarge(const Data& input, Data& destination, size_t horizontalFactor, size
 		newHeight = destination.TFData().ImageHeight();
 	if(destination.TFData().ImageCount() != imageCount)
 		throw std::runtime_error("Error in enlarge() call: source and image have different number of images");
-	std::cout << "Enlarging " << horizontalFactor << " x " << verticalFactor << " to " << newWidth << " x " << newHeight << '\n';
+	//std::cout << "Enlarging " << horizontalFactor << " x " << verticalFactor << " to " << newWidth << " x " << newHeight << '\n';
 	
 	if(horizontalFactor > 1)
 	{
@@ -127,12 +145,22 @@ void scale_invariant_rank_operator(Data& data, double level_horizontal, double l
 	data.TFData().SetGlobalMask(mask);
 }
 
+void scale_invariant_rank_operator_with_missing(Data& data, const Data& missing, double level_horizontal, double level_vertical)
+{
+	Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
+	
+	Mask2DCPtr missingMask = missing.TFData().GetSingleMask();
+	SIROperator::OperateHorizontallyMissing(*mask, *missingMask, level_horizontal);
+	SIROperator::OperateVerticallyMissing(*mask, *missingMask, level_vertical);
+	data.TFData().SetGlobalMask(mask);
+}
+
 void set_flag_function(PyObject* callable)
 {
 	flagFunction = object(boost::python::handle<>(boost::python::borrowed(callable)));
 }
 
-Data shrink(const Data& data, size_t horizontalFactor, size_t verticalFactor)
+Data downsample(const Data& data, size_t horizontalFactor, size_t verticalFactor)
 {
 	TimeFrequencyData timeFrequencyData = data.TFData();
 	const size_t imageCount = timeFrequencyData.ImageCount();
@@ -165,10 +193,57 @@ Data shrink(const Data& data, size_t horizontalFactor, size_t verticalFactor)
 			timeFrequencyData.SetMask(i, newMask);
 		}
 	}
-	return Data(timeFrequencyData);
+	return Data(timeFrequencyData, data.MetaData());
 }
 
-void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor, bool horizontal, bool vertical)
+Data downsample_masked(const Data& data, size_t horizontalFactor, size_t verticalFactor)
+{
+	TimeFrequencyData timeFrequencyData = data.TFData();
+	
+	// Decrease in horizontal direction
+	size_t polCount = timeFrequencyData.PolarizationCount();
+	for(size_t i=0; i<polCount; ++i)
+	{
+		TimeFrequencyData polData(timeFrequencyData.MakeFromPolarizationIndex(i));
+		const Mask2DCPtr mask = polData.GetSingleMask();
+		for(unsigned j=0; j<polData.ImageCount(); ++j)
+		{
+			const Image2DCPtr image = polData.GetImage(j);
+			polData.SetImage(j, ThresholdTools::ShrinkHorizontally(horizontalFactor, image.get(), mask.get()));
+		}
+		timeFrequencyData.SetPolarizationData(i, std::move(polData));
+	}
+	size_t maskCount = timeFrequencyData.MaskCount();
+	for(size_t i=0; i<maskCount; ++i)
+	{
+		Mask2DCPtr mask = timeFrequencyData.GetMask(i);
+		Mask2DPtr newMask(new Mask2D(mask->ShrinkHorizontallyForAveraging(horizontalFactor)));
+		timeFrequencyData.SetMask(i, std::move(newMask));
+	}
+	
+	// Decrease in vertical direction
+	for(size_t i=0; i<polCount; ++i)
+	{
+		TimeFrequencyData polData(timeFrequencyData.MakeFromPolarizationIndex(i));
+		const Mask2DCPtr mask = polData.GetSingleMask();
+		for(unsigned j=0;j<polData.ImageCount();++j)
+		{
+			const Image2DCPtr image = polData.GetImage(j);
+			polData.SetImage(j, ThresholdTools::ShrinkVertically(verticalFactor, image.get(), mask.get()));
+		}
+		timeFrequencyData.SetPolarizationData(i, std::move(polData));
+	}
+	for(size_t i=0; i<maskCount; ++i)
+	{
+		Mask2DCPtr mask = timeFrequencyData.GetMask(i);
+		Mask2DPtr newMask(new Mask2D(mask->ShrinkVerticallyForAveraging(verticalFactor)));
+		timeFrequencyData.SetMask(i, std::move(newMask));
+	}
+	
+	return Data(timeFrequencyData, data.MetaData());
+}
+
+static void sumthreshold_generic(Data& data, const Data* missing, double hThresholdFactor, double vThresholdFactor, bool horizontal, bool vertical)
 {
 	ThresholdConfig thresholdConfig;
 	thresholdConfig.InitializeLengthsDefault();
@@ -183,8 +258,26 @@ void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor, 
 	
 	Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
 	Image2DCPtr image = data.TFData().GetSingleImage();
-	thresholdConfig.Execute(image.get(), mask.get(), false, hThresholdFactor, vThresholdFactor);
+	
+	if(missing != nullptr)
+	{
+		Mask2DCPtr missingMask = missing->TFData().GetSingleMask(); 
+		thresholdConfig.ExecuteWithMissing(image.get(), mask.get(), missingMask.get(), false, hThresholdFactor, vThresholdFactor);
+	}
+	else {
+		thresholdConfig.Execute(image.get(), mask.get(), false, hThresholdFactor, vThresholdFactor);
+	}
 	data.TFData().SetGlobalMask(mask);
+}
+
+void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor, bool horizontal, bool vertical)
+{
+	sumthreshold_generic(data, nullptr, hThresholdFactor, vThresholdFactor, horizontal, vertical);
+}
+
+void sumthreshold_with_missing(Data& data, const Data& missing, double hThresholdFactor, double vThresholdFactor, bool horizontal, bool vertical)
+{
+	sumthreshold_generic(data, &missing, hThresholdFactor, vThresholdFactor, horizontal, vertical);
 }
 
 void threshold_channel_rms(Data& data, double threshold, bool thresholdLowValues)
@@ -243,6 +336,11 @@ void threshold_timestep_rms(Data& data, double threshold)
 		}
 	} while(change);
 	data.TFData().SetGlobalMask(std::move(mask));
+}
+
+void visualize(Data& data, const std::string& label, size_t sortingIndex, ScriptData& scriptData)
+{
+	scriptData.AddVisualization(data.TFData(), label, sortingIndex);
 }
 
 }

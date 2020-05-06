@@ -71,6 +71,8 @@ namespace rfiStrategy {
 
 			virtual void PerformWriteDataTask(const ImageSetIndex &index, std::vector<Image2DCPtr> realImages, std::vector<Image2DCPtr> imaginaryImages) final override;
 			
+			virtual bool HasCrossCorrelations() const final override { return false; }
+			
 			double CentreFrequency() const
 			{
 				return (_fch1 + (_foff*_channelCount*0.5))*1e6;

@@ -26,15 +26,13 @@ class IndirectBaselineReader : public BaselineReader {
 		
 		void SetReadUVW(bool readUVW) { _readUVW = readUVW; }
 	private:
-		class ReorderInfo
+		struct ReorderInfo
 		{
-		public:
 			std::unique_ptr<std::ofstream> dataFile;
 			std::unique_ptr<std::ofstream> flagFile;
 		};
-		class UpdateInfo
+		struct UpdateInfo
 		{
-		public:
 			std::unique_ptr<std::ifstream> dataFile;
 			std::unique_ptr<std::ifstream> flagFile;
 		};
@@ -64,7 +62,7 @@ class IndirectBaselineReader : public BaselineReader {
 			size_t _antennaCount;
 			std::vector<std::vector<std::vector<size_t> > > _table;
 		};
-		void reorderedMS();
+		void reorderMS();
 		void reorderFull();
 		void makeLookupTables(size_t &fileSize);
 		void updateOriginalMSData();
@@ -91,7 +89,7 @@ class IndirectBaselineReader : public BaselineReader {
 		}
 
 		DirectBaselineReader _directReader;
-		SeqIndexLookupTable *_seqIndexTable;
+		std::unique_ptr<SeqIndexLookupTable> _seqIndexTable;
 		std::vector<size_t> _filePositions;
 		bool _msIsReordered;
 		bool _removeReorderedFiles;

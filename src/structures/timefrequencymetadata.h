@@ -30,7 +30,8 @@ class TimeFrequencyMetaData
 			_valueUnits("Jy")
 		{
 		}
-		TimeFrequencyMetaData(const TimeFrequencyMetaData &source)
+		
+		TimeFrequencyMetaData(const TimeFrequencyMetaData& source)
 			: _sequenceId(source._sequenceId),
 			_valueDescription(source._valueDescription),
 			_valueUnits(source._valueUnits)

@@ -88,13 +88,12 @@ class Logger
 		static class LogWriter<DebugLevel> Debug;
 		static class LogWriter<InfoLevel> Info;
 		static class LogWriter<WarningLevel> Warn;
-		static class LogWriter<ErrorLevel> Error;
-		static class LogWriter<FatalLevel> Fatal;
+		static class LogWriter<ErrorLevel, true> Error;
+		static class LogWriter<FatalLevel, true> Fatal;
 		static class LogWriter<NoLevel> Progress;
 	private:
 		Logger()
-		{
-		}
+		{ }
 
 		static void outputTime(bool toStdErr);
 

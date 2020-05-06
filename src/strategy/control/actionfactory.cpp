@@ -31,6 +31,7 @@ const std::vector<std::string> ActionFactory::GetActionList()
 	list.push_back("Plot");
 	list.push_back("Quickly calibrate");
 	list.push_back("Resample");
+	list.push_back("Restore channel range");
 	list.push_back("Save heat map");
 	list.push_back("Set flagging");
 	list.push_back("Set image");
@@ -94,6 +95,8 @@ std::unique_ptr<Action> ActionFactory::CreateAction(const std::string &action)
 		return make<QuickCalibrateAction>();
 	else if(action == "Resample")
 		return make<ResamplingAction>();
+	else if(action == "Restore channel range")
+		return make<RestoreChannelRangeAction>();
 	else if(action == "Save heat map")
 		return make<SaveHeatMapAction>();
 	else if(action == "Set flagging")

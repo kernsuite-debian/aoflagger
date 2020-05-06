@@ -2,8 +2,6 @@
 #include <string>
 #include <mutex>
 
-#include <libgen.h>
-
 #include "strategy/actions/foreachmsaction.h"
 #include "strategy/actions/strategy.h"
 
@@ -21,7 +19,6 @@
 #include "structures/system.h"
 
 #include "util/logger.h"
-#include "util/parameter.h"
 #include "util/progresslistener.h"
 #include "util/stopwatch.h"
 #include "util/numberlist.h"
@@ -29,6 +26,7 @@
 #include "version.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/optional/optional.hpp>
 
 class ConsoleProgressHandler : public ProgressListener {
 	private:
@@ -129,6 +127,16 @@ int main(int argc, char **argv)
 		"     Reads uvw values (some exotic strategies require these)\n"
 		"  -column <name>\n"
 		"     Specify column to flag\n"
+		"  -interval <start> <end>\n"
+		"     Only process the specified timesteps. Indices are zero indexed, and\n"
+		"     the end is exclusive, such that -interval 10 20 selects 10, 11, ... 19.\n"
+		"  -max-interval-size <ntimes>\n"
+		"     This will split the set into intervals with the given maximum size, and flag each\n"
+		"     interval independently. This lowers the amount of memory required. The flagger\n"
+		"     has slightly less information per interval, but for a size of 1000 timesteps there is\n"
+		"     no noticable difference. With a size of 100 the difference is mostly not problematic\n"
+		"     either. In some cases, splitting the data increases accuracy, in particular when the\n"
+		"     statistics in the set change significantly over time (e.g. rising Galaxy).\n"
 		"  -bands <list>\n"
 		"     Comma separated list of (zero-indexed) band ids to process\n"
 		"  -fields <list>\n"
@@ -146,19 +154,17 @@ int main(int argc, char **argv)
 		return RETURN_CMDLINE_ERROR;
 	}
 	
-#ifdef HAS_LOFARSTMAN
-	register_lofarstman();
-#endif // HAS_LOFARSTMAN
-	
-	Parameter<size_t> threadCount;
-	Parameter<BaselineIOMode> readMode;
-	Parameter<bool> readUVW;
-	Parameter<std::string> strategyFile;
-	Parameter<Logger::VerbosityLevel> logVerbosity;
-	Parameter<bool> skipFlagged;
-	Parameter<std::string> dataColumn;
-	Parameter<bool> combineSPWs;
-	Parameter<std::string> bandpass;
+	boost::optional<size_t> threadCount;
+	boost::optional<BaselineIOMode> readMode;
+	boost::optional<bool> readUVW;
+	boost::optional<std::string> strategyFile;
+	boost::optional<Logger::VerbosityLevel> logVerbosity;
+	boost::optional<bool> skipFlagged;
+	boost::optional<std::string> dataColumn;
+	boost::optional<std::pair<size_t, size_t>> interval;
+	boost::optional<size_t> maxIntervalSize;
+	boost::optional<bool> combineSPWs;
+	boost::optional<std::string> bandpass;
 	std::set<size_t> bands, fields;
 
 	size_t parameterIndex = 1;
@@ -237,6 +243,18 @@ int main(int argc, char **argv)
 			++parameterIndex;
 			bandpass = std::string(argv[parameterIndex]);
 		}
+		else if(flag == "interval")
+		{
+			interval = std::pair<size_t,size_t>(
+				atoi(argv[parameterIndex+1]),
+				atoi(argv[parameterIndex+2]));
+			parameterIndex += 2;
+		}
+		else if(flag == "max-interval-size")
+		{
+			++parameterIndex;
+			maxIntervalSize = atoi(argv[parameterIndex]);
+		}
 		else
 		{
 			Logger::Error << "Incorrect usage; parameter \"" << argv[parameterIndex] << "\" not understood.\n";
@@ -246,34 +264,37 @@ int main(int argc, char **argv)
 	}
 
 	try {
-		Logger::SetVerbosity(logVerbosity.Value(Logger::NormalVerbosity));
+		Logger::SetVerbosity(logVerbosity.value_or(Logger::NormalVerbosity));
 		generalInfo();
 			
 		checkRelease();
 
-		if(!threadCount.IsSet())
+		if(!threadCount)
 			threadCount = System::ProcessorCount();
-		Logger::Debug << "Number of threads: " << threadCount.Value() << "\n";
+		Logger::Debug << "Number of threads: " << threadCount.get() << "\n";
 
 		Stopwatch watch(true);
 
 		std::mutex ioMutex;
 		
 		std::unique_ptr<rfiStrategy::ForEachMSAction> fomAction(new rfiStrategy::ForEachMSAction());
-		if(readMode.IsSet())
-			fomAction->SetIOMode(readMode);
-		if(readUVW.IsSet())
-			fomAction->SetReadUVW(readUVW);
-		if(dataColumn.IsSet())
-			fomAction->SetDataColumnName(dataColumn);
+		if(readMode)
+			fomAction->SetIOMode(readMode.get());
+		if(readUVW)
+			fomAction->SetReadUVW(readUVW.get());
+		if(dataColumn)
+			fomAction->SetDataColumnName(dataColumn.get());
+		if(interval)
+			fomAction->SetInterval(interval.get().first, interval.get().second);
+		fomAction->SetMaxIntervalSize(maxIntervalSize);
 		if(!bands.empty())
 			fomAction->Bands() = bands;
 		if(!fields.empty())
 			fomAction->Fields() = fields;
-		if(combineSPWs.IsSet())
-			fomAction->SetCombineSPWs(combineSPWs);
-		if(bandpass.IsSet())
-			fomAction->SetBandpassFilename(bandpass);
+		if(combineSPWs)
+			fomAction->SetCombineSPWs(combineSPWs.get());
+		if(bandpass)
+			fomAction->SetBandpassFilename(bandpass.get());
 		std::stringstream commandLineStr;
 		commandLineStr << argv[0];
 		for(int i=1;i<argc;++i)
@@ -281,27 +302,27 @@ int main(int argc, char **argv)
 			commandLineStr << " \"" << argv[i] << '\"';
 		}
 		fomAction->SetCommandLineForHistory(commandLineStr.str());
-		if(skipFlagged.IsSet())
-			fomAction->SetSkipIfAlreadyProcessed(skipFlagged);
+		if(skipFlagged)
+			fomAction->SetSkipIfAlreadyProcessed(skipFlagged.get());
 		for(int i=parameterIndex;i<argc;++i)
 		{
 			Logger::Debug << "Adding '" << argv[i] << "'\n";
 			fomAction->Filenames().push_back(argv[i]);
 		}
 		
-		if(strategyFile.IsSet())
+		if(strategyFile)
 		{
 			fomAction->SetLoadOptimizedStrategy(false);
 			rfiStrategy::StrategyReader reader;
 			std::unique_ptr<rfiStrategy::Strategy> subStrategy;
 			try {
-				Logger::Debug << "Opening strategy file '" << strategyFile.Value() << "'\n";
-				subStrategy = reader.CreateStrategyFromFile(strategyFile);
+				Logger::Debug << "Opening strategy file '" << strategyFile.get() << "'\n";
+				subStrategy = reader.CreateStrategyFromFile(strategyFile.get());
 				Logger::Debug << "Strategy parsed succesfully.\n";
 			} catch(std::exception &e)
 			{
 				Logger::Error <<
-					"ERROR: Reading strategy file \"" << strategyFile.Value() << "\" failed! This\n"
+					"ERROR: Reading strategy file \"" << strategyFile.get() << "\" failed! This\n"
 					"might be caused by a change in the file format of the strategy file after you\n"
 					"created the strategy file.\n"
 					"Try recreating the file.\n"
@@ -319,14 +340,14 @@ int main(int argc, char **argv)
 			else {
 				fomAction->Add(std::move(subStrategy));
 			}
-			if(threadCount.IsSet())
-				rfiStrategy::Strategy::SetThreadCount(*fomAction, threadCount);
+			if(threadCount)
+				rfiStrategy::Strategy::SetThreadCount(*fomAction, threadCount.get());
 		}
 		else {
 			fomAction->SetLoadOptimizedStrategy(true);
 			fomAction->Add(std::unique_ptr<rfiStrategy::Strategy>(new rfiStrategy::Strategy())); // This helps the progress reader to determine progress
-			if(threadCount.IsSet())
-				fomAction->SetLoadStrategyThreadCount(threadCount);
+			if(threadCount)
+				fomAction->SetLoadStrategyThreadCount(threadCount.get());
 		}
 		
 		rfiStrategy::Strategy overallStrategy;

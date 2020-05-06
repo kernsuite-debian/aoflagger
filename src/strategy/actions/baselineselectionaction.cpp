@@ -98,12 +98,12 @@ namespace rfiStrategy {
 		ImageSet& imageSet = artifacts.ImageSet();
 		BaselineReaderPtr reader = dynamic_cast<MSImageSet&>(imageSet).Reader();
 
-		size_t scans = reader->Set().GetObservationTimesSet().size();
+		size_t scans = reader->MetaData().GetObservationTimesSet().size();
 
 		for(std::vector<BaselineSelector::SingleBaselineInfo>::const_iterator i=baselines.begin();
 			i!=baselines.end();++i)
 		{
-			size_t frequencyCount = reader->Set().FrequencyCount(i->band);
+			size_t frequencyCount = reader->MetaData().FrequencyCount(i->band);
 			Mask2DPtr flaggedMask = Mask2D::CreateSetMaskPtr<true>(scans, frequencyCount);
 			std::vector<Mask2DCPtr> masks;
 			for(size_t p=0;p<reader->Polarizations().size();++p)

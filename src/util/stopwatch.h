@@ -12,7 +12,7 @@ class Stopwatch{
 		~Stopwatch();
 		void Start();
 		void Pause();
-		void Reset();
+		void Reset(bool start = false);
 
 		std::string ToString() const;
 		std::string ToShortString() const;

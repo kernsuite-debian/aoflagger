@@ -10,6 +10,14 @@
 class SumThreshold
 {
 public:
+	struct VerticalScratch
+	{
+		VerticalScratch(size_t width, size_t height);
+		std::unique_ptr<int[], decltype(&free)> lastFlaggedPos;
+		std::unique_ptr<num_t[], decltype(&free)> sum;
+		std::unique_ptr<int[], decltype(&free)> count;
+	};
+
 	template<size_t Length>
 	static void Horizontal(const Image2D* input, Mask2D* mask, num_t threshold);
 	
@@ -36,6 +44,17 @@ public:
 	static void VerticalLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 	
 	static void VerticalLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold);
+	
+	static void HorizontalAVXDumas(const Image2D* input, Mask2D* mask, size_t length, num_t threshold);
+
+	static void VerticalAVXDumas(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, size_t length, num_t threshold);
+	
+	template<size_t Length>
+	static void HorizontalAVXDumas(const Image2D* input, Mask2D* mask, num_t threshold);
+	
+	template<size_t Length>
+	static void VerticalAVXDumas(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+	
 #endif
 	
 	template<size_t Length>
@@ -48,10 +67,10 @@ public:
 		VerticalLarge<Length>(input, mask, vThreshold);
 	}
 	
-	static void VerticalLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
+	static void VerticalLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, VerticalScratch* vScratch, size_t length, num_t threshold)
 	{
 #if defined(__AVX2__)
-		VerticalLargeAVX(input, mask, scratch, length, threshold);
+		VerticalAVXDumas(input, mask, vScratch, length, threshold);
 #elif defined(__SSE__)
 		VerticalLargeSSE(input, mask, scratch, length, threshold);
 #else
@@ -65,7 +84,12 @@ public:
 	
 	static void HorizontalLarge(const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length, num_t threshold)
 	{
-#ifdef __SSE__
+#if defined(__AVX2__)
+		if(length >= 64)
+			HorizontalAVXDumas(input, mask, length, threshold);
+		else
+			HorizontalLargeSSE(input, mask, scratch, length, threshold);
+#elif defined(__SSE__)
 		HorizontalLargeSSE(input, mask, scratch, length, threshold);
 #else
 		HorizontalLargeReference(input, mask, scratch, length, threshold);

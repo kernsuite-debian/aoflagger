@@ -3,7 +3,7 @@
 #include "strategy/algorithms/antennaselector.h"
 #include "strategy/algorithms/baselineselector.h"
 
-#include "structures/measurementset.h"
+#include "structures/msmetadata.h"
 
 #include "quality/defaultstatistics.h"
 #include "quality/histogramcollection.h"
@@ -37,7 +37,7 @@ StatisticsCollection load(const std::string& filename, std::vector<AntennaInfo>&
 		antennae = commander.Antennas();
 	}
 	else {
-		MeasurementSet ms(filename);
+		MSMetaData ms(filename);
 		const unsigned polarizationCount = ms.PolarizationCount();
 		
 		statisticsCollection.SetPolarizationCount(polarizationCount);
@@ -153,7 +153,8 @@ void printSyntax(std::ostream &stream, char *argv[])
 		"\n"
 		"Options:\n"
 		"-flag\n"
-		"  Will also flag all antennas in the measurement set.\n"
+		"  Will not only show statistics, but also flag the antennas that are found\n"
+		"  to be bad in the measurement set.\n"
 		"  (this only works if the given filename is a measurement set, not a .ref).\n"
 		"-method <stddev / percentage>\n"
 		"  Select detection method. Method 'stddev' is the default, and simply detects\n"

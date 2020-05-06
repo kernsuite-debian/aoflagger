@@ -61,6 +61,7 @@ class StrategyReader {
 		std::unique_ptr<Action> parseNormalizeVarianceAction(xmlNode* node);
 		std::unique_ptr<Action> parsePlotAction(xmlNode* node);
 		std::unique_ptr<Action> parseQuickCalibrateAction(xmlNode* node);
+		std::unique_ptr<Action> parseRestoreChannelRangeAction(xmlNode* node);
 		std::unique_ptr<Action> parseSetFlaggingAction(xmlNode* node);
 		std::unique_ptr<Action> parseSetImageAction(xmlNode* node);
 		std::unique_ptr<Action> parseSlidingWindowFitAction(xmlNode* node);

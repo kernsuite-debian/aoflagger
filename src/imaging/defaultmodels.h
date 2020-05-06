@@ -48,7 +48,7 @@ class DefaultModels {
 					break;
 			}
 			WSRTObservatorium wsrtObservatorium(channelCount, bandwidth);
-			return model.SimulateObservation(wsrtObservatorium, dec, ra, a1, a2);
+			return model.SimulateObservation(12*60*60/15, wsrtObservatorium, dec, ra, a1, a2);
 		}
 	
 	private:

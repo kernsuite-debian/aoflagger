@@ -14,7 +14,7 @@
 #include <gtkmm/main.h>
 #include <gtkmm/messagedialog.h>
 
-#include "../structures/measurementset.h"
+#include "../structures/msmetadata.h"
 
 #include "../quality/histogramtablesformatter.h"
 #include "../quality/histogramcollection.h"

@@ -89,6 +89,7 @@ namespace rfiStrategy {
 				_writeFlagsIndex.reset();
 			}
 			virtual std::string BaselineDescription() = 0;
+			virtual bool HasCrossCorrelations() const override { return false; }
 			
 		private:
 			int _readCount;

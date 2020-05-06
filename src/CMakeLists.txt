@@ -22,10 +22,10 @@ else()
 	endif(COMPILER_SUPPORTS_MARCH_NATIVE)
 endif(PORTABLE)
 
-CHECK_CXX_COMPILER_FLAG("-Wsuggest-override" COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
-if(COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
-endif(COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
+#CHECK_CXX_COMPILER_FLAG("-Wsuggest-override" COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
+#if(COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
+#endif(COMPILER_SUPPORTS_SUGGEST_OVERRIDE)
 
 if(HAVE_POSIX_FALLOCATE)
   add_definitions(-DHAVE_POSIX_FALLOCATE)
@@ -90,6 +90,7 @@ set(GUI_FILES
   rfigui/plotframe.cpp
   rfigui/plotwindow.cpp
   rfigui/progresswindow.cpp
+  rfigui/rfiguimenu.cpp
   rfigui/rfiguiwindow.cpp
   rfigui/strategywizardwindow.cpp
   strategy/plots/rfiplots.cpp
@@ -102,6 +103,11 @@ set(IMAGING_FILES
 
 set(INTERFACE_FILES
   interface/aoflagger.cpp)
+  
+set(LUA_FILES
+  lua/data.cpp
+  lua/functions.cpp
+  lua/luastrategy.cpp)
   
 set(MSIO_FILES
   msio/baselinematrixloader.cpp
@@ -119,7 +125,8 @@ set(STRUCTURES_FILES
   structures/colormap.cpp
   structures/image2d.cpp
   structures/mask2d.cpp
-  structures/measurementset.cpp
+  structures/msiterator.cpp
+  structures/msmetadata.cpp
   structures/samplerow.cpp
   structures/stokesimager.cpp
   structures/timefrequencydata.cpp)
@@ -133,7 +140,6 @@ set(QUALITY_FILES
 
 set(STRATEGY_ACTION_FILES
   strategy/actions/baselineselectionaction.cpp
-  strategy/actions/calibratebandpassaction.cpp
   strategy/actions/changeresolutionaction.cpp
   strategy/actions/foreachbaselineaction.cpp
   strategy/actions/foreachmsaction.cpp
@@ -237,15 +243,16 @@ set(ALL_LIBRARIES
 	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
 	${Boost_SYSTEM_LIBRARY}
 	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
-#	${Boost_PYTHON-PY36_LIBRARIES}
-	${Boost_PYTHON_LIBRARIES}
+	${Boost_PYTHON3_LIBRARIES}
+	${Boost_NUMPY3_LIBRARIES}
 	${FFTW3_LIB}
 	${CASACORE_LIBRARIES}
 	${LAPACK_lapack_LIBRARY}
 	${CFITSIO_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT}
 	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
-	${PYTHON_LIBRARIES})
+	${PYTHON_LIBRARIES}
+	${LUA_LIBRARIES})
 
 if(GTKMM_FOUND)
 	message(STATUS "GTKMM found.") 
@@ -264,7 +271,7 @@ endif(SIGCXX_FOUND)
 if(GTKMM_FOUND)
 	set(AOFLAGGER_PLOT_FILES ${PLOT_FILES})
 endif(GTKMM_FOUND)
-add_library(aoflagger SHARED ${AOFLAGGER_PLOT_FILES} ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES} ${PYTHON_FILES})
+add_library(aoflagger SHARED ${AOFLAGGER_PLOT_FILES} ${IMAGING_FILES} ${INTERFACE_FILES} ${LUA_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES} ${PYTHON_FILES})
 set_target_properties(aoflagger PROPERTIES SOVERSION 0)
 target_link_libraries(aoflagger ${ALL_LIBRARIES})
 
@@ -307,6 +314,8 @@ endif(GTKMM_FOUND)
 add_executable(aoflagger-bin aoflagger.cpp)
 set_target_properties(aoflagger-bin PROPERTIES OUTPUT_NAME aoflagger)
 
+add_executable(aolua aolua.cpp aoluarunner/runner.cpp aoluarunner/baselineiterator.cpp aoluarunner/writethread.cpp)
+
 add_executable(msinfo msinfo.cpp)
 
 add_executable(colormapper colormapper.cpp)
@@ -321,7 +330,10 @@ add_custom_target(check COMMAND aotest DEPENDS aotest)
 
 # Installation commands
 if(GTKMM_FOUND)
-	install (TARGETS rfigui aoqplot DESTINATION bin)
+	install (TARGETS rfigui DESTINATION bin)
+	if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND)
+		install (TARGETS aoqplot DESTINATION bin)
+	endif()
 endif(GTKMM_FOUND)
 
 if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
@@ -329,5 +341,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
 endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
 
 install (TARGETS aoflagger-bin DESTINATION bin)
-install (TARGETS aoflagger DESTINATION lib) 
+install (TARGETS aolua DESTINATION bin)
+install (TARGETS aoflagger python_aoflagger DESTINATION lib) 
 install (FILES interface/aoflagger.h DESTINATION include)

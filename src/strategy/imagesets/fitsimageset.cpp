@@ -17,7 +17,8 @@ namespace rfiStrategy {
 		ImageSet(),
 		_file(new FitsFile(file)),
 		_currentBaselineIndex(0),
-		_frequencyOffset(0.0)
+		_frequencyOffset(0.0),
+		_fitsType(UVFitsType)
 	{
 		_file->Open(FitsFile::ReadWriteMode);
 	}
@@ -33,7 +34,8 @@ namespace rfiStrategy {
 		_currentBaselineIndex(source._currentBaselineIndex),
 		_currentBandIndex(source._currentBandIndex),
 		_frequencyOffset(source._frequencyOffset),
-		_baselineData(source._baselineData)
+		_baselineData(source._baselineData),
+		_fitsType(source._fitsType)
 	{
 	}
 	
@@ -48,11 +50,17 @@ namespace rfiStrategy {
 
 	void FitsImageSet::Initialize()
 	{
-		//Logger::Debug << "Keyword count: " << _file->GetKeywordCount() << '\n';
 		if(_file->HasGroups())
+			_fitsType = UVFitsType;
+		else if(_file->GetHDUCount() > 1)
+			_fitsType = SDFitsType;
+		else
+			_fitsType = DynSpectrumType;
+
+		switch(_fitsType)
 		{
+		case UVFitsType: {
 			Logger::Debug << "This file has " << _file->GetGroupCount() << " groups with " << _file->GetParameterCount() << " parameters.\n";
-			//Logger::Debug << "Group size: " << _file->GetGroupSize() << '\n';
 			_file->MoveToHDU(1);
 			if(_file->GetCurrentHDUType() != FitsFile::ImageHDUType)
 				throw FitsIOException("Primary table is not a grouped image");
@@ -72,9 +80,9 @@ namespace rfiStrategy {
 			for(std::set<std::pair<size_t,size_t> >::const_iterator i=baselineSet.begin();i!=baselineSet.end();++i)
 				_baselines.push_back(*i);
 			_bandCount = _file->GetCurrentImageSize(5);
-		} else {
-			// sdfits
-			
+		} break;
+		
+		case SDFitsType: {
 			_baselines.push_back(std::pair<size_t,size_t>(0, 0));
       AntennaInfo antenna;
       antenna.id = 0;
@@ -101,12 +109,34 @@ namespace rfiStrategy {
 			Logger::Debug << _bandCount << " IF's in set: [" << *ifSet.begin();
 			for(int i : ifSet)
 			{
-				_bandInfos.insert(std::pair<int, BandInfo>(i, BandInfo()));
+				_bandInfos.emplace(i, BandInfo());
 				if(_bandIndexToNumber.size()>0)
 					Logger::Debug << ", " << i;
 				_bandIndexToNumber.push_back(i);
 			}
 			Logger::Debug << "]\n";
+		} break;
+		
+		case DynSpectrumType:
+			_baselines.push_back(std::pair<size_t,size_t>(0, 0));
+      AntennaInfo antenna;
+      antenna.id = 0;
+			antenna.name = "";
+			size_t height = _file->GetCurrentImageSize(2);
+			_antennaInfos.emplace_back(antenna);
+			_bandCount = 1;
+			_bandInfos.emplace(0, BandInfo());
+			_bandInfos[0].channels.resize(height);
+			double freq0 = _file->GetDoubleKeywordValue("CRVAL2");
+			double freqDelta = _file->GetDoubleKeywordValue("CDELT2");
+			_sourceName = _file->GetKeywordValue("SOURCE");
+			for(size_t i=0; i!=_bandInfos[0].channels.size(); ++i)
+			{
+				_bandInfos[0].channels[i].frequencyHz = freq0 + i*freqDelta;
+				_bandInfos[0].channels[i].frequencyIndex = i;
+			}
+			_file->MoveToHDU(1);
+			break;
 		}
 	}
 
@@ -118,10 +148,18 @@ namespace rfiStrategy {
 		_file->MoveToHDU(1);
 		TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
 		TimeFrequencyData data;
-		if(_file->HasGroups())
+		switch(_fitsType) {
+		case UVFitsType:
 			data = ReadPrimaryGroupTable(fitsIndex._baselineIndex, fitsIndex._band, 0, *metaData);
-		else
+			break;
+		case SDFitsType:
 			ReadPrimarySingleTable(data, *metaData);
+			break;
+		case DynSpectrumType:
+			ReadDynSpectrum(data, *metaData);
+			return BaselineData(data, metaData, index);
+		}
+		
 		for(int hduIndex=2;hduIndex <= _file->GetHDUCount();hduIndex++)
 		{
 			_file->MoveToHDU(hduIndex);
@@ -141,20 +179,20 @@ namespace rfiStrategy {
 			}
 		}
 		
-		if(_file->HasGroups())
+		if(_fitsType == UVFitsType)
 		{
 			_currentBaselineIndex = fitsIndex._baselineIndex;
 			_currentBandIndex = fitsIndex._band;
 			int bandNumber = _bandIndexToNumber[fitsIndex._band];
 			metaData->SetBand(_bandInfos[bandNumber]);
-      metaData->SetAntenna1(_antennaInfos[_baselines[_currentBaselineIndex].first]);
-      metaData->SetAntenna2(_antennaInfos[_baselines[_currentBaselineIndex].second]);
+			metaData->SetAntenna1(_antennaInfos[_baselines[_currentBaselineIndex].first]);
+			metaData->SetAntenna2(_antennaInfos[_baselines[_currentBaselineIndex].second]);
 			Logger::Debug << "Loaded metadata for: " << Date::AipsMJDToString(metaData->ObservationTimes()[0]) << ", band " << bandNumber << " (" << Frequency::ToString(_bandInfos[bandNumber].channels[0].frequencyHz) << " - " << Frequency::ToString(_bandInfos[bandNumber].channels.rbegin()->frequencyHz) << ")\n";
 		}
 		else {
-      metaData->SetAntenna1(_antennaInfos[0]);
-      metaData->SetAntenna2(_antennaInfos[0]);
-    }
+			metaData->SetAntenna1(_antennaInfos[0]);
+			metaData->SetAntenna2(_antennaInfos[0]);
+		}
 		return BaselineData(data, metaData, index);
 	}
 
@@ -165,10 +203,6 @@ namespace rfiStrategy {
 
 		std::vector<double> observationTimes;
 		std::vector<UVW> uvws;
-
-		//int keywordCount = _file->GetKeywordCount();
-		//for(int i=1;i<=keywordCount;++i)
-		//	Logger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
 
 		std::vector<long double> parameters(_file->GetParameterCount());
 		int baseline = (_baselines[baselineIndex].first+1) + ((_baselines[baselineIndex].second+1)<<8);
@@ -260,22 +294,11 @@ namespace rfiStrategy {
 
 	void FitsImageSet::ReadPrimarySingleTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData)
 	{
-		//int keywordCount = _file->GetKeywordCount();
-		//for(int i=1;i<=keywordCount;++i)
-		//	Logger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
 	}
 	
 	void FitsImageSet::ReadTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData, size_t bandIndex)
 	{
-		//Logger::Debug << "Row count: " << _file->GetRowCount() << '\n';
-		//Logger::Debug << "Column count: " << _file->GetColumnCount() << '\n';
-		//for(int i= 1;i <= _file->GetColumnCount(); ++i)
-		//{
-		//	Logger::Debug << "Column type " << i << ": " << _file->GetColumnType(i) << '\n';
-		//}
 		std::string extName = _file->GetKeywordValue("EXTNAME");
-		//for(int i=1;i<=_file->GetKeywordCount();++i)
-		//	Logger::Debug << "Keyword " << i << ": " << _file->GetKeyword(i) << "=" << _file->GetKeywordValue(i) << " ("  << _file->GetKeywordComment(i) << ")\n";
 		if(extName == "AIPS AN")
 			ReadAntennaTable(metaData);
 		else if(extName == "AIPS FQ")
@@ -359,6 +382,53 @@ namespace rfiStrategy {
 	void FitsImageSet::ReadCalibrationTable()
 	{
 		Logger::Debug << "Found calibration table with " << _file->GetRowCount() << " rows.\n";
+	}
+	
+	void FitsImageSet::ReadDynSpectrum(TimeFrequencyData& data, TimeFrequencyMetaData& metaData)
+	{
+		_file->MoveToHDU(1);
+		size_t width = _file->GetCurrentImageSize(1);
+		size_t height = _file->GetCurrentImageSize(2);
+		size_t npol = _file->GetCurrentImageSize(3);
+		Logger::Debug << "Reading fits file with dynspectrum, " <<  width << " x " << height << " x " << npol << "\n";
+		if(npol != 4)
+			throw std::runtime_error("Expected four polarizations in dynamic spectrum fits file");
+		size_t n = width * height * npol;
+		std::vector<num_t> buffer(n);
+		_file->ReadCurrentImageData(0, buffer.data(), n);
+		Image2DPtr imgs[4];
+		for(size_t i=0; i!=4; ++i)
+			imgs[i] = Image2D::CreateUnsetImagePtr(width, height);
+		Mask2DPtr flags = Mask2D::CreateSetMask<false>(width, height);
+		std::vector<num_t>::const_iterator bufferIter = buffer.begin();
+		for(size_t j=0; j!=npol; ++j)
+		{
+			for(size_t y=0; y!=height; ++y)
+			{
+				for(size_t x=0; x!=width; ++x)
+				{
+					imgs[j]->SetValue(x, y, *bufferIter);
+					if(!std::isfinite(*bufferIter))
+						flags->SetValue(x, y, true);
+					++bufferIter;
+				}
+			}
+		}
+		data = TimeFrequencyData::MakeFromPolarizationCombination(
+			TimeFrequencyData(TimeFrequencyData::RealPart, Polarization::StokesI, imgs[0]),
+			TimeFrequencyData(TimeFrequencyData::RealPart, Polarization::StokesQ, imgs[1]),
+			TimeFrequencyData(TimeFrequencyData::RealPart, Polarization::StokesU, imgs[2]),
+			TimeFrequencyData(TimeFrequencyData::RealPart, Polarization::StokesV, imgs[3])
+		);
+		data.SetGlobalMask(flags);
+		metaData.SetBand(_bandInfos[0]);
+		metaData.SetAntenna1(_antennaInfos[0]);
+		metaData.SetAntenna2(_antennaInfos[0]);
+		std::vector<double> times(width);
+		double timeDelta = _file->GetDoubleKeywordValue("CDELT1");
+		for(size_t i=0; i!=width; ++i)
+			times[i] = timeDelta * i;
+		metaData.SetObservationTimes(times);
 	}
 	
 	void FitsImageSet::ReadSingleDishTable(TimeFrequencyData &data, TimeFrequencyMetaData &metaData, size_t ifIndex)
@@ -515,22 +585,33 @@ namespace rfiStrategy {
 	
 	void FitsImageSet::AddWriteFlagsTask(const ImageSetIndex &index, std::vector<Mask2DCPtr> &flags)
 	{
-		if(_file->HasGroups())
-			throw BadUsageException("Not implemented for grouped fits files");
-		else
+		switch(_fitsType)
+		{
+		case UVFitsType:
+			throw BadUsageException("Not implemented for UV fits files");
+		case SDFitsType:
 			saveSingleDishFlags(flags, static_cast<const FitsImageSetIndex&>(index)._band);
+			break;
+		case DynSpectrumType:
+			saveDynSpectrumFlags(flags);
+			break;
+		}
 	}
 
 	void FitsImageSet::PerformWriteFlagsTask()
 	{
-		if(_file->HasGroups())
-			throw BadUsageException("Not implemented for grouped fits files");
-		else {
+		switch(_fitsType)
+		{
+		case UVFitsType:
+			throw BadUsageException("Writing flags not implemented for UV fits files");
+		case SDFitsType:
+		case DynSpectrumType:
 			// Nothing to be done; Add..Task already wrote the flags.
+			break;
 		}
 	}
 	
-	void FitsImageSet::saveSingleDishFlags(std::vector<Mask2DCPtr> &flags, size_t ifIndex)
+	void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr>& flags, size_t ifIndex)
 	{
 		_file->Close();
 		_file->Open(FitsFile::ReadWriteMode);
@@ -604,6 +685,37 @@ namespace rfiStrategy {
 		}
 	}
 	
+	void FitsImageSet::saveDynSpectrumFlags(const std::vector<Mask2DCPtr>& flags)
+	{
+		Logger::Debug << "Writing dynspectrum flags.\n";
+		_file->Close();
+		_file->Open(FitsFile::ReadWriteMode);
+		_file->MoveToHDU(1);
+			
+		size_t width = _file->GetCurrentImageSize(1);
+		size_t height = _file->GetCurrentImageSize(2);
+		size_t npol = _file->GetCurrentImageSize(3);
+		size_t n = width * height * npol;
+		std::vector<num_t> buffer(n);
+		_file->ReadCurrentImageData(0, buffer.data(), buffer.size());
+		
+		std::vector<num_t>::iterator bufferIter = buffer.begin();
+		for(size_t j=0; j!=npol; ++j)
+		{
+			for(size_t y=0; y!=height; ++y)
+			{
+				for(size_t x=0; x!=width; ++x)
+				{
+					if(flags[j]->Value(x, y))
+						*bufferIter = std::numeric_limits<num_t>::quiet_NaN();
+					++bufferIter;
+				}
+			}
+		}
+		
+		_file->WriteImage(0, buffer.data(), buffer.size(), std::numeric_limits<num_t>::quiet_NaN());
+	}
+	
 	void FitsImageSetIndex::Previous()
 	{
 		if(_baselineIndex > 0)
@@ -636,13 +748,19 @@ namespace rfiStrategy {
 
 	std::string FitsImageSetIndex::Description() const {
 		FitsImageSet &set = static_cast<class FitsImageSet&>(imageSet());
-		int a1 = set.Baselines()[_baselineIndex].first;
-		int a2 = set.Baselines()[_baselineIndex].second;
-		AntennaInfo info1 = set.GetAntennaInfo(a1);
-		AntennaInfo info2 = set.GetAntennaInfo(a2);
-		std::stringstream s;
-		s << "Correlation " << info1.name << " x " << info2.name << ", band " << _band;
-		return s.str();
+		if(set.IsDynSpectrumType())
+		{
+			return set.SourceName();
+		}
+		else {
+			int a1 = set.Baselines()[_baselineIndex].first;
+			int a2 = set.Baselines()[_baselineIndex].second;
+			AntennaInfo info1 = set.GetAntennaInfo(a1);
+			AntennaInfo info2 = set.GetAntennaInfo(a2);
+			std::stringstream s;
+			s << "Correlation " << info1.name << " x " << info2.name << ", band " << _band;
+			return s.str();
+		}
 	}
 
 	std::string FitsImageSet::File()
@@ -652,13 +770,19 @@ namespace rfiStrategy {
 	
 	std::string FitsImageSet::TelescopeName()
 	{
-		for(int hduIndex=2; hduIndex <= _file->GetHDUCount(); hduIndex++)
+		if(_fitsType == SDFitsType)
 		{
-			_file->MoveToHDU(hduIndex);
-			std::string extName = _file->GetKeywordValue("EXTNAME");
-			if(extName == "SINGLE DISH")
-				return _file->GetKeywordValue("TELESCOP");
+			for(int hduIndex=2; hduIndex <= _file->GetHDUCount(); hduIndex++)
+			{
+				_file->MoveToHDU(hduIndex);
+				std::string extName = _file->GetKeywordValue("EXTNAME");
+				if(extName == "SINGLE DISH")
+					return _file->GetKeywordValue("TELESCOP");
+			}
+			return "";
 		}
-		return "";
+		else {
+			return "DynSpectrum";
+		}
 	}
 }

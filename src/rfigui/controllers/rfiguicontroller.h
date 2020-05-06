@@ -9,9 +9,13 @@
 #include "../../strategy/control/pythonstrategy.h"
 #include "../../strategy/control/types.h"
 
+#include "../../lua/luastrategy.h"
+
 #include "imagecomparisoncontroller.h"
 
 #include <mutex>
+
+#include <boost/optional/optional.hpp>
 
 class RFIGuiController
 {
@@ -133,7 +137,7 @@ class RFIGuiController
 		void PlotTimeScatterComparison();
 		void PlotSingularValues();
 		
-		void Open(const std::vector<std::string>& filenames, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW);
+		void Open(const std::vector<std::string>& filenames, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW, std::pair<boost::optional<size_t>,boost::optional<size_t>> interval);
 		
 		void OpenTestSet(unsigned index, bool gaussianTestSets);
 		
@@ -147,6 +151,7 @@ class RFIGuiController
 		class PlotManager &PlotManager() { return *_plotManager; }
 		
 		void ExecutePythonStrategy();
+		void ExecuteLuaStrategy();
 		
  		bool HasImageSet() const { return _imageSet != nullptr; }
  		
