@@ -1,2 +1,2 @@
-#Build-shared-lib-with-SONAME-and-SOVERSION.patch
 Disable-special-RPATH-handling.patch
+Install-libaoflagger.so-into-multi-arch-path.patch

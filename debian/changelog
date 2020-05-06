@@ -1,36 +1,46 @@
-aoflagger (2.14.0-1kern2) bionic; urgency=medium
-
-  * add all binaries
-
- -- KERN packaging <packaging@kernsuite.info>  Fri, 22 Mar 2019 10:57:39 +0100
-
-aoflagger (2.14.0-1) bionic; urgency=medium
+aoflagger (2.15.0-1kern1) bionic; urgency=medium
 
   [ Gijs Molenaar ]
-  * New upstream version 2.14.0
+  * Backport latest debian version to bionic
 
- -- KERN packaging <packaging@kernsuite.info>  Fri, 15 Mar 2019 14:36:17 +0100
+ -- KERN packaging <packaging@kernsuite.info>  Wed, 06 May 2020 10:14:32 +0200
 
-aoflagger (2.13.0-1) bionic; urgency=medium
+aoflagger (2.15.0-1) unstable; urgency=low
 
-  [ Gijs Molenaar ]
+  * Add gitlab-ci.yml for salsa
+  * New upstream version 2.15.0
+  * Drop patches that were applied upstream
+  * Push Standards-Version to 4.5.0. No changes required
+  * New build dependency liblua5.3-dev
+  * Remove static lib from aoflagger-dev
+
+ -- Ole Streicher <olebole@debian.org>  Wed, 26 Feb 2020 08:55:10 +0100
+
+aoflagger (2.14.0-2) unstable; urgency=low
+
+  * Switch to Python 3. (Closes: #936122)
+
+ -- Ole Streicher <olebole@debian.org>  Fri, 30 Aug 2019 13:45:18 +0200
+
+aoflagger (2.14.0-1) unstable; urgency=low
+
+  * New upstream version 2.14.0. Rediff patches
+  * Push Standards-Version to 4.4.0. No changes required.
+  * Push compat to 12; switch to debhelper-compat
+
+ -- Ole Streicher <olebole@debian.org>  Thu, 25 Jul 2019 00:50:27 +0200
+
+aoflagger (2.13.0-1) unstable; urgency=low
+
   * New upstream version 2.13.0
 
- -- KERN packaging <packaging@kernsuite.info>  Wed, 07 Nov 2018 17:02:36 +0100
-
-aoflagger (2.12.1-2kern1) bionic; urgency=medium
-
-  [ Gijs Molenaar ]
-  * rebuild for KERN
-
- -- KERN packaging <packaging@kernsuite.info>  Thu, 27 Sep 2018 14:58:27 +0200
+ -- Ole Streicher <olebole@debian.org>  Thu, 08 Nov 2018 13:31:16 +0100
 
 aoflagger (2.12.1-2) unstable; urgency=medium
 
-  [ Ole Streicher ]
   * Use float-store=true instead of SSE on i386 (Closes: #908384)
 
- -- KERN packaging <packaging@kernsuite.info>  Thu, 27 Sep 2018 14:58:23 +0200
+ -- Ole Streicher <olebole@debian.org>  Mon, 10 Sep 2018 10:55:18 +0200
 
 aoflagger (2.12.1-1) unstable; urgency=medium
 

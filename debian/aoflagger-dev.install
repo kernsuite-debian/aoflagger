@@ -1,2 +1,2 @@
 usr/include
-usr/lib/libaoflagger.so
+usr/lib/*/libaoflagger.so

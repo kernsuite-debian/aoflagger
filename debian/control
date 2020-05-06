@@ -13,19 +13,21 @@ Build-Depends: casacore-dev,
                libboost-date-time-dev,
                libboost-dev,
                libboost-filesystem-dev,
+               libboost-numpy-dev,
                libboost-python-dev,
                libboost-signals-dev,
                libboost-system-dev,
                libboost-thread-dev,
-               libcfitsio-dev | libcfitsio3-dev,
+               libcfitsio-dev,
                libfftw3-dev,
                libgtkmm-3.0-dev,
                liblapack-dev,
+               liblua5.3-dev,
                libpng-dev,
-               libpython-dev,
+               libpython3-dev,
                libxml2-dev,
                zlib1g-dev
-Standards-Version: 4.2.1
+Standards-Version: 4.5.0
 Vcs-Git: https://salsa.debian.org/debian-astro-team/aoflagger.git
 Vcs-Browser: https://salsa.debian.org/debian-astro-team/aoflagger
 Homepage: https://sourceforge.net/projects/aoflagger/
@@ -81,5 +83,5 @@ Description: Find RFI in radio astronomical observations (development files)
  strategy. The preferred input file format is the Casa Measurement Set (MS)
  format.
  .
- This package contains static library and the header file to compile
- own programs against the library.
+ This package contains the header file to compile own programs against
+ the library.
