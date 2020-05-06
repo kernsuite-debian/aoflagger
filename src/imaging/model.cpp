@@ -44,14 +44,14 @@ void Model::SimulateObservation(struct OutputReceiver<T> &receiver, Observatoriu
 template void Model::SimulateObservation(struct OutputReceiver<UVImager> &receiver, Observatorium &observatorium, num_t delayDirectionDEC, num_t delayDirectionRA);
 template void Model::SimulateObservation(struct OutputReceiver<TimeFrequencyData> &receiver, Observatorium &observatorium, num_t delayDirectionDEC, num_t delayDirectionRA);
 
-std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservation(class Observatorium &observatorium, num_t delayDirectionDEC, num_t delayDirectionRA, size_t a1, size_t a2)
+std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservation(size_t nTimes, class Observatorium &observatorium, num_t delayDirectionDEC, num_t delayDirectionRA, size_t a1, size_t a2)
 {
 	const size_t channelCount = observatorium.BandInfo().channels.size();
 	const double frequency = observatorium.BandInfo().channels[0].frequencyHz;
 	
 	OutputReceiver<TimeFrequencyData> tfOutputter;
-	tfOutputter._real = Image2D::CreateZeroImagePtr((size_t) (12*60*60/_integrationTime), channelCount);
-	tfOutputter._imaginary = Image2D::CreateZeroImagePtr((size_t) (12*60*60/_integrationTime), channelCount);
+	tfOutputter._real = Image2D::CreateZeroImagePtr(nTimes, channelCount);
+	tfOutputter._imaginary = Image2D::CreateZeroImagePtr(nTimes, channelCount);
 	
 	TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
 	metaData->SetAntenna1(observatorium.GetAntenna(a1));
@@ -66,14 +66,15 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservatio
 	{
 		double channelFrequency = frequency + observatorium.ChannelWidthHz() * f;
 		tfOutputter.SetY(f);
-		SimulateCorrelation(tfOutputter, delayDirectionDEC, delayDirectionRA, dx, dy, dz, channelFrequency, observatorium.ChannelWidthHz(), 12*60*60, _integrationTime);
+		SimulateCorrelation(tfOutputter, delayDirectionDEC, delayDirectionRA, dx, dy, dz, channelFrequency, observatorium.ChannelWidthHz(), _integrationTime*nTimes, _integrationTime);
 	}
 
 	std::vector<double> times;
 	std::vector<UVW> uvws;
 	num_t wavelength = 1.0L / frequency;
-	for(num_t t=0.0;t<12*60*60;t+=_integrationTime)
+	for(size_t i=0; i!=nTimes; ++i)
 	{
+		double t = _integrationTime * i;
 		times.push_back(t);
 		num_t earthLattitudeApprox = t*M_PIn/(12.0*60.0*60.0);
 		UVW uvw;
@@ -98,13 +99,14 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> Model::SimulateObservatio
 }
 
 template<typename T>
-void Model::SimulateCorrelation(struct OutputReceiver<T> &receiver, num_t delayDirectionDEC, num_t delayDirectionRA, num_t dx, num_t dy, num_t dz, num_t frequency, num_t channelWidth, double totalTime, double integrationTime)
+void Model::SimulateCorrelation(struct OutputReceiver<T> &receiver, num_t delayDirectionDEC, num_t delayDirectionRA, num_t dx, num_t dy, num_t dz, num_t frequency, num_t channelWidth, size_t nTimes, double integrationTime)
 {
 	double sampleGain = integrationTime/(12.0*60.0*60.0) * channelWidth;
 	num_t wavelength = 1.0L / frequency;
 	size_t index = 0;
-	for(num_t t=0.0;t<totalTime;t+=integrationTime)
+	for(size_t ti=0; ti!=nTimes; ++ti)
 	{
+		double t = ti * integrationTime;
 		const double timeInDays = t/(12.0*60.0*60.0);
 		const num_t earthLattitudeApprox = timeInDays*M_PIn;
 		num_t u, v, r1, i1, r2, i2;
@@ -119,7 +121,7 @@ void Model::SimulateCorrelation(struct OutputReceiver<T> &receiver, num_t delayD
 	}
 }
 
-template void Model::SimulateCorrelation(struct OutputReceiver<UVImager> &receiver, num_t delayDirectionDEC, num_t delayDirectionRA, num_t dx, num_t dy, num_t dz, num_t frequency, num_t channelWidth, double totalTime, double integrationTime);
+template void Model::SimulateCorrelation(struct OutputReceiver<UVImager> &receiver, num_t delayDirectionDEC, num_t delayDirectionRA, num_t dx, num_t dy, num_t dz, num_t frequency, num_t channelWidth, size_t nTimes, double integrationTime);
 
 void Model::SimulateAntenna(double time, num_t delayDirectionDEC, num_t delayDirectionRA, num_t dx, num_t dy, num_t frequency, num_t earthLattitude, num_t &r, num_t &i)
 {

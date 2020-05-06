@@ -6,12 +6,9 @@
 #include "../../util/logger.h"
 #include "../../util/stopwatch.h"
 
-#include "../imagesets/bhfitsimageset.h"
-#include "../imagesets/fitsimageset.h"
 #include "../imagesets/imageset.h"
 #include "../imagesets/msimageset.h"
 #include "../imagesets/filterbankset.h"
-#include "../imagesets/qualitystatimageset.h"
 
 #include <iostream>
 #include <sstream>
@@ -36,7 +33,7 @@ namespace rfiStrategy {
 		{
 			ImageSet& imageSet = artifacts.ImageSet();
 			MSImageSet* msImageSet = dynamic_cast<MSImageSet*>(&imageSet);
-			if(msImageSet != 0)
+			if(msImageSet)
 			{
 				// Check memory usage
 				std::unique_ptr<ImageSetIndex> tempIndex = msImageSet->StartIndex();
@@ -100,7 +97,6 @@ namespace rfiStrategy {
 			}
 			_artifacts = &artifacts;
 			
-			_initPartIndex = 0;
 			_finishedBaselines = false;
 			_baselineCount = 0;
 			_baselineProgress = 0;
@@ -119,8 +115,7 @@ namespace rfiStrategy {
 			
 			// Initialize thread data and threads
 			_loopIndex = imageSet.StartIndex();
-			_progressTaskNo = new int[_threadCount];
-			_progressTaskCount = new int[_threadCount];
+			_threadInfo.assign(_threadCount, ThreadInfo() );
 			progress.OnStartTask(*this, 0, 1, "Initializing");
 
 			std::vector<std::thread> threadGroup;
@@ -137,14 +132,11 @@ namespace rfiStrategy {
 				t.join();
 			progress.OnEndTask(*this);
 
-			if(_resultSet != 0)
+			if(_resultSet)
 			{
 				artifacts = *_resultSet;
-				delete _resultSet;
+				_resultSet.reset();
 			}
-
-			delete[] _progressTaskCount;
-			delete[] _progressTaskNo;
 
 			_loopIndex.reset();
 
@@ -175,13 +167,10 @@ namespace rfiStrategy {
 		if(!_antennaeToInclude.empty() && (_antennaeToInclude.count(a1id) == 0 && _antennaeToInclude.count(a2id) == 0))
 			return false;
 		
-		// For SD/BHFits/QS files, we want to select everything -- it's confusing
+		// For SD/BHFits/QS/rfibl files, we want to select everything -- it's confusing
 		// if the default option "only flag cross correlations" would also
 		// hold for sdfits files.
-		if(dynamic_cast<FitsImageSet*>(&imageSet)!=0
-			|| dynamic_cast<BHFitsImageSet*>(&imageSet)!=0
-			|| dynamic_cast<FilterBankSet*>(&imageSet)!=0
-			|| dynamic_cast<QualityStatImageSet*>(&imageSet)!=0)
+		if(!imageSet.HasCrossCorrelations())
 			return true;
 
 		switch(_selection)
@@ -275,7 +264,7 @@ namespace rfiStrategy {
 			}
 	
 			if(_threadIndex == 0)
-				_action._resultSet = new ArtifactSet(newArtifacts);
+				_action._resultSet.reset(new ArtifactSet(newArtifacts));
 
 		} catch(std::exception &e)
 		{
@@ -368,13 +357,13 @@ namespace rfiStrategy {
 	void ForEachBaselineAction::SetProgress(ProgressListener &progress, int no, int count, const std::string& taskName, int threadId)
 	{
 	  std::lock_guard<std::mutex> lock(_mutex);
-		_progressTaskNo[threadId] = no;
-		_progressTaskCount[threadId] = count;
+		_threadInfo[threadId].progressTaskNo = no;
+		_threadInfo[threadId].progressTaskCount = count;
 		size_t totalCount = 0, totalNo = 0;
 		for(size_t i=0;i<_threadCount;++i)
 		{
-			totalCount += _progressTaskCount[threadId];
-			totalNo += _progressTaskNo[threadId];
+			totalCount += _threadInfo[threadId].progressTaskCount;
+			totalNo += _threadInfo[threadId].progressTaskNo;
 		}
 		progress.OnEndTask(*this);
 		std::stringstream str;

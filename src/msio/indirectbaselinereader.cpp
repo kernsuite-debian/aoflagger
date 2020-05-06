@@ -11,8 +11,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include "../structures/arraycolumniterator.h"
-#include "../structures/scalarcolumniterator.h"
 #include "../structures/timefrequencydata.h"
 #include "../structures/system.h"
 
@@ -20,10 +18,17 @@
 #include "../util/stopwatch.h"
 
 #include "reorderedfilebuffer.h"
+#include "msselection.h"
 
-IndirectBaselineReader::IndirectBaselineReader(const std::string &msFile) : BaselineReader(msFile), _directReader(msFile),
-_seqIndexTable(0),
-_msIsReordered(false), _removeReorderedFiles(false), _reorderedDataFilesHaveChanged(false), _reorderedFlagFilesHaveChanged(false), _readUVW(false)
+IndirectBaselineReader::IndirectBaselineReader(const std::string &msFile) :
+	BaselineReader(msFile),
+	_directReader(msFile),
+	_seqIndexTable(),
+	_msIsReordered(false),
+	_removeReorderedFiles(false),
+	_reorderedDataFilesHaveChanged(false),
+	_reorderedFlagFilesHaveChanged(false),
+	_readUVW(false)
 {
 }
 
@@ -35,7 +40,7 @@ IndirectBaselineReader::~IndirectBaselineReader()
 		updateOriginalMSFlags();
 	removeTemporaryFiles();
 	
-	delete _seqIndexTable;
+	_seqIndexTable.reset();
 	_filePositions.clear();
 }
 
@@ -43,7 +48,7 @@ void IndirectBaselineReader::PerformReadRequests()
 {
 	initializeMeta();
 
-	if(!_msIsReordered) reorderedMS();
+	if(!_msIsReordered) reorderMS();
 
 	_results.clear();
 	Logger::Debug << "Performing " << _readRequests.size() << " read requests...\n";
@@ -55,14 +60,14 @@ void IndirectBaselineReader::PerformReadRequests()
 		for(size_t p=0;p<Polarizations().size();++p)
 		{
 			if(ReadData()) {
-				_results[i]._realImages.push_back(Image2D::CreateZeroImagePtr(width, Set().FrequencyCount(request.spectralWindow)));
-				_results[i]._imaginaryImages.push_back(Image2D::CreateZeroImagePtr(width, Set().FrequencyCount(request.spectralWindow)));
+				_results[i]._realImages.push_back(Image2D::CreateZeroImagePtr(width, MetaData().FrequencyCount(request.spectralWindow)));
+				_results[i]._imaginaryImages.push_back(Image2D::CreateZeroImagePtr(width, MetaData().FrequencyCount(request.spectralWindow)));
 			}
 			if(ReadFlags()) {
 				// The flags should be initialized to true, as a baseline might
 				// miss some time scans that other baselines do have, and these
 				// should be flagged.
-				_results[i]._flags.push_back(Mask2D::CreateSetMaskPtr<true>(width, Set().FrequencyCount(request.spectralWindow)));
+				_results[i]._flags.push_back(Mask2D::CreateSetMaskPtr<true>(width, MetaData().FrequencyCount(request.spectralWindow)));
 			}
 		}
 		if(_readUVW)
@@ -70,7 +75,7 @@ void IndirectBaselineReader::PerformReadRequests()
 		else {
 			_results[i]._uvw.clear();
 			for(unsigned j=0;j<width;++j)
-			_results[i]._uvw.push_back(UVW(0.0, 0.0, 0.0));
+			_results[i]._uvw.emplace_back(0.0, 0.0, 0.0);
 		}
 
 		std::ifstream dataFile(DataFilename(), std::ifstream::binary);
@@ -80,7 +85,7 @@ void IndirectBaselineReader::PerformReadRequests()
 		dataFile.seekg(filePos * (sizeof(float)*2), std::ios_base::beg);
 		flagFile.seekg(filePos * sizeof(bool), std::ios_base::beg);
 
-		const size_t bufferSize = Set().FrequencyCount(request.spectralWindow) * Polarizations().size();
+		const size_t bufferSize = MetaData().FrequencyCount(request.spectralWindow) * Polarizations().size();
 		for(size_t x=0;x<width;++x)
 		{
 			std::vector<float> dataBuffer(bufferSize*2);
@@ -89,7 +94,7 @@ void IndirectBaselineReader::PerformReadRequests()
 			size_t dataBufferPtr = 0;
 			flagFile.read((char *) &flagBuffer[0], bufferSize * sizeof(bool));
 			size_t flagBufferPtr = 0;
-			for(size_t f=0;f<Set().FrequencyCount(request.spectralWindow);++f) {
+			for(size_t f=0;f<MetaData().FrequencyCount(request.spectralWindow);++f) {
 				for(size_t p=0;p<Polarizations().size();++p)
 				{
 					_results[i]._realImages[p]->SetValue(x, f, dataBuffer[dataBufferPtr]);
@@ -117,7 +122,7 @@ void IndirectBaselineReader::PerformFlagWriteRequests()
 	_writeRequests.clear();
 }
 
-void IndirectBaselineReader::reorderedMS()
+void IndirectBaselineReader::reorderMS()
 {
 	boost::filesystem::path path(MetaFilename());
 	bool reorderRequired = true;
@@ -127,7 +132,7 @@ void IndirectBaselineReader::reorderedMS()
 		std::ifstream str(path.string().c_str());
 		std::string name;
 		std::getline(str, name);
-		if(boost::filesystem::equivalent(boost::filesystem::path(name), Set().Path()))
+		if(boost::filesystem::equivalent(boost::filesystem::path(name), MetaData().Path()))
 		{
 			Logger::Debug << "Measurement set has already been reordered; using old temporary files.\n";
 			reorderRequired = false;
@@ -137,11 +142,12 @@ void IndirectBaselineReader::reorderedMS()
 			_reorderedFlagFilesHaveChanged = false;
 		}
 	}
+	
 	if(reorderRequired)
 	{
 		reorderFull();
 		std::ofstream str(path.string().c_str());
-		str << Set().Path() << '\n';
+		str << MetaData().Path() << '\n';
 	} else {
 		size_t fileSize;
 		makeLookupTables(fileSize);
@@ -150,25 +156,25 @@ void IndirectBaselineReader::reorderedMS()
 
 void IndirectBaselineReader::makeLookupTables(size_t &fileSize)
 {
-	std::vector<MeasurementSet::Sequence> sequences = Set().GetSequences();
+	std::vector<MSMetaData::Sequence> sequences = MetaData().GetSequences();
 	const size_t
-		antennaCount = Set().AntennaCount(),
+		antennaCount = MetaData().AntennaCount(),
 		polarizationCount = Polarizations().size(),
-		bandCount = Set().BandCount(),
-		sequencesPerBaselineCount = Set().SequenceCount();
+		bandCount = MetaData().BandCount(),
+		sequencesPerBaselineCount = MetaData().SequenceCount();
 
-	_seqIndexTable = new SeqIndexLookupTable(antennaCount, bandCount, sequencesPerBaselineCount);
+	_seqIndexTable.reset(new SeqIndexLookupTable(antennaCount, bandCount, sequencesPerBaselineCount));
 	fileSize = 0;
 	for(size_t i=0;i<sequences.size();++i)
 	{
 		// Initialize look-up table to get index into Sequence-array quickly
-		const MeasurementSet::Sequence &s = sequences[i];
+		const MSMetaData::Sequence &s = sequences[i];
 		_seqIndexTable->Value(s.antenna1, s.antenna2, s.spw, s.sequenceId) = i;
 		
 		// Initialize look-up table to go from sequence array to file position. Is in samples, so
 		// multiple times sizeof(bool) or ..(float)) for exact position.
 		_filePositions.push_back(fileSize);
-		fileSize += ObservationTimes(s.sequenceId).size() * Set().FrequencyCount(s.spw) * polarizationCount;
+		fileSize += ObservationTimes(s.sequenceId).size() * MetaData().FrequencyCount(s.spw) * polarizationCount;
 	}
 }
 
@@ -202,23 +208,20 @@ void IndirectBaselineReader::reorderFull()
 {
 	Stopwatch watch(true);
 	
-	casacore::Table &table = *Table();
+	casacore::MeasurementSet ms = OpenMS();
 
-	casacore::ROScalarColumn<double> timeColumn(*Table(), "TIME");
-	casacore::ROArrayColumn<bool> flagColumn(table, "FLAG");
-	casacore::ROScalarColumn<int> fieldIdColumn(table, "FIELD_ID"); 
-	casacore::ROScalarColumn<int> dataDescIdColumn(table, "DATA_DESC_ID"); 
-	casacore::ROScalarColumn<int> antenna1Column(table, "ANTENNA1"); 
-	casacore::ROScalarColumn<int> antenna2Column(table, "ANTENNA2");
+	casacore::ArrayColumn<bool> flagColumn(ms, "FLAG");
+	casacore::ScalarColumn<int> dataDescIdColumn(ms, "DATA_DESC_ID"); 
+	casacore::ScalarColumn<int> antenna1Column(ms, "ANTENNA1"); 
+	casacore::ScalarColumn<int> antenna2Column(ms, "ANTENNA2");
+	casacore::ArrayColumn<casacore::Complex> dataColumn(ms, DataColumnName() );
 
-	size_t rowCount = table.nrow();
-	if(rowCount == 0)
+	if(ms.nrow() == 0)
 		throw std::runtime_error("Measurement set is empty (zero rows)");
 
-	std::unique_ptr<casacore::ROArrayColumn<casacore::Complex>> dataColumn( new casacore::ROArrayColumn<casacore::Complex>(table, DataColumnName()) );
 
 	std::vector<size_t> dataIdToSpw;
-	Set().GetDataDescToBandVector(dataIdToSpw);
+	MetaData().GetDataDescToBandVector(dataIdToSpw);
 	
 	size_t fileSize;
 	makeLookupTables(fileSize);
@@ -241,47 +244,40 @@ void IndirectBaselineReader::reorderFull()
 	ReorderedFileBuffer dataFile(reorderInfo.dataFile.get(), bufferMem);
 	ReorderedFileBuffer flagFile(reorderInfo.flagFile.get(), bufferMem/8);
 	
-	size_t prevFieldId = size_t(-1), sequenceId = size_t(-1);
 	std::vector<std::size_t> writeFilePositions = _filePositions;
 	std::vector<std::size_t> timePositions(_filePositions.size(), size_t(-1));
-	double prevTime = -1.0;
-	size_t timeIndex = size_t(-1);
-	unsigned progress = 0;
-	for(size_t rowIndex = 0; rowIndex!=rowCount; ++rowIndex)
+	size_t
+		polarizationCount = Polarizations().size(),
+		intStart = IntervalStart(),
+		intEnd = IntervalEnd();
+	unsigned progress = 0, prevProgress = unsigned(-1);
+	
+	MSSelection msSelection(ms, ObservationTimesPerSequence());
+	
+	msSelection.Process(
+		[&](size_t rowIndex, size_t sequenceId, size_t timeIndexInSequence)
 	{
-		if(rowIndex*1000/rowCount != progress)
+		progress = timeIndexInSequence*100/(intEnd - intStart);
+		if(progress > prevProgress)
 		{
-			progress = rowIndex*1000/rowCount;
-			if(progress%10 == 0)
+			if(progress/10 != prevProgress/10)
 				Logger::Debug << "\nReorder progress: ";
-			Logger::Debug << progress/10.0 << "% ";
+			Logger::Debug << progress << "% ";
 			Logger::Debug.Flush();
+			prevProgress = progress;
 		}
-		size_t fieldId = fieldIdColumn(rowIndex);
-		if(fieldId != prevFieldId)
-		{
-			prevFieldId = fieldId;
-			sequenceId++;
-			prevTime = -1.0;
-		}
-		double time = timeColumn(rowIndex);
-		if(time != prevTime)
-		{
-			timeIndex = ObservationTimes(sequenceId).find(time)->second;
-			prevTime = time;
-		}
+	
+		size_t 
+			antenna1 = antenna1Column(rowIndex),
+			antenna2 = antenna2Column(rowIndex),
+			spw = dataIdToSpw[dataDescIdColumn(rowIndex)],
+			channelCount = MetaData().FrequencyCount(spw),
+			arrayIndex = _seqIndexTable->Value(antenna1, antenna2, spw, sequenceId),
+			sampleCount = channelCount * polarizationCount;
+		size_t& filePos = writeFilePositions[arrayIndex];
+		size_t& timePos = timePositions[arrayIndex];
 		
-		size_t polarizationCount = Polarizations().size();
-		size_t antenna1 = antenna1Column(rowIndex);
-		size_t antenna2 = antenna2Column(rowIndex);
-		size_t spw = dataIdToSpw[dataDescIdColumn(rowIndex)];
-		size_t channelCount = Set().FrequencyCount(spw);
-		size_t arrayIndex = _seqIndexTable->Value(antenna1, antenna2, spw, sequenceId);
-		size_t &filePos = writeFilePositions[arrayIndex];
-		size_t &timePos = timePositions[arrayIndex];
-		size_t sampleCount = channelCount * polarizationCount;
-		
-		casacore::Array<casacore::Complex> data = (*dataColumn)(rowIndex);
+		casacore::Array<casacore::Complex> data = dataColumn(rowIndex);
 		casacore::Array<bool> flag = flagColumn(rowIndex);
 		
 		dataFile.seekp(filePos * (sizeof(float)*2));
@@ -290,7 +286,7 @@ void IndirectBaselineReader::reorderFull()
 		// If this baseline missed some time steps, pad the files
 		// (we can't just skip over, because the flags should be set to true)
 		++timePos;
-		while(timePos < timeIndex)
+		while(timePos < timeIndexInSequence)
 		{
 			const std::vector<float> nullData(sampleCount*2, 0.0);
 			const std::vector<char> nullFlags(sampleCount, (char) true);
@@ -305,7 +301,7 @@ void IndirectBaselineReader::reorderFull()
 		flagFile.write(reinterpret_cast<const char*>(&*flag.cbegin()), sampleCount * sizeof(bool));
 		
 		filePos += sampleCount;
-	}
+	});
 	
 	uint64_t dataSetSize = (uint64_t) fileSize * (uint64_t) (sizeof(float)*2 + sizeof(bool));
 	Logger::Debug << "Done reordering data set of " << dataSetSize/(1024*1024) << " MB in " << watch.Seconds() << " s (" << (long double) dataSetSize/(1024.0L*1024.0L*watch.Seconds()) << " MB/s)\n";
@@ -347,10 +343,10 @@ void IndirectBaselineReader::PerformDataWriteTask(std::vector<Image2DCPtr> _real
 		throw std::runtime_error("PerformDataWriteTask: width and/or height of input images did not match");
 	}
 	
-	if(!_msIsReordered) reorderedMS();
+	if(!_msIsReordered) reorderMS();
 	
 	const size_t width = _realImages[0]->Width();
-	const size_t bufferSize = Set().FrequencyCount(spectralWindow) * Polarizations().size();
+	const size_t bufferSize = MetaData().FrequencyCount(spectralWindow) * Polarizations().size();
 	
 	std::ofstream dataFile(DataFilename(), std::ofstream::binary | std::ios_base::in | std::ios_base::out);
 	size_t index = _seqIndexTable->Value(antenna1, antenna2, spectralWindow, sequenceId);
@@ -361,7 +357,7 @@ void IndirectBaselineReader::PerformDataWriteTask(std::vector<Image2DCPtr> _real
 	for(size_t x=0;x<width;++x)
 	{
 		size_t dataBufferPtr = 0;
-		for(size_t f=0;f<Set().FrequencyCount(spectralWindow);++f) {
+		for(size_t f=0;f<MetaData().FrequencyCount(spectralWindow);++f) {
 			for(size_t p=0; p<Polarizations().size(); ++p)
 			{
 				dataBuffer[dataBufferPtr] = _realImages[p]->Value(x, f);
@@ -396,10 +392,10 @@ void IndirectBaselineReader::performFlagWriteTask(std::vector<Mask2DCPtr> flags,
 		throw std::runtime_error("PerformDataWriteTask: width and/or height of input images did not match");
 	}
 	
-	if(!_msIsReordered) reorderedMS();
+	if(!_msIsReordered) reorderMS();
 	
 	const size_t width = flags[0]->Width();
-	const size_t bufferSize = Set().FrequencyCount(spw) * Polarizations().size();
+	const size_t bufferSize = MetaData().FrequencyCount(spw) * Polarizations().size();
 	
 	std::ofstream flagFile(FlagFilename(), std::ofstream::binary | std::ios_base::in | std::ios_base::out);
 	size_t index = _seqIndexTable->Value(antenna1, antenna2, spw, sequenceId);
@@ -410,7 +406,7 @@ void IndirectBaselineReader::performFlagWriteTask(std::vector<Mask2DCPtr> flags,
 	for(size_t x=0;x<width;++x)
 	{
 		size_t flagBufferPtr = 0;
-		for(size_t f=0;f<Set().FrequencyCount(spw);++f) {
+		for(size_t f=0;f<MetaData().FrequencyCount(spw);++f) {
 			for(size_t p=0; p<polarizationCount; ++p)
 			{
 				flagBuffer[flagBufferPtr] = flags[p]->Value(x, f);
@@ -429,21 +425,23 @@ void IndirectBaselineReader::performFlagWriteTask(std::vector<Mask2DCPtr> flags,
 template<bool UpdateData, bool UpdateFlags>
 void IndirectBaselineReader::updateOriginalMS()
 {
-	casacore::Table &table = *Table();
+	casacore::MeasurementSet ms = OpenMS();
+	if(UpdateData || UpdateFlags)
+	{
+		ms.reopenRW();
+	}
 
-	casacore::ROScalarColumn<double> timeColumn(*Table(), "TIME");
-	casacore::ROScalarColumn<int> antenna1Column(table, "ANTENNA1"); 
-	casacore::ROScalarColumn<int> antenna2Column(table, "ANTENNA2");
-	casacore::ROScalarColumn<int> fieldIdColumn(table, "FIELD_ID");
-	casacore::ROScalarColumn<int> dataDescIdColumn(table, "DATA_DESC_ID");
-	casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
-	std::unique_ptr<casacore::ArrayColumn<casacore::Complex>> dataColumn ( new casacore::ArrayColumn<casacore::Complex>(table, DataColumnName()) );
+	casacore::ScalarColumn<double> timeColumn(ms, "TIME");
+	casacore::ScalarColumn<int> antenna1Column(ms, "ANTENNA1"); 
+	casacore::ScalarColumn<int> antenna2Column(ms, "ANTENNA2");
+	casacore::ScalarColumn<int> fieldIdColumn(ms, "FIELD_ID");
+	casacore::ScalarColumn<int> dataDescIdColumn(ms, "DATA_DESC_ID");
+	casacore::ArrayColumn<bool> flagColumn(ms, "FLAG");
+	casacore::ArrayColumn<casacore::Complex> dataColumn(ms, DataColumnName());
 
-	int rowCount = table.nrow();
-
-	std::vector<MeasurementSet::Sequence> sequences = Set().GetSequences();
+	std::vector<MSMetaData::Sequence> sequences = MetaData().GetSequences();
 	std::vector<size_t> dataIdToSpw;
-	Set().GetDataDescToBandVector(dataIdToSpw);
+	MetaData().GetDataDescToBandVector(dataIdToSpw);
 	
 	size_t polarizationCount = Polarizations().size();
 
@@ -463,32 +461,20 @@ void IndirectBaselineReader::updateOriginalMS()
 			throw std::runtime_error("Failed to open temporary flag file");
 	}
 
-	size_t prevFieldId = size_t(-1), sequenceId = size_t(-1);
 	std::vector<size_t> updatedFilePos = _filePositions;
 	std::vector<size_t> timePositions(updatedFilePos.size(), size_t(-1));
-	double prevTime = -1.0;
-	size_t timeIndex = size_t(-1);
-	for(int rowIndex = 0; rowIndex!=rowCount; ++rowIndex)
-	{
-		size_t fieldId = fieldIdColumn(rowIndex);
-		if(fieldId != prevFieldId)
-		{
-			prevFieldId = fieldId;
-			sequenceId++;
-		}
-		double time = timeColumn(rowIndex);
-		if(time != prevTime)
-		{
-			timeIndex = ObservationTimes(sequenceId).find(time)->second;
-			prevTime = time;
-		}
 		
-		size_t antenna1 = antenna1Column(rowIndex);
-		size_t antenna2 = antenna2Column(rowIndex);
-		size_t spw = dataIdToSpw[dataDescIdColumn(rowIndex)];
-		size_t channelCount = Set().FrequencyCount(spw);
-		size_t arrayIndex = _seqIndexTable->Value(antenna1, antenna2, spw, sequenceId);
-		size_t sampleCount = channelCount * polarizationCount;
+	MSSelection msSelection(ms, ObservationTimesPerSequence());
+	msSelection.Process(
+		[&](size_t rowIndex, size_t sequenceId, size_t timeIndexInSequence)
+	{
+		size_t
+			antenna1 = antenna1Column(rowIndex),
+			antenna2 = antenna2Column(rowIndex),
+			spw = dataIdToSpw[dataDescIdColumn(rowIndex)],
+			channelCount = MetaData().FrequencyCount(spw),
+			arrayIndex = _seqIndexTable->Value(antenna1, antenna2, spw, sequenceId),
+			sampleCount = channelCount * polarizationCount;
 		size_t &filePos = updatedFilePos[arrayIndex];
 		size_t &timePos = timePositions[arrayIndex];
 		
@@ -496,7 +482,7 @@ void IndirectBaselineReader::updateOriginalMS()
 		
 		// Skip over samples in the temporary files that are missing in the measurement set
 		++timePos;
-		while(timePos < timeIndex)
+		while(timePos < timeIndexInSequence)
 		{
 			filePos += sampleCount;
 			++timePos;
@@ -512,7 +498,7 @@ void IndirectBaselineReader::updateOriginalMS()
 			if(dataFile.fail())
 				throw std::runtime_error("Error: failed to read temporary data files!");
 						
-			dataColumn->basePut(rowIndex, data);
+			dataColumn.basePut(rowIndex, data);
 		}
 		if(UpdateFlags)
 		{
@@ -528,7 +514,7 @@ void IndirectBaselineReader::updateOriginalMS()
 		}
 		
 		filePos += sampleCount;
-	}
+	});
 	
 	Logger::Debug << "Freeing the data\n";
 	

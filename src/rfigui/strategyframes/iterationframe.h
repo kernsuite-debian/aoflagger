@@ -29,7 +29,8 @@ class IterationFrame : public Gtk::Frame {
 			_iterationCountScale.set_range(0, 200);
 			_iterationCountScale.set_value(_iterationBlock.IterationCount());
 			_iterationCountScale.set_increments(1, 10);
-
+			_iterationCountScale.set_round_digits(0);
+			
 			_box.pack_start(_sensitivityStartLabel);
 
 			_box.pack_start(_sensitivityStartScale);

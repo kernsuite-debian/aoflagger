@@ -4,7 +4,7 @@
 #include "imageset.h"
 #include "msimageset.h"
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
 #include "../../util/logger.h"
 
 #include <vector>
@@ -13,7 +13,7 @@
 
 namespace rfiStrategy {
 	
-	using Sequence = MeasurementSet::Sequence;
+	using Sequence = MSMetaData::Sequence;
 	
 	class CoaddedImageSetIndex : public ImageSetIndex {
 		public:
@@ -62,7 +62,7 @@ namespace rfiStrategy {
 			std::unique_ptr<CoaddedImageSet> newSet(new CoaddedImageSet());
 			for(const std::unique_ptr<MSImageSet>& imageSet : _msImageSets)
 			{
-				newSet->_msImageSets.emplace_back(imageSet->CloneMSImageSet());
+				newSet->_msImageSets.emplace_back(std::unique_ptr<MSImageSet>(new MSImageSet(*imageSet)));
 			}
 			return std::move(newSet);
 		}

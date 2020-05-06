@@ -12,6 +12,12 @@
 
 #endif
 
+SumThreshold::VerticalScratch::VerticalScratch(size_t width, size_t) : 
+	lastFlaggedPos(static_cast<int*>(aligned_alloc(64, sizeof(int) * width)), &free),
+	sum(static_cast<num_t*>(aligned_alloc(64, sizeof(num_t) * width)), &free),
+	count(static_cast<int*>(aligned_alloc(64, sizeof(int) * width)), &free)
+{ }
+
 template<size_t Length>
 void SumThreshold::Horizontal(const Image2D* input, Mask2D* mask, num_t threshold)
 {
@@ -248,6 +254,41 @@ void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask, Mask2D* 
 		default: throw BadUsageException("Invalid value for length");
 	}
 }
+
+void SumThreshold::HorizontalAVXDumas(const Image2D* input, Mask2D* mask, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: HorizontalAVXDumas<1>(input, mask, threshold); break;
+		case 2: HorizontalAVXDumas<2>(input, mask, threshold); break;
+		case 4: HorizontalAVXDumas<4>(input, mask, threshold); break;
+		case 8: HorizontalAVXDumas<8>(input, mask, threshold); break;
+		case 16: HorizontalAVXDumas<16>(input, mask, threshold); break;
+		case 32: HorizontalAVXDumas<32>(input, mask, threshold); break;
+		case 64: HorizontalAVXDumas<64>(input, mask, threshold); break;
+		case 128: HorizontalAVXDumas<128>(input, mask, threshold); break;
+		case 256: HorizontalAVXDumas<256>(input, mask, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}
+}
+
+void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, size_t length, num_t threshold)
+{
+	switch(length)
+	{
+		case 1: VerticalAVXDumas<1>(input, mask, scratch, threshold); break;
+		case 2: VerticalAVXDumas<2>(input, mask, scratch, threshold); break;
+		case 4: VerticalAVXDumas<4>(input, mask, scratch, threshold); break;
+		case 8: VerticalAVXDumas<8>(input, mask, scratch, threshold); break;
+		case 16: VerticalAVXDumas<16>(input, mask, scratch, threshold); break;
+		case 32: VerticalAVXDumas<32>(input, mask, scratch, threshold); break;
+		case 64: VerticalAVXDumas<64>(input, mask, scratch, threshold); break;
+		case 128: VerticalAVXDumas<128>(input, mask, scratch, threshold); break;
+		case 256: VerticalAVXDumas<256>(input, mask, scratch, threshold); break;
+		default: throw BadUsageException("Invalid value for length");
+	}
+}
+
 #endif // AVX2
 
 #ifdef __SSE__
@@ -857,6 +898,509 @@ template
 void SumThreshold::VerticalLargeAVX<128>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
 template
 void SumThreshold::VerticalLargeAVX<256>(const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold);
+
+template<size_t Length>
+void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold)
+{
+	if (Length <= mask->Height())
+	{
+		int* lastFlaggedPos = scratch->lastFlaggedPos.get();
+		num_t* sum = scratch->sum.get();
+		int* count = scratch->count.get();
+
+		std::fill(lastFlaggedPos, lastFlaggedPos + input->Width(), -1);
+		std::fill(sum, sum + input->Width(), 0);
+		std::fill(count, count + input->Width(), 0);
+
+		constexpr int vectorWidth = 8;
+		const int parallelizableLength = (int)mask->Width() - (int)mask->Width() % vectorWidth;
+		const __m256 threshold_m256 = _mm256_set1_ps(threshold);
+		const __m256 sign_mask_m256 = _mm256_xor_ps(_mm256_set1_ps(-0.0f), _mm256_castsi256_ps(_mm256_set1_epi32(-1)));
+
+		//Truncates dwords to bytes for each 256 bit 
+		const __m256i shuffle_1f126i_cvtepi32_epu8_m256i = _mm256_set_epi8(
+			'\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF',
+			'\xFF', '\xFF', '\xFF', '\xFF', '\x0c', '\x08', '\x04', '\x00',
+			'\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF',
+			'\xFF', '\xFF', '\xFF', '\xFF', '\x0c', '\x08', '\x04', '\x00');
+		
+		const __m128i first_dword_true_m128i = _mm_set_epi8(
+			'\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', 
+			'\x01', '\x01', '\x01', '\x01', '\x01', '\x01', '\x01', '\x01');
+		
+		constexpr int64_t true_m32i = 0x01010101L;
+
+		//Set sum and count for initial window position
+		for (int maxRow = 0; maxRow < (int)Length - 1; ++maxRow)
+		{
+			for (int iCol = 0; iCol < parallelizableLength; iCol += vectorWidth)
+			{
+				/* 
+				 * Implements:
+				 *    sum(iCol) += input(maxRow, iCol) * !mask(maxRow, iCol);
+				 *    count(iCol) += !mask(maxRow, iCol);
+				 */
+				
+				//Load sum vector
+				__m256 sum_m256 = _mm256_load_ps(&sum[iCol]);
+				
+				//Load count vector
+				__m256i count_m256i = _mm256_load_si256((__m256i*)&count[iCol]);
+				
+				//Load input vector
+				__m256 input_m256 = _mm256_load_ps(input->ValuePtr(iCol, maxRow));
+				
+				//Load mask vector
+				__m64 mask_m64 = *(__m64*)mask->ValuePtr(iCol, maxRow);
+				__m128i mask_m128i = _mm_set_epi64(_mm_setzero_si64(), mask_m64);
+				__m128i imask_m128i = _mm_xor_si128(first_dword_true_m128i, mask_m128i); //Invert mask vector
+				__m256i imask_m256i = _mm256_cvtepu8_epi32(imask_m128i);
+				__m256 imask_m256 = _mm256_cvtepi32_ps(imask_m256i);
+				
+				//Sum += input * !mask
+				__m256 tmp_m256 = _mm256_mul_ps(imask_m256, input_m256);
+				sum_m256 = _mm256_add_ps(sum_m256, tmp_m256);
+				
+				//Store sum
+				_mm256_store_ps(&sum[iCol], sum_m256);
+				
+				//count += !mask
+				count_m256i = _mm256_add_epi32(count_m256i, imask_m256i);
+				
+				//Store count
+				_mm256_store_si256((__m256i*)&count[iCol], count_m256i);
+			}
+			for (int iCol = parallelizableLength; iCol < (int)mask->Width(); ++iCol)
+			{
+				sum[iCol] += input->Value(iCol, maxRow) * !mask->Value(iCol, maxRow);
+				count[iCol] += !mask->Value(iCol, maxRow);
+			}
+		}
+
+		//Iterate through positions
+		for (int maxRow = (int)Length - 1; maxRow < (int)mask->Height(); ++maxRow)
+		{
+			int minRow = maxRow - (int)Length + 1;
+			
+			//load maxRow vector
+			__m256i maxRow_m256i = _mm256_set1_epi32(maxRow);
+			
+			//Load 'minRow take 1' vector
+			__m256i minRowt1_m256i = _mm256_set1_epi32(minRow - 1);
+			
+			for (int iCol = 0; iCol < parallelizableLength; iCol += vectorWidth)
+			{
+				//Load sum vector
+				__m256 sum_m256 = _mm256_load_ps(&sum[iCol]);
+				
+				//Load count vector
+				__m256i count_m256i = _mm256_load_si256((__m256i*)&count[iCol]);
+
+				/*
+				 * Implements:
+				 *    sum(iCol) += input(maxRow, iCol) * !mask(maxRow, iCol);
+				 *    count(iCol) += !mask(maxRow, iCol);
+				 */
+				{
+					//Load input vector
+					__m256 input_m256 = _mm256_load_ps(input->ValuePtr(iCol, maxRow));
+					
+					//Load mask vector
+					__m64 mask_m64 = *(__m64*)mask->ValuePtr(iCol, maxRow);
+					__m128i mask_m128i = _mm_set_epi64(_mm_setzero_si64(), mask_m64);
+					__m128i imask_m128i = _mm_xor_si128(first_dword_true_m128i, mask_m128i); //Invert mask vector
+					__m256i imask_m256i = _mm256_cvtepu8_epi32(imask_m128i);
+					__m256 imask_m256 = _mm256_cvtepi32_ps(imask_m256i);
+					
+					//Sum += input * !mask
+					__m256 tmp_m256 = _mm256_mul_ps(imask_m256, input_m256);
+					sum_m256 = _mm256_add_ps(sum_m256, tmp_m256);
+					
+					//count += !mask
+					count_m256i = _mm256_add_epi32(count_m256i, imask_m256i);
+				}
+
+				/*
+				 * Implements:
+				 * if (abs(sum(iCol)) > count(iCol) * threshold)
+				 *    lastFlaggedPos(iCol) = maxRow;
+				 */
+				{
+					// cast count
+					__m256 count_m256 = _mm256_cvtepi32_ps(count_m256i);
+					
+					// tmp1 = threshold * count
+					__m256 tmp1_m256 = _mm256_mul_ps(threshold_m256, count_m256);
+					
+					// tmp2 = abs(sum)
+					__m256 tmp2_m256 = _mm256_and_ps(sum_m256, sign_mask_m256);
+					
+					// tmp3 = tmp2 > tmp1
+					__m256 tmp3_m256 = _mm256_cmp_ps(tmp2_m256, tmp1_m256, _CMP_GT_OQ);
+					
+					// cast tmp3
+					__m256i tmp3_m256i = _mm256_castps_si256(tmp3_m256);
+					
+					//store lastFlaggedPos
+					_mm256_maskstore_epi32(&lastFlaggedPos[iCol], tmp3_m256i, maxRow_m256i);
+				}
+
+				/*
+				 * Implements:
+				 *    sum(iCol) -= input(minRow, iCol) * !mask(minRow, iCol);
+				 *    count(iCol) -= !mask(minRow, iCol);
+				 */
+				{
+					//Load input vector
+					__m256 input_m256 = _mm256_load_ps(input->ValuePtr(iCol, minRow));
+					
+					//Load mask vector
+					__m64 mask_m64 = *(__m64*)mask->ValuePtr(iCol, minRow);
+					__m128i mask_m128i = _mm_set_epi64(_mm_setzero_si64(), mask_m64);
+					__m128i imask_m128i = _mm_xor_si128(first_dword_true_m128i, mask_m128i); //Invert mask vector
+					__m256i imask_m256i = _mm256_cvtepu8_epi32(imask_m128i);
+					__m256 imask_m256 = _mm256_cvtepi32_ps(imask_m256i);
+					
+					//Sum -= input * !mask
+					__m256 tmp_m256 = _mm256_mul_ps(imask_m256, input_m256);
+					sum_m256 = _mm256_sub_ps(sum_m256, tmp_m256);
+
+					//count -= !mask
+					count_m256i = _mm256_sub_epi32(count_m256i, imask_m256i);
+				}
+					
+				//Store sum
+				_mm256_store_ps(&sum[iCol], sum_m256);
+				
+				//Store count
+				_mm256_store_si256((__m256i*)&count[iCol], count_m256i);
+				
+				/*
+				 * Implements:
+				 * mask(minRow, iCol) |= (lastFlaggedPos(iCol) > minRow - 1);
+				 */
+				{
+					//Load lastFlaggedPos vector
+					__m256i lastFlaggedPos_m256i = _mm256_load_si256((__m256i*)&lastFlaggedPos[iCol]);
+					
+					__m256i tmp_m256i = _mm256_cmpgt_epi32(lastFlaggedPos_m256i, minRowt1_m256i);
+					
+					tmp_m256i = _mm256_shuffle_epi8(tmp_m256i, shuffle_1f126i_cvtepi32_epu8_m256i);
+					
+					((int32_t*)mask->ValuePtr(iCol, minRow))[0] |= true_m32i & _mm256_extract_epi32(tmp_m256i, 0);
+					((int32_t*)mask->ValuePtr(iCol, minRow))[1] |= true_m32i & _mm256_extract_epi32(tmp_m256i, 4);
+				}
+				
+			}
+			for (int iCol = parallelizableLength; iCol < (int)mask->Width(); ++iCol)
+			{
+				int minRow = maxRow - (int)Length + 1;
+				
+				// add the sample at the right
+				sum[iCol] += input->Value(iCol, maxRow) * !mask->Value(iCol, maxRow);
+				count[iCol] += !mask->Value(iCol, maxRow);
+
+				//Check current pos
+				lastFlaggedPos[iCol] += int(abs(sum[iCol]) > count[iCol] * threshold) * (maxRow - lastFlaggedPos[iCol]);
+
+				// subtract the sample past the left
+				sum[iCol] -= input->Value(iCol, minRow) * !mask->Value(iCol, minRow);
+				count[iCol] -= !mask->Value(iCol, minRow);
+
+				//Flag left edge
+				*mask->ValuePtr(iCol, minRow) |= (lastFlaggedPos[iCol] >= minRow);
+			}
+		}
+
+		//Flag last window
+		for (int minRow = (int)mask->Height() - (int)Length + 1; minRow < (int)mask->Height(); ++minRow)
+		{
+			__m256i minRowt1_m256i = _mm256_set1_epi32(minRow - 1);
+			for (int iCol = 0; iCol < parallelizableLength; iCol += 8)
+			{
+				/*
+				 * Implements:
+				 *    mask(minRow, iCol) |= (lastFlaggedPos(iCol) > minRow - 1);
+				 */
+				
+				__m256i lastFlaggedPos_m256i = _mm256_load_si256((__m256i*)&lastFlaggedPos[iCol]);
+				
+				__m256i tmp1_m256i = _mm256_cmpgt_epi32(lastFlaggedPos_m256i, minRowt1_m256i);
+				
+				__m256i tmp2_m256i = _mm256_shuffle_epi8(tmp1_m256i, shuffle_1f126i_cvtepi32_epu8_m256i );
+				
+				((int32_t*)mask->ValuePtr(iCol, minRow))[0] |= true_m32i & _mm256_extract_epi32(tmp2_m256i, 0);
+				((int32_t*)mask->ValuePtr(iCol, minRow))[1] |= true_m32i & _mm256_extract_epi32(tmp2_m256i, 4);
+			}
+			for (int iCol = parallelizableLength; iCol < (int)mask->Width(); ++iCol)
+			{
+				*mask->ValuePtr(iCol, minRow) |= (lastFlaggedPos[iCol] > minRow - 1);
+			}
+		}
+	}
+}
+
+template<size_t Length>
+void SumThreshold::HorizontalAVXDumas(const Image2D* input, Mask2D* mask, num_t threshold)
+{
+	if(Length <= mask->Width())
+	{
+#ifndef NDEBUG
+		if(input->Stride() * 7 * sizeof(float) > 0xFFFFFFFF)
+		{
+			throw std::runtime_error("Array too big for gather intrinsic");
+		}
+#endif
+		
+		const __m256i gather_input_indexes_m256i = _mm256_set_epi32(
+				input->Stride() * 7 * sizeof(float), input->Stride() * 6 * sizeof(float), 
+				input->Stride() * 5 * sizeof(float), input->Stride() * 4 * sizeof(float),
+				input->Stride() * 3 * sizeof(float), input->Stride() * 2 * sizeof(float), 
+				input->Stride() * 1 * sizeof(float), input->Stride() * 0 * sizeof(float));
+
+		const size_t stride = mask->Stride();
+		const __m256i gather_mask_indexes_m256i = _mm256_set_epi32(
+				(stride * 7-3) * sizeof(bool), (stride * 6-2) * sizeof(bool), 
+				(stride * 5-1) * sizeof(bool), stride * 4 * sizeof(bool),
+				stride * 3 * sizeof(bool), stride * 2 * sizeof(bool), 
+				stride * 1 * sizeof(bool), stride * 0 * sizeof(bool));
+
+		const __m256i epi32_lo_set_m256i = _mm256_set_epi32(0xFF000000, 0xFF0000, 0xFF00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
+		const __m256i epi32_1_m256i = _mm256_set_epi32(1, 1, 1, 1, 1, 1, 1, 1);
+		constexpr int vectorWidth = 8;
+		const __m256 sign_mask_m256 = _mm256_xor_ps(_mm256_set1_ps(-0.0f), _mm256_castsi256_ps(_mm256_set1_epi32(-1)));
+		const __m256 threshold_m256 = _mm256_set1_ps(threshold);
+
+		for (int iRow = 0; iRow < (int)mask->Height() - (int)mask->Height() % vectorWidth; iRow += vectorWidth)
+		{
+			__m256 sum_m256;
+			__m256i count_m256i;
+			__m256i lastFlaggedPos_m256i = _mm256_set1_epi32(-1);
+
+			sum_m256 = _mm256_setzero_ps();
+			count_m256i = _mm256_setzero_si256();
+			//Set sum and count for initial window position
+			for (int maxCol = 0; maxCol < (int)Length - 1; ++maxCol)
+			{
+				/*
+				 * Implements:
+				 *    sum += input(iRow, maxCol) * !mask(iRow, maxCol);
+				 *    count += !mask(iRow, maxCol);
+				 */
+
+				__m256 input_m256 = _mm256_i32gather_ps(input->ValuePtr(maxCol, iRow), gather_input_indexes_m256i, 1);
+				__m256i mask_m256i = _mm256_i32gather_epi32((int*)mask->ValuePtr(maxCol, iRow), gather_mask_indexes_m256i, 1);
+				__m256i tmp1_m256i = _mm256_and_si256(mask_m256i, epi32_lo_set_m256i);
+				__m256i tmp2_m256i = _mm256_cmpeq_epi32(tmp1_m256i, _mm256_setzero_si256());
+				__m256 tmp3_m256 = _mm256_castsi256_ps(tmp2_m256i);
+				__m256 tmp4_m256 = _mm256_and_ps(tmp3_m256, input_m256);
+				
+				sum_m256 = _mm256_add_ps(sum_m256, tmp4_m256);
+
+				__m256i tmp5_m256i = _mm256_and_si256(tmp2_m256i, epi32_1_m256i);
+
+				count_m256i = _mm256_add_epi32(count_m256i, tmp5_m256i);
+			}
+
+			//Iterate through positions
+			for (int maxCol = (int)Length - 1; maxCol < (int)mask->Width(); ++maxCol)
+			{
+				int minCol = maxCol - (int)Length + 1;
+
+				/*
+				 * Implements:
+				 *    sum += input(iRow, maxCol) * !mask(iRow, maxCol);
+				 *    count += !mask(iRow,maxCol);
+				 */
+				{
+					__m256 input_m256 = _mm256_i32gather_ps(input->ValuePtr(maxCol, iRow), gather_input_indexes_m256i, 1);
+					__m256i mask_m256i = _mm256_i32gather_epi32((int*)mask->ValuePtr(maxCol, iRow), gather_mask_indexes_m256i, 1);
+					__m256i tmp1_m256i = _mm256_and_si256(mask_m256i, epi32_lo_set_m256i);
+					__m256i tmp2_m256i = _mm256_cmpeq_epi32(tmp1_m256i, _mm256_setzero_si256());
+					__m256 tmp3_m256 = _mm256_castsi256_ps(tmp2_m256i);
+					__m256 tmp4_m256 = _mm256_and_ps(tmp3_m256, input_m256);
+					
+					sum_m256 = _mm256_add_ps(sum_m256, tmp4_m256);
+
+					__m256i tmp5_m256i = _mm256_and_si256(tmp2_m256i, epi32_1_m256i);
+
+					count_m256i = _mm256_add_epi32(count_m256i, tmp5_m256i);
+				}
+
+				/*
+				 * Implements:
+				 * if (abs(sum) > count * threshold)
+				 *    lastFlaggedPos = maxCol;
+				 */
+				{
+					// cast count
+					__m256 count_m256 = _mm256_cvtepi32_ps(count_m256i);
+					
+					// tmp1 = threshold * count
+					__m256 tmp1_m256 = _mm256_mul_ps(threshold_m256, count_m256);
+					
+					// tmp2 = abs(sum)
+					__m256 tmp2_m256 = _mm256_and_ps(sum_m256, sign_mask_m256);
+					
+					// tmp3 = tmp2 > tmp1
+					__m256 tmp3_m256 = _mm256_cmp_ps(tmp2_m256, tmp1_m256, _CMP_GT_OQ);
+					
+					// cast tmp3
+					__m256i tmp3_m256i = _mm256_castps_si256(tmp3_m256);
+
+					// get maxCol vector`
+					__m256i maxCol_m256i = _mm256_set1_epi32(maxCol);
+					
+					// store lastFlaggedPos
+					lastFlaggedPos_m256i = _mm256_blendv_epi8(lastFlaggedPos_m256i, maxCol_m256i, tmp3_m256i);
+				}
+
+				/*
+				 * Implements:
+				 *    sum -= input(iRow, minCol) * !mask(iRow, minCol);
+				 *    count -= !mask(iRow, minCol);
+				 */
+				{
+					__m256 input_m256 = _mm256_i32gather_ps(input->ValuePtr(minCol, iRow), gather_input_indexes_m256i, 1);
+					__m256i mask_m256i = _mm256_i32gather_epi32((int*)mask->ValuePtr(minCol, iRow), gather_mask_indexes_m256i, 1);
+					__m256i tmp1_m256i = _mm256_and_si256(mask_m256i, epi32_lo_set_m256i);
+					__m256i tmp2_m256i = _mm256_cmpeq_epi32(tmp1_m256i, _mm256_setzero_si256());
+					__m256 tmp3_m256 = _mm256_castsi256_ps(tmp2_m256i);
+					__m256 tmp4_m256 = _mm256_and_ps(tmp3_m256, input_m256);
+					
+					sum_m256 = _mm256_sub_ps(sum_m256, tmp4_m256);
+
+					__m256i tmp5_m256i = _mm256_and_si256(tmp2_m256i, epi32_1_m256i);
+
+					count_m256i = _mm256_sub_epi32(count_m256i, tmp5_m256i);
+				}
+
+				/*
+				 * Implements:
+				 *    mask(iRow, minCol) |= (lastFlaggedPos > minCol - 1);
+				 */
+				{
+					__m256i minColt1_m256i = _mm256_set1_epi32(minCol - 1);
+					__m256i masked_m256i = _mm256_cmpgt_epi32(lastFlaggedPos_m256i, minColt1_m256i);
+					__m256i boolMask_m256i = _mm256_and_si256(masked_m256i, epi32_1_m256i);
+
+					// 5 asm instructions/store with regular bool cast (extract, mov, test, setne, or)
+					// 1 asm instructions/store with reinterpret hack
+					uint8_t* maskPtr = (uint8_t*)mask->ValuePtr(minCol, iRow);
+					maskPtr[mask->Stride() * 0] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 0));
+					maskPtr[mask->Stride() * 1] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 1));
+					maskPtr[mask->Stride() * 2] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 2));
+					maskPtr[mask->Stride() * 3] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 3));
+					maskPtr[mask->Stride() * 4] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 4));
+					maskPtr[mask->Stride() * 5] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 5));
+					maskPtr[mask->Stride() * 6] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 6));
+					maskPtr[mask->Stride() * 7] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 7));
+				}
+			}
+
+			//Flag last window
+			for (int minCol = (int)mask->Width() - Length + 1; minCol < (int)mask->Width(); ++minCol)
+			{
+				/*
+				 * Implements:
+				 *    mask(iRow, minCol) |= (lastFlaggedPos > minCol - 1);
+				 */
+				
+				__m256i minColt1_m256i = _mm256_set1_epi32(minCol - 1);
+				__m256i masked_m256i = _mm256_cmpgt_epi32(lastFlaggedPos_m256i, minColt1_m256i);
+				__m256i boolMask_m256i = _mm256_and_si256(masked_m256i, epi32_1_m256i);
+
+				uint8_t* maskPtr = (uint8_t*)mask->ValuePtr(minCol, iRow);
+
+				maskPtr[mask->Stride() * 0] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 0));
+				maskPtr[mask->Stride() * 1] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 1));
+				maskPtr[mask->Stride() * 2] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 2));
+				maskPtr[mask->Stride() * 3] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 3));
+				maskPtr[mask->Stride() * 4] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 4));
+				maskPtr[mask->Stride() * 5] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 5));
+				maskPtr[mask->Stride() * 6] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 6));
+				maskPtr[mask->Stride() * 7] |= static_cast<uint8_t>(_mm256_extract_epi32(boolMask_m256i, 7));
+			}
+		}
+
+		// non-vectorised remainder
+		for (int iRow = (int)mask->Height() - (int)mask->Height() % (int)vectorWidth; iRow < (int)mask->Height(); ++iRow) 
+		{
+			int lastFlaggedPos = -1;
+			num_t sum = 0;
+			int count = 0;
+
+			//Do prefix sum and count
+			for (int maxCol = 0; maxCol < (int)Length - 1; ++maxCol)
+			{
+				sum += input->Value(maxCol, iRow) * !mask->Value(maxCol, iRow);
+				count += !mask->Value(maxCol, iRow);
+			}
+
+			//Iterate through positions
+			for (int maxCol = (int)Length - 1; maxCol < (int)mask->Width(); ++maxCol)
+			{
+				int minCol = maxCol - Length + 1;
+				
+				// add the sample at the right
+				sum += input->Value(maxCol, iRow) * !mask->Value(maxCol, iRow);
+				count += !mask->Value(maxCol, iRow);
+
+				//Check current pos
+				lastFlaggedPos += int(abs(sum) > count * threshold) * (maxCol - lastFlaggedPos);
+
+				// subtract the sample at the left
+				sum -= input->Value(minCol, iRow) * !mask->Value(minCol, iRow);
+				count -= !mask->Value(minCol, iRow);
+
+				//Flag left edge
+				*mask->ValuePtr(minCol, iRow) |= (lastFlaggedPos >= minCol);
+
+			}
+
+			//Flag last window
+			for (int minCol = (int)mask->Width() - (int)Length + 1; minCol < (int)mask->Width(); ++minCol)
+			{
+				*mask->ValuePtr(minCol, iRow) |= (lastFlaggedPos >= minCol);
+			}
+		}
+	}
+}
+
+template
+void SumThreshold::VerticalAVXDumas<2>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<4>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<8>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<16>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<32>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<64>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<128>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+template
+void SumThreshold::VerticalAVXDumas<256>(const Image2D* input, Mask2D* mask, VerticalScratch* scratch, num_t threshold);
+
+template
+void SumThreshold::HorizontalAVXDumas<2>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<4>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<8>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<16>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<32>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<64>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<128>(const Image2D* input, Mask2D* mask, num_t threshold);
+template
+void SumThreshold::HorizontalAVXDumas<256>(const Image2D* input, Mask2D* mask, num_t threshold);
+
 
 #else
 #warning "AVX2 optimization of SumThreshold algorithm is not used"

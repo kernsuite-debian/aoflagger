@@ -9,8 +9,10 @@
 
 #include "imageset.h"
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
+
 #include "../../msio/spatialtimeloader.h"
+
 #include "../control/defaultstrategy.h"
 
 namespace rfiStrategy {
@@ -117,8 +119,9 @@ namespace rfiStrategy {
 		{
 			throw std::runtime_error("Not implemented");
 		}
+		
 	private:
-		MeasurementSet _set;
+		MSMetaData _set;
 		SpatialTimeLoader _loader;
 		std::stack<BaselineData> _baseline;
 		

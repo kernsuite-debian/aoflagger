@@ -1,3 +1,6 @@
+#ifndef TICKSET_H
+#define TICKSET_H
+
 #include <string>
 #include <vector>
 #include <cmath>
@@ -184,9 +187,7 @@ class LogarithmicTickSet : public TickSet
 		
 		Tick GetTick(unsigned i) const final override
 		{
-			std::stringstream tickStr;
-			tickStr << _ticks[i];
-			return Tick((log10(_ticks[i]) - _minLog10) / (_maxLog10 - _minLog10), tickStr.str());
+			return _ticks[i];
 		}
 		
 		void Reset() final override
@@ -226,35 +227,41 @@ class LogarithmicTickSet : public TickSet
 	private:
 		void set(unsigned sizeRequest)
 		{
+			std::vector<double> vals;
+			bool hasTensOnly = true;
 			if(_max == _min)
-				_ticks.push_back(_min);
-			else
 			{
+				vals.emplace_back(_min);
+				hasTensOnly = false;
+			}
+			else {
 				if(sizeRequest == 0)
 					sizeRequest = 1;
 				const double
 					tickStart = roundUpToBase10Number(_min*0.999),
 					tickEnd = roundDownToBase10Number(_max*1.001);
-				_ticks.push_back(tickStart);
+				vals.emplace_back(tickStart);
 				if(sizeRequest == 1)
 					return;
+				// Add all steps with factor of ten
 				if(tickEnd > tickStart)
 				{
 					const unsigned distance = (unsigned) round(log10(tickEnd / tickStart));
 					const unsigned step = (distance + sizeRequest - 1) / sizeRequest;
 					const double factor = exp10((double) step);
 					double pos = tickStart * factor;
-					while(pos <= _max && _ticks.size() < sizeRequest)
+					while(pos <= _max && vals.size() < sizeRequest)
 					{
-						_ticks.push_back(pos);
+						vals.emplace_back(pos);
 						pos *= factor;
 					}
 				}
 				// can we add two to nine?
-				bool isFull = _ticks.size() >= sizeRequest;
+				// If there are already 3 steps of 10, skip this so the format can be like "10^3" etc
+				bool isFull = vals.size() >= sizeRequest || vals.size() >= 3;
 				if(!isFull)
 				{
-					std::vector<double> tryTickset(_ticks);
+					std::vector<double> tryTickset(vals);
 					double base = tickStart / 10.0;
 					do {
 						for(double i=2.0;i<9.5;++i)
@@ -267,7 +274,8 @@ class LogarithmicTickSet : public TickSet
 					} while(base < _max);
 					if(tryTickset.size() <= sizeRequest)
 					{
-						_ticks = tryTickset;
+						vals = tryTickset;
+						hasTensOnly = false;
 						isFull = true;
 						
 						// can we add 1.5 ?
@@ -279,13 +287,13 @@ class LogarithmicTickSet : public TickSet
 							base *= 10.0;
 						} while(base < _max);
 						if(tryTickset.size() <= sizeRequest)
-							_ticks = std::move(tryTickset);
+							vals = std::move(tryTickset);
 					}
 				}
 				// can we add two, four, ... eight?
 				if(!isFull)
 				{
-					std::vector<double> tryTickset(_ticks);
+					std::vector<double> tryTickset(vals);
 					double base = tickStart / 10.0;
 					do {
 						for(double i=2.0;i<9.0;i+=2.0)
@@ -298,7 +306,8 @@ class LogarithmicTickSet : public TickSet
 					} while(base < _max);
 					if(tryTickset.size() <= sizeRequest)
 					{
-						_ticks = tryTickset;
+						vals = tryTickset;
+						hasTensOnly = false;
 						isFull = true;
 						
 						// can we add 1.5 ?
@@ -310,13 +319,13 @@ class LogarithmicTickSet : public TickSet
 							base *= 10.0;
 						} while(base < _max);
 						if(tryTickset.size() <= sizeRequest)
-							_ticks = std::move(tryTickset);
+							vals = std::move(tryTickset);
 					}
 				}
 				// can we add two and five?
 				if(!isFull)
 				{
-					std::vector<double> tryTickset(_ticks);
+					std::vector<double> tryTickset(vals);
 					double base = tickStart / 10.0;
 					do {
 						for(double i=2.0;i<6.0;i+=3.0)
@@ -329,14 +338,15 @@ class LogarithmicTickSet : public TickSet
 					} while(base < _max);
 					if(tryTickset.size() <= sizeRequest)
 					{
-						_ticks = std::move(tryTickset);
+						vals = std::move(tryTickset);
+						hasTensOnly = false;
 						isFull = true;
 					}
 				}
 				// can we add fives?
 				if(!isFull)
 				{
-					std::vector<double> tryTickset(_ticks);
+					std::vector<double> tryTickset(vals);
 					double base = tickStart / 10.0;
 					do {
 						double val = base * 5.0;
@@ -346,11 +356,38 @@ class LogarithmicTickSet : public TickSet
 					} while(base < _max);
 					if(tryTickset.size() <= sizeRequest)
 					{
-						_ticks = std::move(tryTickset);
+						vals = std::move(tryTickset);
+						hasTensOnly = false;
 						isFull = true;
 					}
 				}
-				std::sort(_ticks.begin(), _ticks.end());
+				std::sort(vals.begin(), vals.end());
+			}
+			
+			// Should we use "3e-3" syntax?
+			bool preferExp = (_max / _min > 100 || _max >= 1000.0 || _min < 0.01);
+			// Can we instead use "10^-5" syntax?
+			bool preferTens = preferExp && hasTensOnly;
+			
+			for(double v : vals)
+			{
+				if(preferTens)
+				{
+					int eVal = int(round(log10(v)));
+					_ticks.emplace_back((log10(v) - _minLog10) / (_maxLog10 - _minLog10), "10^" + std::to_string(eVal));
+				}
+				else if(preferExp)
+				{
+					int eVal = int(floor(log10(v)));
+					std::ostringstream str;
+					str << (v / exp10(eVal)) << "⋅10^" << eVal;
+					_ticks.emplace_back((log10(v) - _minLog10) / (_maxLog10 - _minLog10), str.str());
+				}
+				else {
+					std::ostringstream str;
+					str << v;
+					_ticks.emplace_back((log10(v) - _minLog10) / (_maxLog10 - _minLog10), str.str());
+				}
 			}
 		}
 		
@@ -372,7 +409,7 @@ class LogarithmicTickSet : public TickSet
 		
 		double _min, _minLog10, _max, _maxLog10;
 		unsigned _sizeRequest;
-		std::vector<double> _ticks;
+		std::vector<Tick> _ticks;
 };
 
 class TimeTickSet : public TickSet
@@ -576,3 +613,5 @@ class TextTickSet : public TickSet
 		std::vector<std::string> _labels;
 		std::vector<size_t> _ticks;
 };
+
+#endif

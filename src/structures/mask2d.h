@@ -18,6 +18,8 @@ void swap(Mask2D&&, Mask2D&);
 
 class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 	public:
+		Mask2D();
+		
 		Mask2D(const Mask2D& source);
 		
 		Mask2D(Mask2D&& source) noexcept;

@@ -50,7 +50,7 @@ void VerticalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo, double 
 		cairo->get_text_extents(tick.second, extents);
 		double textX;
 		if(_isSecondAxis)
-			textX = _width - extents.width - 4.0 - _captionSize;
+			textX = 8.0;
 		else
 			textX = -extents.width - 8.0;
 		cairo->move_to(x + textX, y - extents.height/2 - extents.y_bearing + offsetY);

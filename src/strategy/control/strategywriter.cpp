@@ -110,6 +110,9 @@ namespace rfiStrategy {
 			case QuickCalibrateActionType:
 				writeQuickCalibrateAction(static_cast<const QuickCalibrateAction&>(action));
 				break;
+			case RestoreChannelRangeActionType:
+				writeRestoreChannelRangeAction(static_cast<const RestoreChannelRangeAction&>(action));
+				break;
 			case SetFlaggingActionType:
 				writeSetFlaggingAction(static_cast<const SetFlaggingAction&>(action));
 				break;
@@ -253,7 +256,7 @@ namespace rfiStrategy {
 		Attribute("type", "ForEachMSAction");
 		Start("filenames");
 		Write("data-column-name", action.DataColumnName());
-		Write<bool>("subtract-model", action.SubtractModel());
+		//Write<bool>("subtract-model", action.SubtractModel());
 		const std::vector<std::string> &filenames = action.Filenames();
 		for(std::vector<std::string>::const_iterator i=filenames.begin();i!=filenames.end();++i)
 		{
@@ -349,6 +352,13 @@ namespace rfiStrategy {
 	void StrategyWriter::writeRawAppenderAction(const RawAppenderAction &)
 	{
 		Attribute("type", "RawAppenderAction");
+	}
+
+	void StrategyWriter::writeRestoreChannelRangeAction(const RestoreChannelRangeAction& action)
+	{
+		Attribute("type", "RestoreChannelRangeAction");
+		Write<double>("start-frequency-mhz", action.StartFrequencyMHz());
+		Write<double>("end-frequency-mhz", action.EndFrequencyMHz());
 	}
 
 	void StrategyWriter::writeSetFlaggingAction(const SetFlaggingAction &action)

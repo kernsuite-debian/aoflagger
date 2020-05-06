@@ -16,7 +16,7 @@
 #include "../summarypage.h"
 #include "../timefrequencyplotpage.h"
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
 
 #include "../../quality/histogramtablesformatter.h"
 #include "../../quality/histogramcollection.h"
@@ -82,7 +82,7 @@ void AOQPlotController::readDistributedObservation(const std::string& filename, 
 
 void AOQPlotController::readMetaInfoFromMS(const string& filename)
 {
-	MeasurementSet ms(filename);
+	MSMetaData ms(filename);
 	_polarizationCount = ms.PolarizationCount();
 	unsigned antennaCount = ms.AntennaCount();
 	_antennas.clear();

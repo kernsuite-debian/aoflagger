@@ -18,6 +18,7 @@ MSOptionWindow::MSOptionWindow(class RFIGuiController &controller, const std::ve
 	_openButton("_Open", true),
 	_dataKindFrame("Columns to read"),
 	_polarisationFrame("Polarisation to read"),
+	_readingModeFrame("Reading mode"),
 	_observedDataButton("Observed"), _correctedDataButton("Corrected"), _modelDataButton("Model"), _residualDataButton("Residual"),
 	_otherColumnButton("Other:"),
 	_allDipolePolarisationButton("Dipole (xx,xy,yx,yy separately)"),
@@ -26,6 +27,7 @@ MSOptionWindow::MSOptionWindow(class RFIGuiController &controller, const std::ve
 	_directReadButton("Direct IO"),
 	_indirectReadButton("Indirect IO"),
 	_memoryReadButton("Memory-mode IO"),
+	_intervalButton("Interval"),
 	_combineSPWsButton("Combine SPWs"),
 	_readUVWButton("Read UVW"),
 	_loadOptimizedStrategy("Load optimized strategy")
@@ -34,19 +36,20 @@ MSOptionWindow::MSOptionWindow(class RFIGuiController &controller, const std::ve
 
 	initDataTypeButtons();
 	initPolarisationButtons();
+	initReadingModeButtons();
 
 	gtkmm_set_image_from_icon_name(_openButton, "document-open");
 	_openButton.signal_clicked().connect(sigc::mem_fun(*this, &MSOptionWindow::onOpen));
 	_bottomButtonBox.pack_start(_openButton);
 
-	_rightVBox.pack_start(_directReadButton);
-	_rightVBox.pack_start(_indirectReadButton);
-	_rightVBox.pack_start(_memoryReadButton);
-	Gtk::RadioButton::Group group;
-	_directReadButton.set_group(group);
-	_indirectReadButton.set_group(group);
-	_memoryReadButton.set_group(group);
-	_directReadButton.set_active(true);
+	_intervalBox.pack_start(_intervalButton);
+	_intervalStartEntry.set_width_chars(5);
+	_intervalStartEntry.set_text("0");
+	_intervalBox.pack_start(_intervalStartEntry, true, true, 5);
+	_intervalEndEntry.set_width_chars(5);
+	_intervalEndEntry.set_text("...");
+	_intervalBox.pack_start(_intervalEndEntry, true, true, 5);
+	_rightVBox.pack_start(_intervalBox);
 	
 	_rightVBox.pack_start(_combineSPWsButton);
 
@@ -105,6 +108,22 @@ void MSOptionWindow::initPolarisationButtons()
 	_leftVBox.pack_start(_polarisationFrame);
 }
 
+void MSOptionWindow::initReadingModeButtons()
+{
+	Gtk::RadioButton::Group group;
+	_directReadButton.set_group(group);
+	_indirectReadButton.set_group(group);
+	_memoryReadButton.set_group(group);
+	_directReadButton.set_active(true);
+	
+	_readingModeBox.pack_start(_directReadButton);
+	_readingModeBox.pack_start(_indirectReadButton);
+	_readingModeBox.pack_start(_memoryReadButton);
+	
+	_readingModeFrame.add(_readingModeBox);
+	_rightVBox.pack_start(_readingModeFrame);
+}
+
 void MSOptionWindow::onOpen()
 {
 	BaselineIOMode ioMode = DirectReadMode;
@@ -129,6 +148,15 @@ void MSOptionWindow::onOpen()
 	}
 	else if(_otherColumnButton.get_active())
 		dataColumnName = _otherColumnEntry.get_text();
+	
+	boost::optional<size_t> intervalStart, intervalEnd;
+	if(_intervalButton.get_active())
+	{
+		intervalStart = atoi(_intervalStartEntry.get_text().c_str());
+		std::string endStr = _intervalEndEntry.get_text();
+		if(!endStr.empty() && endStr != "...")
+			intervalEnd = atoi(_intervalEndEntry.get_text().c_str());
+	}
 
 	size_t polCount;
 	if(_allDipolePolarisationButton.get_active())
@@ -140,7 +168,7 @@ void MSOptionWindow::onOpen()
 	
 	bool loadStrategy = _loadOptimizedStrategy.get_active();
 	
-	_controller.Open(_filenames, ioMode, readUVW, dataColumnName, subtractModel, polCount, loadStrategy, combineSPWs);
+	_controller.Open(_filenames, ioMode, readUVW, dataColumnName, subtractModel, polCount, loadStrategy, combineSPWs, std::make_pair(intervalStart, intervalEnd));
 	
 	hide();
 }

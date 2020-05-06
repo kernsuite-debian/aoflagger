@@ -4,16 +4,8 @@
 #include <set>
 #include <memory>
 
-#include <gtkmm/actiongroup.h>
-#include <gtkmm/box.h>
-#include <gtkmm/drawingarea.h>
-#include <gtkmm/menu.h>
-#include <gtkmm/menutoolbutton.h>
 #include <gtkmm/paned.h>
-#include <gtkmm/radioaction.h>
-#include <gtkmm/radiomenuitem.h>
 #include <gtkmm/statusbar.h>
-#include <gtkmm/toggleaction.h>
 #include <gtkmm/window.h>
 
 #include "../structures/timefrequencydata.h"
@@ -28,6 +20,10 @@
 #include "interfaces.h"
 
 #include "../imaging/defaultmodels.h"
+
+namespace Gtk {
+	class RadioMenuItem;
+}
 
 class RFIGuiWindow : public Gtk::Window, private StrategyController {
 	public:
@@ -69,8 +65,10 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		rfiStrategy::Strategy &Strategy() final override { return *_strategy; }
 		void SetStrategy(std::unique_ptr<rfiStrategy::Strategy> newStrategy) final override;
 
-		void createToolbar();
-
+		void onTFWidgetMouseMoved(size_t x, size_t y);
+		void onTFWidgetButtonReleased(size_t x, size_t y);
+		void onTFScroll(size_t x, size_t y, int direction);
+		
 		void onLoadPrevious();
 		void onLoadNext();
 		void onToggleFlags();
@@ -165,9 +163,6 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onGoToPressed();
 		void onLoadLongestBaselinePressed();
 		void onLoadShortestBaselinePressed();
-		void onTFWidgetMouseMoved(size_t x, size_t y);
-		void onTFWidgetButtonReleased(size_t x, size_t y);
-		void onTFScroll(size_t x, size_t y, int direction);
 		void onMultiplyData();
 		void onSegment();
 		void onCluster();
@@ -178,10 +173,6 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onVertEVD();
 		void onApplyTimeProfile();
 		void onApplyVertProfile();
-		void onRestoreTimeProfile() { onUseTimeProfile(true); }
-		void onRestoreVertProfile() { onUseVertProfile(true); }
-		void onReapplyTimeProfile() { onUseTimeProfile(false); }
-		void onReapplyVertProfile() { onUseVertProfile(false); }
 		void onUseTimeProfile(bool inverse);
 		void onUseVertProfile(bool inverse);
 		void onStoreData();
@@ -208,6 +199,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		void onControllerStateChange();
 		
 		void onExecutePythonStrategy();
+		void onExecuteLuaStrategy();
 		
 		void updatePolarizations();
 		
@@ -217,29 +209,11 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		class RFIGuiController* _controller;
 		
 		Gtk::Box _mainVBox;
-		Gtk::Paned _panedArea;
 		HeatMapWidget _timeFrequencyWidget;
-		Glib::RefPtr<Gtk::ActionGroup> _actionGroup;
 		Gtk::Statusbar _statusbar;
 		PlotFrame _plotFrame;
 		std::string _imageSetName, _imageSetIndexDescription;
 
-		Glib::RefPtr<Gtk::Action>
-			_previousButton, _reloadButton, _nextButton,
-			_zoomToFitButton, _zoomInButton, _zoomOutButton;
-		Gtk::MenuToolButton _selectVisualizationButton;
-		Glib::RefPtr<Gtk::ToggleAction>
-			_originalFlagsButton, _altFlagsButton,
-			_showPPButton, _showPQButton,
-			_showQPButton, _showQQButton,
-			_backgroundImageButton, _diffImageButton,
-			_timeGraphButton, _simFixBandwidthButton,
-			_closeExecuteFrameButton;
-		std::vector<sigc::connection> _toggleConnections;
-		Glib::RefPtr<Gtk::RadioAction>
-			_gaussianTestSetsButton, _rayleighTestSetsButton, _zeroTestSetsButton,
-			_ncpSetButton, _b1834SetButton, _emptySetButton,
-			_sim16ChannelsButton, _sim64ChannelsButton, _sim256ChannelsButton;
 		std::unique_ptr<class ImagePlaneWindow> _imagePlaneWindow;
 		std::unique_ptr<class HistogramWindow> _histogramWindow;
 		std::unique_ptr<class PlotWindow> _plotWindow;
@@ -248,6 +222,7 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 			_gotoWindow,
 			_progressWindow, _highlightWindow,
 			_plotComplexPlaneWindow, _imagePropertiesWindow;
+		std::unique_ptr<class RFIGuiMenu> _menu;
 
 		std::unique_ptr<rfiStrategy::Strategy> _strategy;
 		int _gaussianTestSets;
@@ -255,7 +230,6 @@ class RFIGuiWindow : public Gtk::Window, private StrategyController {
 		std::vector<double> _horProfile, _vertProfile;
 		TimeFrequencyData _storedData;
 		TimeFrequencyMetaDataCPtr _storedMetaData;
-		Gtk::Menu _tfVisualizationMenu;
 		std::vector<std::unique_ptr<Gtk::RadioMenuItem>> _tfVisualizationMenuItems;
 };
 

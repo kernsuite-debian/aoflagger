@@ -34,9 +34,9 @@ void NormalizeVarianceAction::initializeStdDevs(ArtifactSet &artifacts)
 		MSImageSet* msImageSet = dynamic_cast<MSImageSet*>(&imageSet);
 		if(msImageSet == nullptr)
 			throw std::runtime_error("Normalize variance actions needs measurement set");
-		std::string filename = msImageSet->Reader()->Set().Path();
+		std::string filename = msImageSet->Reader()->MetaData().Path();
 		QualityTablesFormatter qtables(filename);
-		StatisticsCollection statCollection(msImageSet->Reader()->Set().PolarizationCount());
+		StatisticsCollection statCollection(msImageSet->Reader()->MetaData().PolarizationCount());
 		statCollection.LoadTimeStatisticsOnly(qtables);
 		statCollection.IntegrateTimeToOneChannel();
 		_isInitialized = true;

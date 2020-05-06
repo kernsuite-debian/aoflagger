@@ -2,13 +2,11 @@
 #define UVIMAGER_H
 
 #include "../structures/timefrequencymetadata.h"
-#include "../structures/measurementset.h"
 #include "../structures/date.h"
-
 #include "../structures/timefrequencydata.h"
 
 struct SingleFrequencySingleBaselineData {
-	casacore::Complex data;
+	std::complex<float> data;
 	bool flag;
 	bool available;
 	double time;
@@ -20,8 +18,8 @@ class UVImager {
 		enum ImageKind { Homogeneous, Flagging };
 		UVImager(unsigned long xRes, unsigned long yRes, ImageKind imageKind=Homogeneous);
 		~UVImager();
-		void Image(class MeasurementSet &measurementSet, unsigned band);
-		void Image(class MeasurementSet &measurementSet, unsigned band, const class IntegerDomain &frequencies);
+		void Image(class MSMetaData& msMetaData, unsigned band);
+		void Image(class MSMetaData& msMetaData, unsigned band, const class IntegerDomain &frequencies);
 		void Image(const class TimeFrequencyData &data, TimeFrequencyMetaDataCPtr metaData, unsigned frequencyIndex);
 		void Image(const class TimeFrequencyData &data, TimeFrequencyMetaDataCPtr metaData)
 		{
@@ -29,7 +27,7 @@ class UVImager {
 				Image(data, metaData, y);
 		}
 		void Image(const class TimeFrequencyData &data, class SpatialMatrixMetaData *metaData);
-		void InverseImage(class MeasurementSet &prototype, unsigned band, const class Image2D &uvReal, const class Image2D &uvImaginary, unsigned antenna1, unsigned antenna2);
+		void InverseImage(class MSMetaData &prototype, unsigned band, const class Image2D &uvReal, const class Image2D &uvImaginary, unsigned antenna1, unsigned antenna2);
 		const class Image2D &WeightImage() const { return _uvWeights; }
 		const class Image2D &RealUVImage() const { return _uvReal; }
 		const class Image2D &ImaginaryUVImage() const { return _uvImaginary; }
@@ -157,7 +155,7 @@ class UVImager {
 		class Image2D _uvReal, _uvImaginary, _uvWeights;
 		class Image2D _uvFTReal, _uvFTImaginary;
 		class Image2D _timeFreq;
-		MeasurementSet *_measurementSet;
+		MSMetaData* _msMetaData;
 		unsigned _antennaCount, _fieldCount;
 		AntennaInfo *_antennas;
 		BandInfo _band;

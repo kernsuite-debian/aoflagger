@@ -33,7 +33,7 @@ namespace rfiStrategy
 	
 inline std::string rfiStrategy::IndexableSet::TelescopeName()
 {
-	return Reader()->Set().TelescopeName();
+	return Reader()->MetaData().TelescopeName();
 }
 
 #endif

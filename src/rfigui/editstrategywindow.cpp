@@ -35,6 +35,7 @@
 #include "strategyframes/iterationframe.h"
 #include "strategyframes/plotframe.h"
 #include "strategyframes/resamplingframe.h"
+#include "strategyframes/restorechannelrangeframe.h"
 #include "strategyframes/setflaggingframe.h"
 #include "strategyframes/setimageframe.h"
 #include "strategyframes/slidingwindowfitframe.h"
@@ -302,6 +303,9 @@ void EditStrategyWindow::onSelectionChanged()
 					break;
 				case ResamplingActionType:
 					showRight(new ResamplingFrame(*static_cast<rfiStrategy::ResamplingAction*>(selectedAction), *this));
+					break;
+				case RestoreChannelRangeActionType:
+					showRight(new RestoreChannelRangeFrame(*static_cast<rfiStrategy::RestoreChannelRangeAction*>(selectedAction), *this));
 					break;
 				case SetImageActionType:
 					showRight(new SetImageFrame(*static_cast<rfiStrategy::SetImageAction*>(selectedAction), *this));

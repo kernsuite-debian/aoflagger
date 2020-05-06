@@ -116,7 +116,7 @@ namespace aoflagger {
 			 * If this flag is not specified, the flags that have already been set will
 			 * be combined with the flags found by the flagger.
 			 */
-			static const unsigned CLEAR_FLAGS;
+			//static const unsigned CLEAR_FLAGS;
 			
 			/** @brief Optimize for auto-correlations. */
 			static const unsigned AUTO_CORRELATION;
@@ -188,6 +188,7 @@ namespace aoflagger {
 			
 			/** @brief Get constant access to the data buffer of an image.
 			 * @param imageIndex Index of image. See class description for ordering.
+			 * \note Rows are padded, see @ref HorizontalStride().
 			 */
 			const float* ImageBuffer(size_t imageIndex) const;
 			
@@ -321,10 +322,12 @@ namespace aoflagger {
 			 */
 			size_t HorizontalStride() const;
 			
-			/** @brief Get access to the data buffer. */
+			/** @brief Get access to the data buffer. 
+			 * @note The buffer is padded, see @ref HorizontalStride(). */
 			bool* Buffer();
 			
-			/** @brief Get constant access to the data buffer. */
+			/** @brief Get constant access to the data buffer.
+			 * @note The buffer is padded, see @ref HorizontalStride(). */
 			const bool* Buffer() const;
 			
 		private:
@@ -339,7 +342,7 @@ namespace aoflagger {
 	 * Telescope-specific flagging strategies can be created with
 	 * @ref AOFlagger::MakeStrategy(), or
 	 * can be loaded from disc with @ref AOFlagger::LoadStrategy(). Strategies
-	 * can not be changed with this interface. A user can create stored strategies
+	 * can not be changed with this interface. A user can create strategies
 	 * with the @c rfigui tool that is part of the aoflagger package.
 	 */
 	class Strategy
@@ -420,7 +423,7 @@ namespace aoflagger {
 			/** @brief Assign to this object. This is fast; only references are copied. */
 			QualityStatistics& operator=(const QualityStatistics& sourceQS);
 			
-			/** @brief Assign to this object. This is fast; only references are copied.
+			/** @brief Move-assign this object. This is fast; only references are moved.
 			 * @since Version 2.10
 			 */
 			QualityStatistics& operator=(QualityStatistics&& sourceQS);
@@ -446,7 +449,7 @@ namespace aoflagger {
 	 * @brief A base class which callers can inherit from to be able to receive
 	 * progress updates and error messages.
 	 * 
-	 * A status listener should be thread safe when the Run() method is called in parallell.
+	 * A status listener should be thread safe when the Run() method is called in parallel.
 	 */
 	class StatusListener
 	{
@@ -695,20 +698,21 @@ namespace aoflagger {
 			 */
 			FlagMask Run(Strategy& strategy, const ImageSet& input);
 			
-			/** @brief Run the flagging strategy on the given data with correlator flags.
+			/** @brief Run the flagging strategy on the given data with existing flags.
 			 * 
 			 * This method is similar to @ref Run(Strategy& strategy, const ImageSet&), except
-			 * that it will pass the correlator flags to the flagging strategy, which in the
-			 * case of bad data can do a better job of finding RFI in the good data.
+			 * that it will pass existing flags (e.g. as set by the correlator)
+			 * to the flagging strategy, which in the case of bad data can do a better
+			 * job of finding RFI in the good data.
 			 * @p input parameter. The @p strategy parameter can be the
 			 * same for different threads.
 			 * @param strategy The flagging strategy that will be used.
 			 * @param input The data to run the flagger on.
-			 * @param correlatorFlags Flags that indicate what data are bad.
-			 * @return The flags identifying bad (RFI contaminated) data.
+			 * @param existingFlags Flags that indicate what data are bad.
+			 * @return A flag mask that identifies bad (RFI contaminated) data.
 			 * @since 2.12
 			 */
-			FlagMask Run(Strategy& strategy, const ImageSet& input, const FlagMask& correlatorFlags);
+			FlagMask Run(Strategy& strategy, const ImageSet& input, const FlagMask& existingFlags);
 			
 			/** @brief Create a new object for collecting statistics.
 			 * 
@@ -801,6 +805,8 @@ namespace aoflagger {
 			/** @brief It is not allowed to assign to this class
 			 */
 			void operator=(const AOFlagger&) = delete;
+			
+			FlagMask run(Strategy& strategy, const ImageSet& input, const FlagMask* existingFlags);
 			
 			StatusListener* _statusListener;
 	};

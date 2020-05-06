@@ -16,16 +16,6 @@ ImagePropertiesWindow::ImagePropertiesWindow(HeatMapWidget &imageWidget, const s
 	_closeButton("_Close", true),
 	
 	_colorMapFrame("Color map"),
-	_grayScaleButton("Grayscale"),
-	_invGrayScaleButton("Inverted grayscale"),
-	_hotColdScaleButton("Hot/cold"),
-	_redBlueScaleButton("Red/blue"),
-	_blackRedScaleButton("Black/red"),
-	_redBlueYellowScaleButton("Red/Yellow/Blue"),
-	_fireScaleButton("Fire"),
-	_cubeHelixScaleButton("Cubehelix"),
-	_cubeHelixColourfulScaleButton("Cubehelix+"),
-	_viridisScaleButton("Viridis"),
 	
 	_scaleFrame("Scale"),
 	_minMaxScaleButton("From min to max"),
@@ -91,52 +81,36 @@ ImagePropertiesWindow::ImagePropertiesWindow(HeatMapWidget &imageWidget, const s
 
 void ImagePropertiesWindow::initColorMapButtons()
 {
-	Gtk::RadioButton::Group group;
-
-	_grayScaleButton.set_group(group);
-	_colorMapBox.pack_start(_grayScaleButton);
+	_colorMapStore = Gtk::ListStore::create(_colorMapColumns);
 	
-	_invGrayScaleButton.set_group(group);
-	_colorMapBox.pack_start(_invGrayScaleButton);
+	addColorMap("Grayscale", ColorMap::Grayscale);
+	addColorMap("Inverted grayscale", ColorMap::Inverted);
+	addColorMap("Hot/cold", ColorMap::HotCold);
+	addColorMap("Red/blue", ColorMap::RedBlue);
+	addColorMap("Black/red", ColorMap::BlackRed);
+	addColorMap("Red/Yellow/Blue", ColorMap::RedYellowBlue);
+	addColorMap("Fire", ColorMap::Fire);
+	addColorMap("Cool", ColorMap::Cool);
+	addColorMap("Cubehelix", ColorMap::CubeHelix);
+	addColorMap("Cubehelix+", ColorMap::CubeHelixColourful);
+	addColorMap("Viridis", ColorMap::Viridis);
+	addColorMap("Rainbow", ColorMap::Rainbow);
 	
-	_hotColdScaleButton.set_group(group);
-	_colorMapBox.pack_start(_hotColdScaleButton);
+	_colorMapCombo.set_model(_colorMapStore);
+	_colorMapCombo.pack_start(_colorMapColumns.name);
 	
-	_redBlueScaleButton.set_group(group);
-	_colorMapBox.pack_start(_redBlueScaleButton);
-	
-	_blackRedScaleButton.set_group(group);
-	_colorMapBox.pack_start(_blackRedScaleButton);
-	
-	_redBlueYellowScaleButton.set_group(group);
-	_colorMapBox.pack_start(_redBlueYellowScaleButton);
-	
-	_fireScaleButton.set_group(group);
-	_colorMapBox.pack_start(_fireScaleButton);
-	
-	_cubeHelixScaleButton.set_group(group);
-	_colorMapBox.pack_start(_cubeHelixScaleButton);
-	
-	_cubeHelixColourfulScaleButton.set_group(group);
-	_colorMapBox.pack_start(_cubeHelixColourfulScaleButton);
-	
-	_viridisScaleButton.set_group(group);
-	_colorMapBox.pack_start(_viridisScaleButton);
-	
-	switch(_imageWidget.Plot().GetColorMap())
+	ColorMap::Type selectedMap = _imageWidget.Plot().GetColorMap();
+	Gtk::ListStore::Children children = _colorMapStore->children();
+	for(auto row : children)
 	{
-		default:
-		case HeatMapPlot::BWMap: _grayScaleButton.set_active(true); break;
-		case HeatMapPlot::InvertedMap: _invGrayScaleButton.set_active(true); break;
-		case HeatMapPlot::HotColdMap: _hotColdScaleButton.set_active(true); break;
-		case HeatMapPlot::RedBlueMap: _redBlueScaleButton.set_active(true); break;
-		case HeatMapPlot::BlackRedMap: _blackRedScaleButton.set_active(true); break;
-		case HeatMapPlot::RedYellowBlueMap: _redBlueYellowScaleButton.set_active(true); break;
-		case HeatMapPlot::FireMap: _fireScaleButton.set_active(true); break;
-		case HeatMapPlot::CubeHelixMap: _cubeHelixScaleButton.set_active(true); break;
-		case HeatMapPlot::CubeHelixColourfulMap: _cubeHelixColourfulScaleButton.set_active(true); break;
-		case HeatMapPlot::ViridisMap: _viridisScaleButton.set_active(true); break;
+		if(row[_colorMapColumns.colorMap] == selectedMap)
+		{
+			_colorMapCombo.set_active(row);
+			break;
+		}
 	}
+
+	_colorMapBox.pack_start(_colorMapCombo, false, false);
 
 	_colorMapFrame.add(_colorMapBox);
 
@@ -300,26 +274,7 @@ void ImagePropertiesWindow::updateMinMaxEntries()
 
 void ImagePropertiesWindow::onApplyClicked()
 {
-	if(_grayScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::BWMap);
-	else if(_invGrayScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::InvertedMap);
-	else if(_hotColdScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::HotColdMap);
-	else if(_redBlueScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::RedBlueMap);
-	else if(_blackRedScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::BlackRedMap);
-	else if(_redBlueYellowScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::RedYellowBlueMap);
-	else if(_fireScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::FireMap);
-	else if(_cubeHelixScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::CubeHelixMap);
-	else if(_cubeHelixColourfulScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::CubeHelixColourfulMap);
-	else if(_viridisScaleButton.get_active())
-		_imageWidget.Plot().SetColorMap(HeatMapPlot::ViridisMap);
+	_imageWidget.Plot().SetColorMap((*_colorMapCombo.get_active())[_colorMapColumns.colorMap]);
 	
 	if(_minMaxScaleButton.get_active())
 		_imageWidget.Plot().SetRange(HeatMapPlot::MinMax);

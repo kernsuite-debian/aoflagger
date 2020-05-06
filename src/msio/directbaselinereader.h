@@ -10,94 +10,78 @@
 #include "../structures/antennainfo.h"
 #include "../structures/image2d.h"
 #include "../structures/mask2d.h"
-#include "../structures/measurementset.h"
+#include "../structures/msmetadata.h"
 
 class DirectBaselineReader : public BaselineReader {
+public:
+	explicit DirectBaselineReader(const std::string &msFile);
+	~DirectBaselineReader();
+
+	virtual void PerformReadRequests() final override;
+	virtual void PerformFlagWriteRequests() final override;
+	virtual void PerformDataWriteTask(std::vector<Image2DCPtr> /*_realImages*/, std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/, int /*antenna2*/, int /*spectralWindow*/, unsigned /*sequenceId*/) final override
+	{
+		throw std::runtime_error("The direct baseline reader can not write data back to file: use the indirect reader");
+	}
+	std::vector<UVW> ReadUVW(unsigned antenna1, unsigned antenna2, unsigned spectralWindow, unsigned sequenceId);
+	void ShowStatistics();
+	
+private:
+	class BaselineCacheIndex
+	{
 	public:
-		explicit DirectBaselineReader(const std::string &msFile);
-		~DirectBaselineReader();
-
-		virtual void PerformReadRequests() final override;
-		virtual void PerformFlagWriteRequests() final override;
-		virtual void PerformDataWriteTask(std::vector<Image2DCPtr> /*_realImages*/, std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/, int /*antenna2*/, int /*spectralWindow*/, unsigned /*sequenceId*/) final override
+		BaselineCacheIndex() { }
+		BaselineCacheIndex(const BaselineCacheIndex& source) :
+			antenna1(source.antenna1), antenna2(source.antenna2),
+			spectralWindow(source.spectralWindow), sequenceId(source.sequenceId)
+		{ }
+		bool operator==(const BaselineCacheIndex& rhs) const
 		{
-			throw std::runtime_error("The direct baseline reader can not write data back to file: use the indirect reader");
+			return
+				antenna1 == rhs.antenna1 &&
+				antenna2 == rhs.antenna2 &&
+				spectralWindow == rhs.spectralWindow &&
+				sequenceId == rhs.sequenceId;
 		}
-		std::vector<UVW> ReadUVW(unsigned antenna1, unsigned antenna2, unsigned spectralWindow, unsigned sequenceId);
-		void ShowStatistics();
-	private:
-		class BaselineCacheIndex
+		bool operator<(const BaselineCacheIndex &rhs) const
 		{
-		public:
-			BaselineCacheIndex() { }
-			BaselineCacheIndex(const BaselineCacheIndex &source) :
-				antenna1(source.antenna1), antenna2(source.antenna2),
-				spectralWindow(source.spectralWindow), sequenceId(source.sequenceId)
+			if(antenna1 < rhs.antenna1)
+				return true;
+			else if(antenna1 == rhs.antenna1)
 			{
-			}
-			BaselineCacheIndex& operator=(const BaselineCacheIndex &source)
-			{
-				antenna1 = source.antenna1;
-				antenna2 = source.antenna2;
-				spectralWindow = source.spectralWindow;
-				sequenceId = source.sequenceId;
-				return *this;
-			}
-			bool operator==(const BaselineCacheIndex &rhs) const
-			{
-				return
-					antenna1 == rhs.antenna1 &&
-					antenna2 == rhs.antenna2 &&
-					spectralWindow == rhs.spectralWindow &&
-					sequenceId == rhs.sequenceId;
-			}
-			bool operator<(const BaselineCacheIndex &rhs) const
-			{
-				if(antenna1 < rhs.antenna1)
+				if(antenna2 < rhs.antenna2)
 					return true;
-				else if(antenna1 == rhs.antenna1)
+				else if(antenna2 == rhs.antenna2)
 				{
-					if(antenna2 < rhs.antenna2)
+					if(spectralWindow < rhs.spectralWindow)
 						return true;
-					else if(antenna2 == rhs.antenna2)
-					{
-						if(spectralWindow < rhs.spectralWindow)
-							return true;
-						else if(spectralWindow == rhs.spectralWindow)
-							return sequenceId < rhs.sequenceId;
-					}
+					else if(spectralWindow == rhs.spectralWindow)
+						return sequenceId < rhs.sequenceId;
 				}
-				return false;
 			}
-			
-			int antenna1, antenna2, spectralWindow, sequenceId;
-		};
-		class BaselineCacheValue {
-			public:
-			std::vector<size_t> rows;
-			BaselineCacheValue() : rows()
-			{ }
-			BaselineCacheValue(const BaselineCacheValue &source) : rows(source.rows)
-			{ }
-			BaselineCacheValue& operator=(const BaselineCacheValue &source)
-			{
-				rows = source.rows;
-				return *this;
-			}
-		};
+			return false;
+		}
 		
-		void initBaselineCache();
-		
-		void addRequestRows(ReadRequest request, size_t requestIndex, std::vector<std::pair<size_t, size_t> > &rows);
-		void addRequestRows(FlagWriteRequest request, size_t requestIndex, std::vector<std::pair<size_t, size_t> > &rows);
-		void addRowToBaselineCache(int antenna1, int antenna2, int spectralWindow, int sequenceId, size_t row);
-		void readUVWData();
+		int antenna1, antenna2, spectralWindow, sequenceId;
+	};
+	
+	struct BaselineCacheValue {
+		std::vector<size_t> rows;
+	};
+	
+	void initBaselineCache();
+	
+	void addRequestRows(ReadRequest request, size_t requestIndex, std::vector<std::pair<size_t, size_t> > &rows);
+	void addRequestRows(FlagWriteRequest request, size_t requestIndex, std::vector<std::pair<size_t, size_t> > &rows);
+	void addRowToBaselineCache(int antenna1, int antenna2, int spectralWindow, int sequenceId, size_t row);
+	void readUVWData();
 
-		void readTimeData(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<casacore::Complex> data, const casacore::Array<casacore::Complex> *model);
-		void readTimeFlags(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<bool> flag);
-		void readWeights(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<float> weight);
+	void readTimeData(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<casacore::Complex> data, const casacore::Array<casacore::Complex> *model);
+	void readTimeFlags(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<bool> flag);
+	void readWeights(size_t requestIndex, size_t xOffset, int frequencyCount, const casacore::Array<float> weight);
 
-		std::map<BaselineCacheIndex, BaselineCacheValue> _baselineCache;
+	std::map<BaselineCacheIndex, BaselineCacheValue> _baselineCache;
+	casacore::MeasurementSet _ms;
 };
 
 #endif // DIRECTBASELINEREADER_H

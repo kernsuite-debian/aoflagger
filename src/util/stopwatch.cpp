@@ -36,10 +36,12 @@ void Stopwatch::Pause()
 	}
 }
 
-void Stopwatch::Reset()
+void Stopwatch::Reset(bool start)
 {
 	_running = false;
 	_sum = boost::posix_time::seconds(0);
+	if(start)
+		Start();
 }
 
 std::string Stopwatch::ToString() const

@@ -28,7 +28,7 @@ HeatMapPlot::HeatMapPlot() :
 	_initializedHeight(0),
 	_showOriginalMask(true),
 	_showAlternativeMask(true),
-	_colorMap(BWMap),
+	_colorMap(ColorMap::Grayscale),
 	_image(),
 	_highlighting(false),
 	_startHorizontal(0.0),
@@ -480,7 +480,7 @@ void HeatMapPlot::update(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned wi
 		_horiScale->SetPlotDimensions(width - _rightBorderSize + 5.0, height -_topBorderSize - _bottomBorderSize, _vertScale->GetWidth(cairo), _topBorderSize, false);
 	}
 
-	std::unique_ptr<ColorMap> colorMap(createColorMap());
+	std::unique_ptr<ColorMap> colorMap(ColorMap::CreateColorMap(_colorMap));
 	
 	const double
 		minLog10 = min>0.0 ? log10(min) : 0.0,
@@ -522,7 +522,7 @@ void HeatMapPlot::update(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned wi
 		altActive = _showAlternativeMask && alternativeMask != 0;
 	int orMaskR=255, orMaskG=0, orMaskB=255;
 	int altMaskR=255, altMaskG=255, altMaskB=0;
-	if(_colorMap == ViridisMap)
+	if(_colorMap == ColorMap::Viridis)
 	{
 		orMaskR=0; orMaskG=0; orMaskB=0;
 		altMaskR=255; altMaskG=255; altMaskB=255;
@@ -602,35 +602,6 @@ void HeatMapPlot::update(const Cairo::RefPtr<Cairo::Context>& cairo, unsigned wi
 	_initializedHeight = height;
 	redrawWithoutChanges(cairo, width, height);
 } 
-
-std::unique_ptr<ColorMap> HeatMapPlot::createColorMap()
-{
-	using CM=std::unique_ptr<ColorMap>;
-	switch(_colorMap) {
-		case BWMap:
-			return CM(new MonochromeMap());
-		case InvertedMap:
-			return CM(new class InvertedMap());
-		case HotColdMap:
-			return CM(new ColdHotMap());
-		case RedBlueMap:
-			return CM(new class RedBlueMap());
-		case RedYellowBlueMap:
-			return CM(new class RedYellowBlueMap());
-		case FireMap:
-			return CM(new class FireMap());
-		case BlackRedMap:
-			return CM(new class BlackRedMap());
-		case CubeHelixMap:
-			return CM(new class CubeHelixMap());
-		case CubeHelixColourfulMap:
-			return CM(new class CubeHelixColourfulMap());
-		case ViridisMap:
-			return CM(new class ViridisMap());
-		default:
-			return 0;
-	}
-}
 
 void HeatMapPlot::findMinMax(const Image2D* image, const Mask2D* mask, num_t &min, num_t &max)
 {

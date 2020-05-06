@@ -29,7 +29,7 @@
 #include "../imagesets/imageset.h"
 #include "../imagesets/msimageset.h"
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
 
 #include <boost/algorithm/string/case_conv.hpp>
 
@@ -65,7 +65,7 @@ namespace rfiStrategy {
 		}
 	}
 		
-	DefaultStrategy::TelescopeId DefaultStrategy::TelescopeIdFromName(const std::string &name)
+	DefaultStrategy::TelescopeId DefaultStrategy::TelescopeIdFromName(const std::string& name)
 	{
 		const std::string nameUpper = boost::algorithm::to_upper_copy(name);
 		if(nameUpper == "AARTFAAC")
@@ -394,7 +394,7 @@ namespace rfiStrategy {
 		}
 	}
 	
-	void DefaultStrategy::DetermineSettings(MeasurementSet& measurementSet, DefaultStrategy::TelescopeId& telescopeId, unsigned int& flags, double& frequency, double& timeRes, double& frequencyRes)
+	void DefaultStrategy::DetermineSettings(MSMetaData& measurementSet, DefaultStrategy::TelescopeId& telescopeId, unsigned int& flags, double& frequency, double& timeRes, double& frequencyRes)
 	{
 		Logger::Debug << "Determining best known strategy for measurement set...\n";
 		
@@ -457,7 +457,7 @@ namespace rfiStrategy {
 		if(indexableSet != nullptr)
 		{
 			DetermineSettings(
-				indexableSet->Reader()->Set(),
+				indexableSet->Reader()->MetaData(),
 				telescopeId,
 				flags,
 				frequency,

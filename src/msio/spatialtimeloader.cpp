@@ -3,40 +3,34 @@
 #include <stdexcept>
 #include <vector>
 
-#include <casacore/tables/TaQL/ExprNode.h>
-
-#include "../structures/arraycolumniterator.h"
-#include "../structures/scalarcolumniterator.h"
+#include <casacore/tables/Tables/ArrayColumn.h>
+#include <casacore/tables/Tables/ScalarColumn.h>
 
 #include "../util/logger.h"
 
-SpatialTimeLoader::SpatialTimeLoader(MeasurementSet &measurementSet)
-	:  _measurementSet(measurementSet), _sortedTable(0), _tableIter(0)
+SpatialTimeLoader::SpatialTimeLoader(MSMetaData& msMetaData)
+	:  _msMetaData(msMetaData)
 {
-	casacore::Table *rawTable = new casacore::Table(_measurementSet.Path());
+	casacore::Table rawTable(_msMetaData.Path());
 	casacore::Block<casacore::String> names(4);
 	names[0] = "DATA_DESC_ID";
 	names[1] = "TIME";
 	names[2] = "ANTENNA1";
 	names[3] = "ANTENNA2";
-	_sortedTable = new casacore::Table(rawTable->sort(names));
-	delete rawTable;
+	_sortedTable.reset(new casacore::Table(rawTable.sort(names)));
 
-	_channelCount = _measurementSet.FrequencyCount(0);
-	_timestepsCount = _measurementSet.TimestepCount();
-	_antennaCount = _measurementSet.AntennaCount();
-	_polarizationCount = _measurementSet.PolarizationCount();
+	_channelCount = _msMetaData.FrequencyCount(0);
+	_timestepsCount = _msMetaData.TimestepCount();
+	_antennaCount = _msMetaData.AntennaCount();
+	_polarizationCount = _msMetaData.PolarizationCount();
 
 	casacore::Block<casacore::String> selectionNames(1);
 	selectionNames[0] = "DATA_DESC_ID";
-	_tableIter = new casacore::TableIterator(*_sortedTable, selectionNames, casacore::TableIterator::Ascending, casacore::TableIterator::NoSort);
+	_tableIter.reset(new casacore::TableIterator(*_sortedTable, selectionNames, casacore::TableIterator::Ascending, casacore::TableIterator::NoSort));
 }
 
 SpatialTimeLoader::~SpatialTimeLoader()
 {
-	if(_sortedTable != 0)
-		delete _sortedTable;
-	delete _tableIter;
 }
 
 TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex, bool fringeStop)
@@ -44,12 +38,12 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex, bool fringeStop
 	const unsigned baselineCount = _antennaCount * (_antennaCount-1) / 2;
 	
 	casacore::Table table = _tableIter->table();
-	casacore::ROScalarColumn<int> antenna1Column(table, "ANTENNA1"); 
-	casacore::ROScalarColumn<int> antenna2Column(table, "ANTENNA2");
-	casacore::ROScalarColumn<double> timeColumn(table, "TIME");
-	casacore::ROArrayColumn<double> uvwColumn(table, "UVW");
-	casacore::ROArrayColumn<bool> flagColumn(table, "FLAG");
-	casacore::ROArrayColumn<casacore::Complex> dataColumn(table, "DATA");
+	casacore::ScalarColumn<int> antenna1Column(table, "ANTENNA1"); 
+	casacore::ScalarColumn<int> antenna2Column(table, "ANTENNA2");
+	casacore::ScalarColumn<double> timeColumn(table, "TIME");
+	casacore::ArrayColumn<double> uvwColumn(table, "UVW");
+	casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
+	casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
 
 	std::vector<Image2DPtr>
 		realImages(_polarizationCount),
@@ -63,7 +57,7 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex, bool fringeStop
 		masks[p] = Mask2D::CreateUnsetMaskPtr(_timestepsCount, baselineCount);
 	}
 	
-	ChannelInfo channelInfo = _measurementSet.GetBandInfo(0).channels[channelIndex];
+	ChannelInfo channelInfo = _msMetaData.GetBandInfo(0).channels[channelIndex];
 	
 	unsigned timeIndex = 0;
 	double lastTime = timeColumn(0);
@@ -123,7 +117,7 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex, bool fringeStop
 		}
 	}
 	casacore::ROScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
-	const BandInfo band = _measurementSet.GetBandInfo(bandColumn(0));
+	const BandInfo band = _msMetaData.GetBandInfo(bandColumn(0));
 
 	TimeFrequencyData data;
 	if(_polarizationCount == 4)

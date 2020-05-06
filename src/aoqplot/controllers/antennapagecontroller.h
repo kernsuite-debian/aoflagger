@@ -3,7 +3,7 @@
 
 #include "../../quality/statisticscollection.h"
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
 
 #include "aoqplotpagecontroller.h"
 

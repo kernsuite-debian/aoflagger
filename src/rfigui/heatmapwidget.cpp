@@ -29,6 +29,7 @@ bool HeatMapWidget::onDraw(const Cairo::RefPtr<Cairo::Context>& cr)
 	if(window && get_width() > 0 && get_height() > 0)
 	{
 		_plot->Draw(cr, get_width(), get_height(), _invalidated);
+		_invalidated = false;
 		if(_isZooming)
 		{
 			double x1, y1, x2, y2;
@@ -139,7 +140,8 @@ bool HeatMapWidget::onButtonRelease(GdkEventButton *event)
 		if(_isZooming)
 		{
 			_isZooming = false;
-			_plot->ZoomTo(_bpressStartX, _bpressStartY, _mouseX, _mouseY);
+			if(_bpressStartX != _mouseX || _bpressStartY != _mouseY)
+				_plot->ZoomTo(_bpressStartX, _bpressStartY, _mouseX, _mouseY);
 		}
 		if(_isPanning)
 		{

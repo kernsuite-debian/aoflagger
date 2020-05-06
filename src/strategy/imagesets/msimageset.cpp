@@ -17,15 +17,15 @@ namespace rfiStrategy {
 	void MSImageSet::Initialize()
 	{
 		Logger::Debug << "Initializing image set...\n";
-		Logger::Debug << "Antennas: " << _set.AntennaCount() << '\n';
-		_sequences = _set.GetSequences();
+		Logger::Debug << "Antennas: " << _metaData.AntennaCount() << '\n';
+		_sequences = _metaData.GetSequences();
 		Logger::Debug << "Unique sequences: " << _sequences.size() << '\n';
 		if(_sequences.empty())
 			throw std::runtime_error("Trying to open a measurement set with no sequences");
 		initReader();
-		_bandCount = _set.BandCount();
-		_fieldCount = _set.FieldCount();
-		_sequencesPerBaselineCount = _set.SequenceCount();
+		_bandCount = _metaData.BandCount();
+		_fieldCount = _metaData.FieldCount();
+		_sequencesPerBaselineCount = _metaData.SequenceCount();
 		Logger::Debug << "Bands: " << _bandCount << '\n';
 	}
 	
@@ -51,7 +51,7 @@ namespace rfiStrategy {
 	
 	void MSImageSet::initReader()
 	{
-		if(_reader == 0 )
+		if(_reader == nullptr )
 		{
 			switch(_ioMode)
 			{
@@ -75,6 +75,7 @@ namespace rfiStrategy {
 			}
 		}
 		_reader->SetDataColumnName(_dataColumnName);
+		_reader->SetInterval(_intervalStart, _intervalEnd);
 		_reader->SetSubtractModel(_subtractModel);
 		_reader->SetReadFlags(_readFlags);
 		_reader->SetReadData(true);
@@ -87,7 +88,7 @@ namespace rfiStrategy {
 
 	size_t MSImageSet::EndIndex(const MSImageSetIndex &index)
 	{
-		return _reader->Set().GetObservationTimesSet(GetSequenceId(index)).size();
+		return _reader->MetaData().GetObservationTimesSet(GetSequenceId(index)).size();
 	}
 
 	std::vector<double> MSImageSet::ObservationTimesVector(const ImageSetIndex &index)
@@ -95,21 +96,21 @@ namespace rfiStrategy {
 		const MSImageSetIndex &msIndex = static_cast<const MSImageSetIndex &>(index);
 		// StartIndex(msIndex), EndIndex(msIndex)
 		unsigned sequenceId = _sequences[msIndex._sequenceIndex].sequenceId;
-		const std::set<double> &obsTimesSet = _reader->Set().GetObservationTimesSet(sequenceId);
+		const std::set<double>& obsTimesSet = _reader->MetaData().GetObservationTimesSet(sequenceId);
 		std::vector<double> obs(obsTimesSet.begin(), obsTimesSet.end());
 		return obs;
 	}
-			
+	
 	TimeFrequencyMetaDataCPtr MSImageSet::createMetaData(const ImageSetIndex &index, std::vector<UVW> &uvw)
 	{
-		const MSImageSetIndex &msIndex = static_cast<const MSImageSetIndex&>(index);
-		TimeFrequencyMetaData *metaData = new TimeFrequencyMetaData();
-		metaData->SetAntenna1(_set.GetAntennaInfo(GetAntenna1(msIndex)));
-		metaData->SetAntenna2(_set.GetAntennaInfo(GetAntenna2(msIndex)));
-		metaData->SetBand(_set.GetBandInfo(GetBand(msIndex)));
-		metaData->SetField(_set.GetFieldInfo(GetField(msIndex)));
+		const MSImageSetIndex& msIndex = static_cast<const MSImageSetIndex&>(index);
+		TimeFrequencyMetaData* metaData = new TimeFrequencyMetaData();
+		metaData->SetAntenna1(_metaData.GetAntennaInfo(GetAntenna1(msIndex)));
+		metaData->SetAntenna2(_metaData.GetAntennaInfo(GetAntenna2(msIndex)));
+		metaData->SetBand(_metaData.GetBandInfo(GetBand(msIndex)));
+		metaData->SetField(_metaData.GetFieldInfo(GetField(msIndex)));
 		metaData->SetObservationTimes(ObservationTimesVector(msIndex));
-		if(_reader != 0)
+		if(_reader != nullptr)
 		{
 			metaData->SetUVW(uvw);
 		}
@@ -119,7 +120,7 @@ namespace rfiStrategy {
 	std::string MSImageSetIndex::Description() const
 	{
 		std::stringstream sstream;
-		const MeasurementSet::Sequence &sequence = static_cast<class MSImageSet&>(imageSet())._sequences[_sequenceIndex];
+		const MSMetaData::Sequence &sequence = static_cast<class MSImageSet&>(imageSet())._sequences[_sequenceIndex];
 		size_t
 			antenna1 = sequence.antenna1,
 			antenna2 = sequence.antenna2,
@@ -149,7 +150,7 @@ namespace rfiStrategy {
 	size_t MSImageSet::FindBaselineIndex(size_t antenna1, size_t antenna2, size_t band, size_t sequenceId)
 	{
 		size_t index = 0;
-		for(std::vector<MeasurementSet::Sequence>::const_iterator i=_sequences.begin();
+		for(std::vector<MSMetaData::Sequence>::const_iterator i=_sequences.begin();
 			i != _sequences.end() ; ++i)
 		{
 			bool antennaMatch = (i->antenna1 == antenna1 && i->antenna2 == antenna2) || (i->antenna1 == antenna2 && i->antenna2 == antenna1);

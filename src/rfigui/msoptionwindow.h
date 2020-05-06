@@ -19,6 +19,7 @@ class MSOptionWindow : public Gtk::Window {
 	private:
 		void initDataTypeButtons();
 		void initPolarisationButtons();
+		void initReadingModeButtons();
 
 		class RFIGuiController &_controller;
 		const std::vector<std::string> _filenames;
@@ -27,14 +28,14 @@ class MSOptionWindow : public Gtk::Window {
 		Gtk::VBox _leftVBox, _rightVBox;
 		Gtk::HBox _topHBox;
 		Gtk::Button _openButton;
-		Gtk::Frame _dataKindFrame, _polarisationFrame;
-		Gtk::VBox _dataKindBox, _polarisationBox;
-		Gtk::HBox _otherColumnBox;
+		Gtk::Frame _dataKindFrame, _polarisationFrame, _readingModeFrame;
+		Gtk::VBox _dataKindBox, _polarisationBox, _readingModeBox;
+		Gtk::HBox _otherColumnBox, _intervalBox;
 		Gtk::RadioButton _observedDataButton, _correctedDataButton, _modelDataButton, _residualDataButton, _otherColumnButton;
-		Gtk::Entry _otherColumnEntry;
+		Gtk::Entry _otherColumnEntry, _intervalStartEntry, _intervalEndEntry;
 		Gtk::RadioButton _allDipolePolarisationButton, _autoDipolePolarisationButton, _stokesIPolarisationButton;
 		Gtk::RadioButton _directReadButton, _indirectReadButton, _memoryReadButton;
-		Gtk::CheckButton _combineSPWsButton, _readUVWButton, _loadOptimizedStrategy;
+		Gtk::CheckButton _intervalButton, _combineSPWsButton, _readUVWButton, _loadOptimizedStrategy;
 };
 
 #endif

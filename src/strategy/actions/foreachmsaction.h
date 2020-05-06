@@ -5,6 +5,8 @@
 
 #include "../../structures/types.h"
 
+#include <boost/optional/optional.hpp>
+
 #include <set>
 
 namespace rfiStrategy {
@@ -14,7 +16,6 @@ namespace rfiStrategy {
 			ForEachMSAction() : 
 			_readUVW(false), 
 			_dataColumnName("DATA"),
-			_subtractModel(false), 
 			_combineSPWs(false),
 			_skipIfAlreadyProcessed(false),
 			_loadOptimizedStrategy(false),
@@ -48,14 +49,26 @@ namespace rfiStrategy {
 			const std::string &DataColumnName() const { return _dataColumnName; }
 			void SetDataColumnName(const std::string &name) { _dataColumnName = name; }
 			
+			void SetInterval(boost::optional<size_t> intervalStart, boost::optional<size_t> intervalEnd)
+			{
+				_intervalStart = intervalStart;
+				_intervalEnd = intervalEnd;
+			}
+			boost::optional<size_t> IntervalStart() const { return _intervalStart; }
+			boost::optional<size_t> IntervalEnd() const { return _intervalEnd; }
+			void SetMaxIntervalSize(boost::optional<size_t> maxIntervalSize)
+			{
+				_maxIntervalSize = maxIntervalSize;
+			}
+			
 			bool CombineSPWs() const { return _combineSPWs; }
 			void SetCombineSPWs(bool combineSPWs) { _combineSPWs = combineSPWs; }
 			
 			const std::string& BandpassFilename() const { return _bandpassFilename; }
 			void SetBandpassFilename(const std::string& bandpass) { _bandpassFilename = bandpass; };
 
-			bool SubtractModel() const { return _subtractModel; }
-			void SetSubtractModel(bool subtractModel) { _subtractModel = subtractModel; }
+			//bool SubtractModel() const { return _subtractModel; }
+			//void SetSubtractModel(bool subtractModel) { _subtractModel = subtractModel; }
 
 			std::string CommandLineForHistory() const { return _commandLineForHistory; }
 			void SetCommandLineForHistory(const std::string& cmd) { _commandLineForHistory = cmd; }
@@ -74,11 +87,14 @@ namespace rfiStrategy {
 			
 			std::set<size_t>& Bands() { return _bands; }
 			const std::set<size_t>& Bands() const { return _bands; }
+			
 		private:
+			void processMS(const std::string& filenamem, ArtifactSet& artifacts, ProgressListener& progress);
+			
 			std::vector<std::string> _filenames;
 			bool _readUVW;
 			std::string _dataColumnName;
-			bool _subtractModel;
+			boost::optional<size_t> _intervalStart, _intervalEnd, _maxIntervalSize;
 			std::string _commandLineForHistory;
 			bool _combineSPWs;
 			std::string _bandpassFilename;

@@ -30,9 +30,10 @@ def flag(input):
       
       for threshold_factor in threshold_factors:
       
-        print('Flagging polarization ' + str(polarization) + ' (' + str(representation) + ', ' + str(threshold_factor) + ')')
+        #print('Flagging polarization ' + str(polarization) + ' (' + str(representation) + ', ' + str(threshold_factor) + ')')
 
-        aoflagger.sumthreshold(data, threshold_factor * base_threshold, True, True)
+        thr = threshold_factor * base_threshold
+        aoflagger.sumthreshold(data, thr, thr, True, True)
         chdata = copy.copy(data)
         aoflagger.threshold_timestep_rms(data, 3.5)
         aoflagger.threshold_channel_rms(chdata, 3.0 * threshold_factor, True)
@@ -44,7 +45,7 @@ def flag(input):
         aoflagger.enlarge(resized_data, data, 3, 3)
         data = original_image - data
 
-      aoflagger.sumthreshold(data, base_threshold, True, True)
+      aoflagger.sumthreshold(data, base_threshold, base_threshold, True, True)
 
     if polarization in inpPolarizations:
       data = data.make_complex()

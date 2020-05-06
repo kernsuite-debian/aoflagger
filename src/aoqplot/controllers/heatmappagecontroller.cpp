@@ -14,7 +14,7 @@ HeatMapPageController::HeatMapPageController() :
 	_phase(TimeFrequencyData::AmplitudePart)
 { 
 	_heatMap.SetCairoFilter(Cairo::FILTER_NEAREST);
-	_heatMap.SetColorMap(HeatMapPlot::HotColdMap);
+	_heatMap.SetColorMap(ColorMap::HotCold);
 	_heatMap.SetRange(HeatMapPlot::MinMax);
 	_heatMap.SetScaleOption(HeatMapPlot::LogScale);
 	_heatMap.SetZAxisDescription("Statistical value");

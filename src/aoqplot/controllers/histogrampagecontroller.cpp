@@ -6,7 +6,7 @@
 #include "../../quality/histogramcollection.h"
 #include "../../quality/rayleighfitter.h"
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
 
 #ifndef HAVE_EXP10
 #define exp10(x) exp( (2.3025850929940456840179914546844) * (x) )
@@ -30,11 +30,11 @@ void HistogramPageController::readFromFile()
 	HistogramTablesFormatter histogramTables(_statFilename);
 	if(histogramTables.HistogramsExist())
 	{
-		MeasurementSet set(_statFilename);
+		MSMetaData set(_statFilename);
 		
 		const unsigned polarizationCount = set.PolarizationCount();
 
-		_histograms = new HistogramCollection(polarizationCount);
+		_histograms.reset(new HistogramCollection(polarizationCount));
 		_histograms->Load(histogramTables);
 	}
 }
@@ -42,23 +42,15 @@ void HistogramPageController::readFromFile()
 void HistogramPageController::CloseStatistics()
 {
 	_statFilename = std::string();
-	if(_histograms != 0)
-	{
-		delete _histograms;
-		_histograms = 0;
-	}
-	if(_summedPolarizationHistograms != 0)
-	{
-		delete _summedPolarizationHistograms;
-		_summedPolarizationHistograms = 0;
-	}
+	_histograms.reset();
+	_summedPolarizationHistograms.reset();
 }
 
 void HistogramPageController::SetHistograms(const HistogramCollection *histograms)
 {
 	CloseStatistics();
-	_histograms = new HistogramCollection(*histograms);
-	_summedPolarizationHistograms = _histograms->CreateSummedPolarizationCollection();
+	_histograms.reset(new HistogramCollection(*histograms));
+	_summedPolarizationHistograms.reset(_histograms->CreateSummedPolarizationCollection());
 	_histograms->CreateMissingBins();
 	_summedPolarizationHistograms->CreateMissingBins();
 	updatePlot();

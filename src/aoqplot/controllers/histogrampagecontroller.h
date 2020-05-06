@@ -81,8 +81,8 @@ private:
 	class HistogramPage* _page;
 	std::string _statFilename;
 	Plot2D _plot;
-	class HistogramCollection *_histograms;
-	class HistogramCollection *_summedPolarizationHistograms;
+	std::unique_ptr<class HistogramCollection> _histograms;
+	std::unique_ptr<class HistogramCollection> _summedPolarizationHistograms;
 	
 	bool _drawXX, _drawXY, _drawYX, _drawYY, _drawSum;
 	

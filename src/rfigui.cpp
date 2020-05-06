@@ -41,6 +41,8 @@ static void run(int argc, char *argv[])
 	std::set<SavedBaseline> savedBaselines;
 	bool interactive = true;
 	std::string dataColumnName = "DATA";
+	bool plotFlags = true;
+	boost::optional<size_t> intervalStart, intervalEnd;
 	
 	while(argi < argc)
 	{
@@ -72,7 +74,9 @@ static void run(int argc, char *argv[])
 					<< "    multiple times to save multiple baselines in one run. When this parameter is specified,\n"
 					<< "    the main window will not open and the program will exit after saving the requested baselines.\n"
 					<< " -data-column <columnname>\n"
-					<< "    Open the selected column name.\n";
+					<< "    Open the selected column name.\n"
+					<< " -hide-flags / -show-flags\n"
+					<< "    Do not (or do) plot the flag mask on top of the data. Default: plot them.\n";
 				return;
 			}
 			else if(p == "version")
@@ -96,6 +100,14 @@ static void run(int argc, char *argv[])
 			{
 				++argi;
 				dataColumnName = argv[argi];
+			}
+			else if(p == "hide-flags")
+			{
+				plotFlags = false;
+			}
+			else if(p == "show-flags")
+			{
+				plotFlags = true;
 			}
 			else if(p == "v")
 			{
@@ -131,7 +143,7 @@ static void run(int argc, char *argv[])
 			if(interactive)
 				window->OpenPaths(filenames);
 			else
-				controller.Open(filenames, DirectReadMode, true, dataColumnName, false, 4, true, false);
+				controller.Open(filenames, DirectReadMode, true, dataColumnName, false, 4, true, false, std::make_pair(intervalStart, intervalEnd));
 		}
 		
 		if(!savedBaselines.empty())
@@ -141,6 +153,7 @@ static void run(int argc, char *argv[])
 			if(imageSet == nullptr)
 				throw std::runtime_error("Option -save-baseline can only be used for measurement sets.\n");
 			HeatMapPlot& plot = controller.TFController().Plot();
+			plot.SetShowOriginalMask(plotFlags);
 			plot.SetShowXAxisDescription(true);
 			plot.SetShowYAxisDescription(true);
 			plot.SetShowZAxisDescription(true);

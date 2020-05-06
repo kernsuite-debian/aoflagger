@@ -5,8 +5,8 @@
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 
-#include "structures/measurementset.h"
 #include "structures/antennainfo.h"
+#include "structures/msmetadata.h"
 
 #include "strategy/algorithms/thresholdtools.h"
 
@@ -42,11 +42,6 @@ int main(int argc, char *argv[])
 		{
 			antennaeList = true;
 		} else
-		/*if(parameter == "flaglength") {
-			saveFlagLength = true;
-			flagLengthFile = argv[pindex+1];
-			++pindex;
-		} else*/
 		{
 			cerr << "Bad parameter: -" << parameter << endl;
 			exit(-1);
@@ -57,7 +52,7 @@ int main(int argc, char *argv[])
 	string measurementFile = argv[pindex];
 	if(antennaeList)
 	{
-		MeasurementSet set(measurementFile);
+		MSMetaData set(measurementFile);
 		const size_t antennaCount = set.AntennaCount();
 		for(size_t i=0;i<antennaCount;++i)
 		{
@@ -69,7 +64,7 @@ int main(int argc, char *argv[])
 	}
 	else {
 		cout << "Opening measurementset " << measurementFile << endl; 
-		MeasurementSet set(measurementFile);
+		MSMetaData set(measurementFile);
 		size_t antennaCount = set.AntennaCount();
 		cout
 			<< "Telescope name: " << set.TelescopeName() << '\n'
@@ -78,11 +73,12 @@ int main(int argc, char *argv[])
 			<< "Number of channels/band: " << set.FrequencyCount(0) << '\n'
 			<< "Number of fields: " << set.FieldCount() << '\n'
 			<< "Number of bands: " << set.BandCount() << '\n';
-		casacore::Table *table = new casacore::MeasurementSet(set.Path());
-		cout << "Has DATA column: " << BoolToStr(table->tableDesc().isColumn("DATA")) << "\n";
-		cout << "Has CORRECTED_DATA column: " << BoolToStr(table->tableDesc().isColumn("CORRECTED_DATA")) << "\n";
-		cout << "Has MODEL_DATA column: " << BoolToStr(table->tableDesc().isColumn("MODEL_DATA")) << "\n";
-		delete table;
+		{
+			casacore::MeasurementSet table(set.Path());
+			cout << "Has DATA column: " << BoolToStr(table.tableDesc().isColumn("DATA")) << "\n";
+			cout << "Has CORRECTED_DATA column: " << BoolToStr(table.tableDesc().isColumn("CORRECTED_DATA")) << "\n";
+			cout << "Has MODEL_DATA column: " << BoolToStr(table.tableDesc().isColumn("MODEL_DATA")) << "\n";
+		}
 		std::vector<long double> baselines;
 		for(size_t i=0;i<antennaCount;++i)
 		{
@@ -108,15 +104,16 @@ int main(int argc, char *argv[])
 		sort(baselines.begin(), baselines.end());
 		cout << "All provided baselines: ";
 		unsigned i=0;
-		while(i<baselines.size()-1) {
+		while(i<baselines.size()-1)
+		{
 			if(baselines[i+1]-baselines[i] < 1.0)
 				baselines.erase(baselines.begin() + i);
 			else
 				++i;
 		}
-		for(vector<long double>::const_iterator i=baselines.begin();i!=baselines.end();++i)
-			cout << (*i) << " ";
-		cout << endl;
+		for(long double v : baselines)
+			cout << (v) << ' ';
+		cout << '\n';
 
 		for(unsigned i=0;i!=set.BandCount();++i) {
 			cout << "== Spectral band index " << i << " ==" << endl;

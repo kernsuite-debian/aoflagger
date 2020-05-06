@@ -16,9 +16,13 @@
 #include "../../strategy/imagesets/spatialmsimageset.h"
 #include "../../strategy/imagesets/spatialtimeimageset.h"
 
+#include "../../lua/luastrategy.h"
+
 #include "../../msio/singlebaselinefile.h"
 
 #include "../../plot/plotmanager.h"
+
+#include "../../python/scriptdata.h"
 
 #include "../../quality/histogramcollection.h"
 
@@ -146,7 +150,13 @@ void RFIGuiController::PlotPowerSpectrum()
 		plot.SetLogarithmicYAxis(true);
 
 		TimeFrequencyData data = ActiveData();
-		std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
+		std::array<Image2DCPtr, 2> images;
+		if(data.ComplexRepresentation() == TimeFrequencyData::ComplexParts)
+			images = data.GetSingleComplexImage();
+		else {
+			images[0] = data.GetSingleImage();
+			images[1] = images[0];
+		}
 		Mask2DPtr mask =
 			Mask2D::CreateSetMaskPtr<false>(images[0]->Width(), images[0]->Height());
 		Plot2DPointSet &beforeSet = plot.StartLine("Flags not applied");
@@ -236,18 +246,18 @@ void RFIGuiController::PlotPowerTime()
 		Image2DCPtr image = activeData.GetSingleImage();
 		Mask2DPtr mask =
 			Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
-		Plot2DPointSet &totalPlot = plot.StartLine("Total");
+		Plot2DPointSet &totalPlot = plot.StartLine("Without flagging");
 		RFIPlots::MakePowerTimePlot(totalPlot, image, mask, SelectedMetaData());
 
 		mask = Mask2D::MakePtr(*activeData.GetSingleMask());
 		if(!mask->AllFalse())
 		{
-			Plot2DPointSet &uncontaminatedPlot = plot.StartLine("Uncontaminated");
+			Plot2DPointSet &uncontaminatedPlot = plot.StartLine("With flagging");
 			RFIPlots::MakePowerTimePlot(uncontaminatedPlot, image, mask, SelectedMetaData());
 	
-			mask->Invert();
-			Plot2DPointSet &rfiPlot = plot.StartLine("RFI");
-			RFIPlots::MakePowerTimePlot(rfiPlot, image, mask, SelectedMetaData());
+			//mask->Invert();
+			//Plot2DPointSet &rfiPlot = plot.StartLine("RFI");
+			//RFIPlots::MakePowerTimePlot(rfiPlot, image, mask, SelectedMetaData());
 		}
 
 		_plotManager->Update();
@@ -311,7 +321,7 @@ void RFIGuiController::PlotSingularValues()
 	}
 }
 
-void RFIGuiController::Open(const std::vector<std::string>& filenames, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW)
+void RFIGuiController::Open(const std::vector<std::string>& filenames, BaselineIOMode ioMode, bool readUVW, const std::string& dataColumn, bool subtractModel, size_t polCountToRead, bool loadStrategy, bool combineSPW, std::pair<boost::optional<size_t>,boost::optional<size_t>> interval)
 {
 	if(filenames.size() == 1)
 		Logger::Info << "Opening " << filenames[0] << '\n';
@@ -326,6 +336,7 @@ void RFIGuiController::Open(const std::vector<std::string>& filenames, BaselineI
 		{
 			msImageSet->SetSubtractModel(subtractModel);
 			msImageSet->SetDataColumnName(dataColumn);
+			msImageSet->SetInterval(interval.first, interval.second);
 	
 			if(polCountToRead == 1)
 				msImageSet->SetReadStokesI();
@@ -402,7 +413,36 @@ void RFIGuiController::ExecutePythonStrategy()
 	_tfController.ClearAllButOriginal();
 	TimeFrequencyData data = OriginalData(); 
 	
-	_pythonStrategy.Execute(data);
+	ScriptData scriptData;
+	scriptData.SetCanVisualize(true);
+	_pythonStrategy.Execute(data, SelectedMetaData(), scriptData);
+	scriptData.SortVisualizations();
+	for(size_t i=0; i!=scriptData.VisualizationCount(); ++i)
+	{
+		auto v = scriptData.GetVisualization(i);
+		_tfController.AddVisualization(std::get<0>(v), std::get<1>(v));
+	}
+	
+	_tfController.AddVisualization("Script result", data);
+	_rfiGuiWindow->GetTimeFrequencyWidget().Update();
+}
+
+void RFIGuiController::ExecuteLuaStrategy()
+{
+	_tfController.ClearAllButOriginal();
+	TimeFrequencyData data = OriginalData(); 
+	
+	ScriptData scriptData;
+	scriptData.SetCanVisualize(true);
+	LuaStrategy luaStrategy;
+	luaStrategy.Load("strategy.lua");
+	luaStrategy.Execute(data, SelectedMetaData(), scriptData);
+	scriptData.SortVisualizations();
+	for(size_t i=0; i!=scriptData.VisualizationCount(); ++i)
+	{
+		auto v = scriptData.GetVisualization(i);
+		_tfController.AddVisualization(std::get<0>(v), std::get<1>(v));
+	}
 	
 	_tfController.AddVisualization("Script result", data);
 	_rfiGuiWindow->GetTimeFrequencyWidget().Update();

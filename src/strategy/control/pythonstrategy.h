@@ -2,6 +2,7 @@
 #define PYTHON_STRATEGY_H
 
 #include "../../structures/timefrequencydata.h"
+#include "../../structures/timefrequencymetadata.h"
 
 #include <string>
 
@@ -11,7 +12,7 @@ public:
 	PythonStrategy();
 	~PythonStrategy();
 	
-	void Execute(TimeFrequencyData& tfData);
+	void Execute(TimeFrequencyData& tfData, TimeFrequencyMetaDataCPtr metaData, class ScriptData& scriptData);
 	
 private:
 	std::string getPythonError();

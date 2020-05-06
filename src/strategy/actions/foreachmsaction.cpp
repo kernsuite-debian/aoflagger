@@ -2,12 +2,13 @@
 
 #include <boost/filesystem.hpp>
 
-#include "../../structures/measurementset.h"
+#include "../../structures/msmetadata.h"
 
 #include "strategy.h"
 
 #include "../control/artifactset.h"
 #include "../control/defaultstrategy.h"
+#include "../control/strategywriter.h"
 
 #include "../imagesets/imageset.h"
 #include "../imagesets/joinedspwset.h"
@@ -21,43 +22,88 @@
 namespace rfiStrategy {
 
 void ForEachMSAction::Initialize()
-{
-}
+{ }
 
-void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress)
+void ForEachMSAction::Perform(ArtifactSet& artifacts, ProgressListener& progress)
 {
 	unsigned taskIndex = 0;
 	
 	FinishAll();
 
-	for(std::vector<std::string>::const_iterator i=_filenames.begin();i!=_filenames.end();++i)
+	for(const std::string& filename : _filenames)
 	{
-		std::string filename = *i;
-		
 		progress.OnStartTask(*this, taskIndex, _filenames.size(), std::string("Processing measurement set ") + filename);
-		
-		bool skip = false;
-		if(_skipIfAlreadyProcessed)
+		processMS(filename, artifacts, progress);
+		progress.OnEndTask(*this);
+
+		++taskIndex;
+	}
+
+	InitializeAll();
+}
+
+void ForEachMSAction::processMS(const std::string& filename, ArtifactSet& artifacts, ProgressListener& progress)
+{
+	bool skip = false;
+	if(_skipIfAlreadyProcessed)
+	{
+		MSMetaData set(filename);
+		if(set.HasAOFlaggerHistory())
 		{
-			MeasurementSet set(filename);
-			if(set.HasAOFlaggerHistory())
-			{
-				skip = true;
-				Logger::Info << "Skipping " << filename << ",\n"
-					"because the set contains AOFlagger history and -skip-flagged was given.\n";
-			}
+			skip = true;
+			Logger::Info << "Skipping " << filename << ",\n"
+				"because the set contains AOFlagger history and -skip-flagged was given.\n";
 		}
+	}
+
+	if(!skip)
+	{
+		size_t nIntervals = 1;
+		size_t intervalIndex = 0;
+		size_t resolvedIntStart = 0, resolvedIntEnd = 0;
+		bool isMS = false;
 		
-		if(!skip)
+		while(intervalIndex < nIntervals)
 		{
 			std::unique_ptr<ImageSet> imageSet(ImageSet::Create(std::vector<std::string>{filename}, _baselineIOMode));
-			bool isMS = dynamic_cast<MSImageSet*>(&*imageSet) != 0;
+			isMS = dynamic_cast<MSImageSet*>(imageSet.get()) != nullptr;
 			if(isMS)
 			{ 
 				MSImageSet* msImageSet = static_cast<MSImageSet*>(imageSet.get());
 				msImageSet->SetDataColumnName(_dataColumnName);
-				msImageSet->SetSubtractModel(_subtractModel);
+				//msImageSet->SetSubtractModel(_subtractModel);
 				msImageSet->SetReadUVW(_readUVW);
+				// during the first iteration, the nr of intervals hasn't been calculated yet. Do that now.
+				if(intervalIndex == 0)
+				{
+					if(_maxIntervalSize)
+					{
+						msImageSet->SetInterval(_intervalStart, _intervalEnd);
+						const size_t obsTimesSize = msImageSet->MetaData().GetObservationTimesSet().size();
+						nIntervals = (obsTimesSize + *_maxIntervalSize - 1) / *_maxIntervalSize;
+						Logger::Info << "Maximum interval size of " << *_maxIntervalSize << " timesteps for total of " << obsTimesSize << " timesteps results in " << nIntervals << " intervals.\n";
+						if(_intervalStart)
+							resolvedIntStart = *_intervalStart;
+						else
+							resolvedIntStart = 0;
+						if(_intervalEnd)
+							resolvedIntEnd = *_intervalEnd;
+						else
+							resolvedIntEnd = obsTimesSize + resolvedIntStart;
+					}
+					else {
+						nIntervals = 1;
+					}
+				}
+				if(nIntervals == 1)
+					msImageSet->SetInterval(_intervalStart, _intervalEnd);
+				else {
+					size_t nTimes = resolvedIntEnd - resolvedIntStart;
+					size_t start = resolvedIntStart + intervalIndex*nTimes/nIntervals;
+					size_t end = resolvedIntStart + (intervalIndex+1)*nTimes/nIntervals;
+					Logger::Info << "Starting flagging of interval " << intervalIndex << ", timesteps " << start << " - " << end << '\n';
+					msImageSet->SetInterval(start, end);
+				}
 				if(_combineSPWs)
 				{
 					msImageSet->Initialize();
@@ -106,18 +152,13 @@ void ForEachMSAction::Perform(ArtifactSet &artifacts, ProgressListener &progress
 			FinishAll();
 			
 			artifacts.SetNoImageSet();
-
-			if(isMS)
-				writeHistory(*i);
+			
+			++intervalIndex;
 		}
-	
-		progress.OnEndTask(*this);
 
-		
-		++taskIndex;
+		if(isMS)
+			writeHistory(filename);
 	}
-
-	InitializeAll();
 }
 
 void ForEachMSAction::AddDirectory(const std::string &name)
@@ -137,20 +178,24 @@ void ForEachMSAction::writeHistory(const std::string &filename)
 {
 	if(GetChildCount() != 0)
 	{
-		MeasurementSet ms(filename);
-		const Strategy *strategy = 0;
-		if(GetChildCount() == 1 && dynamic_cast<const Strategy*>(&GetChild(0)) != 0)
+		MSMetaData ms(filename);
+		const Strategy *strategy = nullptr;
+		if(GetChildCount() == 1 && dynamic_cast<const Strategy*>(&GetChild(0)) != nullptr)
 		{
 			strategy = static_cast<const Strategy*>(&GetChild(0));
 		} else {
 			const ActionContainer *root = GetRoot();
-			if(dynamic_cast<const Strategy*>(root) != 0)
+			if(dynamic_cast<const Strategy*>(root))
 				strategy = static_cast<const Strategy*>(root);
 		}
 		Logger::Debug << "Adding strategy to history table of MS...\n";
-		if(strategy != 0) {
+		if(strategy != nullptr) {
 			try {
-				ms.AddAOFlaggerHistory(*strategy, _commandLineForHistory);
+				std::ostringstream ostr;
+				rfiStrategy::StrategyWriter writer;
+				writer.WriteToStream(*strategy, ostr);
+
+				ms.AddAOFlaggerHistory(ostr.str(), _commandLineForHistory);
 			} catch(std::exception &e)
 			{
 				Logger::Warn << "Failed to write history to MS: " << e.what() << '\n';

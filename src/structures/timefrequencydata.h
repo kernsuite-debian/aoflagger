@@ -233,7 +233,7 @@ class TimeFrequencyData
 			_data.emplace_back(polarizationType, real, imaginary);
 		}
 
-		void SetNoMask()
+		void SetNoMask() noexcept
 		{
 			for(PolarizedTimeFrequencyData& data : _data)
 				data._flagging = nullptr;
@@ -534,13 +534,13 @@ class TimeFrequencyData
 		}
 
 		size_t ImageCount() const {
-			size_t masks = 0;
+			size_t images = 0;
 			for(const PolarizedTimeFrequencyData& data : _data)
 			{
-				if(data._images[0]) ++masks;
-				if(data._images[1]) ++masks;
+				if(data._images[0]) ++images;
+				if(data._images[1]) ++images;
 			}
-			return masks; 
+			return images; 
 		}
 		
 		size_t MaskCount() const {

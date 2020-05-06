@@ -42,8 +42,9 @@ class DefaultStrategySpeedTest : public UnitTest {
 				AddTest(TimeLoopUntilAmplitude(), "Timing loop until amplitude");
 				AddTest(TimeLoop(), "Timing loop");
 			}
+			AddTest(TimeSumThresholdNHori(), "Timing length-varying SumThreshold horizontal method");
+			AddTest(TimeSumThresholdNVert(), "Timing length-varying SumThreshold vertical method");
 			AddTest(TimeSumThreshold(), "Timing SumThreshold method");
-			AddTest(TimeSumThresholdN(), "Timing varying SumThreshold method");
 			AddTest(TimeRankOperator(), "Timing scale-invariant rank operator");
 			AddTest(TimeSlidingWindowFit(), "Timing sliding window fit");
 			AddTest(TimeHighPassFilter(), "Timing high-pass filter");
@@ -55,7 +56,8 @@ class DefaultStrategySpeedTest : public UnitTest {
 		
 		explicit DefaultStrategySpeedTest(const std::string &) : UnitTest("Default strategy speed test")
 		{
-			AddTest(TimeSumThresholdN(), "Timing varying SumThreshold method");
+			AddTest(TimeSumThresholdNHori(), "Timing length-varying SumThreshold horizontal method");
+			AddTest(TimeSumThresholdNVert(), "Timing length-varying SumThreshold vertical method");
 		}
 		
 	private:
@@ -83,7 +85,11 @@ class DefaultStrategySpeedTest : public UnitTest {
 		{
 			void operator()();
 		};
-		struct TimeSumThresholdN : public Asserter
+		struct TimeSumThresholdNHori : public Asserter
+		{
+			void operator()();
+		};
+		struct TimeSumThresholdNVert : public Asserter
 		{
 			void operator()();
 		};
@@ -307,7 +313,7 @@ inline void DefaultStrategySpeedTest::TimeLoopUntilAmplitude::operator()()
 
 inline void DefaultStrategySpeedTest::TimeSumThreshold::operator()()
 {
-	rfiStrategy::ArtifactSet artifacts(0);
+	rfiStrategy::ArtifactSet artifacts(nullptr);
 
 	rfiStrategy::Strategy strategy;
 	
@@ -328,7 +334,7 @@ inline void DefaultStrategySpeedTest::TimeSumThreshold::operator()()
 	t2->SetTimeDirectionSensitivity(1.0);
 	t2->SetFrequencyDirectionSensitivity(1.0);
 	iteration->Add(std::move(t2));
-		
+	
 	std::unique_ptr<rfiStrategy::ChangeResolutionAction> changeResAction2(new rfiStrategy::ChangeResolutionAction());
 	changeResAction2->SetTimeDecreaseFactor(3);
 	changeResAction2->SetFrequencyDecreaseFactor(3);
@@ -348,7 +354,7 @@ inline void DefaultStrategySpeedTest::TimeSumThreshold::operator()()
 	Logger::Info << "Sum threshold took (loop + threshold): " << watch.ToString() << '\n';
 }
 
-inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
+inline void DefaultStrategySpeedTest::TimeSumThresholdNHori::operator()()
 {
 	rfiStrategy::ArtifactSet artifacts(nullptr);
 	prepareStrategy(artifacts);
@@ -356,86 +362,146 @@ inline void DefaultStrategySpeedTest::TimeSumThresholdN::operator()()
 	ThresholdConfig config;
 	config.InitializeLengthsDefault(9);
 	num_t stddev = artifacts.OriginalData().GetSingleImage()->GetStdDev();
-	//num_t mode = artifacts.OriginalData().GetSingleImage()->GetMode();
-	//Logger::Info << "Stddev: " << stddev << '\n';
-	//Logger::Info << "Mode: " << mode << '\n';
 	config.InitializeThresholdsFromFirstThreshold(6.0 * stddev, ThresholdConfig::Rayleigh);
 	const size_t N=100;
-	double hor=0.0, vert=0.0, sseHor=0.0, sseVert=0.0, avxVert=0.0;
+	double hor=0.0, sseHor=0.0, avxHorDumas = 0.0, selectedHor = 0.0;
 	for(unsigned i=0;i<9;++i)
 	{
 		const unsigned length = config.GetHorizontalLength(i);
 		const double threshold = config.GetHorizontalThreshold(i);
 		Image2DCPtr input = artifacts.OriginalData().GetSingleImage();
 		Mask2D scratch = Mask2D::MakeUnsetMask(input->Width(), input->Height());
+		SumThreshold::VerticalScratch vScratch(input->Width(), input->Height());
 		
-		Mask2D maskA(*artifacts.OriginalData().GetSingleMask()), maskInp = maskA;
-		Stopwatch watchA(true);
+		Mask2D
+			mask(*artifacts.OriginalData().GetSingleMask()),
+			maskInp;
+		Stopwatch watch(true);
 		for(size_t j=0; j!=N; ++j) {
-			maskInp = maskA;
+			maskInp = mask;
 			SumThreshold::HorizontalLargeReference(input.get(), &maskInp, &scratch, length, threshold);
 		}
-		hor += watchA.Seconds();
-		Logger::Info << "Horizontal, length " << length << ": " << watchA.ToString() << '\n';
+		hor += watch.Seconds();
+		Logger::Info << "Horizontal, length " << length << ": " << watch.ToString() << '\n';
 		
 #ifdef __SSE__
-		Mask2D maskE(*artifacts.OriginalData().GetSingleMask());
-		Stopwatch watchE(true);
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
 		for(size_t j=0; j!=N; ++j) {
-			maskInp = maskE;
+			maskInp = mask;
 			SumThreshold::HorizontalLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
 		}
-		sseHor += watchE.Seconds();
-		Logger::Info << "SSE Horizontal, length " << length << ": " << watchE.ToString() << '\n';
+		sseHor += watch.Seconds();
+		Logger::Info << "SSE Horizontal, length " << length << ": " << watch.ToString() << '\n';
 #endif
 
-/*
-#ifdef __AVX2__
-		Mask2D maskC(*artifacts.OriginalData().GetSingleMask());
-		Stopwatch watchC(true);
+#ifdef __AVX2__		
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
 		for(size_t j=0; j!=N; ++j) {
-			maskInp = maskC;
-			CombinatorialThresholder::HorizontalSumThresholdLargeAVX(input.get(), maskInp, &scratch, length, threshold);
+			maskInp = mask;
+			SumThreshold::HorizontalAVXDumas(input.get(), &maskInp, length, threshold);
 		}
-		Logger::Info << "AVX Horizontal, length " << length << ": " << watchC.ToString() << '\n';
-#endif*/
-		
-		Mask2D maskB(*artifacts.OriginalData().GetSingleMask());
-		Stopwatch watchB(true);
+		avxHorDumas += watch.Seconds();
+		Logger::Info << "AVX Horizontal Dumas, length " << length << ": " << watch.ToString() << '\n';
+#endif
+
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
 		for(size_t j=0; j!=N; ++j) {
-			maskInp = maskB;
+			maskInp = mask;
+			SumThreshold::HorizontalLarge(input.get(), &maskInp, &scratch, length, threshold);
+		}
+		selectedHor += watch.Seconds();
+		Logger::Info << "Selected horizontal, length " << length << ": " << watch.ToString() << '\n';
+		
+		Logger::Info
+			<< "Summed values:\n"
+			<< "- Horizontal ref  : " << hor << "\n"
+			<< "- Horizontal SSE  : " << sseHor << "\n"
+			<< "- Horizontal AVX D: " << avxHorDumas << "\n"
+			<< "- Selected horiz  : " << selectedHor << "\n";
+	}
+}
+
+inline void DefaultStrategySpeedTest::TimeSumThresholdNVert::operator()()
+{
+	rfiStrategy::ArtifactSet artifacts(nullptr);
+	prepareStrategy(artifacts);
+
+	ThresholdConfig config;
+	config.InitializeLengthsDefault(9);
+	num_t stddev = artifacts.OriginalData().GetSingleImage()->GetStdDev();
+	config.InitializeThresholdsFromFirstThreshold(6.0 * stddev, ThresholdConfig::Rayleigh);
+	const size_t N=100;
+	double vert=0.0, sseVert=0.0, avxVert=0.0, avxVertDumas = 0.0, selectedVer = 0.0;
+	for(unsigned i=0;i<9;++i)
+	{
+		const unsigned length = config.GetHorizontalLength(i);
+		const double threshold = config.GetHorizontalThreshold(i);
+		Image2DCPtr input = artifacts.OriginalData().GetSingleImage();
+		Mask2D scratch = Mask2D::MakeUnsetMask(input->Width(), input->Height());
+		SumThreshold::VerticalScratch vScratch(input->Width(), input->Height());
+		
+		Mask2D
+			mask(*artifacts.OriginalData().GetSingleMask()),
+			maskInp;
+			
+		Stopwatch watch(true);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = mask;
 			SumThreshold::VerticalLargeReference(input.get(), &maskInp, &scratch, length, threshold);
 		}
-		vert += watchB.Seconds();
-		Logger::Info << "Vertical, length " << length << ": " << watchB.ToString() << '\n';
+		vert += watch.Seconds();
+		Logger::Info << "Vertical, length " << length << ": " << watch.ToString() << '\n';
 		
 #ifdef __SSE__
-		Mask2D maskD(*artifacts.OriginalData().GetSingleMask());
-		Stopwatch watchD(true);
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
 		for(size_t j=0; j!=N; ++j) {
-			maskInp = maskD;
+			maskInp = mask;
 			SumThreshold::VerticalLargeSSE(input.get(), &maskInp, &scratch, length, threshold);
 		}
-		sseVert += watchD.Seconds();
-		Logger::Info << "SSE Vertical, length " << length << ": " << watchD.ToString() << '\n';
+		sseVert += watch.Seconds();
+		Logger::Info << "SSE Vertical, length " << length << ": " << watch.ToString() << '\n';
 #endif
 
 #ifdef __AVX2__
-		Mask2D maskF(*artifacts.OriginalData().GetSingleMask());
-		Stopwatch watchF(true);
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
 		for(size_t j=0; j!=N; ++j) {
-			maskInp = maskF;
-			SumThreshold::VerticalLargeAVX(input.get(), &maskF, &scratch, length, threshold);
+			maskInp = mask;
+			SumThreshold::VerticalLargeAVX(input.get(), &maskInp, &scratch, length, threshold);
 		}
-		avxVert += watchF.Seconds();
-		Logger::Info << "AVX Vertical, length " << length << ": " << watchF.ToString() << '\n';
+		avxVert += watch.Seconds();
+		Logger::Info << "AVX Vertical, length " << length << ": " << watch.ToString() << '\n';
+		
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = mask;
+			SumThreshold::VerticalAVXDumas(input.get(), &maskInp, &vScratch, length, threshold);
+		}
+		avxVertDumas += watch.Seconds();
+		Logger::Info << "AVX Vertical Dumas, length " << length << ": " << watch.ToString() << '\n';
 #endif
+
+		mask = *artifacts.OriginalData().GetSingleMask();
+		watch.Reset(true);
+		for(size_t j=0; j!=N; ++j) {
+			maskInp = mask;
+			SumThreshold::VerticalLarge(input.get(), &maskInp, &scratch, &vScratch, length, threshold);
+		}
+		selectedVer += watch.Seconds();
+		Logger::Info << "Selected vertical, length " << length << ": " << watch.ToString() << '\n';
+		
 		Logger::Info
-			<< "Horizontal ref: " << hor << "\n"
-			<< "  Vertical ref: " << vert << "\n"
-			<< "Horizontal SSE: " << sseHor << "\n"
-			<< "  Vertical SSE: " << sseVert << "\n"
-			<< "  Vertical AVX: " << avxVert << "\n";
+			<< "Summed values:\n"
+			<< "- Vertical ref    : " << vert << "\n"
+			<< "- Vertical SSE    : " << sseVert << "\n"
+			<< "- Vertical AVX    : " << avxVert << "\n"
+			<< "- Vertical AVX D  : " << avxVertDumas << "\n"
+			<< "- Selected vertic : " << selectedVer << "\n";
 	}
 }
 

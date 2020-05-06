@@ -133,6 +133,7 @@ void ThresholdConfig::ExecuteWithMissing(const Image2D* image, Mask2D* mask, con
 
 	size_t operationCount = _horizontalOperations.size() > _verticalOperations.size() ?
 		_horizontalOperations.size() : _verticalOperations.size();
+	SumThreshold::VerticalScratch normalScratch(mask->Width(), mask->Height());
 	for(unsigned i=0;i<operationCount;++i) {
 		switch(_method) {
 			case SumThreshold:
@@ -154,7 +155,7 @@ void ThresholdConfig::ExecuteWithMissing(const Image2D* image, Mask2D* mask, con
 			if(i < _verticalOperations.size())
 			{
 				if(missing == nullptr)
-					SumThreshold::VerticalLarge(image, mask, &scratch, _verticalOperations[i].length, _verticalOperations[i].threshold*frequencyFactor);
+					SumThreshold::VerticalLarge(image, mask, &scratch, &normalScratch, _verticalOperations[i].length, _verticalOperations[i].threshold*frequencyFactor);
 				else
 					SumThresholdMissing::Vertical(*image, *mask, *missing, scratch, _verticalOperations[i].length, _verticalOperations[i].threshold*frequencyFactor);
 			}

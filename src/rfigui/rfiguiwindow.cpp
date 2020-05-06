@@ -3,9 +3,6 @@
 #include <gtkmm/aboutdialog.h>
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/messagedialog.h>
-#include <gtkmm/toolbar.h>
-#include <gtkmm/uimanager.h>
-#include <gtkmm/icontheme.h>
 
 #include "../msio/baselinematrixloader.h"
 
@@ -49,6 +46,7 @@
 #include "numinputdialog.h"
 #include "plotwindow.h"
 #include "progresswindow.h"
+#include "rfiguimenu.h"
 
 #include "../imaging/model.h"
 #include "../imaging/observatorium.h"
@@ -64,14 +62,163 @@ RFIGuiWindow::RFIGuiWindow(RFIGuiController* controller) :
 	_mainVBox(Gtk::ORIENTATION_VERTICAL),
 	_timeFrequencyWidget(&_controller->TFController().Plot()),
 	_plotWindow(new PlotWindow(_controller->PlotManager())),
+	_menu(new RFIGuiMenu()),
 	_strategy(new rfiStrategy::Strategy()),
 	_gaussianTestSets(true)
 {
 	_controller->AttachWindow(this);
 	_controller->AttachStrategyControl(this);
 	
-	createToolbar();
-
+	_menu->SetOriginalFlagsActive(_controller->AreOriginalFlagsShown());
+	_menu->SetAlternativeFlagsActive(_controller->AreAlternativeFlagsShown());
+	
+	// File
+	_menu->OnActionDirectoryOpen.connect([&]() { onActionDirectoryOpen(); });
+	_menu->OnActionFileOpen.connect([&]() { onActionFileOpen(); });
+	_menu->OnActionDirectoryOpenForSpatial.connect([&]() { onActionDirectoryOpenForSpatial(); });
+	_menu->OnActionDirectoryOpenForST.connect([&]() { onActionDirectoryOpenForST(); });
+	_menu->OnSaveBaseline.connect([&]() { onSaveBaseline(); });
+	_menu->OnQuit.connect([&]() { onQuit(); });
+	
+	// View
+	_menu->OnImagePropertiesPressed.connect([&]() { onImagePropertiesPressed(); });
+	_menu->OnTimeGraphButtonPressed.connect([&]() { onTimeGraphButtonPressed(); });
+	_menu->OnToggleFlags.connect([&]() { onToggleFlags(); });
+	_menu->OnHightlightPressed.connect([&]() { onHightlightPressed(); });
+	_menu->OnZoomFit.connect([&]() { onZoomFit(); });
+	_menu->OnZoomIn.connect([&]() { onZoomIn(); });
+	_menu->OnZoomOut.connect([&]() { onZoomOut(); });
+	_menu->OnShowImagePlane.connect([&]() { onShowImagePlane(); });
+	_menu->OnSetAndShowImagePlane.connect([&]() { onSetAndShowImagePlane(); });
+	_menu->OnAddToImagePlane.connect([&]() { onAddToImagePlane(); });
+	_menu->OnShowStats.connect([&]() { onShowStats(); });
+	
+	// Plot
+	_menu->OnPlotPowerSpectrumComparisonPressed.connect([&]() { onImagePropertiesPressed(); });
+	_menu->OnPlotPowerTimeComparisonPressed.connect([&]() { onPlotPowerTimeComparisonPressed(); });
+	_menu->OnPlotTimeScatterComparisonPressed.connect([&]() { onPlotTimeScatterComparisonPressed(); });
+	_menu->OnPlotDistPressed.connect([&]() { onPlotDistPressed(); });
+	_menu->OnPlotLogLogDistPressed.connect([&]() { onPlotLogLogDistPressed(); });
+	_menu->OnPlotComplexPlanePressed.connect([&]() { onPlotComplexPlanePressed(); });
+	_menu->OnPlotMeanSpectrumPressed.connect([&]() { onPlotMeanSpectrumPressed(); });
+	_menu->OnPlotSumSpectrumPressed.connect([&]() { onPlotSumSpectrumPressed(); });
+	_menu->OnPlotPowerSpectrumPressed.connect([&]() { onPlotPowerSpectrumPressed(); });
+	_menu->OnPlotFrequencyScatterPressed.connect([&]() { onPlotFrequencyScatterPressed(); });
+	_menu->OnPlotPowerRMSPressed.connect([&]() { onPlotPowerRMSPressed(); });
+	_menu->OnPlotPowerTimePressed.connect([&]() { onPlotPowerTimePressed(); });
+	_menu->OnPlotTimeScatterPressed.connect([&]() { onPlotTimeScatterPressed(); });
+	_menu->OnPlotSingularValuesPressed.connect([&]() { onPlotSingularValuesPressed(); });
+	
+	// Browse
+	_menu->OnLoadPrevious.connect([&]() { onLoadPrevious(); });
+	_menu->OnReloadPressed.connect([&]() { onReloadPressed(); });
+	_menu->OnLoadNext.connect([&]() { onLoadNext(); });
+	_menu->OnGoToPressed.connect([&]() { onGoToPressed(); });
+	_menu->OnLoadLongestBaselinePressed.connect([&]() { onLoadLongestBaselinePressed(); });
+	_menu->OnLoadShortestBaselinePressed.connect([&]() { onLoadShortestBaselinePressed(); });
+	
+	// Simulate
+	_menu->OnGaussianTestSets.connect([&]() { onGaussianTestSets(); });
+	_menu->OnRayleighTestSets.connect([&]() { onRayleighTestSets(); });
+	_menu->OnZeroTestSets.connect([&]() { onZeroTestSets(); });
+	
+	_menu->OnOpenTestSetA.connect([&]() { onOpenTestSetA(); });
+	_menu->OnOpenTestSetB.connect([&]() { onOpenTestSetB(); });
+	_menu->OnOpenTestSetC.connect([&]() { onOpenTestSetC(); });
+	_menu->OnOpenTestSetD.connect([&]() { onOpenTestSetD(); });
+	_menu->OnOpenTestSetE.connect([&]() { onOpenTestSetE(); });
+	_menu->OnOpenTestSetF.connect([&]() { onOpenTestSetF(); });
+	_menu->OnOpenTestSetG.connect([&]() { onOpenTestSetG(); });
+	_menu->OnOpenTestSetH.connect([&]() { onOpenTestSetH(); });
+	_menu->OnOpenTestSetNoise.connect([&]() { onOpenTestSetNoise(); });
+	_menu->OnOpenTestSet3Model.connect([&]() { onOpenTestSet3Model(); });
+	_menu->OnOpenTestSet5Model.connect([&]() { onOpenTestSet5Model(); });
+	_menu->OnOpenTestSetNoise3Model.connect([&]() { onOpenTestSetNoise3Model(); });
+	_menu->OnOpenTestSetNoise5Model.connect([&]() { onOpenTestSetNoise5Model(); });
+	_menu->OnOpenTestSetBStrong.connect([&]() { onOpenTestSetBStrong(); });
+	_menu->OnOpenTestSetBWeak.connect([&]() { onOpenTestSetBWeak(); });
+	_menu->OnOpenTestSetBAligned.connect([&]() { onOpenTestSetBAligned(); });
+	
+	_menu->OnOpenTestSetGaussianBroadband.connect([&]() { onOpenTestSetGaussianBroadband(); });
+	_menu->OnOpenTestSetSinusoidalBroadband.connect([&]() { onOpenTestSetSinusoidalBroadband(); });
+	_menu->OnOpenTestSetSlewedGaussianBroadband.connect([&]() { onOpenTestSetSlewedGaussianBroadband(); });
+	_menu->OnOpenTestSetBurstBroadband.connect([&]() { onOpenTestSetBurstBroadband(); });
+	_menu->OnOpenTestSetRFIDistributionLow.connect([&]() { onOpenTestSetRFIDistributionLow(); });
+	_menu->OnOpenTestSetRFIDistributionMid.connect([&]() { onOpenTestSetRFIDistributionMid(); });
+	_menu->OnOpenTestSetRFIDistributionHigh.connect([&]() { onOpenTestSetRFIDistributionHigh(); });
+	
+	_menu->OnAddStaticFringe.connect([&]() { onAddStaticFringe(); });
+	_menu->OnAdd1SigmaFringe.connect([&]() { onAdd1SigmaFringe(); });
+	_menu->OnSetToOne.connect([&]() { onSetToOne(); });
+	_menu->OnSetToI.connect([&]() { onSetToI(); });
+	_menu->OnSetToOnePlusI.connect([&]() { onSetToOnePlusI(); });
+	_menu->OnAddCorrelatorFault.connect([&]() { onAddCorrelatorFault(); });
+	_menu->OnMultiplyData.connect([&]() { onMultiplyData(); });
+	
+	_menu->OnSimulateCorrelation.connect([&]() { onSimulateCorrelation(); });
+	_menu->OnSimulateSourceSetA.connect([&]() { onSimulateSourceSetA(); });
+	_menu->OnSimulateSourceSetB.connect([&]() { onSimulateSourceSetB(); });
+	_menu->OnSimulateSourceSetC.connect([&]() { onSimulateSourceSetC(); });
+	_menu->OnSimulateSourceSetD.connect([&]() { onSimulateSourceSetD(); });
+	_menu->OnSimulateOffAxisSource.connect([&]() { onSimulateOffAxisSource(); });
+	_menu->OnSimulateOnAxisSource.connect([&]() { onSimulateOnAxisSource(); });
+	
+	// Data
+	_menu->OnVisualizedToOriginalPressed.connect([&]() { onVisualizedToOriginalPressed(); });
+	_menu->OnKeepRealPressed.connect([&]() { onKeepRealPressed(); });
+	_menu->OnKeepImaginaryPressed.connect([&]() { onKeepImaginaryPressed(); });
+	_menu->OnKeepPhasePressed.connect([&]() { onKeepPhasePressed(); });
+	_menu->OnUnrollPhaseButtonPressed.connect([&]() { onUnrollPhaseButtonPressed(); });
+	
+	_menu->OnKeepStokesIPressed.connect([&]() { onKeepStokesIPressed(); });
+	_menu->OnKeepStokesQPressed.connect([&]() { onKeepStokesQPressed(); });
+	_menu->OnKeepStokesUPressed.connect([&]() { onKeepStokesUPressed(); });
+	_menu->OnKeepStokesVPressed.connect([&]() { onKeepStokesVPressed(); });
+	_menu->OnKeepRRPressed.connect([&]() { onKeepRRPressed(); });
+	_menu->OnKeepRLPressed.connect([&]() { onKeepRLPressed(); });
+	_menu->OnKeepLRPressed.connect([&]() { onKeepLRPressed(); });
+	_menu->OnKeepLLPressed.connect([&]() { onKeepLLPressed(); });
+	_menu->OnKeepXXPressed.connect([&]() { onKeepXXPressed(); });
+	_menu->OnKeepXYPressed.connect([&]() { onKeepXYPressed(); });
+	_menu->OnKeepYXPressed.connect([&]() { onKeepYXPressed(); });
+	_menu->OnKeepYYPressed.connect([&]() { onKeepYYPressed(); });
+	
+	_menu->OnStoreData.connect([&]() { onStoreData(); });
+	_menu->OnRecallData.connect([&]() { onRecallData(); });
+	_menu->OnSubtractDataFromMem.connect([&]() { onSubtractDataFromMem(); });
+	_menu->OnClearOriginalFlagsPressed.connect([&]() { onClearOriginalFlagsPressed(); });
+	_menu->OnClearAltFlagsPressed.connect([&]() { onClearAltFlagsPressed(); });
+	
+	// Actions
+	_menu->OnEditStrategyPressed.connect([&]() { onEditStrategyPressed(); });
+	_menu->OnExecuteStrategyPressed.connect([&]() { onExecuteStrategyPressed(); });
+	_menu->OnExecutePythonStrategy.connect([&]() { onExecutePythonStrategy(); });
+	_menu->OnExecuteLuaStrategy.connect([&]() { onExecuteLuaStrategy(); });
+	
+	_menu->OnSegment.connect([&]() { onSegment(); });
+	_menu->OnCluster.connect([&]() { onCluster(); });
+	_menu->OnClassify.connect([&]() { onClassify(); });
+	_menu->OnRemoveSmallSegments.connect([&]() { onRemoveSmallSegments(); });
+	
+	_menu->OnInterpolateFlagged.connect([&]() { _controller->InterpolateFlagged(); });
+	_menu->OnVertEVD.connect([&]() { onVertEVD(); });
+	_menu->OnApplyTimeProfile.connect([&]() { onApplyTimeProfile(); });
+	_menu->OnApplyVertProfile.connect([&]() { onApplyVertProfile(); });
+	
+	_menu->OnUseTimeProfile.connect([&](bool invert) { onUseTimeProfile(invert); });
+	_menu->OnUseVertProfile.connect([&](bool invert) { onUseVertProfile(invert); });
+	
+	// Help
+	_menu->OnHelpAbout.connect([&]() { onHelpAbout(); });
+	
+	// Toolbar signals (some are already covered)
+	_menu->OnTogglePolarizations.connect([&]() { onTogglePolarizations(); });
+	_menu->OnToggleImage.connect([&]() { onToggleImage(); });
+	_menu->OnSelectImage.connect([&]() { onSelectImage(); });
+	
+	_mainVBox.pack_start(_menu->Menu(), Gtk::PACK_SHRINK);
+	_mainVBox.pack_start(_menu->Toolbar(), Gtk::PACK_SHRINK);
+	
 	_mainVBox.pack_start(_timeFrequencyWidget, Gtk::PACK_EXPAND_WIDGET);
 	_timeFrequencyWidget.OnMouseMovedEvent().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTFWidgetMouseMoved));
 	_timeFrequencyWidget.OnMouseLeaveEvent().connect(sigc::mem_fun(*this, &RFIGuiWindow::setSetNameInStatusBar));
@@ -94,7 +241,9 @@ RFIGuiWindow::RFIGuiWindow(RFIGuiController* controller) :
 	set_default_icon_name("aoflagger");
 
 	rfiStrategy::DefaultStrategy::StrategySetup setup =
-		rfiStrategy::DefaultStrategy::DetermineSetup(rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE, rfiStrategy::DefaultStrategy::FLAG_NONE, 0.0, 0.0, 0.0);
+		rfiStrategy::DefaultStrategy::DetermineSetup(
+			rfiStrategy::DefaultStrategy::GENERIC_TELESCOPE,
+			rfiStrategy::DefaultStrategy::FLAG_NONE, 0.0, 0.0, 0.0);
 	rfiStrategy::DefaultStrategy::LoadSingleStrategy(*_strategy, setup);
 	_imagePlaneWindow.reset(new ImagePlaneWindow());
 	
@@ -108,9 +257,6 @@ RFIGuiWindow::RFIGuiWindow(RFIGuiController* controller) :
 
 RFIGuiWindow::~RFIGuiWindow()
 {
-	while(!_actionGroup->get_actions().empty())
-		_actionGroup->remove(*_actionGroup->get_actions().begin());
-	
 	_imagePlaneWindow.reset();
 	_plotWindow.reset();
 	_histogramWindow.reset();
@@ -252,16 +398,16 @@ TimeFrequencyMetaDataCPtr RFIGuiWindow::SelectedMetaData()
 
 void RFIGuiWindow::onToggleFlags()
 {
-	_controller->SetShowOriginalFlags(_originalFlagsButton->get_active());
-	_controller->SetShowAlternativeFlags(_altFlagsButton->get_active());
+	_controller->SetShowOriginalFlags(_menu->OriginalFlagsActive());
+	_controller->SetShowAlternativeFlags(_menu->AlternativeFlagsActive());
 }
 
 void RFIGuiWindow::onTogglePolarizations()
 {
-	_controller->SetShowPP(_showPPButton->get_active());
-	_controller->SetShowPQ(_showPQButton->get_active());
-	_controller->SetShowQP(_showQPButton->get_active());
-	_controller->SetShowQQ(_showQQButton->get_active());
+	_controller->SetShowPP(_menu->ShowPPActive());
+	_controller->SetShowPQ(_menu->ShowPQActive());
+	_controller->SetShowQP(_menu->ShowQPActive());
+	_controller->SetShowQQ(_menu->ShowQQActive());
 }
 
 void RFIGuiWindow::setSetNameInStatusBar()
@@ -388,7 +534,7 @@ void RFIGuiWindow::onExecuteStrategyFinished()
 		if(artifacts->IterationsPlot().HasData())
 			artifacts->IterationsPlot().MakePlot();
 	}
-	if(_closeExecuteFrameButton->get_active())
+	if(_menu->CloseExecuteFrame())
 	{
 		_progressWindow.reset();
 	}
@@ -406,620 +552,6 @@ void RFIGuiWindow::UpdateImageSetIndex()
 void RFIGuiWindow::openTestSet(unsigned index)
 {
 	_controller->OpenTestSet(index, _gaussianTestSets);
-}
-
-void RFIGuiWindow::createToolbar()
-{
-	Glib::RefPtr<Gtk::Action> action;
-	
-	_actionGroup = Gtk::ActionGroup::create();
-	_actionGroup->add( Gtk::Action::create("MenuFile", "_File") );
-	_actionGroup->add( Gtk::Action::create("MenuBrowse", "_Browse") );
-	_actionGroup->add( Gtk::Action::create("MenuView", "_View") );
-	_actionGroup->add( Gtk::Action::create("MenuPlot", "_Plot") );
-	_actionGroup->add( Gtk::Action::create("MenuSimulate", "_Simulate") );
-	_actionGroup->add( Gtk::Action::create("MenuPlotFlagComparison", "_Compare flags") );
-	_actionGroup->add( Gtk::Action::create("MenuActions", "_Actions") );
-	_actionGroup->add( Gtk::Action::create("MenuData", "_Data") );
-	_actionGroup->add( Gtk::Action::create("MenuHelp", "_Help") );
-	
-	action = Gtk::Action::create("OpenFile", "Open _file");
-	action->set_icon_name("document-open");
-	_actionGroup->add(action, Gtk::AccelKey("<control>O"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onActionFileOpen) );
-	action = Gtk::Action::create("OpenDirectory", "Open _directory");
-	action->set_icon_name("folder");
-	action->set_tooltip("Open a directory. This action should be used to open a measurement set. For opening files (e.g. sdfits files), select 'Open file' instead.");
-	_actionGroup->add(action, Gtk::AccelKey("<control>D"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onActionDirectoryOpen) );
-	_actionGroup->add( Gtk::Action::create("OpenDirectorySpatial", "Open _directory as spatial"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onActionDirectoryOpenForSpatial) );
-	_actionGroup->add( Gtk::Action::create("OpenDirectoryST", "Open _directory as spatial/time"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onActionDirectoryOpenForST) );
-	_actionGroup->add( Gtk::Action::create("SaveBaseline", "Save baseline as..."),
-	sigc::mem_fun(*this, &RFIGuiWindow::onSaveBaseline) );
-	action = Gtk::Action::create("Quit", "_Quit");
-	action->set_icon_name("application-exit");
-	_actionGroup->add(action, Gtk::AccelKey("<control>Q"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onQuit) );
-
-	_actionGroup->add( Gtk::Action::create("ImageProperties", "Plot properties..."),
-		Gtk::AccelKey("<control>P"),
-  	sigc::mem_fun(*this, &RFIGuiWindow::onImagePropertiesPressed) );
-	_timeGraphButton = Gtk::ToggleAction::create("TimeGraph", "Time graph");
-	_timeGraphButton->set_active(false); 
-	_actionGroup->add(_timeGraphButton, sigc::mem_fun(*this, &RFIGuiWindow::onTimeGraphButtonPressed) );
-	
-	_actionGroup->add( Gtk::Action::create("PlotDist", "Plot _distribution"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotDistPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotLogLogDist", "Plot _log-log dist"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotLogLogDistPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotComplexPlane", "Plot _complex plane"),
-		Gtk::AccelKey("<alt>C"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotComplexPlanePressed) );
-	_actionGroup->add( Gtk::Action::create("PlotMeanSpectrum", "Plot _mean spectrum"),
-		Gtk::AccelKey("<alt>M"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotMeanSpectrumPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotSumSpectrum", "Plot s_um spectrum"),
-		Gtk::AccelKey("<alt>U"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotSumSpectrumPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrum", "Plot _power spectrum"),
-		Gtk::AccelKey("<alt>W"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotFrequencyScatter", "Plot _frequency scatter"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotFrequencyScatterPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerSpectrumComparison", "Power _spectrum"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerSpectrumComparisonPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotRMSSpectrum", "Plot _rms spectrum"),
-		Gtk::AccelKey("<alt>R"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerRMSPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerTime", "Plot power vs _time"),
-		Gtk::AccelKey("<alt>T"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerTimePressed) );
-	_actionGroup->add( Gtk::Action::create("PlotPowerTimeComparison", "Po_wer vs time"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotPowerTimeComparisonPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotTimeScatter", "Plot t_ime scatter"),
- 		Gtk::AccelKey("<alt>I"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onPlotTimeScatterPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotTimeScatterComparison", "Time _scatter"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotTimeScatterComparisonPressed) );
-	_actionGroup->add( Gtk::Action::create("PlotSingularValues", "Plot _singular values"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onPlotSingularValuesPressed) );
-	_zoomToFitButton = Gtk::Action::create("ZoomFit", "Zoom _fit");
-	_zoomToFitButton->set_icon_name("zoom-fit-best");
-	_actionGroup->add(_zoomToFitButton, Gtk::AccelKey("<control>0"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onZoomFit) );
-	_zoomInButton = Gtk::Action::create("ZoomIn", "Zoom in");
-	_zoomInButton->set_icon_name("zoom-in");
-	_actionGroup->add(_zoomInButton, Gtk::AccelKey("<control>equal"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onZoomIn) );
-	_zoomOutButton = Gtk::Action::create("ZoomOut", "Zoom out");
-	_zoomOutButton->set_icon_name("zoom-out");
-	_actionGroup->add(_zoomOutButton, Gtk::AccelKey("<control>minus"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onZoomOut) );
-	_actionGroup->add( Gtk::Action::create("ShowImagePlane", "_Show image plane"),
-		Gtk::AccelKey("<control>I"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onShowImagePlane) );
-	_actionGroup->add( Gtk::Action::create("SetAndShowImagePlane", "S_et & show image plane"),
-		Gtk::AccelKey("<control><shift>I"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onSetAndShowImagePlane) );
-	_actionGroup->add( Gtk::Action::create("AddToImagePlane", "Add to _image plane"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onAddToImagePlane) );
-	
-	_actionGroup->add( Gtk::Action::create("OpenTestSet", "Open _testset") );
-	Gtk::RadioButtonGroup testSetGroup;
-	_gaussianTestSetsButton = Gtk::RadioAction::create(testSetGroup, "GaussianTestSets", "Gaussian");
-	_gaussianTestSetsButton->set_active(true);
-	_rayleighTestSetsButton = Gtk::RadioAction::create(testSetGroup, "RayleighTestSets", "Rayleigh");
-	_zeroTestSetsButton = Gtk::RadioAction::create(testSetGroup, "ZeroTestSets", "Zero");
-	_actionGroup->add(_gaussianTestSetsButton, sigc::mem_fun(*this, &RFIGuiWindow::onGaussianTestSets) );
-	_actionGroup->add(_rayleighTestSetsButton, sigc::mem_fun(*this, &RFIGuiWindow::onRayleighTestSets) );
-	_actionGroup->add(_zeroTestSetsButton, sigc::mem_fun(*this, &RFIGuiWindow::onZeroTestSets) );
-	
-	_actionGroup->add( Gtk::Action::create("OpenTestSetA", "A Full spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetA) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetB", "B Half spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetB) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetC", "C Varying spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetC) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetD", "D 3 srcs + spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetD) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetE", "E 5 srcs + spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetE) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetF", "F 5 srcs + spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetF) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetG", "G Test set G"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetG) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetH", "H filtered srcs + spikes"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetH) );
-	_actionGroup->add( Gtk::Action::create("OpenTestSetNoise", "Noise"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetNoise));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetModel3", "3-source model"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSet3Model));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetModel5", "5-source model"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSet5Model));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetNoiseModel3", "3-source model with noise"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetNoise3Model));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetNoiseModel5", "5-source model with noise"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetNoise5Model));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetBStrong", "Test set B (strong RFI)"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetBStrong));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetBWeak", "Test set B (weak RFI)"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetBWeak));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetBAligned", "Test set B (aligned)"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetBAligned));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetGaussianBroadband", "Gaussian broadband"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetGaussianBroadband));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetSinusoidalBroadband", "Sinusoidal broadband"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetSinusoidalBroadband));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetSlewedGaussianBroadband", "Slewed Gaussian"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetSlewedGaussianBroadband));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetBurstBroadband", "Burst"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetBurstBroadband));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetRFIDistributionLow", "Slope -2 dist low"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetRFIDistributionLow));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetRFIDistributionMid", "Slope -2 dist mid"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetRFIDistributionMid));
-	_actionGroup->add( Gtk::Action::create("OpenTestSetRFIDistributionHigh", "Slope -2 dist high"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onOpenTestSetRFIDistributionHigh));
-	_actionGroup->add( Gtk::Action::create("AddTestModification", "Test modify") );
-	_actionGroup->add( Gtk::Action::create("AddStaticFringe", "Static fringe"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onAddStaticFringe) );
-	_actionGroup->add( Gtk::Action::create("Add1SigmaStaticFringe", "Static 1 sigma fringe"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onAdd1SigmaFringe) );
-	_actionGroup->add( Gtk::Action::create("SetToOne", "Set to 1"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onSetToOne) );
-	_actionGroup->add( Gtk::Action::create("SetToI", "Set to i"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onSetToI) );
-	_actionGroup->add( Gtk::Action::create("SetToOnePlusI", "Set to 1+i"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onSetToOnePlusI) );
-	_actionGroup->add( Gtk::Action::create("AddCorrelatorFault", "Add correlator fault"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onAddCorrelatorFault) );
-	_actionGroup->add( Gtk::Action::create("MultiplyData", "Multiply data..."),
-	sigc::mem_fun(*this, &RFIGuiWindow::onMultiplyData) );
-	
-	Gtk::RadioButtonGroup setGroup;
-	_ncpSetButton = Gtk::RadioAction::create(setGroup, "NCPSet", "Use NCP set");
-	_b1834SetButton = Gtk::RadioAction::create(setGroup, "B1834Set", "Use B1834 set");
-	_emptySetButton = Gtk::RadioAction::create(setGroup, "EmptySet", "Use empty set");
-	_ncpSetButton->set_active(true); 
-	_actionGroup->add(_ncpSetButton);
-	_actionGroup->add(_b1834SetButton);
-	_actionGroup->add(_emptySetButton);
-	
-	Gtk::RadioButtonGroup chGroup;
-	_sim16ChannelsButton = Gtk::RadioAction::create(chGroup, "Sim16Channels", "16 channels");
-	_sim64ChannelsButton = Gtk::RadioAction::create(chGroup, "Sim64Channels", "64 channels");
-	_sim256ChannelsButton = Gtk::RadioAction::create(chGroup, "Sim256Channels", "256 channels");
-	_sim64ChannelsButton->set_active(true); 
-	_actionGroup->add(_sim16ChannelsButton);
-	_actionGroup->add(_sim64ChannelsButton);
-	_actionGroup->add(_sim256ChannelsButton);
-	
-	_simFixBandwidthButton = Gtk::ToggleAction::create("SimFixBandwidth", "Fix bandwidth");
-	_simFixBandwidthButton->set_active(false); 
-	_actionGroup->add(_simFixBandwidthButton);
-	
-	_actionGroup->add( Gtk::Action::create("SimulateCorrelation", "Simulate correlation"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateCorrelation) );
-	_actionGroup->add( Gtk::Action::create("SimulateSourceSetA", "Simulate source set A"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateSourceSetA) );
-	_actionGroup->add( Gtk::Action::create("SimulateSourceSetB", "Simulate source set B"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateSourceSetB) );
-	_actionGroup->add( Gtk::Action::create("SimulateSourceSetC", "Simulate source set C"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateSourceSetC) );
-	_actionGroup->add( Gtk::Action::create("SimulateSourceSetD", "Simulate source set D"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateSourceSetD) );
-	_actionGroup->add( Gtk::Action::create("SimulateOffAxisSource", "Simulate off-axis source"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateOffAxisSource) );
-	_actionGroup->add( Gtk::Action::create("SimulateOnAxisSource", "Simulate on-axis source"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSimulateOnAxisSource) );
-
-	_actionGroup->add( Gtk::Action::create("EditStrategy", "_Edit strategy"),
-		Gtk::AccelKey("F8"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onEditStrategyPressed) );
-	action = Gtk::Action::create("ExecuteStrategy", "E_xecute strategy");
-	action->set_tooltip("Run the currently loaded strategy. Normally this will not write back the results to the opened set. The flagging results are displayed in the plot as yellow ('alternative') flag mask.");
-	action->set_icon_name("system-run");
-	_actionGroup->add(action, Gtk::AccelKey("F9"),
-			sigc::mem_fun(*this, &RFIGuiWindow::onExecuteStrategyPressed));
-	_closeExecuteFrameButton = Gtk::ToggleAction::create("CloseExecuteFrame", "Close execute frame");
-	_actionGroup->add(_closeExecuteFrameButton);
-	_closeExecuteFrameButton->set_active(true); 
-	
-	_actionGroup->add( Gtk::Action::create("ExecutePythonStrategy", "_Execute script"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onExecutePythonStrategy) );
-	
-	_actionGroup->add(Gtk::Action::create("ShowStats", "Show _stats"),
-		Gtk::AccelKey("F2"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onShowStats) );
-	_previousButton = Gtk::Action::create("Previous", "Previous");
-	_previousButton->set_icon_name("go-previous");
-	_previousButton->set_tooltip("Load and display the previous baseline. Normally, this steps from the baseline between antennas (i) and (j) to (i) and (j-1).");
-	_previousButton->set_sensitive(false);
-	
-	_actionGroup->add(_previousButton,
-		Gtk::AccelKey("F6"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onLoadPrevious) );
-	_nextButton = Gtk::Action::create("Next", "Next");
-	_nextButton->set_icon_name("go-next");
-	_nextButton->set_tooltip("Load and display the next baseline. Normally, this steps from the baseline between antennas (i) and (j) to (i) and (j+1).");
-	_nextButton->set_sensitive(false);
-	_actionGroup->add(_nextButton,
-		Gtk::AccelKey("F7"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onLoadNext) );
-	_reloadButton = Gtk::Action::create("Reload", "_Reload");
-	_reloadButton->set_icon_name("view-refresh");
-	_reloadButton->set_tooltip("Reload the currently displayed baseline. This will reset the purple flags to the measurement set flags, and clear the yellow flags.");
-	_reloadButton->set_sensitive(false);
-	_actionGroup->add(_reloadButton, Gtk::AccelKey("F5"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onReloadPressed) );
-	_actionGroup->add( Gtk::Action::create("GoTo", "_Go to..."),
-		Gtk::AccelKey("<control>G"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onGoToPressed) );
-	_actionGroup->add( Gtk::Action::create("LoadLongestBaseline", "Longest baseline"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onLoadLongestBaselinePressed) );
-	_actionGroup->add( Gtk::Action::create("LoadShortestBaseline", "Shortest baseline"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onLoadShortestBaselinePressed) );
-	
-  _originalFlagsButton = Gtk::ToggleAction::create("OriginalFlags", "Or flags");
-	_originalFlagsButton->set_active(_controller->AreOriginalFlagsShown());
-	_originalFlagsButton->set_icon_name("showoriginalflags");
-	_originalFlagsButton->set_tooltip("Display the first flag mask on top of the visibilities. These flags are displayed in purple and indicate the flags as they originally were stored in the measurement set.");
-	_toggleConnections.push_back(_originalFlagsButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onToggleFlags)));
-	_actionGroup->add(_originalFlagsButton,
-			Gtk::AccelKey("F3"));
-	
-  _altFlagsButton = Gtk::ToggleAction::create("AlternativeFlags", "Alt flags");
-	_altFlagsButton->set_active(_controller->AreAlternativeFlagsShown()); 
-	_altFlagsButton->set_icon_name("showalternativeflags");
-	_altFlagsButton->set_tooltip("Display the second flag mask on top of the visibilities. These flags are displayed in yellow and indicate flags found by running the strategy.");
-	_toggleConnections.push_back(_altFlagsButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onToggleFlags)));
-	_actionGroup->add(_altFlagsButton,
-			Gtk::AccelKey("F4"));
-	_actionGroup->add( Gtk::Action::create("ClearOriginalFlags", "Clear ori flags"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onClearOriginalFlagsPressed) );
-	_actionGroup->add( Gtk::Action::create("ClearAltFlags", "Clear alt flags"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onClearAltFlagsPressed) );
-
-  _showPPButton = Gtk::ToggleAction::create("DisplayPP", "PP");
-	_showPPButton->set_active(_controller->IsPPShown());
-	_showPPButton->set_icon_name("showpp");
-	_showPPButton->set_tooltip("Display the PP polarization. Depending on the polarization configuration of the measurement set, this will show XX or RR");
-	_toggleConnections.push_back(_showPPButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
-	_actionGroup->add(_showPPButton);
-	
-  _showPQButton = Gtk::ToggleAction::create("DisplayPQ", "PQ");
-	_showPQButton->set_active(_controller->IsPQShown());
-	_showPQButton->set_icon_name("showpq");
-	_showPQButton->set_tooltip("Display the PQ polarization. Depending on the polarization configuration of the measurement set, this will show XY or RL");
-	_toggleConnections.push_back(_showPQButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
-	_actionGroup->add(_showPQButton);
-	
-  _showQPButton = Gtk::ToggleAction::create("DisplayQP", "QP");
-	_showQPButton->set_active(_controller->IsQPShown());
-	_showQPButton->set_icon_name("showqp");
-	_showQPButton->set_tooltip("Display the QP polarization. Depending on the polarization configuration of the measurement set, this will show YX or LR");
-	_toggleConnections.push_back(_showQPButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
-	_actionGroup->add(_showQPButton);
-	
-  _showQQButton = Gtk::ToggleAction::create("DisplayQQ", "QQ");
-	_showQQButton->set_active(_controller->IsQQShown());
-	_showQQButton->set_icon_name("showqq");
-	_showQQButton->set_tooltip("Display the QQ polarization. Depending on the polarization configuration of the measurement set, this will show YY or LL");
-	_toggleConnections.push_back(_showQQButton->signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onTogglePolarizations)));
-	_actionGroup->add(_showQQButton);
-	
-	_actionGroup->add( Gtk::Action::create("VisToOriginal", "Current->Original"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onVisualizedToOriginalPressed) );
-
-	_actionGroup->add( Gtk::Action::create("KeepReal", "Keep _real part"),
-		Gtk::AccelKey("<control>,"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepRealPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepImaginary", "Keep _imaginary part"),
-		Gtk::AccelKey("<control>."),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepImaginaryPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepPhase", "Keep _phase part"),
-		Gtk::AccelKey("<control>1"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepPhasePressed) );
-	_actionGroup->add( Gtk::Action::create("KeepStokesI", "Keep _stokesI part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesIPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepStokesQ", "Keep stokes_Q part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesQPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepStokesU", "Keep stokes_U part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesUPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepStokesV", "Keep stokes_V part"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onKeepStokesVPressed) );
-	//_actionGroup->add( Gtk::Action::create("KeepAutoPol", "Keep xx+yy part"),
-  //sigc::mem_fun(*this, &RFIGuiWindow::onKeepAutoDipolePressed) );
-	//_actionGroup->add( Gtk::Action::create("KeepCrossPol", "Keep xy+yx part"),
-  //sigc::mem_fun(*this, &RFIGuiWindow::onKeepCrossDipolePressed) );
-	_actionGroup->add( Gtk::Action::create("KeepRR", "Keep _rr part"),
-		Gtk::AccelKey("<control>R"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepRRPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepRL", "Keep rl part"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepRLPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepLR", "Keep lr part"),
-		Gtk::AccelKey("<control><alt>L"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepLRPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepLL", "Keep _ll part"),
-		Gtk::AccelKey("<control>L"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepLLPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepXX", "Keep _xx part"),
-		Gtk::AccelKey("<control>X"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepXXPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepXY", "Keep xy part"),
-		Gtk::AccelKey("<control><alt>X"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepXYPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepYX", "Keep yx part"),
-		Gtk::AccelKey("<control><alt>Y"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepYXPressed) );
-	_actionGroup->add( Gtk::Action::create("KeepYY", "Keep _yy part"),
-		Gtk::AccelKey("<control>Y"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onKeepYYPressed) );
-	_actionGroup->add( Gtk::Action::create("UnrollPhase", "_Unroll phase"),
-	sigc::mem_fun(*this, &RFIGuiWindow::onUnrollPhaseButtonPressed) );
-
-	_actionGroup->add( Gtk::Action::create("Segment", "Segment"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSegment) );
-	_actionGroup->add( Gtk::Action::create("Cluster", "Cluster"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onCluster) );
-	_actionGroup->add( Gtk::Action::create("Classify", "Classify"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onClassify) );
-	_actionGroup->add( Gtk::Action::create("RemoveSmallSegments", "Remove small segments"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onRemoveSmallSegments) );
-	_actionGroup->add( Gtk::Action::create("InterpolateFlagged", "Interpolate flagged"),
-  sigc::mem_fun(_controller, &RFIGuiController::InterpolateFlagged) );
-	_actionGroup->add( Gtk::Action::create("StoreData", "Store"),
-		Gtk::AccelKey("<control>M"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onStoreData) );
-	_actionGroup->add( Gtk::Action::create("RecallData", "Recall"),
-		Gtk::AccelKey("<control><alt>R"),
-		sigc::mem_fun(*this, &RFIGuiWindow::onRecallData) );
-	_actionGroup->add( Gtk::Action::create("SubtractDataFromMem", "Subtract from mem"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onSubtractDataFromMem) );
-
-	_actionGroup->add( Gtk::Action::create("Highlight", "Highlight"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onHightlightPressed) );
-	_actionGroup->add( Gtk::Action::create("VertEVD", "Vert EVD"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onVertEVD) );
-	_actionGroup->add( Gtk::Action::create("ApplyTimeProfile", "Apply time profile"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onApplyTimeProfile) );
-	_actionGroup->add( Gtk::Action::create("ApplyVertProfile", "Apply vert profile"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onApplyVertProfile) );
-	_actionGroup->add( Gtk::Action::create("RestoreTimeProfile", "Restore time profile"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onRestoreTimeProfile) );
-	_actionGroup->add( Gtk::Action::create("RestoreVertProfile", "Restore vert profile"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onRestoreVertProfile) );
-	_actionGroup->add( Gtk::Action::create("ReapplyTimeProfile", "Reapply time profile"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onReapplyTimeProfile) );
-	_actionGroup->add( Gtk::Action::create("ReapplyVertProfile", "Reapply vert profile"),
-  sigc::mem_fun(*this, &RFIGuiWindow::onReapplyVertProfile) );
-
-	action = Gtk::Action::create("About", "_About");
-	action->set_icon_name("aoflagger");
-	_actionGroup->add(action, sigc::mem_fun(*this, &RFIGuiWindow::onHelpAbout));
-
-	Glib::RefPtr<Gtk::UIManager> uiManager =
-		Gtk::UIManager::create();
-	uiManager->insert_action_group(_actionGroup);
-	add_accel_group(uiManager->get_accel_group());
-
-	Glib::ustring ui_info =
-    "<ui>"
-    "  <menubar name='MenuBar'>"
-    "    <menu action='MenuFile'>"
-    "      <menuitem action='OpenFile'/>"
-    "      <menuitem action='OpenDirectory'/>"
-    "      <menuitem action='OpenDirectorySpatial'/>"
-    "      <menuitem action='OpenDirectoryST'/>"
-		"      <menuitem action='SaveBaseline'/>"
-    "      <menuitem action='Quit'/>"
-    "    </menu>"
-	  "    <menu action='MenuView'>"
-    "      <menuitem action='ImageProperties'/>"
-    "      <menuitem action='TimeGraph'/>"
-    "      <separator/>"
-    "      <menuitem action='OriginalFlags'/>"
-    "      <menuitem action='AlternativeFlags'/>"
-    "      <menuitem action='Highlight'/>"
-    "      <separator/>"
-    "      <menuitem action='ZoomFit'/>"
-    "      <menuitem action='ZoomIn'/>"
-    "      <menuitem action='ZoomOut'/>"
-    "      <separator/>"
-    "      <menuitem action='ShowImagePlane'/>"
-    "      <menuitem action='SetAndShowImagePlane'/>"
-    "      <menuitem action='AddToImagePlane'/>"
-    "      <separator/>"
-    "      <menuitem action='ShowStats'/>"
-	  "    </menu>"
-	  "    <menu action='MenuPlot'>"
-    "      <menu action='MenuPlotFlagComparison'>"
-    "        <menuitem action='PlotPowerSpectrumComparison'/>"
-    "        <menuitem action='PlotPowerTimeComparison'/>"
-    "        <menuitem action='PlotTimeScatterComparison'/>"
-		"      </menu>"
-    "      <separator/>"
-    "      <menuitem action='PlotDist'/>"
-    "      <menuitem action='PlotLogLogDist'/>"
-    "      <menuitem action='PlotComplexPlane'/>"
-    "      <menuitem action='PlotMeanSpectrum'/>"
-    "      <menuitem action='PlotSumSpectrum'/>"
-    "      <menuitem action='PlotPowerSpectrum'/>"
-    "      <menuitem action='PlotFrequencyScatter'/>"
-    "      <menuitem action='PlotRMSSpectrum'/>"
-    "      <menuitem action='PlotPowerTime'/>"
-    "      <menuitem action='PlotTimeScatter'/>"
-    "      <menuitem action='PlotSingularValues'/>"
-	  "    </menu>"
-    "    <menu action='MenuBrowse'>"
-    "      <menuitem action='Previous'/>"
-    "      <menuitem action='Reload'/>"
-    "      <menuitem action='Next'/>"
-    "      <separator/>"
-    "      <menuitem action='GoTo'/>"
-    "      <separator/>"
-    "      <menuitem action='LoadLongestBaseline'/>"
-    "      <menuitem action='LoadShortestBaseline'/>"
-    "    </menu>"
-	  "    <menu action='MenuSimulate'>"
-    "      <menu action='OpenTestSet'>"
-		"        <menuitem action='GaussianTestSets'/>"
-		"        <menuitem action='RayleighTestSets'/>"
-		"        <menuitem action='ZeroTestSets'/>"
-    "        <separator/>"
-		"        <menuitem action='OpenTestSetA'/>"
-		"        <menuitem action='OpenTestSetB'/>"
-		"        <menuitem action='OpenTestSetC'/>"
-		"        <menuitem action='OpenTestSetD'/>"
-		"        <menuitem action='OpenTestSetE'/>"
-		"        <menuitem action='OpenTestSetF'/>"
-		"        <menuitem action='OpenTestSetG'/>"
-		"        <menuitem action='OpenTestSetH'/>"
-		"        <menuitem action='OpenTestSetNoise'/>"
-		"        <menuitem action='OpenTestSetModel3'/>"
-		"        <menuitem action='OpenTestSetModel5'/>"
-		"        <menuitem action='OpenTestSetNoiseModel3'/>"
-		"        <menuitem action='OpenTestSetNoiseModel5'/>"
-		"        <menuitem action='OpenTestSetBStrong'/>"
-		"        <menuitem action='OpenTestSetBWeak'/>"
-		"        <menuitem action='OpenTestSetBAligned'/>"
-		"        <menuitem action='OpenTestSetGaussianBroadband'/>"
-		"        <menuitem action='OpenTestSetSinusoidalBroadband'/>"
-		"        <menuitem action='OpenTestSetSlewedGaussianBroadband'/>"
-		"        <menuitem action='OpenTestSetBurstBroadband'/>"
-		"        <menuitem action='OpenTestSetRFIDistributionLow'/>"
-		"        <menuitem action='OpenTestSetRFIDistributionMid'/>"
-		"        <menuitem action='OpenTestSetRFIDistributionHigh'/>"
-		"      </menu>"
-		"      <menu action='AddTestModification'>"
-		"        <menuitem action='AddStaticFringe'/>"
-		"        <menuitem action='Add1SigmaStaticFringe'/>"
-		"        <menuitem action='SetToOne'/>"
-		"        <menuitem action='SetToI'/>"
-		"        <menuitem action='SetToOnePlusI'/>"
-		"        <menuitem action='AddCorrelatorFault'/>"
-		"        <menuitem action='MultiplyData'/>"
-		"      </menu>"
-		"      <separator/>"
-    "      <menuitem action='NCPSet'/>"
-    "      <menuitem action='B1834Set'/>"
-    "      <menuitem action='EmptySet'/>"
-    "      <separator/>"
-    "      <menuitem action='Sim16Channels'/>"
-    "      <menuitem action='Sim64Channels'/>"
-    "      <menuitem action='Sim256Channels'/>"
-    "      <menuitem action='SimFixBandwidth'/>"
-    "      <separator/>"
-    "      <menuitem action='SimulateCorrelation'/>"
-    "      <menuitem action='SimulateSourceSetA'/>"
-    "      <menuitem action='SimulateSourceSetB'/>"
-    "      <menuitem action='SimulateSourceSetC'/>"
-    "      <menuitem action='SimulateSourceSetD'/>"
-    "      <menuitem action='SimulateOffAxisSource'/>"
-    "      <menuitem action='SimulateOnAxisSource'/>"
-	  "    </menu>"
-	  "    <menu action='MenuData'>"
-    "      <menuitem action='VisToOriginal'/>"
-    "      <separator/>"
-    "      <menuitem action='KeepReal'/>"
-    "      <menuitem action='KeepImaginary'/>"
-    "      <menuitem action='KeepPhase'/>"
-    "      <menuitem action='UnrollPhase'/>"
-    "      <separator/>"
-    "      <menuitem action='KeepStokesI'/>"
-    "      <menuitem action='KeepStokesQ'/>"
-    "      <menuitem action='KeepStokesU'/>"
-    "      <menuitem action='KeepStokesV'/>"
-    "      <separator/>"
-    "      <menuitem action='KeepRR'/>"
-    "      <menuitem action='KeepRL'/>"
-    "      <menuitem action='KeepLR'/>"
-    "      <menuitem action='KeepLL'/>"
-    "      <separator/>"
-    "      <menuitem action='KeepXX'/>"
-    "      <menuitem action='KeepXY'/>"
-    "      <menuitem action='KeepYX'/>"
-    "      <menuitem action='KeepYY'/>"
-//    "      <menuitem action='ShowAutoPol'/>"
-//    "      <menuitem action='ShowCrossPol'/>"
-    "      <separator/>"
-    "      <menuitem action='StoreData'/>"
-    "      <menuitem action='RecallData'/>"
-    "      <menuitem action='SubtractDataFromMem'/>"
-    "      <menuitem action='ClearOriginalFlags'/>"
-    "      <menuitem action='ClearAltFlags'/>"
-	  "    </menu>"
-	  "    <menu action='MenuActions'>"
-    "      <menuitem action='EditStrategy'/>"
-    "      <menuitem action='ExecuteStrategy'/>"
-    "      <menuitem action='CloseExecuteFrame'/>"
-    "      <separator/>"
-    "      <menuitem action='ExecutePythonStrategy'/>"
-    "      <separator/>"
-    "      <menuitem action='Segment'/>"
-    "      <menuitem action='Cluster'/>"
-    "      <menuitem action='Classify'/>"
-    "      <menuitem action='RemoveSmallSegments'/>"
-    "      <menuitem action='InterpolateFlagged'/>"
-    "      <separator/>"
-    "      <menuitem action='VertEVD'/>"
-    "      <menuitem action='ApplyTimeProfile'/>"
-    "      <menuitem action='ApplyVertProfile'/>"
-    "      <menuitem action='RestoreTimeProfile'/>"
-    "      <menuitem action='RestoreVertProfile'/>"
-    "      <menuitem action='ReapplyTimeProfile'/>"
-    "      <menuitem action='ReapplyVertProfile'/>"
-	  "    </menu>"
-	  "    <menu action='MenuHelp'>"
-    "      <menuitem action='About'/>"
-	  "    </menu>"
-    "  </menubar>"
-    "  <toolbar  name='ToolBar'>"
-    "    <toolitem action='OpenDirectory'/>"
-    "    <separator/>"
-    "    <toolitem action='ExecuteStrategy'/>"
-    "    <toolitem action='OriginalFlags'/>"
-    "    <toolitem action='AlternativeFlags'/>"
-    "    <separator/>"
-    "    <toolitem action='Previous'/>"
-    "    <toolitem action='Reload'/>"
-    "    <toolitem action='Next'/>"
-    "    <separator/>"
-    "    <toolitem action='ZoomFit'/>"
-    "    <toolitem action='ZoomIn'/>"
-    "    <toolitem action='ZoomOut'/>"
-    "    <toolitem action='DisplayPP'/>"
-    "    <toolitem action='DisplayPQ'/>"
-    "    <toolitem action='DisplayQP'/>"
-    "    <toolitem action='DisplayQQ'/>"
-    "  </toolbar>"
-    "</ui>";
-
-	uiManager->add_ui_from_string(ui_info);
-	Gtk::Widget* pMenubar = uiManager->get_widget("/MenuBar");
-	_mainVBox.pack_start(*pMenubar, Gtk::PACK_SHRINK);
-	Gtk::Toolbar* pToolbar = static_cast<Gtk::Toolbar *>(uiManager->get_widget("/ToolBar"));
-	if(Gtk::IconTheme::get_default()->has_icon("aoflagger"))
-	{
-		pToolbar->set_toolbar_style(Gtk::TOOLBAR_ICONS);
-		pToolbar->set_icon_size(Gtk::ICON_SIZE_LARGE_TOOLBAR);
-	}
-	else {
-		pToolbar->set_toolbar_style(Gtk::TOOLBAR_TEXT);
-		pToolbar->set_icon_size(Gtk::ICON_SIZE_SMALL_TOOLBAR);
-	}
-	_mainVBox.pack_start(*pToolbar, Gtk::PACK_SHRINK);
-	
-	_selectVisualizationButton.set_tooltip_text("Switch visualization");
-	_selectVisualizationButton.set_arrow_tooltip_text("Select visualization");
-	_selectVisualizationButton.set_icon_name("showoriginalvisibilities");
-	pToolbar->append(_selectVisualizationButton);
-	_selectVisualizationButton.set_menu(_tfVisualizationMenu);
-	_selectVisualizationButton.signal_clicked().connect(sigc::mem_fun(*this, &RFIGuiWindow::onToggleImage));
-	
-	pMenubar->show();
 }
 
 void RFIGuiWindow::onClearOriginalFlagsPressed()
@@ -1356,10 +888,10 @@ void RFIGuiWindow::updatePolarizations()
 	_controller->CheckPolarizations();
 	bool pp, pq, qp, qq;
 	_controller->GetAvailablePolarizations(pp, pq, qp, qq);
-	_showPPButton->set_sensitive(pp);
-	_showPQButton->set_sensitive(pq);
-	_showQPButton->set_sensitive(qp);
-	_showQQButton->set_sensitive(qq);
+	_menu->SetShowPPSensitive(pp);
+	_menu->SetShowPQSensitive(pq);
+	_menu->SetShowQPSensitive(qp);
+	_menu->SetShowQQSensitive(qq);
 }
 
 void RFIGuiWindow::keepPolarisation(PolarizationEnum polarisation)
@@ -1606,7 +1138,7 @@ void RFIGuiWindow::onRemoveSmallSegments()
 
 void RFIGuiWindow::onTimeGraphButtonPressed()
 {
-	if(_timeGraphButton->get_active())
+	if(_menu->TimeGraphActive())
 	{
 		//_mainVBox.remove(_timeFrequencyWidget);
 		//_mainVBox.pack_start(_panedArea, Gtk::PACK_EXPAND_WIDGET);
@@ -1615,9 +1147,9 @@ void RFIGuiWindow::onTimeGraphButtonPressed()
 		_mainVBox.pack_start(_plotFrame, true, true);
 		_mainVBox.show_all();
 		//_panedArea.set_position(_panedArea.get_height()/2);
-		std::cout << "size of _panedArea: " << _panedArea.get_width() <<',' << _panedArea.get_height() << '\n';
-		std::cout << "size of tf: " << _timeFrequencyWidget.get_height() << '\n';
-		std::cout << "plotframe: " << _plotFrame.get_height() << '\n';
+		//std::cout << "size of _panedArea: " << _panedArea.get_width() <<',' << _panedArea.get_height() << '\n';
+		//std::cout << "size of tf: " << _timeFrequencyWidget.get_height() << '\n';
+		//std::cout << "plotframe: " << _plotFrame.get_height() << '\n';
 	} else {
 		//_mainVBox.remove(_panedArea);
 		//_panedArea.remove(_timeFrequencyWidget);
@@ -1682,9 +1214,9 @@ DefaultModels::SetLocation RFIGuiWindow::getSetLocation(bool empty)
 {
 	if(empty)
 		return DefaultModels::EmptySet;
-	if(_ncpSetButton->get_active())
+	if(_menu->SimulateNCPActive())
 		return DefaultModels::NCPSet;
-	else if(_b1834SetButton->get_active())
+	else if(_menu->SimulateB1834Active())
 		return DefaultModels::B1834Set;
 	else
 		return DefaultModels::EmptySet;
@@ -1693,14 +1225,14 @@ DefaultModels::SetLocation RFIGuiWindow::getSetLocation(bool empty)
 void RFIGuiWindow::loadDefaultModel(DefaultModels::Distortion distortion, bool withNoise, bool empty)
 {
 	unsigned channelCount;
-	if(_sim16ChannelsButton->get_active())
+	if(_menu->Simulate16ChActive())
 		channelCount = 16;
-	else if(_sim64ChannelsButton->get_active())
+	else if(_menu->Simulate64ChActive())
 		channelCount = 64;
 	else
 		channelCount = 256;
 	double bandwidth;
-	if(_simFixBandwidthButton->get_active())
+	if(_menu->SimFixBandwidthActive())
 		bandwidth = 16.0 * 2500000.0;
 	else
 		bandwidth = (double) channelCount / 16.0 * 2500000.0;
@@ -1908,23 +1440,22 @@ void RFIGuiWindow::SetStrategy(std::unique_ptr<rfiStrategy::Strategy> newStrateg
 
 void RFIGuiWindow::onControllerStateChange()
 {
-	for(sigc::connection& connection : _toggleConnections)
-		connection.block();
+	_menu->BlockVisualizationSignals();
 	
-	_originalFlagsButton->set_active(_controller->AreOriginalFlagsShown());
+	_menu->SetOriginalFlagsActive(_controller->AreOriginalFlagsShown());
 	_timeFrequencyWidget.Plot().SetShowOriginalMask(_controller->AreOriginalFlagsShown());
 	
-	_altFlagsButton->set_active(_controller->AreAlternativeFlagsShown());
+	_menu->SetAlternativeFlagsActive(_controller->AreAlternativeFlagsShown());
 	_timeFrequencyWidget.Plot().SetShowAlternativeMask(_controller->AreAlternativeFlagsShown());
 	
-	_showPPButton->set_active(_controller->IsPPShown());
-	_showPQButton->set_active(_controller->IsPQShown());
-	_showQPButton->set_active(_controller->IsQPShown());
-	_showQQButton->set_active(_controller->IsQQShown());
+	_menu->SetShowPPActive(_controller->IsPPShown());
+	_menu->SetShowPQActive(_controller->IsPQShown());
+	_menu->SetShowQPActive(_controller->IsQPShown());
+	_menu->SetShowQQActive(_controller->IsQQShown());
+	
 	_controller->TFController().SetVisualizedPolarization(_controller->IsPPShown(), _controller->IsPQShown(), _controller->IsQPShown(), _controller->IsQQShown());
 	
-	for(sigc::connection& connection : _toggleConnections)
-		connection.unblock();
+	_menu->UnblockVisualizationSignals();
 	
 	_timeFrequencyWidget.Update();
 }
@@ -1952,9 +1483,9 @@ void RFIGuiWindow::onTFZoomChanged()
 {
 	bool s = !_timeFrequencyWidget.Plot().IsZoomedOut();
 	bool i = _timeFrequencyWidget.Plot().HasImage();
-	_zoomToFitButton->set_sensitive(s && i);
-	_zoomOutButton->set_sensitive(s && i);
-	_zoomInButton->set_sensitive(i);
+	_menu->SetZoomToFitSensitive(s && i);
+	_menu->SetZoomOutSensitive(s && i);
+	_menu->SetZoomInSensitive(i);
 }
 
 void RFIGuiWindow::onHelpAbout()
@@ -1977,14 +1508,29 @@ void RFIGuiWindow::onHelpAbout()
 
 void RFIGuiWindow::onExecutePythonStrategy()
 {
-	_controller->ExecutePythonStrategy();
+	try {
+		_controller->ExecutePythonStrategy();
+	}
+	catch(std::exception& e) {
+		showError(e.what());
+	}
+}
+
+void RFIGuiWindow::onExecuteLuaStrategy()
+{
+	try {
+		_controller->ExecuteLuaStrategy();
+	}
+	catch(std::exception& e) {
+		showError(e.what());
+	}
 }
 
 void RFIGuiWindow::SetBaselineInfo(bool multipleBaselines, const std::string& name, const std::string& description)
 {
-	_previousButton->set_sensitive(multipleBaselines);
-	_reloadButton->set_sensitive(true);
-	_nextButton->set_sensitive(multipleBaselines);
+	_menu->SetPreviousSensitive(multipleBaselines);
+	_menu->SetReloadSensitive(true);
+	_menu->SetNextSensitive(multipleBaselines);
 	_imageSetName = name;
 	_imageSetIndexDescription = description;
 	setSetNameInStatusBar();
@@ -2001,9 +1547,10 @@ void RFIGuiWindow::onSelectImage()
 
 void RFIGuiWindow::updateTFVisualizationMenu()
 {
-	std::vector<Gtk::Widget*> children = _tfVisualizationMenu.get_children();
+	Gtk::Menu& menu = _menu->VisualizationMenu();
+	std::vector<Gtk::Widget*> children = menu.get_children();
 	for(Gtk::Widget* child : children)
-		_tfVisualizationMenu.remove(*child);
+		menu.remove(*child);
 	
 	_tfVisualizationMenuItems.clear();
 	Gtk::RadioButtonGroup group;
@@ -2013,13 +1560,13 @@ void RFIGuiWindow::updateTFVisualizationMenu()
 		_tfVisualizationMenuItems.emplace_back(std::unique_ptr<Gtk::RadioMenuItem>(new Gtk::RadioMenuItem(group, label)));
 		Gtk::RadioMenuItem& item = *_tfVisualizationMenuItems.back();
 		item.signal_activate().connect(sigc::mem_fun(*this, &RFIGuiWindow::onSelectImage));
-		_tfVisualizationMenu.add(item);
+		menu.add(item);
 	}
 	
-	_selectVisualizationButton.set_sensitive(_tfVisualizationMenuItems.size() > 1);
+	_menu->SetSelectVisualizationSensitive(_tfVisualizationMenuItems.size() > 1);
 	
 	_tfVisualizationMenuItems.front()->activate();
-	_tfVisualizationMenu.show_all_children();
+	menu.show_all_children();
 }
 
 void RFIGuiWindow::onToggleImage()

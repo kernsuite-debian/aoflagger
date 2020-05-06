@@ -128,6 +128,13 @@ namespace rfiStrategy {
 			{
 				throw std::runtime_error("Not implemented");
 			}
+			/**
+			 * If an imageset has the concept of cross correlations, this returns true.
+			 * When true, aoflagger will by default only process baselines that are formed from
+			 * two different antennas. If false, it will process all baselines by default, which
+			 * is appropriate for single-dish image sets.
+			 */
+			virtual bool HasCrossCorrelations() const { return true; }
 			
 			static class ImageSet *Create(const std::vector<std::string>& files, BaselineIOMode ioMode);
 			static bool IsFitsFile(const std::string &file);

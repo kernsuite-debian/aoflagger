@@ -446,7 +446,7 @@ namespace aoflagger {
 		StatusListener *_destination;
 	};
 	
-	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input)
+	FlagMask AOFlagger::run(Strategy& strategy, const ImageSet& input, const FlagMask* preExistingFlags)
 	{
 		std::mutex mutex;
 		rfiStrategy::ArtifactSet artifacts(&mutex);
@@ -456,33 +456,38 @@ namespace aoflagger {
 		else
 			listener.reset(new ForwardingListener(_statusListener));
 		
-		Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(input.Width(), input.Height());
+		Mask2DCPtr inputMask;
+		if(preExistingFlags == nullptr)
+			inputMask = Mask2D::CreateSetMaskPtr<false>(input.Width(), input.Height());
+		else
+			inputMask = preExistingFlags->_data->mask;
+		
 		TimeFrequencyData inputData, revisedData;
 		Image2DPtr zeroImage = Image2D::CreateZeroImagePtr(input.Width(), input.Height());
 		switch(input.ImageCount())
 		{
 		case 1:
 			inputData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, input._data->images[0]);
-			inputData.SetGlobalMask(mask);
+			inputData.SetGlobalMask(inputMask);
 			revisedData = TimeFrequencyData(TimeFrequencyData::AmplitudePart, Polarization::StokesI, zeroImage);
-			revisedData.SetGlobalMask(mask);
+			revisedData.SetGlobalMask(inputMask);
 			break;
 		case 2:
 			inputData = TimeFrequencyData(Polarization::StokesI, input._data->images[0], input._data->images[1]);
-			inputData.SetGlobalMask(mask);
+			inputData.SetGlobalMask(inputMask);
 			revisedData = TimeFrequencyData(Polarization::StokesI, zeroImage, zeroImage);
-			revisedData.SetGlobalMask(mask);
+			revisedData.SetGlobalMask(inputMask);
 			break;
 		case 4:
 			inputData = TimeFrequencyData(
 				Polarization::XX, input._data->images[0], input._data->images[1],
 				Polarization::YY, input._data->images[2], input._data->images[3]
 			);
-			inputData.SetIndividualPolarizationMasks(mask, mask);
+			inputData.SetIndividualPolarizationMasks(inputMask, inputMask);
 			revisedData = TimeFrequencyData(
 				Polarization::XX, zeroImage, zeroImage,
 				Polarization::YY, zeroImage, zeroImage);
-			revisedData.SetIndividualPolarizationMasks(mask, mask);
+			revisedData.SetIndividualPolarizationMasks(inputMask, inputMask);
 			break;
 		case 8:
 			inputData = TimeFrequencyData::FromLinear(
@@ -491,11 +496,11 @@ namespace aoflagger {
 				input._data->images[4], input._data->images[5],
 				input._data->images[6], input._data->images[7]
 			);
-			inputData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
+			inputData.SetIndividualPolarizationMasks(inputMask, inputMask, inputMask, inputMask);
 			revisedData = TimeFrequencyData::FromLinear(
 				zeroImage, zeroImage, zeroImage, zeroImage,
 				zeroImage, zeroImage, zeroImage, zeroImage);
-			revisedData.SetIndividualPolarizationMasks(mask, mask, mask, mask);
+			revisedData.SetIndividualPolarizationMasks(inputMask, inputMask, inputMask, inputMask);
 			break;
 		}
 		artifacts.SetOriginalData(inputData);
@@ -507,17 +512,22 @@ namespace aoflagger {
 		strategy._data->strategyPtr->Perform(artifacts, *listener);
 		
 		listener.reset();
+		inputMask.reset();
 		
 		FlagMask flagMask;
-		mask.reset(new Mask2D(*artifacts.ContaminatedData().GetSingleMask()));
 		flagMask._data = 
-			new FlagMaskData(std::move(mask));
+			new FlagMaskData(Mask2DPtr(new Mask2D(*artifacts.ContaminatedData().GetSingleMask())));
 		return flagMask;
 	}
 	
-	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input, const FlagMask& correlatorFlags)
+	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input, const FlagMask& preExistingFlags)
 	{
-		return Run(strategy, input);
+		return run(strategy, input, &preExistingFlags);
+	}
+	
+	FlagMask AOFlagger::Run(Strategy& strategy, const ImageSet& input)
+	{
+		return run(strategy, input, nullptr);
 	}
 	
 	QualityStatistics AOFlagger::MakeQualityStatistics(const double *scanTimes, size_t nScans, const double *channelFrequencies, size_t nChannels, size_t nPolarizations)

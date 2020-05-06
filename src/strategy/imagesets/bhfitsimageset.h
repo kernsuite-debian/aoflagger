@@ -82,6 +82,7 @@ namespace rfiStrategy {
 			virtual std::string TelescopeName() final override {
 			  return "Bighorns";
 			}
+			virtual bool HasCrossCorrelations() const final override { return false; }
 		private:
 			struct TimeRange
 			{
