@@ -1,0 +1,14 @@
+Description: Pybind11 is missing from tarball, but we can use system pybind11
+
+--- aoflagger-3.1.0.orig/CMakeLists.txt
++++ aoflagger-3.1.0/CMakeLists.txt
+@@ -32,7 +32,8 @@ endif()
+ 
+ # Include aocommon/pybind11 headers
+ include_directories("${CMAKE_SOURCE_DIR}/aocommon/include")
+-add_subdirectory("${CMAKE_SOURCE_DIR}/external/pybind11")
++
++find_package(pybind11 REQUIRED)
+ include_directories(${pybind11_INCLUDE_DIR})
+ 
+ set(CASACORE_MAKE_REQUIRED_EXTERNALS_OPTIONAL TRUE)

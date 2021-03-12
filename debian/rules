@@ -7,7 +7,7 @@ ifeq ($(DEB_HOST_ARCH_CPU),i386)
     export DEB_CXXFLAGS_MAINT_APPEND = -ffloat-store
 endif
 
-CMAKE_FLAGS += -DDEB_BUILD_MULTIARCH=`dpkg-architecture -qDEB_BUILD_MULTIARCH` -DPORTABLE=yes
+CMAKE_FLAGS += -DDEB_BUILD_MULTIARCH=`dpkg-architecture -qDEB_BUILD_MULTIARCH` -DPORTABLE=yes -DPYTHON_INCLUDE_DIR=/usr/include/python3.8/
 
 %:
 	dh $@

@@ -1,2 +1,5 @@
-Disable-special-RPATH-handling.patch
+#Disable-special-RPATH-handling.patch
 Install-libaoflagger.so-into-multi-arch-path.patch
+Disable-test-cases-that-don-t-work-before-installation.patch
+#Add-missing-header-file.patch
+Use-system-pybind11.patch

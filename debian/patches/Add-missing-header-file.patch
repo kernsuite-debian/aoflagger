@@ -1,0 +1,20 @@
+From: Ole Streicher <olebole@debian.org>
+Date: Wed, 19 Aug 2020 15:30:05 +0200
+Subject: Add missing header file
+
+---
+ algorithms/highpassfilter.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/algorithms/highpassfilter.cpp b/algorithms/highpassfilter.cpp
+index daa96e7..bd0d703 100644
+--- a/algorithms/highpassfilter.cpp
++++ b/algorithms/highpassfilter.cpp
+@@ -3,6 +3,7 @@
+ #include "../../util/rng.h"
+ 
+ #include <cmath>
++#include <stdexcept>
+ 
+ #ifdef __SSE__
+ #define USE_INTRINSICS

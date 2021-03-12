@@ -2,19 +2,21 @@ From: Ole Streicher <olebole@debian.org>
 Date: Fri, 28 Feb 2020 14:38:56 +0100
 Subject: Install libaoflagger.so into multi-arch path
 
+Closes: #962390
 ---
- src/CMakeLists.txt | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 4ed8a75..dc08555 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -342,5 +342,6 @@ endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d625317..cd5c543 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -279,7 +279,7 @@ add_library(aoflagger-lib SHARED ${ALLFILES})
+ set_target_properties(aoflagger-lib PROPERTIES SOVERSION 0)
+ set_target_properties(aoflagger-lib PROPERTIES OUTPUT_NAME aoflagger)
+ target_link_libraries(aoflagger-lib ${ALL_LIBRARIES})
+-install (TARGETS aoflagger-lib DESTINATION lib) 
++install (TARGETS aoflagger-lib DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
  
- install (TARGETS aoflagger-bin DESTINATION bin)
- install (TARGETS aolua DESTINATION bin)
--install (TARGETS aoflagger python_aoflagger DESTINATION lib) 
-+install (TARGETS aoflagger DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
-+install (TARGETS python_aoflagger DESTINATION lib) 
- install (FILES interface/aoflagger.h DESTINATION include)
+ add_executable(aoquality applications/aoquality.cpp)
+ target_link_libraries(aoquality aoflagger-lib ${ALL_LIBRARIES})

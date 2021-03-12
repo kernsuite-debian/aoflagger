@@ -5,7 +5,7 @@ Maintainer: Debian Astro Team <debian-astro-maintainers@lists.alioth.debian.org>
 Uploaders: Gijs Molenaar <gijs@pythonic.nl>, Ole Streicher <olebole@debian.org>
 Build-Depends: casacore-dev,
                cmake,
-               debhelper (>= 11),
+               debhelper-compat (= 12),
                doxygen,
                gfortran,
                graphviz,
@@ -13,10 +13,8 @@ Build-Depends: casacore-dev,
                libboost-date-time-dev,
                libboost-dev,
                libboost-filesystem-dev,
-               libboost-numpy-dev,
-               libboost-python-dev,
-               libboost-signals-dev,
                libboost-system-dev,
+               libboost-test-dev,
                libboost-thread-dev,
                libcfitsio-dev,
                libfftw3-dev,
@@ -26,11 +24,13 @@ Build-Depends: casacore-dev,
                libpng-dev,
                libpython3-dev,
                libxml2-dev,
+               pybind11-dev,
                zlib1g-dev
 Standards-Version: 4.5.0
 Vcs-Git: https://salsa.debian.org/debian-astro-team/aoflagger.git
 Vcs-Browser: https://salsa.debian.org/debian-astro-team/aoflagger
 Homepage: https://sourceforge.net/projects/aoflagger/
+Rules-Requires-Root: no
 
 Package: aoflagger
 Architecture: any
