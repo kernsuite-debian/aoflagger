@@ -1,0 +1,50 @@
+v2.06
+=====
+
+========== ================== 
+2014-06-26 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Summary
+^^^^^^^
+
+This release fixes a lot of small bugs, in particular in the GUI. Support for Filterbank sets was added, and exporting strategies from the GUI to the command line has been made easier. Several other small improvements were made too, of which my personal favourite is that it is now possible to zoom in on the time-frequency plot by pressing ctrl plus (+). 
+
+Change list
+^^^^^^^^^^^
+
+* Implemented the 32-bit `SIGPROC <http://sigproc.sourceforge.net/>`_ Filterbank format for flagging pulsar data.
+* Implemented zoom in, zoom out and zoom to fit commands in View menu, with accelerator keys ctrl =/-/0. Moving mouse over area of interest and pressing ctrl '=' zooms in on that area. I use this all the time now :-). (#40).
+* Automatically add for-each-baseline/write actions when not present in loaded strategy. This makes it possible to create a strategy in the gui, and when it works on one baseline, save it without changes and run it with 'aoflagger' on the entire set (#47).
+* Added default strategy optimization option for high-time-resolution observations.
+* aoflagger now accepts -bands and -fields followed by comma-separated list of ids to select specific bands/fields. Requested by O. Smirnov (#29).
+* Added GUI editor for the FrequencySelectionAction, patch by P. Williams.
+* Renamed menu 'Go' to 'Browse'.
+* Added buttons to browse to shortest and longest baseline and to reload current baseline.
+* Removed 'large step' browse buttons
+* Disable browse buttons when only one baseline available (#34)
+* Improved time axis when ticks have a sub-second distance.
+* Improved :doc:`../cpp_interface` added methods to collect histograms and to get AOFlagger's version.
+* Making it possible to set the axis descriptions and horizontal range on a 2d plot.
+* Output sample count in summary page of aoqplot.
+* Bugfix: Unable to compile on Ubuntu 14.04 with gcc 4.8 due to incorrect pthreads linking, patch by G. Molenaar.
+* Bugfix: Fixing bug in opening of files of length 6 chars, reported by P. Williams.
+* Bugfix: Edit strategy window crashes when the strategy is changed while an action is selected.
+* Bugfix: Crash when moving mouse over a zoomed image.
+* Bugfix: Solved a problem when rewriting data with indirect baseline reader.
+* Bugfix: Edit strategy window is too small and hides action properties (#48).
+* Bugfix: Axes invalid for very large sets (#49).
+* Bugfix: Compiler issues with linking lapack/cblas on some platforms.
+* Bugfix: Problem in writing the flags of Bighorns fits file: zeros were replaced with nans.
+* Bugfix: In ChangeResolutionAction, restoring the revised image when decreasing in frequency resolution did not work.
+* Bugfix: Issues with calculation of free mem on 32-bit machines & improved mem reporting.
+* Bugfix: Updated old e-mail address in flagger strategy files, write aoflagger version to the files.
+* Bugfix: "make check" fails for 32 bit build, reported by G. Molenaar.
+* Bugfix: Boost.Signals deprecated: switch to Boost.Signals2 (#43).
+* Bugfix: Fixed documentation of HighPassFilterAction, patch by P. Williams.
+* Bugfix: Crash when pressing "clear plots" button in plot window.
+* Bugfix: Warnings issued by Intel compiler (#42)
+* Bugfix: Compilation errors when using newest Casacore
+* Bugfix: Fixed some compilations error on the Mac (but it still doesn't compile flawless). Thanks to E. Lenc.
+* Bugfix: Issue with NaNs in 2d plot.
+* Code cleaning: Removed deprecated code: Collect statistics action and various old observation formats that are no longer in use.

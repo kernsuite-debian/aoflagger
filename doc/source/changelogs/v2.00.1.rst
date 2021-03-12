@@ -1,0 +1,15 @@
+v2.00.1
+=======
+
+========== ================== 
+2012-03-16 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Changes:
+
+* This release is a quick fix for a bug that caused a strategy read failure on machines with non-standard locales
+* Bug fix: fixing bug causing strategy reader to malfunction with different locales (reported by Arpad Miskolczi)
+* Bug fix: show an error box when a strategy fails to load instead of crashing
+* Bug fix: complex plane plot was still using gnuplot -- now uses the internal plotter.
+* Bug fix: fixed a bug that sometimes caused a crash after having resized the time-frequency diagram.
+* Bug fix: building without gtkmm was not possible, patched by Marcel Loose.

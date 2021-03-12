@@ -1,0 +1,46 @@
+v3.00
+=====
+
+========== ================== 
+2020-07-21 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+In version 3.00, AOFlagger has fully switched to using :doc:`Lua-scripted strategies <../designing_strategies>`. For this, the ``rfigui`` underwent a transformation, and now provides a simple Lua editor and runner. Furthermore, the AOFlagger repository has been migrated to Gitlab: https://gitlab.com/aroffringa/aoflagger is its new location. GitLab is faster, provides CI, an easier and more advanced ticketing system, merge requested, etc. Additionally, the old Wiki was transformed into Sphinx documentation that is automatically build and readable online at https://aoflagger.readthedocs.io/.
+
+The full list of changes is given below.
+
+New features
+^^^^^^^^^^^^
+
+``rfigui``
+----------
+
+* Options for loading default strategies.
+* Add menu item for opening recent files.
+* Some restructuring of toolbar buttons and menus.
+* Combine open file/open directory options into one open option.
+* Save baseline flags from the gui.
+* Application icons are now found even when installed in a user prefix.
+* Show a progress bar for long-running tasks.
+* Directly load and save baseline-integrated data/flags (coherently/incoherently averaged, time/frequency differenced).
+
+``aoflagger``
+-------------
+
+* Run ``.lua`` files instead of ``.rfis`` files.
+
+Generic
+-------------
+
+* Add Lua files for all supported telescopes.
+* Use pybind11 instead of boost-python.
+* New C++/Python :doc:`external interfaces <../cpp_interface>` that supports loading and running Lua scripts.
+* Provide CMake config files for easier configuration for software that depends on AOFlagger.
+
+Bug fixes  & refactoring
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Simplify directory structure
+* Add a few new unit tests and an automated CI system
+* Fix polarization button logic
+* Make use of 'aocommon' repository

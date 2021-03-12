@@ -1,0 +1,34 @@
+v2.11
+=====
+
+========== ================== 
+2018-06-12 André Offringa <of...nga@gmail.com>
+========== ================== 
+ 
+Version 2.11 is mostly just incremental improvement, with no major new features but some important fixes. Worth mentioning is that the AOFlagger interface is integrated into the aartfaac preprocessing pipeline.
+
+Full list of changes:
+
+New features
+^^^^^^^^^^^^
+
+* AARTFAAC telescope added to standard list of recognized telescopes, and integration with aartfaac2ms.
+* SumThreshold's time and frequency sensitivity can now be separately specified (#20).
+* Added an AVX2 SumThreshold algorithm. It is not much faster, but there seem to be cases where it is faster than the old SSE algorithm.
+* The ``badstations`` tool has been optimized for AARTFAAC, where it seems very useful.
+* Some minor plotting fixes / improvements.
+* Better support for various versions of the sdfits files that various telescopes use, in particular better support for GBT due to these changes:
+    * TDIM specification is no longer required;
+    * Several columns are now optional;
+    * IFNUM is allowed as keyword instead of IF.
+
+Bug fixes
+^^^^^^^^^
+
+* Compilation error, function ``pow10`` was removed from glibc 2.27 and ``exp10`` is used instead (#73, #74, #75).
+* Possible segfault when running strategy caused by sumthreshold action with incorrect ptr use in c++11 changes.
+* Possible bad_alloc exception due to bug in FrequencySelectionAction (#72), reported by P. Williams).
+* The ``rfigui`` program no longer crashes when zooming in too far (#66).
+* Updated dependencies/cmake config to reflect updates in boost python and glibmm (#71).
+* PQ/QP spelling error.
+* CMake prints "GTKMM found", regardless of whether GTKMM was found (#76).

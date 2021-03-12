@@ -1,0 +1,52 @@
+v3.01
+=====
+
+========== ================== 
+2021-02-24 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+This version provides new functionality which allows some further flagging flexibility. In particular, it is possible to flag parts of the frequency range with different strategies (for Apertif), changes were made to support querying metadata from Lua when using DP3 (for NenuFAR) and support for the LBA flagging strategy was added back. The gui also got several improvements, and quite a lot of bugs were squashed.
+
+The full list of changes is given below.
+
+.. default-domain:: lua
+
+New features
+^^^^^^^^^^^^
+
+* New open dialog that will eventually provide more options for opening multiple measurement sets at once. Fixes `#26 <https://gitlab.com/aroffringa/aoflagger/-/issues/26>`_.
+* New Lua functions to support flagging data partially:
+
+  - :meth:`aoflagger.copy_to_channel`
+  - :meth:`aoflagger.copy_to_frequency`
+  - :meth:`aoflagger.trim_channels`
+  - :meth:`aoflagger.trim_frequencies`
+  
+  As an example: this is used by Apertif to use a different strategy for the protected 1400-1420 MHz band, avoiding accidental flagging of HI.
+
+* New Lua functions to specify version requirements:
+
+  - :meth:`aoflagger.require_max_version`
+  - :meth:`aoflagger.require_min_version`
+
+* New Lua function :meth:`aoflagger.normalize_bandpass` to normalize the bandpass (used by LBA strategy).
+  
+* The main ``rfigui`` window can now show a power-over-time plot above the dynamic spectrum heatmap and align the axes of the two.
+* Several strategies were improved / added, including a LOFAR LBA wideband strategy, an improved Apertif strategy, an ATCA strategy and a NenuFAR strategy (the latter was made by F. Mertens).
+* Make it possible to propagate metadata from the API to Lua scripts. Amongst other things, this makes it possible to use measurement set metadata from within Lua scripts when aoflagger is called from DP3. This is used for NenuFAR.
+
+Bug fixes  & refactoring
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+* pybind11 is now put into the source as submodule, which means it is no longer a dependency.
+* Fix the 'select active data' option so that it honours zoom settings.
+* Fix "Export baeline" dialog so that it shows `.rfibl` files.
+* Fix a crash when using `aoquality query_fr`/`query_g` on collected quality statistic sets.
+* Fix hang when reading (sd)fits files.
+* Add CPack options to CMakeLists.txt to enable creating Debian packages.
+* Apply automated formatting of source code.
+* Require at least Lua 5.2.
+* Fixes for compilation on Macs (with help from JM van der Hulst).
+* Fix build when SSE is not available.
+* Fix issue causing crash when flagging multiple bands (Identified by I. van Bemmel, collect_statistics could crash when an MS has multiple bands).
+* Don't output a confusing message when running on empty data.

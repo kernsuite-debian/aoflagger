@@ -1,0 +1,21 @@
+/** \mainpage AOFlagger public interface API
+*
+* ### About the API
+*
+* These pages describe the C++ API of the public interface. This interface can
+* be used to integrate the flagger into an observatory pipeline in an easy
+* way, without having to know the internals of the flagger. If this flagger
+* is to be integrated in a pipeline, the best place to start is to
+* read the class description of class @ref aoflagger::AOFlagger.
+* This interface has also been wrapped in a Python interface.
+*
+* To use libaoflagger, add an "#include <aoflagger.h>" to your C++
+* program and link with "-laoflagger". For installation instructions, check
+* the website.
+*
+* The official webpage of the full documentation is http://aoflagger.readthedocs.io/ .
+* Additionally, the 
+* <a href="http://www.astron.nl/radio-observatory/lofar/lofar-imaging-cookbook">
+* LOFAR imaging cookbook</a> contains a lot of general info about running the
+* flagger.
+*/

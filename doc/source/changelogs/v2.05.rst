@@ -1,0 +1,34 @@
+v2.05
+=====
+
+========== ================== 
+2013-08-24 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+The GUI has been converted to GTK 3. Consequently, you will need the GTKMM 3 library to compile the graphical programs. This library version is at present not available in some (common) distributions, so if you need the graphical programs, make sure your distribution ships GTKMM 3. Also nice to report is that the AOFlagger has been succesfully applied on Arecibo 305m and BIGHORNS data, and default strategies were added for the two. Also, various bugs and performance issues were squashed which should make it worthwhile to update.
+
+List of changes
+^^^^^^^^^^^^^^^
+
+* Switched to GTK/GTKMM 3 (#26).
+* A default strategy for Arecibo 305m telescope was added.
+* A default strategy for "BIGHORNS" telescope was added, and support for its file format was added with help from M. Solovsky (#36).
+* Multiple sets can now be opened in aoqplot without using a cluster file: aoqplot ``*.ms`` will work now (#39).
+* Added an execute strategy button to the toolbar (#35).
+* Version info can be retrieved with "aoflagger --version" and the about box in the rfigui (#28).
+* Name of open sdfits files is now displayed in GUI (#30), requested by J. Delhaize.
+* Antenna map feature was removed because of bugginess and little use.
+* API change: Image buffers can now be resized without reallocation, which was necessary to avoid memory fragmentation in the Cotter MWA preprocessing pipeline.
+* API performance fix: Collecting statistics was quite slow in the API. Speed of this task is now 7x improved (#16).
+* Bugfix: Antenna plot in aoqplot did not properly integrate statistics over all antennae (#37).
+* Bugfix: Plots in rfigui sometimes use unselected flags (#38).
+* Bugfix: Arecibo single-dish files caused GUI to crash (#33), reported by L. Hoppmann.
+* Bugfix: Reading with direct reader on large sets is too slow (#27), tested by F. de Gasperin.
+* Bugfix: Extensions '.uvfits', '.uvf' and '.fits' are now recognized as uvfits files.
+* Bugfix: The command line 'aoflagger' application did not properly write the flags for MWA datasets.
+* Bugfix: Crash when setting change resolution factor to 0 (#24), reported by F. de Gasperin.
+* Bugfix: Crash when pressing Vert EVD in multi-polarization datasets (#24).
+* Bugfix: Possibly race condition in producer-consumer construct used at various locations.
+* Bugfix: Compilation error with gcc >= 4.8.1 (#32), reported by M. Brentjens.
+* Bugfix: Fixed several other compilation issues on more exotic systems.
+* Some cleaning of some code (#15).

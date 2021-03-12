@@ -1,0 +1,51 @@
+v2.07
+=====
+
+========== ================== 
+2015-06-12 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Summary
+^^^^^^^
+
+No really shocking changes, but lots of small improvements. It is now possible to save quality statistic plots from the command line and to re-flag by opening quality statistics. There are also many small gui tweaks and a lot of small bugfixes. Release 2.7.0 supports both Casacore's 1.x and 2.x versions -- 2.7.1 will only support 2.0. The release of 2.7.1 was mainly to work around a bug in GTKMM in Ubuntu's latest distribution, causing the rfigui and aoqplot windows not to open.
+
+Changes from 2.7.0 to 2.7.1 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+2.7.1 was released on 2015-09-02.
+
+ * Code was converted to `Casacore 2 <https://github.com/casacore/casacore>`_
+ * Bugfix: Fixed two compiler warnings
+ * Bugfix: Applied patch by M. Sokolowski to correct time range of BIGHORN fits files
+ * Bugfix: crash when opening main windows in certain GTKMM installations (notably the one currently in Ubuntu)
+
+Changes from 2.6 to 2.7
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* Feature: Save the 'aoqplot' plots from the command line with option -save (#51).
+* Feature: Quality sets can be opened in the rfigui & on the command line with aoflagger.
+* Feature: Toolbar buttons for zooming in/out (related to #50).
+* Feature: Icons for 'Show original/smoothed/residual visibilities' toolbar buttons.
+* Feature: Tooltips for all toolbar buttons, which are displayed by holding the mouse above a button.
+* Feature: When the AOFlagger icons are available, the text is no longer shown on buttons in the toolbar to save space.
+* Feature: Added -version and -help parameters to aoqplot.
+* Feature: Run 'aoquality liststats' to get list of stat names, and some more info in aoquality's help.
+* Feature: Show progress on command line when opening multiple QS files.
+* Feature: Change resampling method in plot properties window; default filter now nearest neighbour (related to #31).
+* Feature: Collect time-frequency information in aoquality collect.
+* Feature: New colour map, 'fire', going via black to red to yellow to white.
+* Feature: Specify data column during collecting.
+* Bugfix: Solving compilation issue when building with shared libraries (-DBUILD_SHARED_LIBS=ON) instead of a static library, to make it possible to link AOFlagger with new NDPPP.
+* Bugfix: Adding newer FindCasacore.cmake from LOFAR repository, which supports casacore 2.
+* Bugfix: Crash when pressing background or difference button when no image is loaded.
+* Bugfix: Fixed all deprecated usage of GTKMM. Everything can now be compiled with '-DGTKMM_DISABLE_DEPRECATED' set (#52).
+* Bugfix: Application icon not shown in About window.
+* Bugfix: Patch by M. Brentjes to prevent using Casapy's boost, which causes compilation errors.
+* Bugfix: Compiling without GTKMM results in undefined reference due to missing vdsfile.cpp on some platforms (reported by G. van Diepen).
+* Bugfix: Making it possible to run strategies from the API that include plot actions, which includes the default LOFAR strategy.
+* Bugfix: Solved several Mac compilation issues (reported by A. Biggs).
+* Bugfix: Make use of cmake package finders for casacore and cfitsio (patch by T.J. Dijkema)
+* Bugfix: Sometimes plots were not updated when changing their parameters.
+* Cleanup: Using find_package(Threads) instead of find_library in cmake (suggested by M. Brentjens).
+* ...and some more clean ups.

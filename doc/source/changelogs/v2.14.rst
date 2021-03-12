@@ -1,0 +1,29 @@
+v2.14
+=====
+
+========== ================== 
+2019-02-14 André Offringa <of...nga@gmail.com>
+========== ================== 
+ 
+This release contains some important bug fixes. Due to stricter requirements in gcc, 2.13 did no longer compile with new gcc versions. This is fixed in 2.14. There are also some new features that enable a good flagging strategy on concatenated LOFAR subbands.
+
+Full list of changes:
+
+New features
+^^^^^^^^^^^^
+
+* Save and load single baseline into a binary file.
+* Correct for smooth bandpasses.
+* Add minimum version for boost: Require Boost 1.55.
+* Return non-zero value when exceptions occurs (reported by W. Williams).
+
+Bug fixes 
+^^^^^^^^^
+
+* Fix VisualizeAction memory leak bug, causing memory problems (reported by A. Drabent).
+* Fixing compilation issues with newer gcc versions (#81).
+* Correct y-axis in logarithmic plots.
+* Correct averaging in time/frequency with change resolution action and masks.
+* Save the 'average with mask' property of changeresolutionaction.
+* Fixing spelling error in debug output (pointed out by T.J. Dijkema).
+* Remove unnecessary cmake search for signals resulting in compilation errors with Boost>=1.68 (reported by M. Brentjens).

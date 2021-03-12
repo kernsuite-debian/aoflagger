@@ -1,0 +1,24 @@
+v2.13
+=====
+
+========== ================== 
+2018-11-07 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+This quick release, only two months after the previous release, is to make a feature available that was found to be required for Apertif: to temporary apply a passband by means of a text file. It also fixes some minor bugs.
+
+Full list of changes:
+
+New features
+^^^^^^^^^^^^
+
+* Apply passband action that can be used to read in and apply a text file with gain values, implemented `-bandpass` parameter for aoflagger
+* New colourmap: cubehelix and "colourful" cubehelix
+
+Bug fixes
+^^^^^^^^^
+
+* AOQPlot required X/graphics when in non-interactive mode
+* Slight improvement to API interface (Make QualityStatistics nullable)
+* Baseline plot was saved without colour (reported by B. McKinley)
+* Fixing potential use of uninitialized value in aoqplot

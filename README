@@ -1,7 +1,7 @@
 -- Read-me file for the AOFlagger distribution --
 
 For the latest version and information about installing, go to
-http://aoflagger.sourceforge.net/ .
+https://aoflagger.readthedocs.io/ .
 
 The quick summary to compile and install, from the aoflagger root
 directory:
@@ -25,7 +25,7 @@ paths can be specified by separating them with a colon ':'.
 -- License --
 
 This file is part of the AOFlagger package.
-Copyright 2008-2019 A. R. Offringa
+Copyright 2008-2020 A. R. Offringa
 
 The AOFlagger package is free software: you can redistribute it
 and/or modify it under the terms of the GNU General Public License
