@@ -1,0 +1,22 @@
+set(PACKAGE_VERSION "@AOFLAGGER_VERSION@")
+
+# Versions are compatible if version found >= necessary AND the major
+# version number matches. Hence, requiring aoflagger 2.10 would not
+# be compatible with a found version of 3.0.
+if("@AOFLAGGER_VERSION@" VERSION_LESS PACKAGE_FIND_VERSION OR
+   NOT "@AOFLAGGER_VERSION_MAJOR@" VERSION_EQUAL PACKAGE_FIND_VERSION_MAJOR)
+   
+  message(STATUS "Found an incompatible version of AOFlagger: found @AOFLAGGER_VERSION@, need ${PACKAGE_FIND_VERSION}")
+  set(PACKAGE_VERSION_COMPATIBLE FALSE)
+  set(PACKAGE_VERSION_EXACT FALSE)
+  
+else()
+
+  set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  if("@AOFLAGGER_VERSION@" VERSION_EQUAL PACKAGE_FIND_VERSION)
+    set(PACKAGE_VERSION_EXACT TRUE)
+  else()
+    set(PACKAGE_VERSION_EXACT FALSE)
+  endif()
+
+endif()

@@ -1,0 +1,48 @@
+v2.09
+=====
+
+========== ================== 
+2016-12-20 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+This version adds support for circular polarizations in various locations, making AOFlagger visualize and interpret JVLA data correctly. Several other polarization issues were fixed as well (mostly reported by B. Adebahr while working on Apertif data), making it easier to browse polarized data with the rfigui.
+
+New features
+^^^^^^^^^^^^
+
+* Toolbar buttons that select the displayed polarization (#61).
+* Add proper support for circular polarizations (#17).
+* In the plot options window, one can now select a logarithmic X axis.
+* New plot: a frequency scatter plot, similar to time scatter plot.
+* Close execute strategy frame when finished by default, unless asked to remain.
+* Toolbar buttons of aoqplot now have tooltips.
+* When the Viridis colour scheme is selected, masks will be white and black.
+
+Changes to default strategy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are some slight changes in the workings of the actions, which changes the default strategy slightly:
+
+* The "for-each-polarization" action now propagates the background/residual images, and actions after the f.o.p. action will now be executed on the residual image.
+* This "for-each-complex-component" action now always propagates the data, despite whether "restore from amplitude" is checked. If that option is checked, it now means proper flux units are restored in amplitude mode, by dividing amp by sqrt(2).
+* Threshold of final time selection action is now 4 instead of 3.5 sigma. This is because it is now executed on the foreground-removed data because of the change to the for-each-polarization action, and tends to be slightly more sensitive.
+* Added a new buffering scheme to reordering which seems to speed up the reordering significantly.
+
+Bug fixes
+^^^^^^^^^
+* Corrected reading of Polarization table, affecting some measurement sets with two polarizations (#60, reported by B. Adebahr).
+* Displaying a single polarization would still show the flags from all polarizations (#59, reported by B. Adebahr).
+* Manually specifying -field, -bands or -j would not work when specifying a custom strategy (reported by B. Adebahr).
+* The time-frequency display of aoqplot would show every set with only one channel.
+* Use SONAME and SOVERSION for libaoflagger.so (#56, patch by O. Streicher).
+* The 'clear alt flags' button did not longer work.
+* Fixing unset state of original/alternative flag buttons.
+* Major refactoring of TimeFrequencyData structure.
+* A crash could occur in the plot frame when pressing clear plots button.
+* Better increments for ranges in various action editting frames.
+* Correcting help for `quality collect -d`
+* Several compilation problems were fixed:
+    * Compilation error on new platforms due to wrong Glib::RefPtr comparison (#57, patch by O. Streicher). 
+    * Compilation errors on Macs (reported by T. van der Hulst).
+    * Compilation issue on gcc 5.3.1
+    * Provide conditions on the use of SSE intrinsics, such that AOFlagger can be compiled on other platforms.

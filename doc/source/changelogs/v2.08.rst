@@ -1,0 +1,43 @@
+v2.08
+=====
+
+========== ================== 
+2015-06-21 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+This version has no major new features, but some small enhancements and quite a few fixes for small bugs.
+
+New features
+^^^^^^^^^^^^
+
+* Functionality in the interface to set a custom error handler and progress reporter (this also fixes exceptions ocurring whilst running within NDPPP).
+* New aoqplot interface
+* Adding a 'keep window open' checkbutton to the Goto window, requested by F. de Gasperin.
+* Make the default size of the goto window somewhat larger.
+* Adding option '-save-baseline' to rfigui for saving baseline plots in a non-interactive way
+* Adding option '-data-column' to rfigui for selecting data column when saving baselines.
+* Added an 'export data' tool to image widget.
+* Use object libraries to speed up compilation and avoid compiling files more than once.
+* Viridis colour scale.
+* Making it possible to give column name in ``aoquality collect``.
+* Implementing CPU affinity patch by J. D. Mol, allowing e.g. SLURM to be used and have aoflagger use the right number of threads.
+
+Bug fixes 
+^^^^^^^^^
+* Issue with ``aoquality collect``, causing to not properly collect statistics.
+* Turning on C++11 compilation, because this is now necessary to compile with the latest GTKMM.
+* Segmentation fault in interface that seemed to occur because of bug exposed by newer compiler optimisations.
+* When loading a strategy, -j did not work.
+* Change assignment to real and imag part, for compatibility with libc++ and c++11 (patch by T. J. Dijkema)
+* Avoiding compatilibity issues with different versions of GTKMM.
+* Making sure that domain name in hostname doesn't make aoqplot halt.
+* Improving warning when baseline not found in rfigui.
+* Gracefully handle exceptions before gui has opened.
+* Skip NaNs in the frequency plot.
+* Fixing crash with error 'requested baseline is not available in measurement set', reported by D. van der Vlugt.
+* When reporting progress, flush the correct stdout/stderr stream.
+* Issue in CMakeLists.txt: GSL is not included when it is used.
+* Fixed compilation warning (std::auto_ptr deprecated).
+* Textual: Removing all references to my old e-mail address.
+* Textual: Correcting wrong text above for-each-polarisation frame.
+* Refactoring: Refactored source code with new 'structures' directory, clean up, removed timestepaccessor.

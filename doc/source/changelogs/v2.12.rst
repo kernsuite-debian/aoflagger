@@ -1,0 +1,39 @@
+v2.12
+=====
+
+========== ================== 
+2018-09-03 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+This version contains quite some changes and a new features. The gui has several usability additions, such as better zooming, visualization of intermediate products and improvements to plots. There are now options for taking into account flags that are already set in the observation before flagging, e.g. when they are set by the correlator. Several changes were added for APERTIF testing, such as coadding of different beams to improve RFI detection.
+
+Full list of changes:
+
+New features
+^^^^^^^^^^^^
+
+* Zooming can now be performed by drawing a rectangle on the image widget or scrolling the mouse wheel (#50).
+* Implemented panning by holding right mouse button.
+* Enabled proper double buffering of the dynamic spectra, which improves snappiness.
+* Improved system to show residual / background plots in ``rfigui``: strategies can add visualizations to the gui, making it possible to inspect the smoothed and residual plots for different iterations.
+* Plots in ``rfigui`` and ``aoqplot`` now contain a legend (#62), and have various other esthetic improvements.
+* Improved "edit action" frames for change resolution and high pass filter actions.
+* The binary file ``rficonsole`` that had been renamed to ``aoflagger`` has now been removed completely.
+* In ``rfigui``, measurement sets can now be "coadded" in amplitude by specifying multiple mses on the command line (requested by the APERTIF team).
+* Strategies can now take into account existing flags in the measurement set, e.g. those set by the correlator. In particular:
+    * Finished implementation of SumThreshold algorithm with missings, including new option in SumThreshold action to turn it on.
+    * Implemented SIR operator that can apply on masks in which values are missing, such as when the original flags of an obs are set by the correlator.
+* Added a 'clear original flags' button.
+* Major cleanup and improvement of the strategy wizard, with preselected telescope and an extra page separating observational and technical settings.
+* Added option 'interval' to ``aoquality collect``.
+
+Bug fixes 
+^^^^^^^^^
+
+* Assigning from or to an empty FlagMask would lead to segfault.
+* The "Change resolution" action with a resizing factor of 1 now works. 
+* Fixed problem with conversion of some circularly polarized data.
+* Renamed 'statistical flagging' to more appropriate term 'morphological flagging'.
+* Fixing error on Mac, ``exp10`` use without including math (reported by T. van der Hulst - Version 2.12 compiles succesfully on the Mac).
+
+Version 2.12.1 fixes an issue with compilation on 32-bit and non-x86 systems, but is otherwise the same as 2.12.0.

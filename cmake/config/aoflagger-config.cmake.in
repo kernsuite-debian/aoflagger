@@ -1,0 +1,33 @@
+# This is the cmake config script for AOFlagger.
+#
+# It sets the following variables:
+# - AOFLAGGER_INCLUDE_DIR
+# - AOFLAGGER_LIB
+# - AOFLAGGER_LIB_PATH
+# - AOFLAGGER_VERSION[_MAJOR/_MINOR]
+# - AOFLAGGER_FOUND
+# - AOFLAGGER_ROOT_DIR
+
+# Compute path
+get_filename_component(_AOFLAGGER_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_AOFLAGGER_CMAKE_DIR_ABS "${_AOFLAGGER_CMAKE_DIR}" ABSOLUTE)
+get_filename_component(_AOFLAGGER_ROOT_DIR "${_AOFLAGGER_CMAKE_DIR_ABS}/../../.." ABSOLUTE)
+
+set(AOFLAGGER_ROOT_DIR "${_AOFLAGGER_ROOT_DIR}"
+    CACHE PATH "AOFlagger root (prefix) directory")
+
+set(AOFLAGGER_INCLUDE_DIR "${AOFLAGGER_ROOT_DIR}/include"
+    CACHE PATH "AOFlagger include directory")
+
+set(AOFLAGGER_LIB_PATH "${AOFLAGGER_ROOT_DIR}/lib"
+    CACHE PATH "AOFlagger library directory")
+
+find_library(AOFLAGGER_LIB aoflagger PATH ${AOFLAGGER_LIB_PATH} NO_DEFAULT_PATH
+             DOC "AOFlagger library directory")
+message(STATUS "Found AOFlagger @AOFLAGGER_VERSION@.")
+message(STATUS "  AOFlagger include dir: ${AOFLAGGER_INCLUDE_DIR}")
+message(STATUS "  AOFlagger lib: ${AOFLAGGER_LIB}")
+
+unset(_AOFLAGGER_ROOT_DIR)
+unset(_AOFLAGGER_CMAKE_DIR)
+unset(_AOFLAGGER_CMAKE_DIR_ABS)

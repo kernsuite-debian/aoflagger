@@ -1,14 +1,15 @@
-import aoflagger as aof
+import aoflagger
 import numpy
 import sys
 
 nch = 256
 ntimes = 1000
-count=50       # number of trials in the false-positives test
+count = 50       # number of trials in the false-positives test
 
-aoflagger = aof.AOFlagger()
-strategy = aoflagger.load_strategy("example-strategy.rfis")
-data = aoflagger.make_image_set(ntimes, nch, 8)
+flagger = aoflagger.AOFlagger()
+path = flagger.find_strategy_file(aoflagger.TelescopeId.Generic)
+strategy = flagger.load_strategy_file(path)
+data = flagger.make_image_set(ntimes, nch, 8)
 
 ratiosum = 0.0
 ratiosumsq = 0.0
@@ -18,7 +19,7 @@ for repeat in range(count):
         values = numpy.random.normal(0, 1, [nch, ntimes])
         data.set_image_buffer(imgindex, values)
         
-    flags = aoflagger.run(strategy, data)
+    flags = strategy.run(data)
     flagvalues = flags.get_buffer()
     ratio = float(sum(sum(flagvalues))) / (nch*ntimes)
     ratiosum += ratio

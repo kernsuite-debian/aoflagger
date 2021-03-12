@@ -1,0 +1,40 @@
+v2.15
+=====
+
+========== ================== 
+2020-02-20 André Offringa <of...nga@gmail.com>
+========== ================== 
+ 
+The biggest change in AOFlagger 2.15 is the use of Lua as a scripting language for defining flagging strategies. After having tried to use Python for this, it unfortunately turned out that (without complicating things severely) Python is neither fast enough nor flexible enough to allow multi-threaded processing of the data. Lua, aimed at being a fast, embedded language, turned out to be a very good match for making aoflagger strategies. Lua strategies can be tested with the ``aolua`` command line tool. Another important thing about this release, is that it will be the last release of the major 2.x branch, whereas the 3.0 release will drop support for several things and move to Github.
+
+As a result of using Lua, AOFlagger now depends on the lua 5.3 libraries. These are provided by the Ubuntu/Debian ``liblua5.3-dev`` package. Apart from the switch to Lua, as usual with new releases, AOFlagger 2.15 fixes various small issues and enhances the gui. It also includes a few new features that are aimed at flagging Apertif data more accurately. 
+
+Full list of changes
+^^^^^^^^^^^^^^^^^^^^
+
+New features
+------------
+
+* ``aolua`` command line tool can be used to run ``.lua`` scripted strategies. This allows for much more flexibility within the flagging scripts and, compared to the old 'xml' block-wise strategies, also makes it easier to understand what happens. This release implements all functionality, but the Lua tools are not completely stable or documented. This can be seen as a prerelease that allows testing with Lua strategies while all 'old' functionality still works, whereas 3.0 will fully switch to using Lua.
+* The gui can also run lua scripts. This is done by adding a file called ``strategy.lua`` to your working directory. This will become easier / more flexible in AOFlagger 3.0.
+* The :doc:`../cpp_interface` now has functionality to specify "input" flags that indicate data that is bad (e.g. because of a correlator malfunction, missing subband-edges, etc.), which are used to improve flagging accuracy by keeping the flagged visibilities out of collected statistics.
+* The C++ API ("pipeline interface") is now completely wrapped with :doc:`a Python interface <../python_interface>`. There are now two interfaces for Python: the "pipeline" interface that can be used to pass data that is flagged by a predefined strategy, and an "algorithmic" interface that can be used to fully define a strategy from within Python. The latter is too slow for the processing of large datasets, and is to be replaced by the Lua functionality. For the first part, the "pipeline interface", performance is not so relevant, and Python works well for this.
+* New action "restore channel range" can be used to make sure that legimite lines (e.g. HI) are not flagged.
+* Single baseline ``.rfibl`` files can now be processed by the ``aoflagger`` program.
+* Add colormap 'cool' (similar to ds9) and 'rainbow'
+* New parameters ``-interval`` and ``-max-interval-size`` to split the data and thereby lower the memory usage (suggested by A. Drabent; [[#84](#84)]).
+* Some improvements to the :doc:`../cpp_interface`.
+* Some small GUI improvements, related to metadata, plot axes, etc.
+* Rewrote code for displaying menu
+* Option ``-hide-flags`` added to rfigui (requested by R. Schulz)
+* Include new, faster version of SumThreshold algorithm, written by Nicholas Dumas. This algorithm is used for Length>=64 when AVX is available.
+
+Bug fixes
+---------
+
+* Fixed a crash when opening corrupted input files
+* Output error and warning messages when something goes wrong in a parallel thread
+* Don't require write access to a measurement set when not actually requiring it
+* Don't crash when a Python exception occurs in a Python strategy
+* Better support for running several aoflagger instances in parallel
+* Several small compilation issues and refactoring

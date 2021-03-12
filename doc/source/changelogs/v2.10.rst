@@ -1,0 +1,42 @@
+v2.10
+=====
+
+========== ================== 
+2018-02-06 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Version 2.10 brings a few small but useful new features, and many small bugfixes. A lot of code was cleaned up and improved to use C++11 features.
+
+Full list of changes:
+
+New features
+^^^^^^^^^^^^
+
+* Initial work on Python-scripted strategies; to be fully implemented in aoflagger 3.0.
+* SPWs can be concattenated (#65).
+* Added option in StatisticalFlagging to flag entire timesteps, channels or baselines when too little visibilities are left.
+* A graphical termal ('X') is no longer necessary to run `rfigui` / `aoqplot` with drawing parameters, which allows saving plots in scripts.
+* The aoqplot status window now also displays antenna index when hovering a baseline.
+* Added interpolate flags menu item and extended algorithm to run multiple times to fill in spots that are still missing.
+
+Bug fixes 
+^^^^^^^^^
+
+* Stokes I-only images are not shown because they cannot be selected (#63).
+* Check polarizations when changing settings (#69).
+* It could happen that exceptions were not shown properly (bug in baseexception).
+* Unselected original flags would still show them in plots and 'keep..data' actions.
+* Fixed x/y flip when opening a parmdb.
+* Compilation improvements.
+* Fixing frequency and time scatter plots in rfigui and plots in aoqplot for non-xx/xy/yx/yy polarized sets (#70) e.g. JVLA; reported by M. Verheijen). 
+* Don't plot polarizations when they are not available in aoqplot, as that can cause segfault
+* Esthetics of plots are improved.
+    * Use a clipping region to prevent points falling outside the canvas.
+    * Unset value could cause the z-axis to disappear.
+    * Make logarithmic Y ticks be better behaved.
+    * Y axis in logarithmic plots could have the wrong range.
+* Major code cleanup:
+    * Many code has been cleaned up to use C++11 features.
+    * Dependence on Boost has been decreased.
+    * Directory structure was improved and old code was removed.
+* Fixing multithreading of for-each-baseline action in ArtifactSet
