@@ -1,5 +1,5 @@
 Disable-special-RPATH-handling.patch
 Install-libaoflagger.so-into-multi-arch-path.patch
 Disable-test-cases-that-don-t-work-before-installation.patch
-Use-system-pybind11.patch
-Make-compile-with-gc11.patch
+Use-system-provided-pybind11.patch
+Make-compile-with-gcc11.patch

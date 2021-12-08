@@ -1,0 +1,99 @@
+From: =?utf-8?q?Andr=C3=A9_Offringa?= <offringa@gmail.com>
+Date: Mon, 26 Apr 2021 19:06:14 +0200
+Subject: Make compile with gcc11
+
+---
+ algorithms/antennaselector.cpp                  | 6 ++++--
+ algorithms/antennaselector.h                    | 4 ++--
+ aoluarunner/runner.cpp                          | 2 +-
+ aoqplot/controllers/histogrampagecontroller.cpp | 1 +
+ applications/aoquality.cpp                      | 2 +-
+ 5 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/algorithms/antennaselector.cpp b/algorithms/antennaselector.cpp
+index a4c0dd7..98e624d 100644
+--- a/algorithms/antennaselector.cpp
++++ b/algorithms/antennaselector.cpp
+@@ -3,6 +3,8 @@
+ #include "../../quality/statisticscollection.h"
+ #include "../../quality/statisticsderivator.h"
+ 
++using std::size_t;
++
+ namespace rfiStrategy {
+ 
+ std::vector<size_t> AntennaSelector::Run(
+@@ -15,7 +17,7 @@ std::vector<size_t> AntennaSelector::Run(
+   for (size_t p = 0; p != 4; ++p) {
+     double meanStddev = 0.0;
+     stddevs.clear();
+-    for (const std::pair<size_t, DefaultStatistics>& antenna : antStatistics) {
++    for (const std::pair<const size_t, DefaultStatistics>& antenna : antStatistics) {
+       double stddev = StatisticsDerivator::GetStatisticAmplitude(
+           QualityTablesFormatter::StandardDeviationStatistic, antenna.second,
+           p);
+@@ -31,7 +33,7 @@ std::vector<size_t> AntennaSelector::Run(
+ 
+     size_t index = 0;
+     double limit = _threshold * stddevOfStddev;
+-    for (const std::pair<size_t, DefaultStatistics>& antenna : antStatistics) {
++    for (const std::pair<const size_t, DefaultStatistics>& antenna : antStatistics) {
+       if (std::fabs(stddevs[index] - meanStddev) > limit ||
+           stddevs[index] == 0.0) {
+         if (antenna.second.count[p] != 0) badAntennas.insert(antenna.first);
+diff --git a/algorithms/antennaselector.h b/algorithms/antennaselector.h
+index 6353a4d..d6828fc 100644
+--- a/algorithms/antennaselector.h
++++ b/algorithms/antennaselector.h
+@@ -13,11 +13,11 @@ class AntennaSelector {
+  public:
+   AntennaSelector() : _threshold(5.0) {}
+ 
+-  std::vector<size_t> Run(const StatisticsCollection& statisticsCollection);
++  std::vector<std::size_t> Run(const StatisticsCollection& statisticsCollection);
+ 
+  private:
+   void addStatistic(unsigned antIndex, const DefaultStatistics& stats,
+-                    std::map<size_t, DefaultStatistics>& antStatistics);
++                    std::map<std::size_t, DefaultStatistics>& antStatistics);
+ 
+   double _threshold;
+ };
+diff --git a/aoluarunner/runner.cpp b/aoluarunner/runner.cpp
+index 359acc7..2fdd8e2 100644
+--- a/aoluarunner/runner.cpp
++++ b/aoluarunner/runner.cpp
+@@ -41,7 +41,7 @@ void Runner::Run() {
+   }  // Let threadgroup go out of scope
+   if (optionsForAllRuns.empty())
+     optionsForAllRuns.emplace("main", _cmdLineOptions);
+-  for (const std::pair<std::string, Options>& singleRunOptions :
++  for (const std::pair<const std::string, Options>& singleRunOptions :
+        optionsForAllRuns) {
+     Logger::Debug << "Starting run '" + singleRunOptions.first + "'...\n";
+     run(singleRunOptions.second);
+diff --git a/aoqplot/controllers/histogrampagecontroller.cpp b/aoqplot/controllers/histogrampagecontroller.cpp
+index 93cf26c..eaf0829 100644
+--- a/aoqplot/controllers/histogrampagecontroller.cpp
++++ b/aoqplot/controllers/histogrampagecontroller.cpp
+@@ -285,6 +285,7 @@ void HistogramPageController::addHistogramToPlot(
+       logxEnd = log10(i.binEnd());
+     } else {
+       logxStart = log10(x);
++      logxEnd = 0.0; // unused, but to avoid warning
+     }
+     if (derivative) {
+       const double cslope = histogram.NormalizedSlope(x / deltaS, x * deltaS);
+diff --git a/applications/aoquality.cpp b/applications/aoquality.cpp
+index 1cca33d..b772c69 100644
+--- a/applications/aoquality.cpp
++++ b/applications/aoquality.cpp
+@@ -285,7 +285,7 @@ void actionQueryAntenna(const std::string &kindName,
+     std::cout << '\t' << kindName << "_POL" << p << "_R\t" << kindName << "_POL"
+               << p << "_I";
+   std::cout << '\n';
+-  for (const std::pair<size_t, DefaultStatistics> &s : stats) {
++  for (const std::pair<const size_t, DefaultStatistics> &s : stats) {
+     const size_t antenna = s.first;
+     std::cout << antenna;
+     for (unsigned p = 0; p < polarizationCount; ++p) {

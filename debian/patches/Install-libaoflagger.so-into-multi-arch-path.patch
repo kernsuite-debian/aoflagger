@@ -8,15 +8,15 @@ Closes: #962390
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index d625317..cd5c543 100644
+index e2b97f9..86146fa 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -279,7 +279,7 @@ add_library(aoflagger-lib SHARED ${ALLFILES})
+@@ -301,7 +301,7 @@ add_library(aoflagger-lib SHARED ${ALLFILES})
  set_target_properties(aoflagger-lib PROPERTIES SOVERSION 0)
  set_target_properties(aoflagger-lib PROPERTIES OUTPUT_NAME aoflagger)
  target_link_libraries(aoflagger-lib ${ALL_LIBRARIES})
 -install (TARGETS aoflagger-lib DESTINATION lib) 
 +install (TARGETS aoflagger-lib DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
-
+ 
  add_executable(aoquality applications/aoquality.cpp)
  target_link_libraries(aoquality aoflagger-lib ${ALL_LIBRARIES})
