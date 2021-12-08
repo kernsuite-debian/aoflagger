@@ -25,8 +25,9 @@ Build-Depends: casacore-dev,
                libpython3-dev,
                libxml2-dev,
                pybind11-dev,
+               python3-dev,
                zlib1g-dev
-Standards-Version: 4.5.0
+Standards-Version: 4.6.0
 Vcs-Git: https://salsa.debian.org/debian-astro-team/aoflagger.git
 Vcs-Browser: https://salsa.debian.org/debian-astro-team/aoflagger
 Homepage: https://sourceforge.net/projects/aoflagger/

@@ -11,28 +11,28 @@ index d6739e3..62c7566 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -232,18 +232,14 @@ set(PYTHON_FILES
- 	python/functions.cpp)
- 
+        python/functions.cpp)
+
  set(ALL_LIBRARIES
--	${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
- 	${Boost_SYSTEM_LIBRARY}
--	${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
-+	${Boost_DATE_TIME_LIBRARY}
- #	${Boost_PYTHON-PY36_LIBRARIES}
- 	${Boost_PYTHON_LIBRARIES}
- 	${Boost_SIGNALS_LIBRARY}
- 	${FFTW3_LIB}
- 	${CASACORE_LIBRARIES}
--	${LAPACK_lapack_LIBRARY}
--	${CFITSIO_LIBRARY}
- 	${CMAKE_THREAD_LIBS_INIT}
--	${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
- 	${PYTHON_LIBRARIES})
- 
+-       ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
+        ${Boost_SYSTEM_LIBRARY}
+-       ${Boost_FILESYSTEM_LIBRARY} ${Boost_DATE_TIME_LIBRARY}
++       ${Boost_DATE_TIME_LIBRARY}
+ #      ${Boost_PYTHON-PY36_LIBRARIES}
+        ${Boost_PYTHON_LIBRARIES}
+        ${Boost_SIGNALS_LIBRARY}
+        ${FFTW3_LIB}
+        ${CASACORE_LIBRARIES}
+-       ${LAPACK_lapack_LIBRARY}
+-       ${CFITSIO_LIBRARY}
+        ${CMAKE_THREAD_LIBS_INIT}
+-       ${PNG_LIBRARIES} ${LIBXML2_LIBRARIES}
+        ${PYTHON_LIBRARIES})
+
  if(GTKMM_FOUND)
 @@ -263,11 +259,23 @@ endif(SIGCXX_FOUND)
  if(GTKMM_FOUND)
- 	set(AOFLAGGER_PLOT_FILES ${PLOT_FILES})
+        set(AOFLAGGER_PLOT_FILES ${PLOT_FILES})
  endif(GTKMM_FOUND)
 -add_library(aoflagger SHARED ${AOFLAGGER_PLOT_FILES} ${IMAGING_FILES} ${INTERFACE_FILES} ${MSIO_FILES} ${QUALITY_FILES} ${STRATEGY_FILES} ${STRUCTURES_FILES} ${UTIL_FILES} ${PYTHON_FILES})
 -set_target_properties(aoflagger PROPERTIES SOVERSION 0)
@@ -56,12 +56,12 @@ index d6739e3..62c7566 100644
 +  ${CMAKE_THREAD_LIBS_INIT})
 +
 +link_libraries(aoflagger-shared)
- 
+
  add_library(python_aoflagger SHARED python/pyinterface.cpp)
  set_target_properties(python_aoflagger PROPERTIES SOVERSION 0)
 @@ -328,5 +336,6 @@ if(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
  endif(BOOST_ASIO_H_FOUND AND SIGCXX_FOUND AND GTKMM_FOUND)
- 
+
  install (TARGETS aoflagger-bin DESTINATION bin)
 -install (TARGETS aoflagger DESTINATION lib) 
 +install (TARGETS aoflagger-shared DESTINATION lib/${DEB_BUILD_MULTIARCH}) 

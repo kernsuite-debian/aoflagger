@@ -1,3 +1,12 @@
+aoflagger (3.1.0-1kern2) focal; urgency=medium
+
+  [ Athanaseus Javas Ramaila ]
+  * Rediff patches
+  * Push Standards-Version to 4.6.0. No changes needed
+  * Update build dependencies
+
+ -- KERN packaging <packaging@kernsuite.info>  Wed, 08 Dec 2021 08:44:01 +0000
+
 aoflagger (3.1.0-1) focal; urgency=medium
 
   [ Gijs Molenaar ]

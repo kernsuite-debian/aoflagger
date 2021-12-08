@@ -1,4 +1,4 @@
-From: Ole Streicher <olebole@debian.org>
+rom: Ole Streicher <olebole@debian.org>
 Date: Wed, 19 Aug 2020 14:21:47 +0200
 Subject: Disable test cases that don't work before installation
 
@@ -6,9 +6,9 @@ Subject: Disable test cases that don't work before installation
 --- aoflagger-3.1.0.orig/test/interface/interfacetest.cpp
 +++ aoflagger-3.1.0/test/interface/interfacetest.cpp
 @@ -8,18 +8,22 @@
- 
+
  BOOST_AUTO_TEST_SUITE(interface, *boost::unit_test::label("interface"))
- 
+
 +#if 0
  BOOST_AUTO_TEST_CASE(find_strategy) {
    aoflagger::AOFlagger flagger;
@@ -16,7 +16,7 @@ Subject: Disable test cases that don't work before installation
    BOOST_CHECK_NE(defaultStrategy, "");
  }
 +#endif
- 
+
 +#if 0
  BOOST_AUTO_TEST_CASE(load_nonexisting_strategy) {
    aoflagger::AOFlagger flagger;
@@ -25,13 +25,13 @@ Subject: Disable test cases that don't work before installation
    BOOST_CHECK_THROW(flagger.LoadStrategyFile(unknownStrategy), std::exception);
  }
 +#endif
- 
+
  BOOST_AUTO_TEST_CASE(make_image_set) {
    aoflagger::AOFlagger flagger;
 @@ -31,6 +35,7 @@ BOOST_AUTO_TEST_CASE(make_image_set) {
    BOOST_CHECK_GE(imageSet.HorizontalStride(), 100);
  }
- 
+
 +#if 0
  BOOST_AUTO_TEST_CASE(run_default_strategy_without_input) {
    aoflagger::AOFlagger flagger;
@@ -41,7 +41,7 @@ Subject: Disable test cases that don't work before installation
    BOOST_CHECK_EQUAL(mask.Buffer()[0], false);
  }
 +#endif
- 
+
 +#if 0
  BOOST_AUTO_TEST_CASE(run_default_strategy_with_input) {
    aoflagger::AOFlagger flagger;
@@ -51,7 +51,7 @@ Subject: Disable test cases that don't work before installation
    BOOST_CHECK_EQUAL(mask.Buffer()[0], false);
  }
 +#endif
- 
+
 +#if 0
  BOOST_AUTO_TEST_CASE(runs) {
    size_t width = 200, height = 50;
@@ -61,6 +61,6 @@ Subject: Disable test cases that don't work before installation
    BOOST_CHECK_LT(mask2DB.GetCount<true>(), width * height / 5);
  }
 +#endif
- 
+
  BOOST_AUTO_TEST_CASE(version) {
    short major, minor, subminor;

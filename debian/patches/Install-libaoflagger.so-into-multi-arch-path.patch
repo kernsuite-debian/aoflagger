@@ -17,6 +17,6 @@ index d625317..cd5c543 100644
  target_link_libraries(aoflagger-lib ${ALL_LIBRARIES})
 -install (TARGETS aoflagger-lib DESTINATION lib) 
 +install (TARGETS aoflagger-lib DESTINATION lib/${DEB_BUILD_MULTIARCH}) 
- 
+
  add_executable(aoquality applications/aoquality.cpp)
  target_link_libraries(aoquality aoflagger-lib ${ALL_LIBRARIES})
