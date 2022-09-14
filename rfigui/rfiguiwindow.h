@@ -15,18 +15,25 @@
 #include "../imagesets/imagesetindex.h"
 
 #include "../plot/plotwidget.h"
-#include "../plot/plot2d.h"
+#include "../plot/xyplot.h"
 
 #include "timefrequencywidget.h"
 #include "interfaces.h"
 #include "plotframe.h"
 #include "strategyeditor.h"
 
-#include "../imaging/defaultmodels.h"
+#include "../algorithms/enums.h"
 
 namespace Gtk {
 class RadioMenuItem;
 }
+
+namespace algorithms {
+class ThresholdConfig;
+}
+
+class HistogramCollection;
+struct MSOptions;
 
 class RFIGuiWindow : public Gtk::Window {
  public:
@@ -40,12 +47,13 @@ class RFIGuiWindow : public Gtk::Window {
 
   TimeFrequencyData GetActiveData() const;
   const TimeFrequencyData& GetOriginalData() const;
-  // const TimeFrequencyData &GetContaminatedData() const;
 
-  HeatMapWidget& GetHeatMap() { return _timeFrequencyWidget.HeatMap(); }
+  PlotWidget& GetHeatMapWidget() {
+    return _timeFrequencyWidget.GetHeatMapWidget();
+  }
   TimeFrequencyWidget& GetTimeFrequencyWidget() { return _timeFrequencyWidget; }
 
-  class ThresholdConfig& HighlightConfig();
+  algorithms::ThresholdConfig& HighlightConfig();
   void SetHighlighting(bool newValue);
   TimeFrequencyMetaDataCPtr SelectedMetaData();
 
@@ -54,9 +62,9 @@ class RFIGuiWindow : public Gtk::Window {
 
   void OpenPaths(const std::vector<std::string>& paths);
   void OpenMS(const std::vector<std::string>& filenames,
-              const class MSOptions& options);
+              const MSOptions& options);
 
-  void ShowHistogram(class HistogramCollection& histogramCollection);
+  void ShowHistogram(HistogramCollection& histogramCollection);
 
   class RFIGuiController& Controller() {
     return *_controller;
@@ -66,11 +74,14 @@ class RFIGuiWindow : public Gtk::Window {
   void OpenGotoWindow() { onGoToPressed(); }
   void SetBaselineInfo(bool isEmpty, bool hasMultipleBaselines,
                        const std::string& name, const std::string& description);
-  void SetImageSetIndex(const rfiStrategy::ImageSetIndex& newImageSetIndex);
+  void SetImageSetIndex(const imagesets::ImageSetIndex& newImageSetIndex);
 
  private:
-  void onTFWidgetMouseMoved(size_t x, size_t y);
-  void onTFScroll(size_t x, size_t y, int direction);
+  bool onClose(GdkEventAny* event);
+  /// Returns 'false' if the user wants to cancel the operation
+  bool askToSaveChanges();
+  void onTFWidgetMouseMoved(double x, double y);
+  void onTFScroll(double x, double y, int direction);
   void onToggleFlags();
   void onTogglePolarizations();
   void onToggleImage();
@@ -78,6 +89,7 @@ class RFIGuiWindow : public Gtk::Window {
   void onZoomFit();
   void onZoomIn();
   void onZoomOut();
+  void onZoomSelect();
 
   // File menu
   void onOpen();
@@ -96,7 +108,6 @@ class RFIGuiWindow : public Gtk::Window {
   void onViewTimePlot();
 
   // Strategy menu
-  void onEditStrategyPressed();
   void onExecuteLuaStrategy();
   void onStrategyNewEmpty();
   void onStrategyNewTemplate();
@@ -116,6 +127,7 @@ class RFIGuiWindow : public Gtk::Window {
   void onVisualizedToOriginalPressed();
   void onClearOriginalFlagsPressed();
   void onClearAltFlagsPressed();
+  void handleAveraging(bool spectrally);
 
   void keepPhasePart(
       enum TimeFrequencyData::ComplexRepresentation phaseRepresentation);
@@ -146,33 +158,30 @@ class RFIGuiWindow : public Gtk::Window {
   void onKeepYXPressed() { keepPolarisation(aocommon::Polarization::YX); }
   void onKeepYYPressed() { keepPolarisation(aocommon::Polarization::YY); }
   void onImagePropertiesPressed();
-  void onOpenTestSetNoise() { openTestSet(2); }
-  void onOpenTestSetA() { openTestSet(3); }
-  void onOpenTestSetB() { openTestSet(4); }
-  void onOpenTestSetC() { openTestSet(5); }
-  void onOpenTestSetD() { openTestSet(18); }
-  void onOpenTestSetE() { openTestSet(14); }
-  void onOpenTestSetF() { openTestSet(16); }
-  void onOpenTestSetG() { openTestSet(17); }
-  void onOpenTestSetH() { openTestSet(7); }
-  void onOpenTestSetNoise3Model() { openTestSet(19); }
-  void onOpenTestSetNoise5Model() { openTestSet(20); }
-  void onOpenTestSet3Model() { openTestSet(21); }
-  void onOpenTestSet5Model() { openTestSet(22); }
-  void onOpenTestSetBStrong() { openTestSet(24); }
-  void onOpenTestSetBWeak() { openTestSet(23); }
-  void onOpenTestSetBAligned() { openTestSet(25); }
-  void onOpenTestSetGaussianBroadband() { openTestSet(26); }
-  void onOpenTestSetSinusoidalBroadband() { openTestSet(27); }
-  void onOpenTestSetSlewedGaussianBroadband() { openTestSet(28); }
-  void onOpenTestSetBurstBroadband() { openTestSet(29); }
-  void onOpenTestSetRFIDistributionLow() { openTestSet(32); }
-  void onOpenTestSetRFIDistributionMid() { openTestSet(31); }
-  void onOpenTestSetRFIDistributionHigh() { openTestSet(30); }
-  void onOpenTestSetSpike() { openTestSet(1000); }
-  void onGaussianTestSets() { _gaussianTestSets = 1; }
-  void onRayleighTestSets() { _gaussianTestSets = 0; }
-  void onZeroTestSets() { _gaussianTestSets = 2; }
+  void onOpenTestSetNoise() { openTestSet(algorithms::RFITestSet::Empty); }
+  void onOpenTestSetA() { openTestSet(algorithms::RFITestSet::FullBandBursts); }
+  void onOpenTestSetB() { openTestSet(algorithms::RFITestSet::HalfBandBursts); }
+  void onOpenTestSetC() { openTestSet(algorithms::RFITestSet::VaryingBursts); }
+  void onOpenTestSetD() {
+    openTestSet(algorithms::RFITestSet::VaryingBursts,
+                algorithms::BackgroundTestSet::ThreeSources);
+  }
+  void onOpenTestSetE() {
+    openTestSet(algorithms::RFITestSet::FullBandBursts,
+                algorithms::BackgroundTestSet::FiveSources);
+  }
+  void onOpenTestSetF() {
+    openTestSet(algorithms::RFITestSet::VaryingBursts,
+                algorithms::BackgroundTestSet::FiveSources);
+  }
+  void onOpenTestSetG() {
+    openTestSet(algorithms::RFITestSet::VaryingBursts,
+                algorithms::BackgroundTestSet::FiveFilteredSources);
+  }
+  void onOpenTestSetH() {
+    openTestSet(algorithms::RFITestSet::VaryingBursts,
+                algorithms::BackgroundTestSet::HighFrequency);
+  }
   void onAddStaticFringe();
   void onAdd1SigmaFringe();
   void onSetToOne();
@@ -208,34 +217,12 @@ class RFIGuiWindow : public Gtk::Window {
   void showError(const std::string& description);
   void setSetNameInStatusBar();
 
-  DefaultModels::SetLocation getSetLocation(bool empty = false);
-  void loadDefaultModel(DefaultModels::Distortion distortion, bool withNoise,
-                        bool empty = false);
-  void onSimulateCorrelation() {
-    loadDefaultModel(DefaultModels::ConstantDistortion, false);
-  }
-  void onSimulateSourceSetA() {
-    loadDefaultModel(DefaultModels::ConstantDistortion, true);
-  }
-  void onSimulateSourceSetB() {
-    loadDefaultModel(DefaultModels::VariableDistortion, true);
-  }
-  void onSimulateSourceSetC() {
-    loadDefaultModel(DefaultModels::FaintDistortion, true);
-  }
-  void onSimulateSourceSetD() {
-    loadDefaultModel(DefaultModels::MislocatedDistortion, true);
-  }
-  void onSimulateOffAxisSource() {
-    loadDefaultModel(DefaultModels::ConstantDistortion, false, true);
-  }
-  void onSimulateOnAxisSource() {
-    loadDefaultModel(DefaultModels::OnAxisSource, false, true);
-  }
-
+  void onSimulate();
   void onHelpAbout();
 
-  void openTestSet(unsigned index);
+  void openTestSet(algorithms::RFITestSet rfiSet,
+                   algorithms::BackgroundTestSet backgroundSet =
+                       algorithms::BackgroundTestSet::Empty);
 
   void onControllerStateChange();
 
@@ -260,12 +247,9 @@ class RFIGuiWindow : public Gtk::Window {
   std::unique_ptr<class PlotWindow> _plotWindow;
   std::unique_ptr<Gtk::Window> _gotoWindow, _plotComplexPlaneWindow,
       _imagePropertiesWindow;
-  std::unique_ptr<class MSOptionWindow> _msOptionWindow;
   std::unique_ptr<class ProgressWindow> _progressWindow;
   std::unique_ptr<class RFIGuiMenu> _menu;
 
-  int _gaussianTestSets;
-  SegmentedImagePtr _segmentedImage;
   TimeFrequencyData _storedData;
   TimeFrequencyMetaDataCPtr _storedMetaData;
   std::vector<std::unique_ptr<Gtk::RadioMenuItem>> _tfVisualizationMenuItems;

@@ -5,6 +5,7 @@
 #include "../structures/timefrequencydata.h"
 
 #include "../util/logger.h"
+#include "../util/progress/dummyprogresslistener.h"
 #include "../util/stopwatch.h"
 
 #include <casacore/tables/DataMan/TiledStManAccessor.h>
@@ -14,10 +15,8 @@
 #include <set>
 #include <stdexcept>
 
-DirectBaselineReader::DirectBaselineReader(const std::string &msFile)
+DirectBaselineReader::DirectBaselineReader(const std::string& msFile)
     : BaselineReader(msFile), _ms(OpenMS()) {}
-
-DirectBaselineReader::~DirectBaselineReader() { ShowStatistics(); }
 
 void DirectBaselineReader::initBaselineCache() {
   // Pass one time through the entire measurement set and store the rownumbers
@@ -44,9 +43,11 @@ void DirectBaselineReader::initBaselineCache() {
       });
 }
 
-void DirectBaselineReader::addRowToBaselineCache(int antenna1, int antenna2,
-                                                 int spectralWindow,
-                                                 int sequenceId, size_t row) {
+void DirectBaselineReader::addRowToBaselineCache(size_t antenna1,
+                                                 size_t antenna2,
+                                                 size_t spectralWindow,
+                                                 size_t sequenceId,
+                                                 size_t row) {
   BaselineCacheIndex searchItem;
   searchItem.antenna1 = antenna1;
   searchItem.antenna2 = antenna2;
@@ -65,42 +66,35 @@ void DirectBaselineReader::addRowToBaselineCache(int antenna1, int antenna2,
 
 void DirectBaselineReader::addRequestRows(
     ReadRequest request, size_t requestIndex,
-    std::vector<std::pair<size_t, size_t>> &rows) {
+    std::vector<std::pair<size_t, size_t>>& rows) {
   BaselineCacheIndex searchItem;
   searchItem.antenna1 = request.antenna1;
   searchItem.antenna2 = request.antenna2;
   searchItem.spectralWindow = request.spectralWindow;
   searchItem.sequenceId = request.sequenceId;
-  std::map<BaselineCacheIndex, BaselineCacheValue>::iterator cacheItemIter =
-      _baselineCache.find(searchItem);
+  auto cacheItemIter = _baselineCache.find(searchItem);
   if (cacheItemIter != _baselineCache.end()) {
-    const std::vector<size_t> &cacheRows = cacheItemIter->second.rows;
-    for (std::vector<size_t>::const_iterator j = cacheRows.begin();
-         j != cacheRows.end(); ++j)
-      rows.push_back(std::pair<size_t, size_t>(*j, requestIndex));
+    const std::vector<size_t>& cacheRows = cacheItemIter->second.rows;
+    for (size_t j : cacheRows) rows.emplace_back(j, requestIndex);
   }
 }
 
 void DirectBaselineReader::addRequestRows(
     FlagWriteRequest request, size_t requestIndex,
-    std::vector<std::pair<size_t, size_t>> &rows) {
+    std::vector<std::pair<size_t, size_t>>& rows) {
   BaselineCacheIndex searchItem;
   searchItem.antenna1 = request.antenna1;
   searchItem.antenna2 = request.antenna2;
   searchItem.spectralWindow = request.spectralWindow;
   searchItem.sequenceId = request.sequenceId;
-  std::map<BaselineCacheIndex, BaselineCacheValue>::iterator cacheItemIter =
-      _baselineCache.find(searchItem);
+  auto cacheItemIter = _baselineCache.find(searchItem);
   if (cacheItemIter != _baselineCache.end()) {
-    const std::vector<size_t> &cacheRows = cacheItemIter->second.rows;
-    for (std::vector<size_t>::const_iterator j = cacheRows.begin();
-         j != cacheRows.end(); ++j)
-      rows.push_back(std::pair<size_t, size_t>(*j, requestIndex));
+    const std::vector<size_t>& cacheRows = cacheItemIter->second.rows;
+    for (size_t j : cacheRows) rows.emplace_back(j, requestIndex);
   }
 }
 
-void DirectBaselineReader::PerformReadRequests(
-    class ProgressListener &progress) {
+void DirectBaselineReader::PerformReadRequests(ProgressListener& progress) {
   progress.OnStartTask("Reading measurement set");
   Stopwatch stopwatch(true);
 
@@ -116,8 +110,8 @@ void DirectBaselineReader::PerformReadRequests(
 
   _results.resize(_readRequests.size());
   for (size_t reqIndex = 0; reqIndex != _readRequests.size(); ++reqIndex) {
-    const ReadRequest &request = _readRequests[reqIndex];
-    Result &result = _results[reqIndex];
+    const ReadRequest& request = _readRequests[reqIndex];
+    Result& result = _results[reqIndex];
     size_t startIndex = request.startIndex, endIndex = request.endIndex,
            band = request.spectralWindow,
            channelCount = MetaData().FrequencyCount(band);
@@ -145,16 +139,11 @@ void DirectBaselineReader::PerformReadRequests(
   casacore::ArrayColumn<float> weightColumn(_ms, "WEIGHT");
   casacore::ArrayColumn<double> uvwColumn(_ms, "UVW");
   casacore::ArrayColumn<bool> flagColumn(_ms, "FLAG");
-  std::unique_ptr<casacore::ArrayColumn<casacore::Complex>> modelColumn,
-      dataColumn;
+  std::unique_ptr<casacore::ArrayColumn<casacore::Complex>> dataColumn;
 
   if (ReadData())
     dataColumn.reset(
         new casacore::ArrayColumn<casacore::Complex>(_ms, DataColumnName()));
-
-  if (SubtractModel())
-    modelColumn.reset(
-        new casacore::ArrayColumn<casacore::Complex>(_ms, "MODEL_DATA"));
 
   for (size_t i = 0; i != rows.size(); ++i) {
     progress.OnProgress(i, rows.size());
@@ -163,7 +152,7 @@ void DirectBaselineReader::PerformReadRequests(
     size_t requestIndex = p.second;
 
     double time = timeColumn(rowIndex);
-    const ReadRequest &request = _readRequests[requestIndex];
+    const ReadRequest& request = _readRequests[requestIndex];
     size_t timeIndex = ObservationTimes(request.sequenceId).find(time)->second,
            startIndex = request.startIndex, endIndex = request.endIndex,
            band = request.spectralWindow;
@@ -172,17 +161,8 @@ void DirectBaselineReader::PerformReadRequests(
       // if(BaselineReader::DataKind() == WeightData)
       //	readWeights(requestIndex, timeIndex-startIndex,
       // MetaData().FrequencyCount(band), weightColumn(rowIndex)); else
-      if (modelColumn == nullptr)
-        readTimeData(requestIndex, timeIndex - startIndex,
-                     MetaData().FrequencyCount(band), (*dataColumn)(rowIndex),
-                     0);
-      else {
-        const casacore::Array<casacore::Complex> model =
-            (*modelColumn)(rowIndex);
-        readTimeData(requestIndex, timeIndex - startIndex,
-                     MetaData().FrequencyCount(band), (*dataColumn)(rowIndex),
-                     &model);
-      }
+      readTimeData(requestIndex, timeIndex - startIndex,
+                   MetaData().FrequencyCount(band), (*dataColumn)(rowIndex));
     }
     if (ReadFlags() && timeIsSelected) {
       readTimeFlags(requestIndex, timeIndex - startIndex,
@@ -190,7 +170,7 @@ void DirectBaselineReader::PerformReadRequests(
     }
     if (timeIsSelected) {
       casacore::Array<double> arr = uvwColumn(rowIndex);
-      casacore::Array<double>::const_iterator i = arr.begin();
+      casacore::Array<double>::const_contiter i = arr.cbegin();
       _results[requestIndex]._uvw[timeIndex - startIndex].u = *i;
       ++i;
       _results[requestIndex]._uvw[timeIndex - startIndex].v = *i;
@@ -212,7 +192,7 @@ std::vector<UVW> DirectBaselineReader::ReadUVW(unsigned antenna1,
   initializeMeta();
   if (_baselineCache.empty()) initBaselineCache();
 
-  const std::map<double, size_t> &observationTimes =
+  const std::map<double, size_t>& observationTimes =
       ObservationTimes(sequenceId);
 
   // Each element contains (row number, corresponding request index)
@@ -243,8 +223,8 @@ std::vector<UVW> DirectBaselineReader::ReadUVW(unsigned antenna1,
     size_t timeIndex = observationTimes.find(time)->second;
 
     casacore::Array<double> arr = uvwColumn(rowIndex);
-    casacore::Array<double>::const_iterator j = arr.begin();
-    UVW &uvw = uvws[timeIndex];
+    casacore::Array<double>::const_contiter j = arr.cbegin();
+    UVW& uvw = uvws[timeIndex];
     uvw.u = *j;
     ++j;
     uvw.v = *j;
@@ -274,28 +254,26 @@ void DirectBaselineReader::PerformFlagWriteRequests() {
   casacore::ScalarColumn<double> timeColumn(_ms, "TIME");
   casacore::ArrayColumn<bool> flagColumn(_ms, "FLAG");
 
-  for (std::vector<FlagWriteRequest>::iterator i = _writeRequests.begin();
-       i != _writeRequests.end(); ++i) {
-    size_t band = i->spectralWindow;
-    if (MetaData().FrequencyCount(band) != i->flags[0]->Height()) {
+  for (const FlagWriteRequest& request : _writeRequests) {
+    size_t band = request.spectralWindow;
+    if (MetaData().FrequencyCount(band) != request.flags[0]->Height()) {
       std::cerr << "The frequency count in the measurement set ("
                 << MetaData().FrequencyCount(band)
-                << ") does not match the image!" << std::endl;
+                << ") does not match the image!\n";
     }
-    if (i->endIndex - i->startIndex != i->flags[0]->Width()) {
+    if (request.endIndex - request.startIndex != request.flags[0]->Width()) {
       std::cerr << "The number of time scans to write in the measurement set ("
-                << (i->endIndex - i->startIndex)
-                << ") does not match the image (" << i->flags[0]->Width()
-                << ") !" << std::endl;
+                << (request.endIndex - request.startIndex)
+                << ") does not match the image (" << request.flags[0]->Width()
+                << ") !\n";
     }
   }
 
   size_t rowsWritten = 0;
 
-  for (std::vector<std::pair<size_t, size_t>>::const_iterator i = rows.begin();
-       i != rows.end(); ++i) {
-    size_t rowIndex = i->first;
-    FlagWriteRequest &request = _writeRequests[i->second];
+  for (const std::pair<size_t, size_t>& row : rows) {
+    size_t rowIndex = row.first;
+    FlagWriteRequest& request = _writeRequests[row.second];
     double time = timeColumn(rowIndex);
     size_t timeIndex = ObservationTimes(request.sequenceId).find(time)->second;
     if (timeIndex >= request.startIndex + request.leftBorder &&
@@ -320,12 +298,9 @@ void DirectBaselineReader::PerformFlagWriteRequests() {
 }
 
 void DirectBaselineReader::readTimeData(
-    size_t requestIndex, size_t xOffset, int frequencyCount,
-    const casacore::Array<casacore::Complex> data,
-    const casacore::Array<casacore::Complex> *model) {
-  casacore::Array<casacore::Complex>::const_iterator i = data.begin();
-  casacore::Array<casacore::Complex>::const_iterator m;
-  if (DataKind() == ResidualData) m = model->begin();
+    size_t requestIndex, size_t xOffset, size_t frequencyCount,
+    const casacore::Array<casacore::Complex>& data) {
+  casacore::Array<casacore::Complex>::const_contiter i = data.cbegin();
 
   size_t polarizationCount = Polarizations().size();
 
@@ -333,21 +308,11 @@ void DirectBaselineReader::readTimeData(
     num_t rv, iv;
 
     for (size_t p = 0; p < polarizationCount; ++p) {
-      if (DataKind() == ResidualData) {
-        const casacore::Complex &iData = *i;
-        const casacore::Complex &iModel = *m;
-        ++i;
-        ++m;
+      const casacore::Complex& complex = *i;
+      ++i;
 
-        rv = iData.real() - iModel.real();
-        iv = iData.imag() - iModel.imag();
-      } else {
-        const casacore::Complex &complex = *i;
-        ++i;
-
-        rv = complex.real();
-        iv = complex.imag();
-      }
+      rv = complex.real();
+      iv = complex.imag();
       _results[requestIndex]._realImages[p]->SetValue(xOffset, f, rv);
       _results[requestIndex]._imaginaryImages[p]->SetValue(xOffset, f, iv);
     }
@@ -355,8 +320,8 @@ void DirectBaselineReader::readTimeData(
 }
 
 void DirectBaselineReader::readTimeFlags(size_t requestIndex, size_t xOffset,
-                                         int frequencyCount,
-                                         const casacore::Array<bool> flag) {
+                                         size_t frequencyCount,
+                                         const casacore::Array<bool>& flag) {
   size_t polarizationCount = Polarizations().size();
 
   casacore::Array<bool>::const_iterator j = flag.begin();
@@ -370,8 +335,8 @@ void DirectBaselineReader::readTimeFlags(size_t requestIndex, size_t xOffset,
 }
 
 void DirectBaselineReader::readWeights(size_t requestIndex, size_t xOffset,
-                                       int frequencyCount,
-                                       const casacore::Array<float> weight) {
+                                       size_t frequencyCount,
+                                       const casacore::Array<float>& weight) {
   size_t polarizationCount = Polarizations().size();
 
   casacore::Array<float>::const_iterator j = weight.begin();
@@ -385,15 +350,5 @@ void DirectBaselineReader::readWeights(size_t requestIndex, size_t xOffset,
       _results[requestIndex]._realImages[p]->SetValue(xOffset, f, values[p]);
       _results[requestIndex]._imaginaryImages[p]->SetValue(xOffset, f, 0.0);
     }
-  }
-}
-
-void DirectBaselineReader::ShowStatistics() {
-  try {
-    casacore::ROTiledStManAccessor accessor(_ms, "LofarStMan");
-    std::stringstream s;
-    accessor.showCacheStatistics(s);
-    Logger::Debug << s.str();
-  } catch (std::exception &e) {
   }
 }

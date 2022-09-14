@@ -5,6 +5,7 @@
 #include "../algorithms/applybandpass.h"
 #include "../algorithms/highpassfilter.h"
 #include "../algorithms/medianwindow.h"
+#include "../algorithms/resampling.h"
 #include "../algorithms/siroperator.h"
 #include "../algorithms/thresholdconfig.h"
 
@@ -13,7 +14,7 @@
 #include "../structures/timefrequencydata.h"
 
 #ifdef HAVE_GTKMM
-#include "../plot/heatmapplot.h"
+#include "../rfigui/maskedheatmap.h"
 #endif
 
 #include "../algorithms/polarizationstatistics.h"
@@ -22,6 +23,14 @@
 #include "../quality/statisticscollection.h"
 
 #include <iostream>
+
+using algorithms::ApplyBandpass;
+using algorithms::HighPassFilter;
+using algorithms::MedianWindow;
+using algorithms::PolarizationStatistics;
+using algorithms::SIROperator;
+using algorithms::ThresholdConfig;
+using algorithms::ThresholdTools;
 
 namespace aoflagger_lua {
 
@@ -146,39 +155,16 @@ void copy_to_frequency(Data& destination, const Data& source,
   copy_to_channel(destination, source, channelIndex);
 }
 
-void upsample(const Data& input, Data& destination, size_t horizontalFactor,
-              size_t verticalFactor) {
-  TimeFrequencyData timeFrequencyData = input.TFData();
-  const size_t imageCount = timeFrequencyData.ImageCount(),
-               newWidth = destination.TFData().ImageWidth(),
-               newHeight = destination.TFData().ImageHeight();
-  if (destination.TFData().ImageCount() != imageCount)
-    throw std::runtime_error(
-        "Error in upsample() call: source and image have different number of "
-        "images");
-  // std::cout << "Enlarging " << horizontalFactor << " x " << verticalFactor <<
-  // " to " << newWidth << " x " << newHeight << '\n';
+void upsample_image(const Data& input, Data& destination,
+                    size_t horizontalFactor, size_t verticalFactor) {
+  algorithms::upsample_image(input.TFData(), destination.TFData(),
+                             horizontalFactor, verticalFactor);
+}
 
-  if (horizontalFactor > 1) {
-    for (size_t i = 0; i < imageCount; ++i) {
-      Image2DPtr newImage(
-          new Image2D(timeFrequencyData.GetImage(i)->EnlargeHorizontally(
-              horizontalFactor, newWidth)));
-      timeFrequencyData.SetImage(i, newImage);
-    }
-  }
-
-  for (size_t i = 0; i < imageCount; ++i) {
-    Image2DCPtr image = timeFrequencyData.GetImage(i);
-    if (verticalFactor > 1) {
-      Image2DPtr newImage(
-          new Image2D(timeFrequencyData.GetImage(i)->EnlargeVertically(
-              verticalFactor, newHeight)));
-      destination.TFData().SetImage(i, newImage);
-    } else {
-      destination.TFData().SetImage(i, timeFrequencyData.GetImage(i));
-    }
-  }
+void upsample_mask(const Data& input, Data& destination,
+                   size_t horizontalFactor, size_t verticalFactor) {
+  algorithms::upsample_mask(input.TFData(), destination.TFData(),
+                            horizontalFactor, verticalFactor);
 }
 
 void low_pass_filter(Data& data, size_t kernelWidth, size_t kernelHeight,
@@ -220,8 +206,9 @@ void high_pass_filter(Data& data, size_t kernelWidth, size_t kernelHeight,
 void save_heat_map(const char* filename, const Data& data) {
 #ifdef HAVE_GTKMM
   const TimeFrequencyData tfData = data.TFData();
-  HeatMapPlot plot;
-  plot.SetImage(tfData.GetSingleImage());
+  MaskedHeatMap plot;
+  plot.SetImage(
+      std::unique_ptr<PlotImage>(new PlotImage(tfData.GetSingleImage())));
   plot.SetAlternativeMask(tfData.GetSingleMask());
   plot.SaveByExtension(filename, 800, 500);
 #else
@@ -248,14 +235,16 @@ void scale_invariant_rank_operator(Data& data, double level_horizontal,
 
 void scale_invariant_rank_operator_masked(Data& data, const Data& missing,
                                           double level_horizontal,
-                                          double level_vertical) {
+                                          double level_vertical,
+                                          double penalty) {
   if (!data.TFData().IsEmpty()) {
     Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
 
     Mask2DCPtr missingMask = missing.TFData().GetSingleMask();
     SIROperator::OperateHorizontallyMissing(*mask, *missingMask,
-                                            level_horizontal);
-    SIROperator::OperateVerticallyMissing(*mask, *missingMask, level_vertical);
+                                            level_horizontal, penalty);
+    SIROperator::OperateVerticallyMissing(*mask, *missingMask, level_vertical,
+                                          penalty);
     data.TFData().SetGlobalMask(mask);
   }
 }
@@ -297,46 +286,16 @@ Data downsample(const Data& data, size_t horizontalFactor,
 Data downsample_masked(const Data& data, size_t horizontalFactor,
                        size_t verticalFactor) {
   TimeFrequencyData timeFrequencyData = data.TFData();
-
-  // Decrease in horizontal direction
-  size_t polCount = timeFrequencyData.PolarizationCount();
-  for (size_t i = 0; i < polCount; ++i) {
-    TimeFrequencyData polData(timeFrequencyData.MakeFromPolarizationIndex(i));
-    const Mask2DCPtr mask = polData.GetSingleMask();
-    for (unsigned j = 0; j < polData.ImageCount(); ++j) {
-      const Image2DCPtr image = polData.GetImage(j);
-      polData.SetImage(j, ThresholdTools::ShrinkHorizontally(
-                              horizontalFactor, image.get(), mask.get()));
-    }
-    timeFrequencyData.SetPolarizationData(i, std::move(polData));
+  TimeFrequencyMetaDataPtr metaData;
+  if (data.MetaData()) {
+    metaData.reset(new TimeFrequencyMetaData(*data.MetaData()));
+    algorithms::downsample_masked(timeFrequencyData, metaData.get(),
+                                  horizontalFactor, verticalFactor);
+  } else {
+    algorithms::downsample_masked(timeFrequencyData, nullptr, horizontalFactor,
+                                  verticalFactor);
   }
-  size_t maskCount = timeFrequencyData.MaskCount();
-  for (size_t i = 0; i < maskCount; ++i) {
-    Mask2DCPtr mask = timeFrequencyData.GetMask(i);
-    Mask2DPtr newMask(
-        new Mask2D(mask->ShrinkHorizontallyForAveraging(horizontalFactor)));
-    timeFrequencyData.SetMask(i, std::move(newMask));
-  }
-
-  // Decrease in vertical direction
-  for (size_t i = 0; i < polCount; ++i) {
-    TimeFrequencyData polData(timeFrequencyData.MakeFromPolarizationIndex(i));
-    const Mask2DCPtr mask = polData.GetSingleMask();
-    for (unsigned j = 0; j < polData.ImageCount(); ++j) {
-      const Image2DCPtr image = polData.GetImage(j);
-      polData.SetImage(j, ThresholdTools::ShrinkVertically(
-                              verticalFactor, image.get(), mask.get()));
-    }
-    timeFrequencyData.SetPolarizationData(i, std::move(polData));
-  }
-  for (size_t i = 0; i < maskCount; ++i) {
-    Mask2DCPtr mask = timeFrequencyData.GetMask(i);
-    Mask2DPtr newMask(
-        new Mask2D(mask->ShrinkVerticallyForAveraging(verticalFactor)));
-    timeFrequencyData.SetMask(i, std::move(newMask));
-  }
-
-  return Data(timeFrequencyData, data.MetaData(), data.GetContext());
+  return Data(timeFrequencyData, metaData, data.GetContext());
 }
 
 static void sumthreshold_generic(Data& data, const Data* missing,
@@ -422,7 +381,7 @@ void threshold_timestep_rms(Data& data, double threshold) {
       timesteps.SetValue(x, row.RMSWithMissings());
     }
     bool change;
-    MedianWindow<num_t>::SubtractMedian(timesteps, 512);
+    MedianWindow<num_t>::SubtractMedian(timesteps, 511);
     do {
       num_t median = 0.0;
       num_t stddev = timesteps.StdDevWithMissings(0.0);

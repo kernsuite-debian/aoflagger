@@ -14,8 +14,8 @@ HeatMapPageController::HeatMapPageController()
       _phase(TimeFrequencyData::AmplitudePart) {
   _heatMap.SetCairoFilter(Cairo::FILTER_NEAREST);
   _heatMap.SetColorMap(ColorMap::HotCold);
-  _heatMap.SetRange(HeatMapPlot::MinMax);
-  _heatMap.SetScaleOption(HeatMapPlot::LogScale);
+  _heatMap.SetZRange(Range::MinMax);
+  _heatMap.SetLogZScale(true);
   _heatMap.SetZAxisDescription("Statistical value");
   _heatMap.SetManualZAxisDescription(true);
 }
@@ -27,7 +27,7 @@ void HeatMapPageController::updateImageImpl(
   std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> pair =
       constructImage(statisticKind);
 
-  TimeFrequencyData &data = pair.first;
+  TimeFrequencyData& data = pair.first;
 
   if (!data.IsEmpty()) {
     setToPolarization(data, polarisation);
@@ -44,15 +44,15 @@ void HeatMapPageController::updateImageImpl(
 
     _heatMap.SetZAxisDescription(
         StatisticsDerivator::GetDescWithUnits(statisticKind));
-    _heatMap.SetImage(image);
+    _heatMap.SetImage(std::unique_ptr<PlotImage>(new PlotImage(image)));
     _heatMap.SetOriginalMask(data.GetSingleMask());
-    if (pair.second != 0) _heatMap.SetMetaData(pair.second);
+    if (pair.second != nullptr) _heatMap.SetMetaData(pair.second);
 
     if (_page != nullptr) _page->Redraw();
   }
 }
 
-Image2D HeatMapPageController::normalizeXAxis(const Image2D &input) {
+Image2D HeatMapPageController::normalizeXAxis(const Image2D& input) {
   Image2D output = Image2D::MakeUnsetImage(input.Width(), input.Height());
   for (size_t x = 0; x < input.Width(); ++x) {
     SampleRow row = SampleRow::MakeFromColumn(&input, x);
@@ -69,7 +69,7 @@ Image2D HeatMapPageController::normalizeXAxis(const Image2D &input) {
   return output;
 }
 
-Image2D HeatMapPageController::normalizeYAxis(const Image2D &input) {
+Image2D HeatMapPageController::normalizeYAxis(const Image2D& input) {
   Image2D output = Image2D::MakeUnsetImage(input.Width(), input.Height());
   for (size_t y = 0; y < input.Height(); ++y) {
     SampleRow row = SampleRow::MakeFromRow(&input, y);
@@ -86,7 +86,7 @@ Image2D HeatMapPageController::normalizeYAxis(const Image2D &input) {
   return output;
 }
 
-void HeatMapPageController::setToPolarization(TimeFrequencyData &data,
+void HeatMapPageController::setToPolarization(TimeFrequencyData& data,
                                               PolarizationEnum polarisation) {
   if ((polarisation == Polarization::StokesI &&
        data.HasPolarization(Polarization::XX) &&
@@ -101,7 +101,7 @@ void HeatMapPageController::setToPolarization(TimeFrequencyData &data,
 }
 
 void HeatMapPageController::setToPhase(
-    TimeFrequencyData &data,
+    TimeFrequencyData& data,
     enum TimeFrequencyData::ComplexRepresentation phase) {
   data = data.Make(phase);
 }

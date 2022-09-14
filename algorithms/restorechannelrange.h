@@ -1,8 +1,10 @@
 #ifndef RESTORE_CHANNEL_RANGE_H
 #define RESTORE_CHANNEL_RANGE_H
 
-#include "../../structures/timefrequencydata.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/timefrequencydata.h"
+#include "../structures/timefrequencymetadata.h"
+
+namespace algorithms {
 
 class RestoreChannelRange {
  public:
@@ -36,5 +38,7 @@ class RestoreChannelRange {
       lhs.SetMask(m, std::move(cMasks[m]));
   }
 };
+
+}  // namespace algorithms
 
 #endif

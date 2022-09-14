@@ -6,7 +6,9 @@
 #include <vector>
 #include <cmath>
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
+
+namespace algorithms {
 
 class NoiseStatistics {
  public:
@@ -16,12 +18,12 @@ class NoiseStatistics {
   NoiseStatistics()
       : _sum(0.0), _sum2(0.0), _sum3(0.0), _sum4(0.0), _count(0) {}
 
-  explicit NoiseStatistics(const Array &samples)
+  explicit NoiseStatistics(const Array& samples)
       : _sum(0.0), _sum2(0.0), _sum3(0.0), _sum4(0.0), _count(0) {
     Add(samples);
   }
 
-  void Set(const Array &samples) {
+  void Set(const Array& samples) {
     _sum = 0.0;
     _sum2 = 0.0;
     _sum3 = 0.0;
@@ -30,7 +32,7 @@ class NoiseStatistics {
     Add(samples);
   }
 
-  void Add(const Array &samples) {
+  void Add(const Array& samples) {
     // Calculate sum & mean
     for (Array::const_iterator i = samples.begin(); i != samples.end(); ++i) {
       const stat_t v = *i;
@@ -42,7 +44,7 @@ class NoiseStatistics {
     _count += samples.size();
   }
 
-  void Add(const NoiseStatistics &statistics) {
+  void Add(const NoiseStatistics& statistics) {
     _count += statistics._count;
     _sum += statistics._sum;
     _sum2 += statistics._sum2;
@@ -120,8 +122,8 @@ class NoiseStatistics {
   static unsigned WriteColumnCount() { return 8; }
   static unsigned VarianceColumn() { return 6; }
 
-  static void WriteHeaders(const std::string &headerPrefix,
-                           std::ostream &stream) {
+  static void WriteHeaders(const std::string& headerPrefix,
+                           std::ostream& stream) {
     stream << headerPrefix << "Count\t" << headerPrefix << "Sum\t"
            << headerPrefix << "Sum2\t" << headerPrefix << "Sum3\t"
            << headerPrefix << "Sum4\t" << headerPrefix << "Mean\t"
@@ -129,13 +131,13 @@ class NoiseStatistics {
            << "VarianceOfVariance";
   }
 
-  void WriteValues(std::ostream &stream) const {
+  void WriteValues(std::ostream& stream) const {
     stream << _count << '\t' << _sum << '\t' << _sum2 << '\t' << _sum3 << '\t'
            << _sum4 << '\t' << Mean() << '\t' << VarianceEstimator() << '\t'
            << VarianceOfVarianceEstimator();
   }
 
-  void ReadValues(std::istream &stream) {
+  void ReadValues(std::istream& stream) {
     stat_t tmp;
     stream >> _count >> _sum >> _sum2 >> _sum3 >> _sum4 >> tmp >> tmp >> tmp;
   }
@@ -147,5 +149,7 @@ class NoiseStatistics {
   stat_t _sum4;
   unsigned long _count;
 };
+
+}  // namespace algorithms
 
 #endif

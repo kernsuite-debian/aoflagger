@@ -12,42 +12,46 @@
 #include "../structures/mask2d.h"
 #include "../structures/msmetadata.h"
 
-class DirectBaselineReader : public BaselineReader {
+class DirectBaselineReader final : public BaselineReader {
  public:
-  explicit DirectBaselineReader(const std::string &msFile);
-  ~DirectBaselineReader();
+  explicit DirectBaselineReader(const std::string& msFile);
 
-  virtual void PerformReadRequests(
-      class ProgressListener &listener) final override;
-  virtual void PerformFlagWriteRequests() final override;
-  virtual void PerformDataWriteTask(
-      std::vector<Image2DCPtr> /*_realImages*/,
-      std::vector<Image2DCPtr> /*_imaginaryImages*/, int /*antenna1*/,
-      int /*antenna2*/, int /*spectralWindow*/,
-      unsigned /*sequenceId*/) final override {
+  bool IsModified() const override { return false; }
+
+  void WriteToMs() override {}
+
+  void PrepareReadWrite(ProgressListener&) override {}
+
+  void PerformReadRequests(class ProgressListener& listener) override;
+  void PerformFlagWriteRequests() override;
+  void PerformDataWriteTask(
+      [[maybe_unused]] std::vector<Image2DCPtr> realImages,
+      [[maybe_unused]] std::vector<Image2DCPtr> imaginaryImages,
+      [[maybe_unused]] size_t antenna1, [[maybe_unused]] size_t antenna2,
+      [[maybe_unused]] size_t spectralWindow,
+      [[maybe_unused]] size_t sequenceId) override {
     throw std::runtime_error(
         "The direct baseline reader can not write data back to file: use the "
         "indirect reader");
   }
   std::vector<UVW> ReadUVW(unsigned antenna1, unsigned antenna2,
                            unsigned spectralWindow, unsigned sequenceId);
-  void ShowStatistics();
 
  private:
   class BaselineCacheIndex {
    public:
     BaselineCacheIndex() {}
-    BaselineCacheIndex(const BaselineCacheIndex &source)
+    BaselineCacheIndex(const BaselineCacheIndex& source)
         : antenna1(source.antenna1),
           antenna2(source.antenna2),
           spectralWindow(source.spectralWindow),
           sequenceId(source.sequenceId) {}
-    bool operator==(const BaselineCacheIndex &rhs) const {
+    bool operator==(const BaselineCacheIndex& rhs) const {
       return antenna1 == rhs.antenna1 && antenna2 == rhs.antenna2 &&
              spectralWindow == rhs.spectralWindow &&
              sequenceId == rhs.sequenceId;
     }
-    bool operator<(const BaselineCacheIndex &rhs) const {
+    bool operator<(const BaselineCacheIndex& rhs) const {
       if (antenna1 < rhs.antenna1)
         return true;
       else if (antenna1 == rhs.antenna1) {
@@ -63,7 +67,7 @@ class DirectBaselineReader : public BaselineReader {
       return false;
     }
 
-    int antenna1, antenna2, spectralWindow, sequenceId;
+    size_t antenna1, antenna2, spectralWindow, sequenceId;
   };
 
   struct BaselineCacheValue {
@@ -73,20 +77,20 @@ class DirectBaselineReader : public BaselineReader {
   void initBaselineCache();
 
   void addRequestRows(ReadRequest request, size_t requestIndex,
-                      std::vector<std::pair<size_t, size_t> > &rows);
+                      std::vector<std::pair<size_t, size_t>>& rows);
   void addRequestRows(FlagWriteRequest request, size_t requestIndex,
-                      std::vector<std::pair<size_t, size_t> > &rows);
-  void addRowToBaselineCache(int antenna1, int antenna2, int spectralWindow,
-                             int sequenceId, size_t row);
+                      std::vector<std::pair<size_t, size_t>>& rows);
+  void addRowToBaselineCache(size_t antenna1, size_t antenna2,
+                             size_t spectralWindow, size_t sequenceId,
+                             size_t row);
   void readUVWData();
 
-  void readTimeData(size_t requestIndex, size_t xOffset, int frequencyCount,
-                    const casacore::Array<casacore::Complex> data,
-                    const casacore::Array<casacore::Complex> *model);
-  void readTimeFlags(size_t requestIndex, size_t xOffset, int frequencyCount,
-                     const casacore::Array<bool> flag);
-  void readWeights(size_t requestIndex, size_t xOffset, int frequencyCount,
-                   const casacore::Array<float> weight);
+  void readTimeData(size_t requestIndex, size_t xOffset, size_t frequencyCount,
+                    const casacore::Array<casacore::Complex>& data);
+  void readTimeFlags(size_t requestIndex, size_t xOffset, size_t frequencyCount,
+                     const casacore::Array<bool>& flag);
+  void readWeights(size_t requestIndex, size_t xOffset, size_t frequencyCount,
+                   const casacore::Array<float>& weight);
 
   std::map<BaselineCacheIndex, BaselineCacheValue> _baselineCache;
   casacore::MeasurementSet _ms;

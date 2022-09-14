@@ -14,7 +14,7 @@
  */
 class SpatialTimeLoader {
  public:
-  explicit SpatialTimeLoader(MSMetaData &measurementSet);
+  explicit SpatialTimeLoader(MSMetaData& measurementSet);
   ~SpatialTimeLoader();
 
   TimeFrequencyData Load(unsigned channelIndex, bool fringeStop = true);
@@ -24,7 +24,7 @@ class SpatialTimeLoader {
   unsigned TimestepsCount() const { return _timestepsCount; }
 
  private:
-  MSMetaData &_msMetaData;
+  MSMetaData& _msMetaData;
   std::unique_ptr<casacore::Table> _sortedTable;
   std::unique_ptr<casacore::TableIterator> _tableIter;
   unsigned _channelCount;

@@ -14,7 +14,9 @@ void TimeFrequencyPlotPage::onMouseMoved(size_t x, size_t y) {
   const QualityTablesFormatter::StatisticKind kind = getSelectedStatisticKind();
   const std::string& kindName = QualityTablesFormatter::KindToName(kind);
 
-  text << kindName << " = " << grayScaleWidget().Plot().Image()->Value(x, y)
-       << " (" << x << ", " << y << ")";
+  const MaskedHeatMap& map =
+      static_cast<MaskedHeatMap&>(grayScaleWidget().Plot());
+  text << kindName << " = " << map.GetImage2D()->Value(x, y) << " (" << x
+       << ", " << y << ")";
   _signalStatusChange(text.str());
 }

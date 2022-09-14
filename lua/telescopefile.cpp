@@ -6,12 +6,11 @@
 #include "../imagesets/imageset.h"
 #include "../imagesets/msimageset.h"
 
-#include "../../structures/msmetadata.h"
+#include "../structures/msmetadata.h"
 
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 #include <version.h>
 
@@ -85,6 +84,8 @@ TelescopeFile::TelescopeId TelescopeFile::TelescopeIdFromName(
     return APERTIF_TELESCOPE;
   else if (nameUpper == "ARECIBO" || nameUpper == "ARECIBO 305M")
     return ARECIBO_TELESCOPE;
+  else if (nameUpper == "ATCA")
+    return ATCA_TELESCOPE;
   else if (nameUpper == "BIGHORNS")
     return BIGHORNS_TELESCOPE;
   else if (nameUpper == "EVLA" || nameUpper == "JVLA")
@@ -113,29 +114,28 @@ std::string TelescopeFile::FindStrategy(const std::string& argv0,
   else
     filename = filename + "-" + boost::to_lower_copy(scenario) + ".lua";
 
-  boost::filesystem::path search;
+  std::filesystem::path search;
 
-  search = boost::filesystem::path(AOFLAGGER_INSTALL_PATH) /
+  search = std::filesystem::path(AOFLAGGER_INSTALL_PATH) /
            "share/aoflagger/strategies" / filename;
-  if (boost::filesystem::exists(search)) return search.string();
+  if (std::filesystem::exists(search)) return search.string();
 
   if (!argv0.empty()) {
-    boost::filesystem::path root = boost::filesystem::path(argv0).remove_leaf();
+    std::filesystem::path root = std::filesystem::path(argv0).remove_filename();
 
     search = root / "../share/aoflagger/strategies" / filename;
-    if (boost::filesystem::exists(search)) return search.string();
+    if (std::filesystem::exists(search)) return search.string();
 
     search = root / "../data/strategies" / filename;
-    if (boost::filesystem::exists(search)) return search.string();
+    if (std::filesystem::exists(search)) return search.string();
   }
 
-  search =
-      boost::filesystem::path("/usr/share/aoflagger/strategies") / filename;
-  if (boost::filesystem::exists(search)) return search.string();
+  search = std::filesystem::path("/usr/share/aoflagger/strategies") / filename;
+  if (std::filesystem::exists(search)) return search.string();
 
-  search = boost::filesystem::path("/usr/local/share/aoflagger/strategies") /
-           filename;
-  if (boost::filesystem::exists(search)) return search.string();
+  search =
+      std::filesystem::path("/usr/local/share/aoflagger/strategies") / filename;
+  if (std::filesystem::exists(search)) return search.string();
 
   return std::string();
 }

@@ -11,7 +11,7 @@
 
 class PlotWindow : public Gtk::Window {
  public:
-  explicit PlotWindow(class PlotManager &plotManager);
+  explicit PlotWindow(class PlotManager& plotManager);
 
   ~PlotWindow();
 
@@ -37,14 +37,14 @@ class PlotWindow : public Gtk::Window {
   void updatePlotList();
 
   PlotWidget _plotWidget;
-  class PlotManager &_plotManager;
+  class PlotManager& _plotManager;
   Gtk::HBox _hBox;
   Gtk::VBox _sideBox;
   Gtk::Toolbar _toolbar;
   Gtk::ToolButton _clearButton, _editButton;
   Glib::RefPtr<Gtk::ListStore> _plotListStore;
   Gtk::TreeView _plotListView;
-  class PlotPropertiesWindow *_plotPropertiesWindow;
+  class PlotPropertiesWindow* _plotPropertiesWindow;
 };
 
 #endif

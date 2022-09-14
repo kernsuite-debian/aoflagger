@@ -6,7 +6,7 @@ PolFitMethod::~PolFitMethod() {
   if (_background != 0) delete _background;
 }
 
-void PolFitMethod::Initialize(const TimeFrequencyData &input) {
+void PolFitMethod::Initialize(const TimeFrequencyData& input) {
   _original = input.GetSingleImage();
   _background2D =
       Image2D::CreateEmptyImagePtr(_original->Width(), _original->Height());
@@ -63,10 +63,10 @@ long double PolFitMethod::CalculateBackgroundValue(unsigned x, unsigned y) {
   }
 }
 
-int PolFitMethod::SquareError(const gsl_vector *coefs, void *data,
-                              gsl_vector *f) {
+int PolFitMethod::SquareError(const gsl_vector* coefs, void* data,
+                              gsl_vector* f) {
   // f(x,y) = ( a * x^2 + b * xy + c * y^2 + d x + e y + l  -  image[x,y] )^2
-  ThreadLocal &local = *(ThreadLocal *)data;
+  ThreadLocal& local = *(ThreadLocal*)data;
   double a = gsl_vector_get(coefs, 0);
   double b = gsl_vector_get(coefs, 1);
   double c = gsl_vector_get(coefs, 2);
@@ -93,9 +93,9 @@ int PolFitMethod::SquareError(const gsl_vector *coefs, void *data,
   return GSL_SUCCESS;
 }
 
-int PolFitMethod::SquareErrorDiff(const gsl_vector *coefs, void *data,
-                                  gsl_matrix *J) {
-  ThreadLocal &local = *(ThreadLocal *)data;
+int PolFitMethod::SquareErrorDiff(const gsl_vector* coefs, void* data,
+                                  gsl_matrix* J) {
+  ThreadLocal& local = *(ThreadLocal*)data;
 
   double a = gsl_vector_get(coefs, 0);
   double b = gsl_vector_get(coefs, 1);
@@ -131,9 +131,9 @@ int PolFitMethod::SquareErrorDiff(const gsl_vector *coefs, void *data,
   return GSL_SUCCESS;
 }
 
-int PolFitMethod::LinError(const gsl_vector *coefs, void *data, gsl_vector *f) {
+int PolFitMethod::LinError(const gsl_vector* coefs, void* data, gsl_vector* f) {
   // f(x,y) = | a * x^2 + b * xy + c * y^2 + d x + e y + l  -  image[x,y] |
-  ThreadLocal &local = *(ThreadLocal *)data;
+  ThreadLocal& local = *(ThreadLocal*)data;
   double a = gsl_vector_get(coefs, 0);
   double b = gsl_vector_get(coefs, 1);
   double c = gsl_vector_get(coefs, 2);
@@ -160,9 +160,9 @@ int PolFitMethod::LinError(const gsl_vector *coefs, void *data, gsl_vector *f) {
   return GSL_SUCCESS;
 }
 
-int PolFitMethod::LinErrorDiff(const gsl_vector *coefs, void *data,
-                               gsl_matrix *J) {
-  ThreadLocal &local = *(ThreadLocal *)data;
+int PolFitMethod::LinErrorDiff(const gsl_vector* coefs, void* data,
+                               gsl_matrix* J) {
+  ThreadLocal& local = *(ThreadLocal*)data;
 
   double a = gsl_vector_get(coefs, 0);
   double b = gsl_vector_get(coefs, 1);
@@ -201,7 +201,7 @@ int PolFitMethod::LinErrorDiff(const gsl_vector *coefs, void *data,
 }
 
 long double PolFitMethod::FitBackground(unsigned x, unsigned y,
-                                        ThreadLocal &local) {
+                                        ThreadLocal& local) {
   std::vector<long double> coefficients(6);
 
   boost::mutex::scoped_lock lock(_mutex);
@@ -213,13 +213,13 @@ long double PolFitMethod::FitBackground(unsigned x, unsigned y,
   lock.unlock();
 
   // Chose to use the Levenberg-Marquardt solver with scaling
-  const gsl_multifit_fdfsolver_type *T = gsl_multifit_fdfsolver_lmsder;
+  const gsl_multifit_fdfsolver_type* T = gsl_multifit_fdfsolver_lmsder;
 
   // Construct solver
   unsigned functionCount =
       (local.endY - local.startY + 1) * (local.endX - local.startX + 1);
   unsigned coefficientCount = 6;
-  gsl_multifit_fdfsolver *solver =
+  gsl_multifit_fdfsolver* solver =
       gsl_multifit_fdfsolver_alloc(T, functionCount, coefficientCount);
   if (solver == 0) throw BadUsageException("No solver.");
 
@@ -288,7 +288,7 @@ long double PolFitMethod::FitBackground(unsigned x, unsigned y,
 }
 
 long double PolFitMethod::Evaluate(unsigned x, unsigned y,
-                                   long double *coefficients) {
+                                   long double* coefficients) {
   // f(x,y) = a * x^2 + b * xy + c * y^2 + d x + e y + f
   double xf = x, yf = y;
   return coefficients[0] * xf * xf + coefficients[1] * xf * yf +

@@ -1,12 +1,12 @@
 #include "msstatreader.h"
 
-#include "multibanddata.h"
-
 #include "../structures/mask2d.h"
 #include "../structures/msmetadata.h"
 #include "../structures/image2d.h"
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
+
+#include <aocommon/multibanddata.h>
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
@@ -69,7 +69,7 @@ MSStatReader::Result MSStatReader::readSamples(
   casacore::Array<std::complex<float>> dataArray(dataShape);
   casacore::Array<bool> flagArray(dataShape);
 
-  internal::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
+  aocommon::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
 
   size_t startRow = _sequenceStart[sequenceIndex],
          endRow = _sequenceStart[sequenceIndex + 1];
@@ -153,7 +153,7 @@ MSStatReader::Result MSStatReader::readTimeDiff(
   casacore::Array<std::complex<float>> dataArray(dataShape);
   casacore::Array<bool> flagArray(dataShape);
 
-  internal::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
+  aocommon::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
 
   size_t startRow = _sequenceStart[sequenceIndex],
          endRow = _sequenceStart[sequenceIndex + 1];
@@ -279,7 +279,7 @@ MSStatReader::Result MSStatReader::makeResult(
 }
 
 void MSStatReader::fillBand(MSStatReader::Result& result, bool freqDiff,
-                            const internal::MultiBandData& bands,
+                            const aocommon::MultiBandData& bands,
                             size_t bandIndex) {
   BandInfo bandInfo;
   bandInfo.windowIndex = 0;
@@ -381,7 +381,7 @@ void MSStatReader::storeFlags(const std::vector<Mask2DCPtr>& flags,
         "Invalid nr of masks specified in call to MSStatReader::storeFlags()");
   casacore::Array<bool> flagArray(dataShape);
 
-  internal::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
+  aocommon::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
 
   size_t startRow = _sequenceStart[sequenceIndex],
          endRow = _sequenceStart[sequenceIndex + 1];

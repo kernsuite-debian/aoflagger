@@ -94,6 +94,20 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
     return Mask2DPtr(CreateSetMask<InitValue>(width, height));
   }
 
+  /**
+   * Creates a new mask containing a subset of an existing mask.
+   *
+   * @pre The rows selected to be copied exist in @a source.
+   *
+   * @param source The source mask to copy from.
+   * @param offset The offset of the first row to be copied.
+   * @param count The number of rows to copy.
+   *
+   * @returns The new mask.
+   */
+  static Mask2DPtr CreatePtrFromRows(const Mask2D& source, size_t offset,
+                                     size_t count);
+
   bool Value(size_t x, size_t y) const { return _values[y][x]; }
 
   void SetValue(size_t x, size_t y, bool newValue) { _values[y][x] = newValue; }
@@ -104,7 +118,6 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
 
   void SetVerticalValues(size_t x, size_t y, bool newValue, size_t count) {
     for (size_t i = 0; i != count; ++i) _values[y + i][x] = newValue;
-    ;
   }
 
   size_t Width() const { return _width; }

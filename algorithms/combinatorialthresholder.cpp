@@ -1,7 +1,9 @@
-#include "../../structures/image2d.h"
+#include "../structures/image2d.h"
 
 #include "combinatorialthresholder.h"
 #include "thresholdtools.h"
+
+namespace algorithms {
 
 void CombinatorialThresholder::HorizontalVarThreshold(const Image2D* input,
                                                       Mask2D* mask,
@@ -51,3 +53,5 @@ void CombinatorialThresholder::VarThreshold(const Image2D* input, Mask2D* mask,
   HorizontalVarThreshold(input, mask, length, threshold);
   VerticalVarThreshold(input, mask, length, threshold);
 }
+
+}  // namespace algorithms

@@ -221,13 +221,13 @@ class SampleRow {
   }
 
   void ConvolveWithGaussian(num_t sigma) {
-    Convolutions::OneDimensionalGausConvolution(_values.data(), _values.size(),
-                                                sigma);
+    algorithms::Convolutions::OneDimensionalGausConvolution(
+        _values.data(), _values.size(), sigma);
   }
 
   void ConvolveWithSinc(num_t frequency) {
-    Convolutions::OneDimensionalSincConvolution(_values.data(), _values.size(),
-                                                frequency);
+    algorithms::Convolutions::OneDimensionalSincConvolution(
+        _values.data(), _values.size(), frequency);
   }
 
   SampleRow* operator-=(const SampleRow& source) noexcept {

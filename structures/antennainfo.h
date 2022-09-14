@@ -26,7 +26,6 @@ class EarthPosition {
       << "N" << Latitude() * 180 / M_PI << " E" << Longitude() * 180 / M_PI;
     return s.str();
   }
-  EarthPosition FromITRS(long double x, long double y, long double z);
 
   double Longitude() const { return atan2l(y, x); }
 
@@ -44,25 +43,29 @@ class EarthPosition {
 
   double AltitudeL() const { return sqrtl((long double)x * x + y * y + z * z); }
 
-  void Serialize(std::ostream &stream) const {
+  void Serialize(std::ostream& stream) const {
     Serializable::SerializeToDouble(stream, x);
     Serializable::SerializeToDouble(stream, y);
     Serializable::SerializeToDouble(stream, z);
   }
 
-  void Unserialize(std::istream &stream) {
+  void Unserialize(std::istream& stream) {
     x = Serializable::UnserializeDouble(stream);
     y = Serializable::UnserializeDouble(stream);
     z = Serializable::UnserializeDouble(stream);
   }
 
-  double Distance(const EarthPosition &other) const {
+  double Distance(const EarthPosition& other) const {
     return sqrt(DistanceSquared(other));
   }
 
-  double DistanceSquared(const EarthPosition &other) const {
+  double DistanceSquared(const EarthPosition& other) const {
     double dx = x - other.x, dy = y - other.y, dz = z - other.z;
     return dx * dx + dy * dy + dz * dz;
+  }
+
+  friend bool operator==(const EarthPosition& lhs, const EarthPosition& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
   }
 };
 
@@ -84,7 +87,7 @@ class AntennaInfo {
   std::string mount;
   std::string station;
 
-  void Serialize(std::ostream &stream) const {
+  void Serialize(std::ostream& stream) const {
     Serializable::SerializeToUInt32(stream, id);
     position.Serialize(stream);
     Serializable::SerializeToString(stream, name);
@@ -93,13 +96,19 @@ class AntennaInfo {
     Serializable::SerializeToString(stream, station);
   }
 
-  void Unserialize(std::istream &stream) {
+  void Unserialize(std::istream& stream) {
     id = Serializable::UnserializeUInt32(stream);
     position.Unserialize(stream);
     Serializable::UnserializeString(stream, name);
     diameter = Serializable::UnserializeDouble(stream);
     Serializable::UnserializeString(stream, mount);
     Serializable::UnserializeString(stream, station);
+  }
+
+  friend bool operator==(const AntennaInfo& lhs, const AntennaInfo& rhs) {
+    return lhs.id == rhs.id && lhs.position == rhs.position &&
+           lhs.name == rhs.name && lhs.diameter == rhs.diameter &&
+           lhs.mount == rhs.mount && lhs.station == rhs.station;
   }
 };
 
@@ -114,7 +123,7 @@ class ChannelInfo {
   double MetersToLambda(double meters) const {
     return meters * frequencyHz / 299792458.0L;
   }
-  void Serialize(std::ostream &stream) const {
+  void Serialize(std::ostream& stream) const {
     Serializable::SerializeToUInt32(stream, frequencyIndex);
     Serializable::SerializeToDouble(stream, frequencyHz);
     Serializable::SerializeToDouble(stream, channelWidthHz);
@@ -122,7 +131,7 @@ class ChannelInfo {
     Serializable::SerializeToDouble(stream, resolutionHz);
   }
 
-  void Unserialize(std::istream &stream) {
+  void Unserialize(std::istream& stream) {
     frequencyIndex = Serializable::UnserializeUInt32(stream);
     frequencyHz = Serializable::UnserializeDouble(stream);
     channelWidthHz = Serializable::UnserializeDouble(stream);
@@ -145,7 +154,7 @@ class BandInfo {
       total += i->frequencyHz;
     return total / channels.size();
   }
-  void Serialize(std::ostream &stream) const {
+  void Serialize(std::ostream& stream) const {
     Serializable::SerializeToUInt32(stream, windowIndex);
     Serializable::SerializeToUInt32(stream, channels.size());
     for (std::vector<ChannelInfo>::const_iterator i = channels.begin();
@@ -153,7 +162,7 @@ class BandInfo {
       i->Serialize(stream);
   }
 
-  void Unserialize(std::istream &stream) {
+  void Unserialize(std::istream& stream) {
     windowIndex = Serializable::UnserializeUInt32(stream);
     size_t channelCount = Serializable::UnserializeUInt32(stream);
     channels.resize(channelCount);
@@ -180,17 +189,24 @@ class BandInfo {
 class FieldInfo {
  public:
   FieldInfo() {}
-  FieldInfo(const FieldInfo &source)
+  FieldInfo(const FieldInfo& source)
       : fieldId(source.fieldId),
         delayDirectionRA(source.delayDirectionRA),
         delayDirectionDec(source.delayDirectionDec),
         name(source.name) {}
-  FieldInfo &operator=(const FieldInfo &source) {
+  FieldInfo& operator=(const FieldInfo& source) {
     fieldId = source.fieldId;
     delayDirectionRA = source.delayDirectionRA;
     delayDirectionDec = source.delayDirectionDec;
     name = source.name;
     return *this;
+  }
+
+  friend bool operator==(const FieldInfo& lhs, const FieldInfo& rhs) {
+    return lhs.fieldId == rhs.fieldId &&
+           lhs.delayDirectionRA == rhs.delayDirectionRA &&
+           lhs.delayDirectionDec == rhs.delayDirectionDec &&
+           lhs.name == rhs.name;
   }
 
   unsigned fieldId;
@@ -203,9 +219,9 @@ class Baseline {
  public:
   EarthPosition antenna1, antenna2;
   Baseline() : antenna1(), antenna2() {}
-  Baseline(const AntennaInfo &_antenna1, const AntennaInfo &_antenna2)
+  Baseline(const AntennaInfo& _antenna1, const AntennaInfo& _antenna2)
       : antenna1(_antenna1.position), antenna2(_antenna2.position) {}
-  Baseline(const EarthPosition &_antenna1, const EarthPosition &_antenna2)
+  Baseline(const EarthPosition& _antenna1, const EarthPosition& _antenna2)
       : antenna1(_antenna1), antenna2(_antenna2) {}
 
   num_t Distance() const {

@@ -3,11 +3,11 @@
 #include "../plot/plotmanager.h"
 #include "../plot/plotpropertieswindow.h"
 
-PlotWindow::PlotWindow(PlotManager &plotManager)
+PlotWindow::PlotWindow(PlotManager& plotManager)
     : _plotManager(plotManager),
       _clearButton("_Clear"),
       _editButton("_Edit"),
-      _plotPropertiesWindow(0) {
+      _plotPropertiesWindow(nullptr) {
   Gtk::ToolButton();
   plotManager.OnUpdate() = std::bind(&PlotWindow::handleUpdate, this);
 
@@ -45,9 +45,9 @@ PlotWindow::~PlotWindow() { delete _plotPropertiesWindow; }
 void PlotWindow::handleUpdate() {
   updatePlotList();
 
-  const std::vector<std::unique_ptr<Plot2D>> &plots = _plotManager.Items();
+  const std::vector<std::unique_ptr<XYPlot>>& plots = _plotManager.Items();
   if (!plots.empty()) {
-    Plot2D &lastPlot = **plots.rbegin();
+    XYPlot& lastPlot = **plots.rbegin();
     size_t index = plots.size() - 1;
     _plotWidget.SetPlot(lastPlot);
     for (Gtk::TreeNodeChildren::iterator i = _plotListStore->children().begin();
@@ -60,19 +60,19 @@ void PlotWindow::handleUpdate() {
   } else {
     _plotWidget.Clear();
     delete _plotPropertiesWindow;
-    _plotPropertiesWindow = 0;
+    _plotPropertiesWindow = nullptr;
   }
   show();
   raise();
 }
 
 void PlotWindow::updatePlotList() {
-  const std::vector<std::unique_ptr<Plot2D>> &plots = _plotManager.Items();
+  const std::vector<std::unique_ptr<XYPlot>>& plots = _plotManager.Items();
 
   _plotListView.get_selection()->unselect_all();
   _plotListStore->clear();
   for (size_t index = 0; index != plots.size(); ++index) {
-    const Plot2D &plot = *plots[index];
+    const XYPlot& plot = *plots[index];
     Gtk::TreeModel::Row row = *_plotListStore->append();
     row[_plotListColumns._index] = index;
     row[_plotListColumns._name] = plot.Title();
@@ -86,7 +86,7 @@ void PlotWindow::onSelectedPlotChange() {
   {
     Gtk::TreeModel::Row row = *iter;
     size_t index = row[_plotListColumns._index];
-    Plot2D &plot = *_plotManager.Items()[index];
+    XYPlot& plot = *_plotManager.Items()[index];
     _plotWidget.SetPlot(plot);
   }
 }
@@ -100,7 +100,7 @@ void PlotWindow::onEditPlottingPropertiesPressed() {
   delete _plotPropertiesWindow;
   Gtk::TreeModel::iterator iter = _plotListView.get_selection()->get_selected();
   if (iter) {
-    Plot2D &plot = *_plotManager.Items()[(*iter)[_plotListColumns._index]];
+    XYPlot& plot = *_plotManager.Items()[(*iter)[_plotListColumns._index]];
     _plotPropertiesWindow = new PlotPropertiesWindow(plot, "Plot properties");
     _plotPropertiesWindow->OnChangesApplied =
         std::bind(&PlotWindow::onPlotPropertiesChanged, this);

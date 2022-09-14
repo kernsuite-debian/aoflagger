@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'AOFlagger'
-copyright = '2020, André Offringa'
+copyright = '2022, André Offringa'
 author = 'André Offringa'
 
 # The full version, including alpha/beta/rc tags
-release = '3.0-alpha'
+release = '3.2'
 
 
 # -- General configuration ---------------------------------------------------

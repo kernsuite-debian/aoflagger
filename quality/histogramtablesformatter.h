@@ -18,22 +18,22 @@ class HistogramTablesFormatter {
 
   enum HistogramType { TotalHistogram, RFIHistogram };
 
-  explicit HistogramTablesFormatter(const std::string &measurementSetName)
-      : _measurementSet(0),
+  explicit HistogramTablesFormatter(const std::string& measurementSetName)
+      : _measurementSet(nullptr),
         _measurementSetName(measurementSetName),
-        _typeTable(0),
-        _countTable(0) {}
+        _typeTable(nullptr),
+        _countTable(nullptr) {}
 
   ~HistogramTablesFormatter() { Close(); }
 
   void Close() {
-    if (_countTable != 0) {
+    if (_countTable != nullptr) {
       delete _countTable;
-      _countTable = 0;
+      _countTable = nullptr;
     }
-    if (_typeTable != 0) {
+    if (_typeTable != nullptr) {
       delete _typeTable;
-      _typeTable = 0;
+      _typeTable = nullptr;
     }
     closeMainTable();
   }
@@ -105,11 +105,11 @@ class HistogramTablesFormatter {
                   double count);
 
   void QueryHistogram(unsigned typeIndex,
-                      std::vector<HistogramItem> &histogram);
+                      std::vector<HistogramItem>& histogram);
 
   unsigned QueryTypeIndex(enum HistogramType type, unsigned polarizationIndex);
   bool QueryTypeIndex(enum HistogramType type, unsigned polarizationIndex,
-                      unsigned &destTypeIndex);
+                      unsigned& destTypeIndex);
   unsigned StoreOrQueryTypeIndex(enum HistogramType type,
                                  unsigned polarizationIndex) {
     unsigned typeIndex;
@@ -128,9 +128,9 @@ class HistogramTablesFormatter {
   }
 
  private:
-  HistogramTablesFormatter(const HistogramTablesFormatter &) =
+  HistogramTablesFormatter(const HistogramTablesFormatter&) =
       delete;  // don't allow copies
-  void operator=(const HistogramTablesFormatter &) =
+  void operator=(const HistogramTablesFormatter&) =
       delete;  // don't allow assignment
 
   const static std::string ColumnNameType;
@@ -141,19 +141,19 @@ class HistogramTablesFormatter {
   const static std::string ColumnNameBinEnd;
   const static std::string ColumnNameCount;
 
-  casacore::Table *_measurementSet;
+  casacore::Table* _measurementSet;
   const std::string _measurementSetName;
 
-  casacore::Table *_typeTable;
-  casacore::Table *_countTable;
+  casacore::Table* _typeTable;
+  casacore::Table* _countTable;
 
   bool hasOneEntry(unsigned typeIndex);
   void removeTypeEntry(enum HistogramType type, unsigned polarizationIndex);
   void removeEntries(enum TableKind table);
 
-  void addTimeColumn(casacore::TableDesc &tableDesc);
-  void addFrequencyColumn(casacore::TableDesc &tableDesc);
-  void addValueColumn(casacore::TableDesc &tableDesc);
+  void addTimeColumn(casacore::TableDesc& tableDesc);
+  void addFrequencyColumn(casacore::TableDesc& tableDesc);
+  void addValueColumn(casacore::TableDesc& tableDesc);
 
   void createTable(enum TableKind table) {
     switch (table) {
@@ -170,25 +170,25 @@ class HistogramTablesFormatter {
 
   void createTypeTable();
   void createCountTable();
-  unsigned findFreeTypeIndex(casacore::Table &typeTable);
+  unsigned findFreeTypeIndex(casacore::Table& typeTable);
 
   void openMainTable(bool needWrite);
   void closeMainTable() {
-    if (_measurementSet != 0) {
+    if (_measurementSet != nullptr) {
       delete _measurementSet;
-      _measurementSet = 0;
+      _measurementSet = nullptr;
     }
   }
 
-  void openTable(TableKind table, bool needWrite, casacore::Table **tablePtr);
+  void openTable(TableKind table, bool needWrite, casacore::Table** tablePtr);
   void openTypeTable(bool needWrite) {
     openTable(HistogramTypeTable, needWrite, &_typeTable);
   }
   void openCountTable(bool needWrite) {
     openTable(HistogramCountTable, needWrite, &_countTable);
   }
-  casacore::Table &getTable(TableKind table, bool needWrite) {
-    casacore::Table **tablePtr = 0;
+  casacore::Table& getTable(TableKind table, bool needWrite) {
+    casacore::Table** tablePtr = nullptr;
     switch (table) {
       case HistogramTypeTable:
         tablePtr = &_typeTable;

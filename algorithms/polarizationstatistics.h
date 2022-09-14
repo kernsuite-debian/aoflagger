@@ -6,18 +6,20 @@
 #include <string>
 #include <sstream>
 
-#include "../../structures/mask2d.h"
-#include "../../structures/timefrequencydata.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/mask2d.h"
+#include "../structures/timefrequencydata.h"
+#include "../structures/timefrequencymetadata.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
+
+namespace algorithms {
 
 class PolarizationStatistics {
  public:
   PolarizationStatistics() {}
   ~PolarizationStatistics() {}
 
-  void Add(const class TimeFrequencyData &data) {
+  void Add(const class TimeFrequencyData& data) {
     unsigned polarizationCount = data.PolarizationCount();
     if (_flaggedCounts.size() == 0) {
       _polarizations = data.Polarizations();
@@ -70,5 +72,7 @@ class PolarizationStatistics {
   std::vector<std::string> _names;
   std::vector<aocommon::PolarizationEnum> _polarizations;
 };
+
+}  // namespace algorithms
 
 #endif

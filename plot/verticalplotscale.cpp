@@ -1,5 +1,11 @@
 #include "verticalplotscale.h"
-#include "tickset.h"
+
+#include "ticksets/logarithmictickset.h"
+#include "ticksets/numerictickset.h"
+
+namespace {
+const std::string kFontName = "Sans";
+}
 
 VerticalPlotScale::VerticalPlotScale()
     : _plotWidth(0.0),
@@ -11,6 +17,8 @@ VerticalPlotScale::VerticalPlotScale()
       _metricsAreInitialized(false),
       _alignTo(nullptr),
       _tickSet(),
+      _axisType(AxisType::kNumeric),
+      _tickRange({0.0, 1.0}),
       _isLogarithmic(false),
       _drawWithDescription(true),
       _unitsCaption("y"),
@@ -19,19 +27,22 @@ VerticalPlotScale::VerticalPlotScale()
 
 VerticalPlotScale::~VerticalPlotScale() {}
 
-double VerticalPlotScale::GetTextHeight(
+double VerticalPlotScale::GetTickTextHeight(
     const Cairo::RefPtr<Cairo::Context>& cairo) {
-  Cairo::TextExtents extents;
-  cairo->get_text_extents("M", extents);
-  return extents.height;
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  layout->set_font_description(fontDescription);
+  layout->set_text("M");
+  return layout->get_pixel_logical_extents().get_height();
 }
 
 double VerticalPlotScale::UnitToAxis(double unitValue) const {
-  return _tickSet->UnitToAxis(unitValue);
+  return _tickSet ? _tickSet->UnitToAxis(unitValue) : 0.0;
 }
 
 double VerticalPlotScale::AxisToUnit(double axisValue) const {
-  return _tickSet->AxisToUnit(axisValue);
+  return _tickSet ? _tickSet->AxisToUnit(axisValue) : 0.0;
 }
 
 void VerticalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo,
@@ -39,54 +50,61 @@ void VerticalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo,
   offsetY += _fromTop;
   initializeMetrics(cairo);
   cairo->set_source_rgb(0.0, 0.0, 0.0);
-  cairo->set_font_size(_tickValuesFontSize);
   double x = _isSecondAxis ? offsetX : _width + offsetX;
   double tickX = _isSecondAxis ? 3 : -3;
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
   for (unsigned i = 0; i != _tickSet->Size(); ++i) {
     const Tick tick = _tickSet->GetTick(i);
     double y = getTickYPosition(tick);
     cairo->move_to(x + tickX, y + offsetY);
     cairo->line_to(x, y + offsetY);
-    Cairo::TextExtents extents;
-    cairo->get_text_extents(tick.second, extents);
+    layout->set_text(tick.second);
+    const Pango::Rectangle extents = layout->get_pixel_logical_extents();
     double textX;
     if (_isSecondAxis)
       textX = 8.0;
     else
-      textX = -extents.width - 8.0;
-    cairo->move_to(x + textX,
-                   y - extents.height / 2 - extents.y_bearing + offsetY);
-    cairo->show_text(tick.second);
+      textX = -extents.get_width() - 8.0;
+    cairo->move_to(x + textX, y - extents.get_height() / 2 -
+                                  extents.get_ascent() + offsetY);
+    layout->show_in_cairo_context(cairo);
   }
   cairo->stroke();
 
-  if (_drawWithDescription) drawUnits(cairo, offsetX, offsetY);
+  if (_drawWithDescription) drawDescription(cairo, offsetX, offsetY);
 }
 
-void VerticalPlotScale::drawUnits(const Cairo::RefPtr<Cairo::Context>& cairo,
-                                  double offsetX, double offsetY) {
+void VerticalPlotScale::drawDescription(
+    const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX,
+    double offsetY) {
   cairo->save();
-  cairo->set_font_size(_descriptionFontSize);
-  Cairo::TextExtents extents;
-  cairo->get_text_extents(_unitsCaption, extents);
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
+  layout->set_text(_unitsCaption);
+  const Pango::Rectangle extents = layout->get_pixel_logical_extents();
   double x = _isSecondAxis ? offsetX + 2 + _width - _captionSize : offsetX + 2;
-  cairo->translate(x - extents.y_bearing, offsetY + 0.7 * _plotHeight);
+  cairo->translate(x - extents.get_ascent(), offsetY + 0.7 * _plotHeight);
   cairo->rotate(M_PI * 1.5);
   cairo->move_to(0.0, 0.0);
-  cairo->show_text(_unitsCaption);
+  layout->show_in_cairo_context(cairo);
   cairo->stroke();
   cairo->restore();
 
   // Base of arrow
-  cairo->move_to(x + extents.height / 2.0, offsetY + _plotHeight * 0.9);
-  cairo->line_to(x + extents.height / 2.0, offsetY + _plotHeight * 0.725);
+  cairo->move_to(x + extents.get_height() / 2.0, offsetY + _plotHeight * 0.9);
+  cairo->line_to(x + extents.get_height() / 2.0, offsetY + _plotHeight * 0.725);
   cairo->stroke();
 
   // The arrow
-  cairo->move_to(x + extents.height / 2.0, offsetY + _plotHeight * 0.725);
-  cairo->line_to(x + 0.1 * extents.height, offsetY + _plotHeight * 0.75);
-  cairo->line_to(x + 0.5 * extents.height, offsetY + _plotHeight * 0.74);
-  cairo->line_to(x + 0.9 * extents.height, offsetY + _plotHeight * 0.75);
+  cairo->move_to(x + extents.get_height() / 2.0, offsetY + _plotHeight * 0.725);
+  cairo->line_to(x + 0.1 * extents.get_height(), offsetY + _plotHeight * 0.75);
+  cairo->line_to(x + 0.5 * extents.get_height(), offsetY + _plotHeight * 0.74);
+  cairo->line_to(x + 0.9 * extents.get_height(), offsetY + _plotHeight * 0.75);
   cairo->close_path();
   cairo->fill();
 }
@@ -107,21 +125,26 @@ void VerticalPlotScale::initializeMetrics(
       while (!ticksFit(cairo) && _tickSet->Size() > 2) {
         _tickSet->DecreaseTicks();
       }
-      cairo->set_font_size(_tickValuesFontSize);
-      double maxWidth = 0;
+      Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+      Pango::FontDescription fontDescription;
+      fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+      layout->set_font_description(fontDescription);
+      int maxWidth = 0;
       for (unsigned i = 0; i != _tickSet->Size(); ++i) {
         Tick tick = _tickSet->GetTick(i);
-        Cairo::TextExtents extents;
-        cairo->get_text_extents(tick.second, extents);
-        if (maxWidth < extents.width) maxWidth = extents.width;
+        layout->set_text(tick.second);
+        maxWidth =
+            std::max(maxWidth, layout->get_pixel_logical_extents().get_width());
       }
       _width = maxWidth + 10;
     }
     if (_drawWithDescription) {
-      cairo->set_font_size(_descriptionFontSize);
-      Cairo::TextExtents extents;
-      cairo->get_text_extents(_unitsCaption, extents);
-      _captionSize = extents.height;
+      Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+      Pango::FontDescription fontDescription;
+      fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
+      layout->set_font_description(fontDescription);
+      layout->set_text(_unitsCaption);
+      _captionSize = layout->get_pixel_logical_extents().get_height();
       _width += _captionSize;
     } else {
       _captionSize = 0.0;
@@ -130,15 +153,11 @@ void VerticalPlotScale::initializeMetrics(
   }
 }
 
-void VerticalPlotScale::InitializeNumericTicks(double min, double max) {
-  _tickSet.reset(new NumericTickSet(min, max, 25));
-  _isLogarithmic = false;
-  _metricsAreInitialized = false;
-}
-
-void VerticalPlotScale::InitializeLogarithmicTicks(double min, double max) {
-  _tickSet.reset(new LogarithmicTickSet(min, max, 25));
-  _isLogarithmic = true;
+void VerticalPlotScale::InitializeTicks() {
+  if (_isLogarithmic)
+    _tickSet.reset(new LogarithmicTickSet(_tickRange[0], _tickRange[1], 25));
+  else
+    _tickSet.reset(new NumericTickSet(_tickRange[0], _tickRange[1], 25));
   _metricsAreInitialized = false;
 }
 

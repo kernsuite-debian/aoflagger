@@ -1,9 +1,9 @@
 #include "pythonstrategy.h"
 
-#include "../../lua/data.h"
-#include "../../lua/functions.h"
+#include "../lua/data.h"
+#include "../lua/functions.h"
 
-#include "../../python/pyfunctions.h"
+#include "../python/pyfunctions.h"
 
 #include <boost/filesystem.hpp>
 

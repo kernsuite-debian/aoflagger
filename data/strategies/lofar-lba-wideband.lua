@@ -1,9 +1,9 @@
 --[[
- This is a LBA AOFlagger strategy for combined subbands, version 2021-01-13
+ This is a LBA AOFlagger strategy for combined subbands, version 2021-03-30
  Author: André Offringa
 ]]--
 
-aoflagger.require_min_version("3.0.3")
+aoflagger.require_min_version("3.1")
 
 function execute(input)
 
@@ -47,11 +47,12 @@ function execute(input)
   for ipol,polarization in ipairs(flag_polarizations) do
  
     local pol_data = input:convert_to_polarization(polarization)
+    local original_data
 
     for _,representation in ipairs(flag_representations) do
 
       data = pol_data:convert_to_complex(representation)
-      local original_data = data:copy()
+      original_data = data:copy()
 
       for i=1,iteration_count-1 do
         local threshold_factor = math.pow(threshold_factor_step, iteration_count-i)
@@ -98,7 +99,11 @@ function execute(input)
       end
     end -- end of complex representation iteration
 
-    -- Helper function used in the strategy
+    if(exclude_original_flags) then
+      data:join_mask(original_data)
+    end
+
+    -- Helper function used below
     function contains(arr, val)
       for _,v in ipairs(arr) do
         if v == val then return true end

@@ -2,11 +2,9 @@
 
 #include <glibmm/miscutils.h>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-
 #include <boost/algorithm/string.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 #include "../lua/default-strategy.h"
@@ -17,24 +15,24 @@ Settings::Settings() {
 }
 
 std::string Settings::getConfigFilename() {
-  return (boost::filesystem::path(GetConfigDir()) / "settings").string();
+  return (std::filesystem::path(GetConfigDir()) / "settings").string();
 }
 
 std::string Settings::GetStrategyFilename() const {
-  return (boost::filesystem::path(GetConfigDir()) / "strategy.lua").string();
+  return (std::filesystem::path(GetConfigDir()) / "strategy.lua").string();
 }
 
 std::string Settings::GetConfigDir() {
-  boost::filesystem::path configPath =
-      boost::filesystem::path(Glib::get_user_config_dir()) / "aoflagger";
-  if (!boost::filesystem::is_directory(configPath))
-    boost::filesystem::create_directory(configPath);
+  std::filesystem::path configPath =
+      std::filesystem::path(Glib::get_user_config_dir()) / "aoflagger";
+  if (!std::filesystem::is_directory(configPath))
+    std::filesystem::create_directory(configPath);
   return configPath.string();
 }
 
 void Settings::InitializeWorkStrategy() {
   std::string filename = GetStrategyFilename();
-  // if(!boost::filesystem::exists(filename))
+  // if(!std::filesystem::exists(filename))
   //{
   std::ofstream str(filename);
   str.write(reinterpret_cast<const char*>(data_strategies_generic_default_lua),
@@ -48,7 +46,7 @@ void Settings::InitializeWorkStrategy() {
 
 void Settings::Load() {
   std::string configFilename = getConfigFilename();
-  if (boost::filesystem::exists(configFilename)) {
+  if (std::filesystem::exists(configFilename)) {
     std::ifstream file(configFilename);
     std::string line;
     std::getline(file, line);

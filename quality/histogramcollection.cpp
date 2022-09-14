@@ -2,7 +2,7 @@
 
 #include "histogramtablesformatter.h"
 
-void HistogramCollection::Save(HistogramTablesFormatter &histogramTables) {
+void HistogramCollection::Save(HistogramTablesFormatter& histogramTables) {
   histogramTables.InitializeEmptyTables();
   for (size_t p = 0; p < _polarizationCount; ++p) {
     LogHistogram totalHistogram;
@@ -27,7 +27,7 @@ void HistogramCollection::Save(HistogramTablesFormatter &histogramTables) {
   }
 }
 
-void HistogramCollection::Load(HistogramTablesFormatter &histogramTables) {
+void HistogramCollection::Load(HistogramTablesFormatter& histogramTables) {
   Clear();
   for (unsigned p = 0; p < _polarizationCount; ++p) {
     const unsigned totalHistogramIndex = histogramTables.QueryTypeIndex(
@@ -47,9 +47,9 @@ void HistogramCollection::Load(HistogramTablesFormatter &histogramTables) {
 void HistogramCollection::Add(const unsigned antenna1, const unsigned antenna2,
                               const unsigned polarization, Image2DCPtr image,
                               Mask2DCPtr flagMask) {
-  LogHistogram &totalHistogram =
+  LogHistogram& totalHistogram =
       GetTotalHistogram(antenna1, antenna2, polarization);
-  LogHistogram &rfiHistogram =
+  LogHistogram& rfiHistogram =
       GetRFIHistogram(antenna1, antenna2, polarization);
 
   for (size_t y = 0; y < image->Height(); ++y) {
@@ -64,9 +64,9 @@ void HistogramCollection::Add(const unsigned antenna1, const unsigned antenna2,
 void HistogramCollection::Add(const unsigned antenna1, const unsigned antenna2,
                               const unsigned polarization, Image2DCPtr image,
                               Mask2DCPtr flagMask, Mask2DCPtr correlatorMask) {
-  LogHistogram &totalHistogram =
+  LogHistogram& totalHistogram =
       GetTotalHistogram(antenna1, antenna2, polarization);
-  LogHistogram &rfiHistogram =
+  LogHistogram& rfiHistogram =
       GetRFIHistogram(antenna1, antenna2, polarization);
 
   for (size_t y = 0; y < image->Height(); ++y) {
@@ -84,9 +84,9 @@ void HistogramCollection::Add(const unsigned antenna1, const unsigned antenna2,
                               const unsigned polarization, Image2DCPtr real,
                               Image2DCPtr imaginary, Mask2DCPtr flagMask,
                               Mask2DCPtr correlatorMask) {
-  LogHistogram &totalHistogram =
+  LogHistogram& totalHistogram =
       GetTotalHistogram(antenna1, antenna2, polarization);
-  LogHistogram &rfiHistogram =
+  LogHistogram& rfiHistogram =
       GetRFIHistogram(antenna1, antenna2, polarization);
 
   for (size_t y = 0; y < real->Height(); ++y) {

@@ -3,7 +3,7 @@
 
 #include <cstring>
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class ImageSet;
 
@@ -40,6 +40,6 @@ class ImageSetIndex final {
   size_t _n, _value;
   bool _hasWrapped;
 };
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

@@ -77,7 +77,7 @@ class TimeFrequencyData {
     }
   }
 
-  TimeFrequencyData(aocommon::PolarizationEnum* polarizations,
+  TimeFrequencyData(const aocommon::PolarizationEnum* polarizations,
                     size_t polarizationCount, Image2DCPtr* realImages,
                     Image2DCPtr* imaginaryImages)
       : _complexRepresentation(ComplexParts) {
@@ -86,7 +86,7 @@ class TimeFrequencyData {
       _data.emplace_back(polarizations[p], realImages[p], imaginaryImages[p]);
   }
 
-  TimeFrequencyData(aocommon::PolarizationEnum* polarizations,
+  TimeFrequencyData(const aocommon::PolarizationEnum* polarizations,
                     size_t polarizationCount, Image2DPtr* realImages,
                     Image2DPtr* imaginaryImages)
       : _complexRepresentation(ComplexParts) {

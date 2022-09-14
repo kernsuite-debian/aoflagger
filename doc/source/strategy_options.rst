@@ -6,10 +6,12 @@ Strategy option list
 The following table lists all the options that can be set when implementing the :meth:`options` function.
 
 ============================ =======     =========== 
-option‑‑‑‑‑‑‑‑‑‑             type        description
+option                       type        description
 ============================ =======     ===========
 bands                        table       List of integer (zero-indexed) band ids to process.
 baselines                    string      ``"auto"``, ``"cross"`` or ``"all"`` for selecting auto/cross-correlations or both.
+baseline-integration         string      Average baselines together to a single dynamic spectrum, with a specified method. Allowed
+                                         values are: ``"count"``, ``"average"``, ``"average-abs"``, ``"squared"`` or ``"stddev"``.
 chunk-size                   integer     When not zero, ``aoflagger`` will process the data in chunks with the given maximum
                                          chunk size.
 column-name                  string      What data column to use, e.g. ``"DATA"``, ``"CORRECTED_DATA"``. etc.

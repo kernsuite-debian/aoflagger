@@ -13,13 +13,13 @@
 struct stat;
 class StatisticsDerivator {
  public:
-  explicit StatisticsDerivator(const StatisticsCollection &collection)
+  explicit StatisticsDerivator(const StatisticsCollection& collection)
       : _collection(collection) {}
 
   std::complex<long double> GetComplexBaselineStatistic(
       QualityTablesFormatter::StatisticKind kind, unsigned antenna1,
       unsigned antenna2, unsigned polarization) const {
-    const DefaultStatistics &statistics =
+    const DefaultStatistics& statistics =
         _collection.BaselineStatistics().GetStatistics(antenna1, antenna2);
     return deriveComplex<long double>(kind, statistics, polarization);
   }
@@ -27,7 +27,7 @@ class StatisticsDerivator {
   std::complex<long double> GetComplexTimeStatistic(
       QualityTablesFormatter::StatisticKind kind, double time,
       unsigned polarization) const {
-    const DefaultStatistics &statistics =
+    const DefaultStatistics& statistics =
         _collection.TimeStatistics().find(time)->second;
     return deriveComplex<long double>(kind, statistics, polarization);
   }
@@ -35,20 +35,20 @@ class StatisticsDerivator {
   std::complex<long double> GetComplexFrequencyStatistic(
       QualityTablesFormatter::StatisticKind kind, double frequency,
       unsigned polarization) const {
-    const DefaultStatistics &statistics =
+    const DefaultStatistics& statistics =
         _collection.FrequencyStatistics().find(frequency)->second;
     return deriveComplex<long double>(kind, statistics, polarization);
   }
 
   static std::complex<long double> GetComplexStatistic(
       QualityTablesFormatter::StatisticKind kind,
-      const DefaultStatistics &statistics, unsigned polarization) {
+      const DefaultStatistics& statistics, unsigned polarization) {
     return deriveComplex<long double>(kind, statistics, polarization);
   }
 
   static long double GetStatisticAmplitude(
       QualityTablesFormatter::StatisticKind kind,
-      const DefaultStatistics &statistics, unsigned polarization) {
+      const DefaultStatistics& statistics, unsigned polarization) {
     const std::complex<long double> val =
         GetComplexStatistic(kind, statistics, polarization);
     return sqrtl(val.real() * val.real() + val.imag() * val.imag());
@@ -79,18 +79,18 @@ class StatisticsDerivator {
 
   std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> CreateTFData(
       QualityTablesFormatter::StatisticKind kind) {
-    const std::map<double, std::map<double, DefaultStatistics> > &map =
+    const std::map<double, std::map<double, DefaultStatistics>>& map =
         _collection.AllTimeStatistics();
     std::set<double> frequencies;
     std::set<double> timesteps;
     // List the frequencies and timesteps
-    for (std::map<double, std::map<double, DefaultStatistics> >::const_iterator
+    for (std::map<double, std::map<double, DefaultStatistics>>::const_iterator
              i = map.begin();
          i != map.end(); ++i) {
       const double frequency = i->first;
       frequencies.insert(frequency);
 
-      const std::map<double, DefaultStatistics> &innerMap = i->second;
+      const std::map<double, DefaultStatistics>& innerMap = i->second;
       for (std::map<double, DefaultStatistics>::const_iterator j =
                innerMap.begin();
            j != innerMap.end(); ++j) {
@@ -133,13 +133,13 @@ class StatisticsDerivator {
     }
 
     // add the statistis
-    for (std::map<double, std::map<double, DefaultStatistics> >::const_iterator
+    for (std::map<double, std::map<double, DefaultStatistics>>::const_iterator
              i = map.begin();
          i != map.end(); ++i) {
       const double frequency = i->first;
       const size_t freqIndex = freqIndices.find(frequency)->second;
 
-      const std::map<double, DefaultStatistics> &innerMap = i->second;
+      const std::map<double, DefaultStatistics>& innerMap = i->second;
       for (std::map<double, DefaultStatistics>::const_iterator j =
                innerMap.begin();
            j != innerMap.end(); ++j) {
@@ -156,7 +156,7 @@ class StatisticsDerivator {
       }
     }
     TimeFrequencyData data = TimeFrequencyData::FromLinear(
-        pCount, (Image2DCPtr *)&(realImage[0]), (Image2DCPtr *)&(imagImage[0]));
+        pCount, (Image2DCPtr*)&(realImage[0]), (Image2DCPtr*)&(imagImage[0]));
     data.SetGlobalMask(mask);
     TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
     metaData->SetObservationTimes(observationTimes);
@@ -232,7 +232,7 @@ class StatisticsDerivator {
   template <typename T>
   static std::complex<T> deriveComplex(
       QualityTablesFormatter::StatisticKind kind,
-      const DefaultStatistics &statistics, unsigned polarization) {
+      const DefaultStatistics& statistics, unsigned polarization) {
     switch (kind) {
       case QualityTablesFormatter::CountStatistic:
         return std::complex<T>(statistics.count[polarization], 0.0);
@@ -336,7 +336,7 @@ class StatisticsDerivator {
     return sqrt((sumP2 - sumMeanSquared) / n);
   }
 
-  const StatisticsCollection &_collection;
+  const StatisticsCollection& _collection;
 };
 
 #endif

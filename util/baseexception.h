@@ -25,7 +25,7 @@ class BaseException : public std::runtime_error {
    * @param description The description that should describe the cause of the
    * exception.
    */
-  explicit BaseException(const std::string &description) noexcept
+  explicit BaseException(const std::string& description) noexcept
       : std::runtime_error(description) {}
 
   /**
@@ -50,7 +50,7 @@ class IOException : public BaseException {
    * Constructor that initialises the IOException with a description
    * @param description The description of the Input/Output exception
    */
-  explicit IOException(const std::string &description) noexcept
+  explicit IOException(const std::string& description) noexcept
       : BaseException(description) {}
 };
 
@@ -63,7 +63,7 @@ class ConfigurationException : public BaseException {
    * Constructor that initialises the ConfigurationException with a description
    * @param description The description of the configuration error
    */
-  explicit ConfigurationException(const std::string &description) noexcept
+  explicit ConfigurationException(const std::string& description) noexcept
       : BaseException(description) {}
 };
 
@@ -76,7 +76,7 @@ class BadUsageException : public BaseException {
    * Constructor that initialises the BadUsageException with a description
    * @param description The description of the incorrect usage
    */
-  explicit BadUsageException(const std::string &description) noexcept
+  explicit BadUsageException(const std::string& description) noexcept
       : BaseException(description) {}
 };
 #endif

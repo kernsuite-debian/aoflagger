@@ -12,8 +12,8 @@
 Model::Model() : _noiseSigma(1.0), _sourceSigma(0.0), _integrationTime(15.0) {}
 
 template <typename T>
-void Model::SimulateObservation(struct OutputReceiver<T> &receiver,
-                                Observatorium &observatorium,
+void Model::SimulateObservation(struct OutputReceiver<T>& receiver,
+                                Observatorium& observatorium,
                                 num_t delayDirectionDEC,
                                 num_t delayDirectionRA) {
   const size_t channelCount = observatorium.BandInfo().channels.size();
@@ -40,15 +40,15 @@ void Model::SimulateObservation(struct OutputReceiver<T> &receiver,
 }
 
 template void Model::SimulateObservation(
-    struct OutputReceiver<UVImager> &receiver, Observatorium &observatorium,
+    struct OutputReceiver<UVImager>& receiver, Observatorium& observatorium,
     num_t delayDirectionDEC, num_t delayDirectionRA);
 template void Model::SimulateObservation(
-    struct OutputReceiver<TimeFrequencyData> &receiver,
-    Observatorium &observatorium, num_t delayDirectionDEC,
+    struct OutputReceiver<TimeFrequencyData>& receiver,
+    Observatorium& observatorium, num_t delayDirectionDEC,
     num_t delayDirectionRA);
 
 std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr>
-Model::SimulateObservation(size_t nTimes, class Observatorium &observatorium,
+Model::SimulateObservation(size_t nTimes, class Observatorium& observatorium,
                            num_t delayDirectionDEC, num_t delayDirectionRA,
                            size_t a1, size_t a2) {
   const size_t channelCount = observatorium.BandInfo().channels.size();
@@ -109,7 +109,7 @@ Model::SimulateObservation(size_t nTimes, class Observatorium &observatorium,
 }
 
 template <typename T>
-void Model::SimulateCorrelation(struct OutputReceiver<T> &receiver,
+void Model::SimulateCorrelation(struct OutputReceiver<T>& receiver,
                                 num_t delayDirectionDEC, num_t delayDirectionRA,
                                 num_t dx, num_t dy, num_t dz, num_t frequency,
                                 num_t channelWidth, size_t nTimes,
@@ -135,21 +135,21 @@ void Model::SimulateCorrelation(struct OutputReceiver<T> &receiver,
 }
 
 template void Model::SimulateCorrelation(
-    struct OutputReceiver<UVImager> &receiver, num_t delayDirectionDEC,
+    struct OutputReceiver<UVImager>& receiver, num_t delayDirectionDEC,
     num_t delayDirectionRA, num_t dx, num_t dy, num_t dz, num_t frequency,
     num_t channelWidth, size_t nTimes, double integrationTime);
 
 void Model::SimulateAntenna(double time, num_t delayDirectionDEC,
                             num_t delayDirectionRA, num_t dx, num_t dy,
-                            num_t frequency, num_t earthLattitude, num_t &r,
-                            num_t &i) {
+                            num_t frequency, num_t earthLattitude, num_t& r,
+                            num_t& i) {
   r = 0.0;
   i = 0.0;
   num_t delayW = GetWPosition(delayDirectionDEC, delayDirectionRA, frequency,
                               earthLattitude, dx, dy);
-  for (std::vector<Source *>::const_iterator iter = _sources.begin();
+  for (std::vector<Source*>::const_iterator iter = _sources.begin();
        iter != _sources.end(); ++iter) {
-    Source &source = **iter;
+    Source& source = **iter;
     num_t w = GetWPosition(source.Dec(time), source.Ra(time), frequency,
                            earthLattitude, dx, dy);
     num_t fieldStrength =
@@ -166,7 +166,7 @@ void Model::SimulateAntenna(double time, num_t delayDirectionDEC,
 void Model::SimulateUncoherentAntenna(double time, num_t delayDirectionDEC,
                                       num_t delayDirectionRA, num_t dx,
                                       num_t dy, num_t frequency,
-                                      num_t earthLattitude, num_t &r, num_t &i,
+                                      num_t earthLattitude, num_t& r, num_t& i,
                                       size_t index) {
   num_t delayW = GetWPosition(delayDirectionDEC, delayDirectionRA, frequency,
                               earthLattitude, dx, dy);
@@ -179,7 +179,7 @@ void Model::SimulateUncoherentAntenna(double time, num_t delayDirectionDEC,
   noisei *= _noiseSigma;
   //}
   // else {
-  Source &source = *_sources[index % _sources.size()];
+  Source& source = *_sources[index % _sources.size()];
   num_t w = GetWPosition(source.Dec(time), source.Ra(time), frequency,
                          earthLattitude, dx, dy);
   num_t fieldStrength =
@@ -189,7 +189,7 @@ void Model::SimulateUncoherentAntenna(double time, num_t delayDirectionDEC,
   //}
 }
 
-void Model::GetUVPosition(num_t &u, num_t &v, num_t earthLattitudeAngle,
+void Model::GetUVPosition(num_t& u, num_t& v, num_t earthLattitudeAngle,
                           num_t delayDirectionDEC, num_t delayDirectionRA,
                           num_t dx, num_t dy, num_t dz, num_t wavelength) {
   // Rotate baseline plane towards phase center, first rotate around z axis,
@@ -250,10 +250,6 @@ void Model::loadUrsaMajorDistortingSource(double ra, double dec, double factor,
     ra += 0.002;
   }
   AddSource(dec - 0.12800 * factor, ra + 0.015 + 0.015 * factor, 4.0);
-}
-
-void Model::loadOnAxisSource(double ra, double dec, double factor) {
-  AddSource(dec - 0.01280 * factor, ra + 0.0015 + 0.0015 * factor, 4.0);
 }
 
 void Model::loadUrsaMajorDistortingVariableSource(double ra, double dec,

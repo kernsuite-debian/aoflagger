@@ -1,19 +1,19 @@
 #include "bhfitsimageset.h"
 
-#include "../../msio/fitsfile.h"
-#include "../../structures/image2d.h"
-#include "../../structures/timefrequencydata.h"
+#include "../msio/fitsfile.h"
+#include "../structures/image2d.h"
+#include "../structures/timefrequencydata.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
-BHFitsImageSet::BHFitsImageSet(const std::string &file)
+BHFitsImageSet::BHFitsImageSet(const std::string& file)
     : ImageSet(), _file(new FitsFile(file)), _width(0), _height(0) {
   Logger::Debug << "Opening bhfits file: '" << file << "'\n";
   try {
     _file->Open(FitsFile::ReadWriteMode);
-  } catch (FitsIOException &exception) {
+  } catch (FitsIOException& exception) {
     Logger::Error
         << "CFitsio failed to open file in RW mode with the following error:\n"
         << exception.what()
@@ -23,7 +23,7 @@ BHFitsImageSet::BHFitsImageSet(const std::string &file)
   }
 }
 
-BHFitsImageSet::BHFitsImageSet(const BHFitsImageSet &source)
+BHFitsImageSet::BHFitsImageSet(const BHFitsImageSet& source)
     : ImageSet(),
       _file(source._file),
       _baselineData(source._baselineData),
@@ -31,7 +31,7 @@ BHFitsImageSet::BHFitsImageSet(const BHFitsImageSet &source)
       _width(source._width),
       _height(source._height) {}
 
-BHFitsImageSet::~BHFitsImageSet() {}
+BHFitsImageSet::~BHFitsImageSet() = default;
 
 std::unique_ptr<ImageSet> BHFitsImageSet::Clone() {
   return std::unique_ptr<BHFitsImageSet>(new BHFitsImageSet(*this));
@@ -114,16 +114,16 @@ void BHFitsImageSet::Initialize() {
   }
 }
 
-BaselineData BHFitsImageSet::loadData(const ImageSetIndex &index) {
+BaselineData BHFitsImageSet::loadData(const ImageSetIndex& index) {
   TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
   TimeFrequencyData data;
   loadImageData(data, metaData, index);
   return BaselineData(data, metaData, index);
 }
 
-void BHFitsImageSet::loadImageData(TimeFrequencyData &data,
-                                   const TimeFrequencyMetaDataPtr &metaData,
-                                   const ImageSetIndex &index) {
+void BHFitsImageSet::loadImageData(TimeFrequencyData& data,
+                                   const TimeFrequencyMetaDataPtr& metaData,
+                                   const ImageSetIndex& index) {
   std::vector<num_t> buffer(_width * _height);
   _file->ReadCurrentImageData(0, &buffer[0], _width * _height);
 
@@ -165,7 +165,7 @@ void BHFitsImageSet::loadImageData(TimeFrequencyData &data,
       }
     }
     data.SetGlobalMask(mask);
-  } catch (std::exception &) {
+  } catch (std::exception&) {
     // Flag file could not be read; probably does not exist. Ignore this, flags
     // will be initialized to false.
   }
@@ -197,7 +197,7 @@ void BHFitsImageSet::loadImageData(TimeFrequencyData &data,
 }
 
 std::pair<int, int> BHFitsImageSet::getRangeFromString(
-    const std::string &rangeStr) {
+    const std::string& rangeStr) {
   std::pair<int, int> value;
   size_t partA = rangeStr.find(' ');
   value.first = atoi(rangeStr.substr(0, partA).c_str());
@@ -216,8 +216,8 @@ std::string BHFitsImageSet::flagFilePath() const {
   return flagFilePath;
 }
 
-void BHFitsImageSet::AddWriteFlagsTask(const ImageSetIndex &index,
-                                       std::vector<Mask2DCPtr> &flags) {
+void BHFitsImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
+                                       std::vector<Mask2DCPtr>& flags) {
   if (flags.size() != 1)
     throw std::runtime_error(
         "BHFitsImageSet::AddWriteFlagsTask() called with multiple flags");
@@ -229,7 +229,7 @@ void BHFitsImageSet::AddWriteFlagsTask(const ImageSetIndex &index,
   try {
     flagFile.Open(FitsFile::ReadWriteMode);
     newFile = false;
-  } catch (std::exception &) {
+  } catch (std::exception&) {
     Logger::Debug << "File did not exist yet, creating new.\n";
     flagFile.Create();
     flagFile.AppendImageHUD(FitsFile::Float32ImageType, _height, _width);
@@ -259,7 +259,7 @@ void BHFitsImageSet::PerformWriteFlagsTask() {
   // Nothing to do; already written
 }
 
-std::string BHFitsImageSet::Description(const ImageSetIndex &index) const {
+std::string BHFitsImageSet::Description(const ImageSetIndex& index) const {
   std::ostringstream str;
   str << "Time range " << RangeName(index.Value());
   return str.str();
@@ -268,4 +268,4 @@ std::string BHFitsImageSet::Description(const ImageSetIndex &index) const {
 std::vector<std::string> BHFitsImageSet::Files() const {
   return std::vector<std::string>{_file->Filename()};
 }
-}  // namespace rfiStrategy
+}  // namespace imagesets

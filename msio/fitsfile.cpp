@@ -10,8 +10,8 @@
 
 #include "../util/logger.h"
 
-FitsFile::FitsFile(const std::string &filename)
-    : _filename(filename), _fptr(0), _isOpen(false) {}
+FitsFile::FitsFile(const std::string& filename)
+    : _filename(filename), _fptr(nullptr), _isOpen(false) {}
 
 FitsFile::~FitsFile() {
   if (_isOpen) Close();
@@ -76,7 +76,7 @@ void FitsFile::Close() {
     fits_close_file(_fptr, &status);
     CheckStatus(status);
     _isOpen = false;
-    _fptr = 0;
+    _fptr = nullptr;
   } else {
     throw FitsIOException("Non-opened file was closed");
   }
@@ -100,7 +100,7 @@ int FitsFile::GetCurrentHDU() {
 void FitsFile::MoveToHDU(int hduNumber) {
   CheckOpen();
   int status = 0;
-  fits_movabs_hdu(_fptr, hduNumber, NULL, &status);
+  fits_movabs_hdu(_fptr, hduNumber, nullptr, &status);
   CheckStatus(status);
 }
 
@@ -167,7 +167,7 @@ long FitsFile::GetCurrentImageSize(int dimension) {
   if (dimension > GetCurrentImageDimensionCount())
     throw FitsIOException("Parameter outside range");
   int status = 0;
-  long *sizes = new long[dimension];
+  long* sizes = new long[dimension];
   fits_get_img_size(_fptr, dimension, sizes, &status);
   long size = sizes[dimension - 1];
   delete[] sizes;
@@ -175,16 +175,16 @@ long FitsFile::GetCurrentImageSize(int dimension) {
   return size;
 }
 
-void FitsFile::ReadCurrentImageData(long startPos, num_t *buffer,
+void FitsFile::ReadCurrentImageData(long startPos, num_t* buffer,
                                     long bufferSize, long double nullValue) {
   CheckOpen();
   int status = 0, dimensions = GetCurrentImageDimensionCount();
-  long *firstpixel = new long[dimensions];
+  long* firstpixel = new long[dimensions];
   for (int i = 0; i < dimensions; i++) {
     firstpixel[i] = 1 + startPos % GetCurrentImageSize(i + 1);
     startPos = startPos / GetCurrentImageSize(i + 1);
   }
-  double *dblbuffer = new double[bufferSize];
+  double* dblbuffer = new double[bufferSize];
   double dblNullValue = nullValue;
   int anynul = 0;
   fits_read_pix(_fptr, TDOUBLE, firstpixel, bufferSize, &dblNullValue,
@@ -218,7 +218,7 @@ void FitsFile::AppendImageHUD(enum FitsFile::ImageType imageType, long width,
     default:
       throw FitsIOException("?");
   }
-  long *naxes = new long[2];
+  long* naxes = new long[2];
   naxes[0] = width;
   naxes[1] = height;
   fits_create_img(_fptr, bitPixInt, 2, naxes, &status);
@@ -226,11 +226,11 @@ void FitsFile::AppendImageHUD(enum FitsFile::ImageType imageType, long width,
   CheckStatus(status);
 }
 
-void FitsFile::WriteImage(long startPos, double *buffer, long bufferSize,
+void FitsFile::WriteImage(long startPos, double* buffer, long bufferSize,
                           double nullValue) {
   CheckOpen();
   int status = 0, dimensions = GetCurrentImageDimensionCount();
-  long *firstpixel = new long[dimensions];
+  long* firstpixel = new long[dimensions];
   for (int i = 0; i < dimensions; i++) {
     firstpixel[i] = 1 + startPos % GetCurrentImageSize(i + 1);
     startPos = startPos / GetCurrentImageSize(i + 1);
@@ -241,11 +241,11 @@ void FitsFile::WriteImage(long startPos, double *buffer, long bufferSize,
   CheckStatus(status);
 }
 
-void FitsFile::WriteImage(long startPos, float *buffer, long bufferSize,
+void FitsFile::WriteImage(long startPos, float* buffer, long bufferSize,
                           float nullValue) {
   CheckOpen();
   int status = 0, dimensions = GetCurrentImageDimensionCount();
-  long *firstpixel = new long[dimensions];
+  long* firstpixel = new long[dimensions];
   for (int i = 0; i < dimensions; i++) {
     firstpixel[i] = 1 + startPos % GetCurrentImageSize(i + 1);
     startPos = startPos / GetCurrentImageSize(i + 1);
@@ -267,7 +267,7 @@ int FitsFile::GetRowCount() {
 
 int FitsFile::GetKeywordCount() {
   int status = 0, keysexist;
-  fits_get_hdrspace(_fptr, &keysexist, NULL, &status);
+  fits_get_hdrspace(_fptr, &keysexist, nullptr, &status);
   CheckStatus(status);
   return keysexist;
 }
@@ -275,7 +275,7 @@ int FitsFile::GetKeywordCount() {
 std::string FitsFile::GetKeyword(int keywordNumber) {
   char keyName[FLEN_KEYWORD], keyValue[FLEN_VALUE];
   int status = 0;
-  fits_read_keyn(_fptr, keywordNumber, keyName, keyValue, NULL, &status);
+  fits_read_keyn(_fptr, keywordNumber, keyName, keyValue, nullptr, &status);
   CheckStatus(status);
   return std::string(keyName);
 }
@@ -283,7 +283,7 @@ std::string FitsFile::GetKeyword(int keywordNumber) {
 std::string FitsFile::GetKeywordValue(int keywordNumber) {
   char keyName[FLEN_KEYWORD], keyValue[FLEN_VALUE];
   int status = 0;
-  fits_read_keyn(_fptr, keywordNumber, keyName, keyValue, NULL, &status);
+  fits_read_keyn(_fptr, keywordNumber, keyName, keyValue, nullptr, &status);
   CheckStatus(status);
   std::string val(keyValue);
   if (val.length() >= 2 && *val.begin() == '\'' && *val.rbegin() == '\'') {
@@ -293,12 +293,12 @@ std::string FitsFile::GetKeywordValue(int keywordNumber) {
   return val;
 }
 
-bool FitsFile::GetKeywordValue(const std::string &keywordName,
-                               std::string &value) {
+bool FitsFile::GetKeywordValue(const std::string& keywordName,
+                               std::string& value) {
   char keyValue[FLEN_VALUE];
   int status = 0;
-  fits_read_keyword(_fptr, const_cast<char *>(keywordName.c_str()), keyValue,
-                    NULL, &status);
+  fits_read_keyword(_fptr, const_cast<char*>(keywordName.c_str()), keyValue,
+                    nullptr, &status);
   if (status == 0) {
     value = std::string(keyValue);
     if (value.length() >= 2 && *value.begin() == '\'' &&
@@ -312,11 +312,11 @@ bool FitsFile::GetKeywordValue(const std::string &keywordName,
   }
 }
 
-std::string FitsFile::GetKeywordValue(const std::string &keywordName) {
+std::string FitsFile::GetKeywordValue(const std::string& keywordName) {
   char keyValue[FLEN_VALUE];
   int status = 0;
-  fits_read_keyword(_fptr, const_cast<char *>(keywordName.c_str()), keyValue,
-                    NULL, &status);
+  fits_read_keyword(_fptr, const_cast<char*>(keywordName.c_str()), keyValue,
+                    nullptr, &status);
   CheckStatus(status);
   std::string val(keyValue);
   if (val.length() >= 2 && *val.begin() == '\'' && *val.rbegin() == '\'') {
@@ -355,7 +355,7 @@ int FitsFile::GetIntKeywordValue(int keywordNumber) {
   return atoi(GetKeyword(keywordNumber).c_str());
 }
 
-int FitsFile::GetIntKeywordValue(const std::string &keywordName) {
+int FitsFile::GetIntKeywordValue(const std::string& keywordName) {
   return atoi(GetKeywordValue(keywordName).c_str());
 }
 
@@ -363,14 +363,14 @@ double FitsFile::GetDoubleKeywordValue(int keywordNumber) {
   return atof(GetKeyword(keywordNumber).c_str());
 }
 
-double FitsFile::GetDoubleKeywordValue(const std::string &keywordName) {
+double FitsFile::GetDoubleKeywordValue(const std::string& keywordName) {
   return atof(GetKeywordValue(keywordName).c_str());
 }
 
 bool FitsFile::HasGroups() {
   try {
     return GetKeywordValue("GROUPS") == "T";
-  } catch (FitsIOException &e) {
+  } catch (FitsIOException& e) {
     return false;
   }
 }
@@ -398,10 +398,10 @@ long FitsFile::GetGroupSize() {
 }
 
 void FitsFile::ReadGroupParameters(long groupIndex,
-                                   long double *parametersData) {
+                                   long double* parametersData) {
   int status = 0;
   long pSize = GetParameterCount();
-  double *parameters = new double[pSize];
+  double* parameters = new double[pSize];
 
   fits_read_grppar_dbl(_fptr, groupIndex + 1, 1, pSize, parameters, &status);
   CheckStatus(status);
@@ -411,11 +411,11 @@ void FitsFile::ReadGroupParameters(long groupIndex,
   delete[] parameters;
 }
 
-void FitsFile::ReadGroup(long groupIndex, long double *groupData) {
+void FitsFile::ReadGroup(long groupIndex, long double* groupData) {
   int status = 0;
   long size = GetImageSize();
   long pSize = GetParameterCount();
-  double *parameters = new double[pSize];
+  double* parameters = new double[pSize];
   double nulValue = std::numeric_limits<double>::quiet_NaN();
   int anynul = 0;
 
@@ -425,7 +425,7 @@ void FitsFile::ReadGroup(long groupIndex, long double *groupData) {
   for (long i = 0; i < pSize; ++i) groupData[i] = parameters[i];
 
   delete[] parameters;
-  double *data = new double[size];
+  double* data = new double[size];
 
   fits_read_img_dbl(_fptr, groupIndex + 1, 1, size, nulValue, data, &anynul,
                     &status);
@@ -438,13 +438,13 @@ void FitsFile::ReadGroup(long groupIndex, long double *groupData) {
   if (anynul != 0) Logger::Warn << "There were nulls in the group\n";
 }
 
-void FitsFile::ReadGroupData(long groupIndex, long double *groupData) {
+void FitsFile::ReadGroupData(long groupIndex, long double* groupData) {
   int status = 0;
   long size = GetImageSize();
   double nulValue = std::numeric_limits<double>::quiet_NaN();
   int anynul = 0;
 
-  double *data = new double[size];
+  double* data = new double[size];
 
   fits_read_img_dbl(_fptr, groupIndex + 1, 1, size, nulValue, data, &anynul,
                     &status);
@@ -457,7 +457,7 @@ void FitsFile::ReadGroupData(long groupIndex, long double *groupData) {
   if (anynul != 0) Logger::Warn << "There were nulls in the group data\n";
 }
 
-int FitsFile::GetGroupParameterIndex(const std::string &parameterName) {
+int FitsFile::GetGroupParameterIndex(const std::string& parameterName) {
   if (!HasGroups()) throw FitsIOException("HDU has no groups");
   int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
@@ -469,7 +469,7 @@ int FitsFile::GetGroupParameterIndex(const std::string &parameterName) {
                         parameterName);
 }
 
-int FitsFile::GetGroupParameterIndex(const std::string &parameterName,
+int FitsFile::GetGroupParameterIndex(const std::string& parameterName,
                                      int number) {
   if (!HasGroups()) throw FitsIOException("HDU has no groups");
   int parameterCount = GetParameterCount();
@@ -485,7 +485,7 @@ int FitsFile::GetGroupParameterIndex(const std::string &parameterName,
                         parameterName);
 }
 
-bool FitsFile::HasGroupParameter(const std::string &parameterName) {
+bool FitsFile::HasGroupParameter(const std::string& parameterName) {
   if (!HasGroups()) return false;
   int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
@@ -496,7 +496,7 @@ bool FitsFile::HasGroupParameter(const std::string &parameterName) {
   return false;
 }
 
-bool FitsFile::HasGroupParameter(const std::string &parameterName, int number) {
+bool FitsFile::HasGroupParameter(const std::string& parameterName, int number) {
   if (!HasGroups()) return false;
   int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
@@ -510,7 +510,7 @@ bool FitsFile::HasGroupParameter(const std::string &parameterName, int number) {
   return false;
 }
 
-bool FitsFile::HasTableColumn(const std::string &columnName, int &columnIndex) {
+bool FitsFile::HasTableColumn(const std::string& columnName, int& columnIndex) {
   int colCount = GetColumnCount();
   for (int i = 1; i <= colCount; ++i) {
     std::stringstream s;
@@ -523,7 +523,7 @@ bool FitsFile::HasTableColumn(const std::string &columnName, int &columnIndex) {
   return false;
 }
 
-int FitsFile::GetTableColumnIndex(const std::string &columnName) {
+int FitsFile::GetTableColumnIndex(const std::string& columnName) {
   int colCount = GetColumnCount();
   for (int i = 1; i <= colCount; ++i) {
     std::stringstream s;
@@ -582,7 +582,7 @@ std::string FitsFile::GetTableDimensionName(int index) {
   return val;
 }
 
-void FitsFile::ReadTableCell(int row, int col, double *output, size_t size) {
+void FitsFile::ReadTableCell(int row, int col, double* output, size_t size) {
   int status = 0;
   double nulValue = std::numeric_limits<double>::quiet_NaN();
   int anynul = 0;
@@ -590,7 +590,7 @@ void FitsFile::ReadTableCell(int row, int col, double *output, size_t size) {
                 &status);
 }
 
-void FitsFile::ReadTableCell(int row, int col, long double *output,
+void FitsFile::ReadTableCell(int row, int col, long double* output,
                              size_t size) {
   std::vector<double> data(size);
   int status = 0;
@@ -601,7 +601,7 @@ void FitsFile::ReadTableCell(int row, int col, long double *output,
   for (size_t i = 0; i < size; ++i) output[i] = data[i];
 }
 
-void FitsFile::ReadTableCell(int row, int col, bool *output, size_t size) {
+void FitsFile::ReadTableCell(int row, int col, bool* output, size_t size) {
   std::vector<char> data(size);
   int status = 0;
   char nulValue = 0;
@@ -611,7 +611,7 @@ void FitsFile::ReadTableCell(int row, int col, bool *output, size_t size) {
   for (size_t i = 0; i < size; ++i) output[i] = data[i] != 0;
 }
 
-void FitsFile::ReadTableCell(int row, int col, char *output) {
+void FitsFile::ReadTableCell(int row, int col, char* output) {
   int status = 0;
   double nulValue = std::numeric_limits<double>::quiet_NaN();
   int anynul = 0;
@@ -619,13 +619,13 @@ void FitsFile::ReadTableCell(int row, int col, char *output) {
                 &status);
 }
 
-void FitsFile::WriteTableCell(int row, int col, double *data, size_t size) {
+void FitsFile::WriteTableCell(int row, int col, double* data, size_t size) {
   int status = 0;
   fits_write_col(_fptr, TDOUBLE, col, row, 1, size, data, &status);
   CheckStatus(status);
 }
 
-void FitsFile::WriteTableCell(int row, int col, const bool *data, size_t size) {
+void FitsFile::WriteTableCell(int row, int col, const bool* data, size_t size) {
   std::vector<char> dataChar(size);
   int status = 0;
   for (size_t i = 0; i < size; ++i) {

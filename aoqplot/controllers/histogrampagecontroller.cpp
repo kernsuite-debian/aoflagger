@@ -39,7 +39,7 @@ void HistogramPageController::CloseStatistics() {
 }
 
 void HistogramPageController::SetHistograms(
-    const HistogramCollection *histograms) {
+    const HistogramCollection* histograms) {
   CloseStatistics();
   _histograms.reset(new HistogramCollection(*histograms));
   _summedPolarizationHistograms.reset(
@@ -65,7 +65,7 @@ void HistogramPageController::updatePlot() {
 }
 
 void HistogramPageController::plotPolarization(
-    const HistogramCollection &histogramCollection, unsigned polarization) {
+    const HistogramCollection& histogramCollection, unsigned polarization) {
   LogHistogram totalHistogram, rfiHistogram;
   histogramCollection.GetTotalHistogramForCrossCorrelations(polarization,
                                                             totalHistogram);
@@ -74,7 +74,7 @@ void HistogramPageController::plotPolarization(
   plotPolarization(totalHistogram, rfiHistogram);
 }
 
-std::string HistogramPageController::SlopeText(const LogHistogram &histogram) {
+std::string HistogramPageController::SlopeText(const LogHistogram& histogram) {
   if (_automaticSlopeRange) {
     histogram.GetRFIRegion(_slopeStart, _slopeEnd);
   }
@@ -107,8 +107,8 @@ std::string HistogramPageController::SlopeText(const LogHistogram &histogram) {
   return str.str();
 }
 
-void HistogramPageController::plotSlope(const LogHistogram &histogram,
-                                        const std::string &title,
+void HistogramPageController::plotSlope(const LogHistogram& histogram,
+                                        const std::string& title,
                                         bool useLowerLimit2) {
   double start, end;
   if (_automaticSlopeRange) {
@@ -146,7 +146,7 @@ void HistogramPageController::plotSlope(const LogHistogram &histogram,
 }
 
 void HistogramPageController::plotPolarization(
-    const LogHistogram &totalHistogram, const LogHistogram &rfiHistogram) {
+    const LogHistogram& totalHistogram, const LogHistogram& rfiHistogram) {
   if (_totalHistogram) {
     _plot.StartLine("Total histogram", "Amplitude in arbitrary units (log)",
                     "Frequency (log)");
@@ -196,8 +196,8 @@ void HistogramPageController::plotPolarization(
   }
 }
 
-void HistogramPageController::plotFit(const LogHistogram &histogram,
-                                      const std::string &title) {
+void HistogramPageController::plotFit(const LogHistogram& histogram,
+                                      const std::string& title) {
   double sigmaEstimate;
   sigmaEstimate = RayleighFitter::SigmaEstimate(histogram);
   if (_automaticFitRange) {
@@ -229,7 +229,7 @@ void HistogramPageController::plotFit(const LogHistogram &histogram,
   _page->SetFitText(str.str());
 }
 
-void HistogramPageController::addRayleighToPlot(const LogHistogram &histogram,
+void HistogramPageController::addRayleighToPlot(const LogHistogram& histogram,
                                                 double sigma, double n) {
   const bool derivative = _derivative;
   double x = histogram.MinPositiveAmplitude();
@@ -252,7 +252,7 @@ void HistogramPageController::addRayleighToPlot(const LogHistogram &histogram,
 }
 
 void HistogramPageController::addRayleighDifferenceToPlot(
-    const LogHistogram &histogram, double sigma, double n) {
+    const LogHistogram& histogram, double sigma, double n) {
   const double sigmaP2 = sigma * sigma;
   double minCount = histogram.MinPosNormalizedCount();
   for (LogHistogram::iterator i = histogram.begin(); i != histogram.end();
@@ -271,7 +271,7 @@ void HistogramPageController::addRayleighDifferenceToPlot(
 }
 
 void HistogramPageController::addHistogramToPlot(
-    const LogHistogram &histogram) {
+    const LogHistogram& histogram) {
   const bool derivative = _derivative;
   const bool staircase = _staircaseFunction;
   const bool normalize = _normalize;
@@ -285,6 +285,7 @@ void HistogramPageController::addHistogramToPlot(
       logxEnd = log10(i.binEnd());
     } else {
       logxStart = log10(x);
+      logxEnd = 0.0;  // unused, but to avoid warning
     }
     if (derivative) {
       const double cslope = histogram.NormalizedSlope(x / deltaS, x * deltaS);

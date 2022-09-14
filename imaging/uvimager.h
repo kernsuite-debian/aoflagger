@@ -19,24 +19,24 @@ class UVImager {
   UVImager(unsigned long xRes, unsigned long yRes,
            ImageKind imageKind = Homogeneous);
   ~UVImager();
-  void Image(class MSMetaData &msMetaData, unsigned band);
-  void Image(class MSMetaData &msMetaData, unsigned band,
-             const class IntegerDomain &frequencies);
-  void Image(const class TimeFrequencyData &data,
+  void Image(class MSMetaData& msMetaData, unsigned band);
+  void Image(class MSMetaData& msMetaData, unsigned band,
+             const class IntegerDomain& frequencies);
+  void Image(const class TimeFrequencyData& data,
              TimeFrequencyMetaDataCPtr metaData, unsigned frequencyIndex);
-  void Image(const class TimeFrequencyData &data,
+  void Image(const class TimeFrequencyData& data,
              TimeFrequencyMetaDataCPtr metaData) {
     for (unsigned y = 0; y < data.ImageHeight(); ++y) Image(data, metaData, y);
   }
-  void Image(const class TimeFrequencyData &data,
-             class SpatialMatrixMetaData *metaData);
-  void InverseImage(class MSMetaData &prototype, unsigned band,
-                    const class Image2D &uvReal,
-                    const class Image2D &uvImaginary, unsigned antenna1,
+  void Image(const class TimeFrequencyData& data,
+             class SpatialMatrixMetaData* metaData);
+  void InverseImage(class MSMetaData& prototype, unsigned band,
+                    const class Image2D& uvReal,
+                    const class Image2D& uvImaginary, unsigned antenna1,
                     unsigned antenna2);
-  const class Image2D &WeightImage() const { return _uvWeights; }
-  const class Image2D &RealUVImage() const { return _uvReal; }
-  const class Image2D &ImaginaryUVImage() const { return _uvImaginary; }
+  const class Image2D& WeightImage() const { return _uvWeights; }
+  const class Image2D& RealUVImage() const { return _uvReal; }
+  const class Image2D& ImaginaryUVImage() const { return _uvImaginary; }
   void SetInvertFlagging(bool newValue) { _invertFlagging = newValue; }
   void SetDirectFT(bool directFT) { _directFT = directFT; }
 
@@ -50,11 +50,11 @@ class UVImager {
    * position for
    * @param [in] metaData information about the baseline
    */
-  static void GetUVPosition(num_t &u, num_t &v, size_t timeIndex,
+  static void GetUVPosition(num_t& u, num_t& v, size_t timeIndex,
                             size_t frequencyIndex,
                             TimeFrequencyMetaDataCPtr metaData);
 
-  static num_t GetFringeStopFrequency(size_t time, const Baseline &baseline,
+  static num_t GetFringeStopFrequency(size_t time, const Baseline& baseline,
                                       num_t delayDirectionRA,
                                       num_t delayDirectionDec, num_t frequency,
                                       TimeFrequencyMetaDataCPtr metaData);
@@ -90,12 +90,12 @@ class UVImager {
   void PerformFFT();
   bool HasUV() const { return !_uvReal.Empty(); }
   bool HasFFT() const { return !_uvFTReal.Empty(); }
-  const class Image2D &FTReal() const { return _uvFTReal; }
-  const class Image2D &FTImaginary() const { return _uvFTImaginary; }
-  class Image2D &FTReal() {
+  const class Image2D& FTReal() const { return _uvFTReal; }
+  const class Image2D& FTImaginary() const { return _uvFTImaginary; }
+  class Image2D& FTReal() {
     return _uvFTReal;
   }
-  class Image2D &FTImaginary() {
+  class Image2D& FTImaginary() {
     return _uvFTImaginary;
   }
   void SetUVScaling(num_t newScale) { _uvScaling = newScale; }
@@ -113,7 +113,7 @@ class UVImager {
   }
   static numl_t AverageUVDistance(TimeFrequencyMetaDataCPtr metaData,
                                   const double frequencyHz) {
-    const std::vector<UVW> &uvw = metaData->UVW();
+    const std::vector<UVW>& uvw = metaData->UVW();
     numl_t avgDist = 0.0;
     for (std::vector<UVW>::const_iterator i = uvw.begin(); i != uvw.end();
          ++i) {
@@ -124,7 +124,7 @@ class UVImager {
   }
   static numl_t UVTrackLength(TimeFrequencyMetaDataCPtr metaData,
                               const double frequencyHz) {
-    const std::vector<UVW> &uvw = metaData->UVW();
+    const std::vector<UVW>& uvw = metaData->UVW();
     numl_t length = 0.0;
     std::vector<UVW>::const_iterator i = uvw.begin();
     if (i == uvw.end()) return 0.0;
@@ -151,18 +151,18 @@ class UVImager {
     num_t wavelength;
     num_t dx, dy, dz;
   };
-  void Image(const class IntegerDomain &frequencies);
-  void Image(const IntegerDomain &frequencies,
-             const IntegerDomain &antenna1Domain,
-             const IntegerDomain &antenna2Domain);
-  void Image(unsigned frequencyIndex, class AntennaInfo &antenna1,
-             class AntennaInfo &antenna2,
-             SingleFrequencySingleBaselineData *data);
+  void Image(const class IntegerDomain& frequencies);
+  void Image(const IntegerDomain& frequencies,
+             const IntegerDomain& antenna1Domain,
+             const IntegerDomain& antenna2Domain);
+  void Image(unsigned frequencyIndex, class AntennaInfo& antenna1,
+             class AntennaInfo& antenna2,
+             SingleFrequencySingleBaselineData* data);
 
   // This is the fast variant.
-  void GetUVPosition(num_t &u, num_t &v,
-                     const SingleFrequencySingleBaselineData &data,
-                     const AntennaCache &cache);
+  void GetUVPosition(num_t& u, num_t& v,
+                     const SingleFrequencySingleBaselineData& data,
+                     const AntennaCache& cache);
   void SetUVFTValue(num_t u, num_t v, num_t r, num_t i, num_t weight);
 
   unsigned long _xRes, _yRes;
@@ -171,11 +171,11 @@ class UVImager {
   class Image2D _uvReal, _uvImaginary, _uvWeights;
   class Image2D _uvFTReal, _uvFTImaginary;
   class Image2D _timeFreq;
-  MSMetaData *_msMetaData;
+  MSMetaData* _msMetaData;
   unsigned _antennaCount, _fieldCount;
-  AntennaInfo *_antennas;
+  AntennaInfo* _antennas;
   BandInfo _band;
-  FieldInfo *_fields;
+  FieldInfo* _fields;
   size_t _scanCount;
   ImageKind _imageKind;
   bool _invertFlagging, _directFT;

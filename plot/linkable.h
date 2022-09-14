@@ -1,5 +1,5 @@
-#ifndef PLOT_GROUP_H
-#define PLOT_GROUP_H
+#ifndef LINKABLE_H
+#define LINKABLE_H
 
 #include <algorithm>
 #include <memory>

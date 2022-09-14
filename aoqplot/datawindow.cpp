@@ -1,11 +1,11 @@
 #include "datawindow.h"
 
-#include "../plot/plot2d.h"
+#include "../plot/xyplot.h"
 
 #include <sstream>
 #include <iomanip>
 
-void DataWindow::SetData(const Plot2D &plot) {
+void DataWindow::SetData(const XYPlot& plot) {
   _plot = &plot;
   int selectedIndex = _comboBox.get_active_row_number();
   if (selectedIndex < 0) selectedIndex = 0;
@@ -35,7 +35,7 @@ void DataWindow::loadData(size_t plotSetIndex) {
   std::stringstream _dataStream;
   _dataStream << std::setprecision(14);
   if (_plot->PointSetCount() > plotSetIndex) {
-    const Plot2DPointSet &pointSet = _plot->GetPointSet(plotSetIndex);
+    const XYPointSet& pointSet = _plot->GetPointSet(plotSetIndex);
     const size_t valueCount = pointSet.Size();
     for (size_t i = 0; i < valueCount; ++i) {
       const double x = pointSet.GetX(i), y = pointSet.GetY(i);

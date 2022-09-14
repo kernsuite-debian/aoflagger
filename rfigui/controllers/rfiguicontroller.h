@@ -10,16 +10,20 @@
 
 #include "../settings.h"
 
+#include "../../algorithms/enums.h"
+
 #include "imagecomparisoncontroller.h"
 
+#include <optional>
 #include <mutex>
 #include <thread>
 
-#include <boost/optional/optional.hpp>
-
-namespace rfiStrategy {
+namespace imagesets {
 class BaselineData;
 }
+
+struct MSOptions;
+class XYPlot;
 
 class RFIGuiController {
  public:
@@ -110,14 +114,15 @@ class RFIGuiController {
   void PlotPowerSpectrum();
   void PlotFrequencyScatter();
   void PlotTimeMean();
-  void DrawTimeMean(class Plot2D& plot);
+  void DrawTimeMean(XYPlot& plot);
   void PlotTimeScatter();
   void PlotSingularValues();
 
   void OpenMS(const std::vector<std::string>& filenames,
-              const class MSOptions& options);
+              const MSOptions& options);
 
-  void OpenTestSet(unsigned index, bool gaussianTestSets);
+  void OpenTestSet(algorithms::RFITestSet rfiSet,
+                   algorithms::BackgroundTestSet backgroundSet);
 
   std::vector<std::string> RecentFiles() const;
 
@@ -140,13 +145,13 @@ class RFIGuiController {
 
   bool HasImageSet() const { return _imageSet != nullptr; }
 
-  void SetImageSet(std::unique_ptr<rfiStrategy::ImageSet> newImageSet);
+  void SetImageSet(std::unique_ptr<imagesets::ImageSet> newImageSet);
 
-  void SetImageSetIndex(const rfiStrategy::ImageSetIndex& newImageSetIndex);
+  void SetImageSetIndex(const imagesets::ImageSetIndex& newImageSetIndex);
 
-  rfiStrategy::ImageSet& GetImageSet() const { return *_imageSet; }
+  imagesets::ImageSet& GetImageSet() const { return *_imageSet; }
 
-  const rfiStrategy::ImageSetIndex& GetImageSetIndex() const {
+  const imagesets::ImageSetIndex& GetImageSetIndex() const {
     return _imageSetIndex;
   }
 
@@ -182,7 +187,10 @@ class RFIGuiController {
  private:
   void plotMeanSpectrum(bool weight);
   void setRecentFile(const std::string& filename);
-  void open(std::unique_ptr<rfiStrategy::ImageSet> imageSet);
+  void open(std::unique_ptr<imagesets::ImageSet> imageSet);
+
+  void OpenMsConcatenated(const std::vector<std::string>& filenames,
+                          const MSOptions& options);
 
   bool _showOriginalFlags, _showAlternativeFlags;
   bool _showPP, _showPQ, _showQP, _showQQ;
@@ -194,9 +202,9 @@ class RFIGuiController {
 
   Settings _settings;
   std::unique_ptr<class PlotManager> _plotManager;
-  std::unique_ptr<rfiStrategy::ImageSet> _imageSet;
-  rfiStrategy::ImageSetIndex _imageSetIndex;
-  std::unique_ptr<rfiStrategy::BaselineData> _tempLoadedBaseline;
+  std::unique_ptr<imagesets::ImageSet> _imageSet;
+  imagesets::ImageSetIndex _imageSetIndex;
+  std::unique_ptr<imagesets::BaselineData> _tempLoadedBaseline;
   std::mutex _ioMutex;
   std::thread _processingThread;
   TimeFrequencyData _scriptTFData;

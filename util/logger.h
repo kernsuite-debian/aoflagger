@@ -24,7 +24,7 @@ class Logger {
    public:
     LogWriter() : _atNewLine(true) {}
 
-    LogWriter &operator<<(const std::string &str) {
+    LogWriter& operator<<(const std::string& str) {
       boost::mutex::scoped_lock lock(_mutex);
       size_t start = 0, end;
       while (std::string::npos != (end = str.find('\n', start))) {
@@ -34,17 +34,17 @@ class Logger {
       outputLinePart(str.substr(start, str.size() - start), false);
       return *this;
     }
-    LogWriter &operator<<(const char *str) {
+    LogWriter& operator<<(const char* str) {
       (*this) << std::string(str);
       return *this;
     }
-    LogWriter &operator<<(const char c) {
+    LogWriter& operator<<(const char c) {
       boost::mutex::scoped_lock lock(_mutex);
       outputLinePart(std::string(1, c), c == '\n');
       return *this;
     }
     template <typename S>
-    LogWriter &operator<<(const S &str) {
+    LogWriter& operator<<(const S& str) {
       std::ostringstream stream;
       stream << str;
       (*this) << stream.str();
@@ -62,7 +62,7 @@ class Logger {
     boost::mutex _mutex;
     bool _atNewLine;
 
-    void outputLinePart(const std::string &str, bool endsWithCR) {
+    void outputLinePart(const std::string& str, bool endsWithCR) {
       if ((int)_coutLevel <= (int)Level && !str.empty()) {
         if (_atNewLine && _logTime) outputTime(ToStdErr);
         if (ToStdErr)

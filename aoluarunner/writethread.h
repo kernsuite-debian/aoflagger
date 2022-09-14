@@ -10,25 +10,26 @@
 
 class WriteThread {
  public:
-  WriteThread(rfiStrategy::ImageSet& imageSet, size_t calcThreadCount,
+  WriteThread(imagesets::ImageSet& imageSet, size_t calcThreadCount,
               std::mutex* ioMutex);
   ~WriteThread();
 
   void SaveFlags(const TimeFrequencyData& data,
-                 rfiStrategy::ImageSetIndex& imageSetIndex);
+                 imagesets::ImageSetIndex& imageSetIndex);
 
  private:
   struct FlushThread {
     WriteThread* _parent;
-    void operator()(std::unique_ptr<rfiStrategy::ImageSet> imageSet);
+    void operator()(std::unique_ptr<imagesets::ImageSet> imageSet);
+    void operator()(imagesets::ImageSet* imageSet);
   };
 
   struct BufferItem {
     BufferItem(const std::vector<Mask2DCPtr>& masks,
-               const rfiStrategy::ImageSetIndex& index)
+               const imagesets::ImageSetIndex& index)
         : _masks(masks), _index(index) {}
     std::vector<Mask2DCPtr> _masks;
-    rfiStrategy::ImageSetIndex _index;
+    imagesets::ImageSetIndex _index;
   };
 
   void pushInWriteBuffer(const BufferItem& newItem);

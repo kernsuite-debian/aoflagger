@@ -4,6 +4,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+using algorithms::MorphologicalFlagger;
+
 BOOST_AUTO_TEST_SUITE(dilation, *boost::unit_test::label("algorithms"))
 
 static std::string maskToString(Mask2DCPtr mask, bool flip) {
@@ -24,7 +26,7 @@ static std::string maskToString(Mask2DCPtr mask, bool flip) {
   return s.str();
 }
 
-static void setMask(Mask2DPtr mask, bool flip, const std::string &str) {
+static void setMask(Mask2DPtr mask, bool flip, const std::string& str) {
   std::string::const_iterator i = str.begin();
   if (flip) {
     for (unsigned x = 0; x < mask->Width(); ++x) {

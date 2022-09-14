@@ -8,13 +8,16 @@
 
 #include <iostream>
 
-using namespace aocommon;
+using aocommon::Polarization;
+
+using algorithms::HighPassFilter;
+using algorithms::LocalFitMethod;
 
 BOOST_AUTO_TEST_SUITE(high_pass_filter_experiment,
                       *boost::unit_test::label("experiment") *
                           boost::unit_test::disabled())
 
-static void Initialize(Image2DPtr &image, Mask2DPtr &mask) {
+static void Initialize(Image2DPtr& image, Mask2DPtr& mask) {
   const size_t width = 10000, height = 256;
   image = Image2D::CreateUnsetImagePtr(width, height);
   mask = Mask2D::CreateUnsetMaskPtr(width, height);
@@ -28,7 +31,7 @@ static void Initialize(Image2DPtr &image, Mask2DPtr &mask) {
   }
 }
 
-static void InitializeFlagged(Image2DPtr &image, Mask2DPtr &mask) {
+static void InitializeFlagged(Image2DPtr& image, Mask2DPtr& mask) {
   const size_t width = 10000 / 3, height = 256 / 3;
   image = Image2D::CreateUnsetImagePtr(width, height);
   mask = Mask2D::CreateUnsetMaskPtr(width, height);

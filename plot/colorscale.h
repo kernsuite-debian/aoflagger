@@ -11,7 +11,7 @@
 class ColorScale {
  public:
   ColorScale();
-
+  void Clear() { _colorValues.clear(); }
   void SetPlotDimensions(double plotWidth, double plotHeight, double topMargin,
                          bool textOnLeft) {
     _plotWidth = plotWidth;
@@ -25,20 +25,16 @@ class ColorScale {
     return _width;
   }
   void Draw(const Cairo::RefPtr<Cairo::Context>& cairo);
-  void InitializeNumericTicks(double min, double max) {
-    _width = 0.0;
-    _min = min;
-    _max = max;
-    _isLogaritmic = false;
-    _verticalPlotScale.InitializeNumericTicks(min, max);
+  void SetAxisType(AxisType axisType) {
+    _verticalPlotScale.SetAxisType(axisType);
   }
-  void InitializeLogarithmicTicks(double min, double max) {
-    _width = 0.0;
-    _min = min;
-    _max = max;
-    _isLogaritmic = true;
-    _verticalPlotScale.InitializeLogarithmicTicks(min, max);
+  void SetTickRange(double min, double max) {
+    _verticalPlotScale.SetTickRange(min, max);
   }
+  void SetLogarithmic(bool logarithmic) {
+    _verticalPlotScale.SetLogarithmic(logarithmic);
+  }
+  void InitializeTicks() { _verticalPlotScale.InitializeTicks(); }
   void SetColorValue(double value, double red, double green, double blue) {
     ColorValue cValue;
     cValue.red = red;
@@ -71,10 +67,8 @@ class ColorScale {
   double _plotWidth, _plotHeight, _topMargin;
   double _scaleWidth, _width, _textHeight;
   bool _textOnLeft;
-  double _min, _max;
   class VerticalPlotScale _verticalPlotScale;
   std::map<double, ColorValue> _colorValues;
-  bool _isLogaritmic;
 };
 
 #endif

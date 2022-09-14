@@ -14,26 +14,26 @@ class BaselineStatisticsMap : public Serializable {
   explicit BaselineStatisticsMap(unsigned polarizationCount)
       : _polarizationCount(polarizationCount) {}
 
-  void operator+=(const BaselineStatisticsMap &other) {
+  void operator+=(const BaselineStatisticsMap& other) {
     for (OuterMap::const_iterator i = other._map.begin(); i != other._map.end();
          ++i) {
       unsigned antenna1 = i->first;
-      const InnerMap &innerMap = i->second;
+      const InnerMap& innerMap = i->second;
       for (InnerMap::const_iterator j = innerMap.begin(); j != innerMap.end();
            ++j) {
         unsigned antenna2 = j->first;
-        const DefaultStatistics &stat = j->second;
+        const DefaultStatistics& stat = j->second;
         GetStatistics(antenna1, antenna2) += stat;
       }
     }
   }
 
-  DefaultStatistics &GetStatistics(unsigned antenna1, unsigned antenna2) {
+  DefaultStatistics& GetStatistics(unsigned antenna1, unsigned antenna2) {
     OuterMap::iterator antenna1Map =
         _map.insert(OuterPair(antenna1, InnerMap())).first;
-    InnerMap &innerMap = antenna1Map->second;
+    InnerMap& innerMap = antenna1Map->second;
     InnerMap::iterator antenna2Value = innerMap.find(antenna2);
-    DefaultStatistics *statistics;
+    DefaultStatistics* statistics;
     if (antenna2Value == innerMap.end()) {
       // The baseline does not exist yet, create empty statistics.
       statistics = &(innerMap
@@ -46,7 +46,7 @@ class BaselineStatisticsMap : public Serializable {
     return *statistics;
   }
 
-  const DefaultStatistics &GetStatistics(unsigned antenna1,
+  const DefaultStatistics& GetStatistics(unsigned antenna1,
                                          unsigned antenna2) const {
     OuterMap::const_iterator antenna1Map = _map.find(antenna1);
     if (antenna1Map == _map.end()) {
@@ -54,7 +54,7 @@ class BaselineStatisticsMap : public Serializable {
           "BaselineStatisticsMap::GetStatistics() : Requested unavailable "
           "baseline");
     } else {
-      const InnerMap &innerMap = antenna1Map->second;
+      const InnerMap& innerMap = antenna1Map->second;
       InnerMap::const_iterator antenna2Value = innerMap.find(antenna2);
       if (antenna2Value == innerMap.end()) {
         throw std::runtime_error(
@@ -66,12 +66,12 @@ class BaselineStatisticsMap : public Serializable {
     }
   }
 
-  std::vector<std::pair<unsigned, unsigned> > BaselineList() const {
-    std::vector<std::pair<unsigned, unsigned> > list;
+  std::vector<std::pair<unsigned, unsigned>> BaselineList() const {
+    std::vector<std::pair<unsigned, unsigned>> list;
     for (OuterMap::const_iterator outerIter = _map.begin();
          outerIter != _map.end(); ++outerIter) {
       const unsigned antenna1 = outerIter->first;
-      const InnerMap &innerMap = outerIter->second;
+      const InnerMap& innerMap = outerIter->second;
 
       for (InnerMap::const_iterator innerIter = innerMap.begin();
            innerIter != innerMap.end(); ++innerIter) {
@@ -88,7 +88,7 @@ class BaselineStatisticsMap : public Serializable {
 
     for (OuterMap::const_iterator outerIter = _map.begin();
          outerIter != _map.end(); ++outerIter) {
-      const InnerMap &innerMap = outerIter->second;
+      const InnerMap& innerMap = outerIter->second;
       if (highestIndex < innerMap.rbegin()->first)
         highestIndex = innerMap.rbegin()->first;
     }
@@ -99,12 +99,12 @@ class BaselineStatisticsMap : public Serializable {
 
   unsigned PolarizationCount() const { return _polarizationCount; }
 
-  virtual void Serialize(std::ostream &stream) const final override {
+  virtual void Serialize(std::ostream& stream) const final override {
     SerializeToUInt32(stream, _polarizationCount);
     serializeOuterMap(stream, _map);
   }
 
-  virtual void Unserialize(std::istream &stream) final override {
+  virtual void Unserialize(std::istream& stream) final override {
     _map.clear();
     _polarizationCount = UnserializeUInt32(stream);
     unserializeOuterMap(stream, _map);
@@ -119,19 +119,19 @@ class BaselineStatisticsMap : public Serializable {
   OuterMap _map;
   unsigned _polarizationCount;
 
-  void serializeOuterMap(std::ostream &stream, const OuterMap &map) const {
+  void serializeOuterMap(std::ostream& stream, const OuterMap& map) const {
     SerializeToUInt32(stream, map.size());
 
     for (OuterMap::const_iterator i = map.begin(); i != map.end(); ++i) {
       unsigned antenna1 = i->first;
       SerializeToUInt32(stream, antenna1);
 
-      const InnerMap &innerMap = i->second;
+      const InnerMap& innerMap = i->second;
       serializeInnerMap(stream, innerMap);
     }
   }
 
-  void unserializeOuterMap(std::istream &stream, OuterMap &map) const {
+  void unserializeOuterMap(std::istream& stream, OuterMap& map) const {
     size_t size = UnserializeUInt32(stream);
     for (size_t j = 0; j < size; ++j) {
       unsigned antenna1 = UnserializeUInt32(stream);
@@ -142,19 +142,19 @@ class BaselineStatisticsMap : public Serializable {
     }
   }
 
-  void serializeInnerMap(std::ostream &stream, const InnerMap &map) const {
+  void serializeInnerMap(std::ostream& stream, const InnerMap& map) const {
     SerializeToUInt32(stream, map.size());
 
     for (InnerMap::const_iterator i = map.begin(); i != map.end(); ++i) {
       unsigned antenna2 = i->first;
       SerializeToUInt32(stream, antenna2);
 
-      const DefaultStatistics &statistics = i->second;
+      const DefaultStatistics& statistics = i->second;
       statistics.Serialize(stream);
     }
   }
 
-  void unserializeInnerMap(std::istream &stream, InnerMap &map) const {
+  void unserializeInnerMap(std::istream& stream, InnerMap& map) const {
     size_t size = UnserializeUInt32(stream);
     for (size_t j = 0; j < size; ++j) {
       unsigned antenna2 = UnserializeUInt32(stream);

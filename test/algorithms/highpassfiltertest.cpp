@@ -8,7 +8,10 @@
 
 #include <boost/test/unit_test.hpp>
 
-using namespace aocommon;
+using aocommon::Polarization;
+
+using algorithms::HighPassFilter;
+using algorithms::LocalFitMethod;
 
 BOOST_AUTO_TEST_SUITE(high_pass_filter, *boost::unit_test::label("algorithms"))
 

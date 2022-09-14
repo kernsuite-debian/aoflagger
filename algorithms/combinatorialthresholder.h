@@ -4,8 +4,10 @@
 #include <cstddef>
 #include <cstring>
 
-#include "../../structures/image2d.h"
-#include "../../structures/mask2d.h"
+#include "../structures/image2d.h"
+#include "../structures/mask2d.h"
+
+namespace algorithms {
 
 class CombinatorialThresholder {
  public:
@@ -21,5 +23,7 @@ class CombinatorialThresholder {
  private:
   CombinatorialThresholder() = delete;
 };
+
+}  // namespace algorithms
 
 #endif

@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
 class BandpassFile {
  public:

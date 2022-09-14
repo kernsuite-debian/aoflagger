@@ -7,15 +7,6 @@ RFIGuiMenu::RFIGuiMenu()
        // constructor, so we have to initialize them here.
       _miViewData(_viewModeGroup),
       _miViewStrategy(_viewModeGroup),
-      _miTestGaussian(_testSetGroup),
-      _miTestRayleigh(_testSetGroup),
-      _miTestZero(_testSetGroup),
-      _miSimNCP(_simSetGroup),
-      _miSimB1834(_simSetGroup),
-      _miSimEmpty(_simSetGroup),
-      _miSim16channels(_simChGroup),
-      _miSim64channels(_simChGroup),
-      _miSim256channels(_simChGroup),
       _tbModeData(_tbModeGroup),
       _tbModeStrategy(_tbModeGroup),
       _inStrategyMode(false),
@@ -25,7 +16,7 @@ RFIGuiMenu::RFIGuiMenu()
   topMenu(_menuStrategy, _miStrategy, "_Strategy");
   topMenu(_menuPlot, _miPlot, "_Plot");
   topMenu(_menuBrowse, _miBrowse, "_Browse");
-  topMenu(_menuSimulate, _miSimulate, "S_imulate");
+  topMenu(_menuSimulate, _miSimulateMenu, "S_imulate");
   topMenu(_menuData, _miData, "_Data");
 
   makeFileMenu();
@@ -118,6 +109,12 @@ void RFIGuiMenu::makeViewMenu() {
         if (!_blockVisualizationSignals) OnZoomOut();
       },
       "Zoom out", "zoom-out");
+  addItem(
+      _menuView, _miViewSelectZoom,
+      [&]() {
+        if (!_blockVisualizationSignals) OnZoomSelect();
+      },
+      "Select zoom...");
   addItem(_menuView, _miViewSep3);
 
   // F2
@@ -218,19 +215,10 @@ void RFIGuiMenu::makeBrowseMenu() {
 }
 
 void RFIGuiMenu::makeSimulateMenu() {
+  addItem(_menuSimulate, _miSimulate, OnSimulate, "Simulate...");
+
   _miTestSetSubMenu.set_submenu(_menuTestSets);
   addItem(_menuSimulate, _miTestSetSubMenu, "Open _testset");
-
-  // Gtk::RadioMenuItem::Group testSetGroup;
-  addItem(_menuTestSets, _miTestGaussian, OnGaussianTestSets, "Gaussian");
-  //_miTestGaussian.set_group(testSetGroup);
-  _miTestGaussian.set_active(true);
-  addItem(_menuTestSets, _miTestRayleigh, OnRayleighTestSets, "Rayleigh");
-  //_miTestRayleigh.set_group(testSetGroup);
-  addItem(_menuTestSets, _miTestZero, OnZeroTestSets, "Zero");
-  //_miTestZero.set_group(testSetGroup);
-
-  addItem(_menuTestSets, _miTestSep1);
 
   addItem(_menuTestSets, _miTestA, OnOpenTestSetA, "A Full spikes");
   addItem(_menuTestSets, _miTestB, OnOpenTestSetB, "B Half spikes");
@@ -239,37 +227,9 @@ void RFIGuiMenu::makeSimulateMenu() {
   addItem(_menuTestSets, _miTestE, OnOpenTestSetE, "E 5 srcs + spikes");
   addItem(_menuTestSets, _miTestF, OnOpenTestSetF, "F 5 srcs + spikes");
   addItem(_menuTestSets, _miTestG, OnOpenTestSetG, "G Test set G");
-  addItem(_menuTestSets, _miTestH, OnOpenTestSetG, "H filtered srcs + spikes");
+  addItem(_menuTestSets, _miTestH, OnOpenTestSetH, "H filtered srcs + spikes");
 
   addItem(_menuTestSets, _miTestNoise, OnOpenTestSetNoise, "Noise");
-  addItem(_menuTestSets, _miTestModel3, OnOpenTestSet3Model, "3-source model");
-  addItem(_menuTestSets, _miTestModel5, OnOpenTestSet5Model, "5-source model");
-  addItem(_menuTestSets, _miTestNoiseModel3, OnOpenTestSetNoise3Model,
-          "3-source model with noise");
-  addItem(_menuTestSets, _miTestNoiseModel5, OnOpenTestSetNoise5Model,
-          "5-source model with noise");
-  addItem(_menuTestSets, _miTestBStrong, OnOpenTestSetBStrong,
-          "Test set B (strong RFI)");
-  addItem(_menuTestSets, _miTestBWeak, OnOpenTestSetBWeak,
-          "Test set B (weak RFI)");
-  addItem(_menuTestSets, _miTestBAligned, OnOpenTestSetBAligned,
-          "Test set B (aligned)");
-
-  addItem(_menuTestSets, _miTestGaussianBroadband,
-          OnOpenTestSetGaussianBroadband, "Gaussian broadband");
-  addItem(_menuTestSets, _miTestSenusoidalBroadband,
-          OnOpenTestSetSinusoidalBroadband, "Sinusoidal broadband");
-  addItem(_menuTestSets, _miTestSlewedGaussianBroadband,
-          OnOpenTestSetSlewedGaussianBroadband, "Slewed Gaussian");
-  addItem(_menuTestSets, _miTestBurstBroadband, OnOpenTestSetBurstBroadband,
-          "Burst");
-  addItem(_menuTestSets, _miTestRFIDistLow, OnOpenTestSetRFIDistributionLow,
-          "Slope -2 dist low");
-  addItem(_menuTestSets, _miTestRFIDistMid, OnOpenTestSetRFIDistributionMid,
-          "Slope -2 dist mid");
-  addItem(_menuTestSets, _miTestRFIDistHigh, OnOpenTestSetRFIDistributionHigh,
-          "Slope -2 dist high");
-  addItem(_menuTestSets, _miTestSpike, OnOpenTestSetSpike, "Spike (debug)");
 
   _miSimulateModify.set_submenu(_menuModify);
   addItem(_menuSimulate, _miSimulateModify, "Modify");
@@ -285,46 +245,6 @@ void RFIGuiMenu::makeSimulateMenu() {
           "Add correlator fault");
   addItem(_menuModify, _miModifyAddNaNs, OnAddNaNs, "Add NaNs");
   addItem(_menuModify, _miModifyMultiply, OnMultiplyData, "Multiply data...");
-
-  // Gtk::RadioMenuItem::Group setGroup;
-  //_miSimNCP.set_group(setGroup);
-  addItem(_menuSimulate, _miSimNCP, "Use NCP set");
-  //_miSimB1834.set_group(setGroup);
-  addItem(_menuSimulate, _miSimB1834, "Use B1834 set");
-  //_miSimEmpty.set_group(setGroup);
-  addItem(_menuSimulate, _miSimEmpty, "Use empty set");
-  _miSimNCP.set_active(true);
-
-  addItem(_menuSimulate, _miSimSep1);
-
-  // Gtk::RadioMenuItem::Group chGroup;
-  //_miSim16channels.set_group(chGroup);
-  addItem(_menuSimulate, _miSim16channels, "16 channels");
-  //_miSim64channels.set_group(chGroup);
-  addItem(_menuSimulate, _miSim64channels, "64 channels");
-  //_miSim256channels.set_group(chGroup);
-  addItem(_menuSimulate, _miSim256channels, "256 channels");
-  _miSim64channels.set_active(true);
-
-  addItem(_menuSimulate, _miSimSep2);
-
-  addItem(_menuSimulate, _miSimFixBandwidth, "Fix bandwidth");
-  _miSimFixBandwidth.set_active(false);
-
-  addItem(_menuSimulate, _miSimCorrelation, OnSimulateCorrelation,
-          "Simulate correlation");
-  addItem(_menuSimulate, _miSimSourceSetA, OnSimulateSourceSetA,
-          "Simulate source set A");
-  addItem(_menuSimulate, _miSimSourceSetB, OnSimulateSourceSetB,
-          "Simulate source set B");
-  addItem(_menuSimulate, _miSimSourceSetC, OnSimulateSourceSetC,
-          "Simulate source set C");
-  addItem(_menuSimulate, _miSimSourceSetD, OnSimulateSourceSetD,
-          "Simulate source set D");
-  addItem(_menuSimulate, _miSimSourceOffAxis, OnSimulateOffAxisSource,
-          "Simulate off-axis source");
-  addItem(_menuSimulate, _miSimSourceOnAxis, OnSimulateOnAxisSource,
-          "Simulate on-axis source");
 }
 
 void RFIGuiMenu::makeDataMenu() {
@@ -379,6 +299,13 @@ void RFIGuiMenu::makeDataMenu() {
           "Subtract from mem");
 
   addItem(_menuData, _miDataSep3);
+
+  addItem(_menuData, _miTemporalAveraging, OnTemporalAveragingPressed,
+          "Temporal averaging...");
+  addItem(_menuData, _miSpectralAveraging, OnSpectralAveragingPressed,
+          "Spectral averaging...");
+
+  addItem(_menuData, _miDataSep4);
 
   addItem(_menuData, _miDataClearOriginalFlags, OnClearOriginalFlagsPressed,
           "Clear ori. flags");

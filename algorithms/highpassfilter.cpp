@@ -1,6 +1,6 @@
 #include "highpassfilter.h"
 
-#include "../../util/rng.h"
+#include "../util/rng.h"
 
 #include <cmath>
 #include <stdexcept>
@@ -13,12 +13,14 @@
 #include <xmmintrin.h>
 #endif
 
+namespace algorithms {
+
 HighPassFilter::~HighPassFilter() {
   delete[] _hKernel;
   delete[] _vKernel;
 }
 
-void HighPassFilter::applyLowPassSimple(const Image2DPtr &image) {
+void HighPassFilter::applyLowPassSimple(const Image2DPtr& image) {
   // Guassian convolution can be separated in two 1D convolution
   // because of properties of the 2D Gaussian function.
   Image2DPtr temp =
@@ -55,7 +57,7 @@ void HighPassFilter::applyLowPassSimple(const Image2DPtr &image) {
   }
 }
 
-void HighPassFilter::applyLowPassSSE(const Image2DPtr &image) {
+void HighPassFilter::applyLowPassSSE(const Image2DPtr& image) {
 #ifdef USE_INTRINSICS
   Image2DPtr temp =
       Image2D::CreateZeroImagePtr(image->Width(), image->Height());
@@ -73,8 +75,8 @@ void HighPassFilter::applyLowPassSSE(const Image2DPtr &image) {
                                         : 0);
 
     for (unsigned y = 0; y < image->Height(); ++y) {
-      float *tempPtr = temp->ValuePtr(xStart, y);
-      const float *imagePtr = image->ValuePtr(xStart + i - hKernelMid, y);
+      float* tempPtr = temp->ValuePtr(xStart, y);
+      const float* imagePtr = image->ValuePtr(xStart + i - hKernelMid, y);
 
       unsigned x = xStart;
       for (; x + 4 < xEnd; x += 4) {
@@ -107,8 +109,8 @@ void HighPassFilter::applyLowPassSSE(const Image2DPtr &image) {
                                      ? (image->Height() - i + vKernelMid)
                                      : 0);
     for (unsigned y = yStart; y < yEnd; ++y) {
-      const float *tempPtr = temp->ValuePtr(0, y + i - vKernelMid);
-      float *imagePtr = image->ValuePtr(0, y);
+      const float* tempPtr = temp->ValuePtr(0, y + i - vKernelMid);
+      float* imagePtr = image->ValuePtr(0, y);
 
       unsigned x = 0;
       for (; x + 4 < image->Width(); x += 4) {
@@ -133,15 +135,15 @@ void HighPassFilter::applyLowPassSSE(const Image2DPtr &image) {
 #endif
 }
 
-Image2DPtr HighPassFilter::ApplyHighPass(const Image2DCPtr &image,
-                                         const Mask2DCPtr &mask) {
+Image2DPtr HighPassFilter::ApplyHighPass(const Image2DCPtr& image,
+                                         const Mask2DCPtr& mask) {
   Image2DPtr outputImage = ApplyLowPass(image, mask);
   outputImage->SubtractAsRHS(image);
   return outputImage;
 }
 
-Image2DPtr HighPassFilter::ApplyLowPass(const Image2DCPtr &image,
-                                        const Mask2DCPtr &mask) {
+Image2DPtr HighPassFilter::ApplyLowPass(const Image2DCPtr& image,
+                                        const Mask2DCPtr& mask) {
   initializeKernel();
   Image2DPtr outputImage =
                  Image2D::CreateUnsetImagePtr(image->Width(), image->Height()),
@@ -156,7 +158,7 @@ Image2DPtr HighPassFilter::ApplyLowPass(const Image2DCPtr &image,
 }
 
 void HighPassFilter::initializeKernel() {
-  if (_hKernel == 0) {
+  if (_hKernel == nullptr) {
     _hKernel = new num_t[_hWindowSize];
     const int midPointX = _hWindowSize / 2;
     for (int x = 0; x < (int)_hWindowSize; ++x)
@@ -164,7 +166,7 @@ void HighPassFilter::initializeKernel() {
           RNG::EvaluateUnnormalizedGaussian(x - midPointX, _hKernelSigmaSq);
   }
 
-  if (_vKernel == 0) {
+  if (_vKernel == nullptr) {
     _vKernel = new num_t[_vWindowSize];
     const int midPointY = _vWindowSize / 2;
     for (int y = 0; y < (int)_vWindowSize; ++y)
@@ -174,8 +176,8 @@ void HighPassFilter::initializeKernel() {
 }
 
 void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSimple(
-    const Image2DCPtr &inputImage, const Image2DPtr &outputImage,
-    const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput) {
+    const Image2DCPtr& inputImage, const Image2DPtr& outputImage,
+    const Mask2DCPtr& inputMask, const Image2DPtr& weightsOutput) {
   const size_t width = inputImage->Width();
   for (size_t y = 0; y < inputImage->Height(); ++y) {
     for (size_t x = 0; x < width; ++x) {
@@ -191,19 +193,19 @@ void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSimple(
 }
 
 void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSSE(
-    const Image2DCPtr &inputImage, const Image2DPtr &outputImage,
-    const Mask2DCPtr &inputMask, const Image2DPtr &weightsOutput) {
+    const Image2DCPtr& inputImage, const Image2DPtr& outputImage,
+    const Mask2DCPtr& inputMask, const Image2DPtr& weightsOutput) {
 #ifdef USE_INTRINSICS
   const size_t width = inputImage->Width();
   const __m128i zero4i = _mm_set_epi32(0, 0, 0, 0);
   const __m128 zero4 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);
   const __m128 one4 = _mm_set_ps(1.0, 1.0, 1.0, 1.0);
   for (size_t y = 0; y < inputImage->Height(); ++y) {
-    const bool *rowPtr = inputMask->ValuePtr(0, y);
-    const float *inputPtr = inputImage->ValuePtr(0, y);
-    float *outputPtr = outputImage->ValuePtr(0, y);
-    float *weightsPtr = weightsOutput->ValuePtr(0, y);
-    const float *end = inputPtr + width;
+    const bool* rowPtr = inputMask->ValuePtr(0, y);
+    const float* inputPtr = inputImage->ValuePtr(0, y);
+    float* outputPtr = outputImage->ValuePtr(0, y);
+    float* weightsPtr = weightsOutput->ValuePtr(0, y);
+    const float* end = inputPtr + width;
     while (inputPtr < end) {
       // Assign each integer to one bool in the mask
       // Convert false to 0xFFFFFFFF and true to 0
@@ -231,8 +233,8 @@ void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSSE(
 #endif
 }
 
-void HighPassFilter::elementWiseDivideSimple(const Image2DPtr &leftHand,
-                                             const Image2DCPtr &rightHand) {
+void HighPassFilter::elementWiseDivideSimple(const Image2DPtr& leftHand,
+                                             const Image2DCPtr& rightHand) {
   for (unsigned y = 0; y < leftHand->Height(); ++y) {
     for (unsigned x = 0; x < leftHand->Width(); ++x) {
       if (rightHand->Value(x, y) == 0.0)
@@ -244,15 +246,15 @@ void HighPassFilter::elementWiseDivideSimple(const Image2DPtr &leftHand,
   }
 }
 
-void HighPassFilter::elementWiseDivideSSE(const Image2DPtr &leftHand,
-                                          const Image2DCPtr &rightHand) {
+void HighPassFilter::elementWiseDivideSSE(const Image2DPtr& leftHand,
+                                          const Image2DCPtr& rightHand) {
 #ifdef USE_INTRINSICS
   const __m128 zero4 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);
 
   for (unsigned y = 0; y < leftHand->Height(); ++y) {
-    float *leftHandPtr = leftHand->ValuePtr(0, y);
-    const float *rightHandPtr = rightHand->ValuePtr(0, y);
-    float *end = leftHandPtr + leftHand->Width();
+    float* leftHandPtr = leftHand->ValuePtr(0, y);
+    const float* rightHandPtr = rightHand->ValuePtr(0, y);
+    float* end = leftHandPtr + leftHand->Width();
     while (leftHandPtr < end) {
       __m128 l = _mm_load_ps(leftHandPtr), r = _mm_load_ps(rightHandPtr);
       __m128 conditionMask = _mm_cmpeq_ps(r, zero4);
@@ -267,3 +269,5 @@ void HighPassFilter::elementWiseDivideSSE(const Image2DPtr &leftHand,
   throw std::runtime_error("SSE function called without SSE available");
 #endif
 }
+
+}  // namespace algorithms

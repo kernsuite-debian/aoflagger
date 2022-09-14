@@ -32,7 +32,8 @@ class Functions {
   static int threshold_timestep_rms(lua_State* L);
   static int trim_channels(lua_State* L);
   static int trim_frequencies(lua_State* L);
-  static int upsample(lua_State* L);
+  static int upsample_image(lua_State* L);
+  static int upsample_mask(lua_State* L);
   static int visualize(lua_State* L);
 };
 

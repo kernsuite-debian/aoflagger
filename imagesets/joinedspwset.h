@@ -5,13 +5,13 @@
 #include "imageset.h"
 #include "msimageset.h"
 
-#include "../../structures/msmetadata.h"
+#include "../structures/msmetadata.h"
 
 #include <vector>
 #include <list>
 #include <map>
 
-namespace rfiStrategy {
+namespace imagesets {
 
 using Sequence = MSMetaData::Sequence;
 
@@ -77,9 +77,71 @@ class JoinedSPWSet final : public IndexableSet {
     _requests.push_back(index.Value());
   }
 
+  /**
+   * Combines the baseline data of multiple bands in one band.
+   *
+   * @param data The baseline data of the individual bands.
+   * @param totalHeight The sum of the channels in all bands in @a data.
+   * @param index The index of the final baseline.
+   */
+  static std::unique_ptr<BaselineData> CombineBaselineData(
+      std::vector<std::unique_ptr<BaselineData>>&& data, size_t totalHeight,
+      const ImageSetIndex& index) {
+    // Combine the images
+    TimeFrequencyData tfData(data[0]->Data());
+    size_t width = tfData.ImageWidth();
+    for (size_t imgIndex = 0; imgIndex != tfData.ImageCount(); ++imgIndex) {
+      size_t chIndex = 0;
+      Image2DPtr img = Image2D::CreateUnsetImagePtr(width, totalHeight);
+      for (size_t i = 0; i != data.size(); ++i) {
+        Image2DCPtr src = data[i]->Data().GetImage(imgIndex);
+        for (size_t y = 0; y != src->Height(); ++y) {
+          num_t* destPtr = img->ValuePtr(0, y + chIndex);
+          const num_t* srcPtr = src->ValuePtr(0, y);
+          for (size_t x = 0; x != src->Width(); ++x) destPtr[x] = srcPtr[x];
+        }
+        chIndex += data[i]->Data().ImageHeight();
+      }
+      tfData.SetImage(imgIndex, img);
+    }
+
+    // Combine the masks
+    for (size_t maskIndex = 0; maskIndex != tfData.MaskCount(); ++maskIndex) {
+      size_t chIndex = 0;
+      Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(width, totalHeight);
+      for (size_t i = 0; i != data.size(); ++i) {
+        Mask2DCPtr src = data[i]->Data().GetMask(maskIndex);
+        for (size_t y = 0; y != src->Height(); ++y) {
+          bool* destPtr = mask->ValuePtr(0, y + chIndex);
+          const bool* srcPtr = src->ValuePtr(0, y);
+          for (size_t x = 0; x != src->Width(); ++x) destPtr[x] = srcPtr[x];
+        }
+        chIndex += data[i]->Data().ImageHeight();
+      }
+      tfData.SetMask(maskIndex, mask);
+    }
+
+    // Combine the metadata
+    TimeFrequencyMetaDataPtr metaData(
+        new TimeFrequencyMetaData(*data[0]->MetaData()));
+    BandInfo band = metaData->Band();
+    size_t chIndex = band.channels.size();
+    band.channels.resize(totalHeight);
+    for (size_t i = 1; i != data.size(); ++i) {
+      const BandInfo& srcBand = data[i]->MetaData()->Band();
+      for (size_t ch = 0; ch != srcBand.channels.size(); ++ch)
+        band.channels[ch + chIndex] = srcBand.channels[ch];
+      chIndex += srcBand.channels.size();
+    }
+
+    metaData->SetBand(band);
+    return std::make_unique<BaselineData>(std::move(tfData),
+                                          std::move(metaData), index);
+  }
+
   void PerformReadRequests(class ProgressListener& progress) override {
     _msImageSet->PerformReadRequests(progress);
-    for (auto& request : _requests) {
+    for (size_t request : _requests) {
       const std::vector<std::pair<size_t /*spw*/, size_t /*seq*/>>&
           indexInformation = _joinedSequences[request].bandAndOriginalSeq;
       std::vector<std::unique_ptr<BaselineData>> data;
@@ -89,69 +151,20 @@ class JoinedSPWSet final : public IndexableSet {
         totalHeight += data.back()->Data().ImageHeight();
       }
 
-      // Combine the images
-      TimeFrequencyData tfData(data[0]->Data());
-      size_t width = tfData.ImageWidth();
-      for (size_t imgIndex = 0; imgIndex != tfData.ImageCount(); ++imgIndex) {
-        size_t chIndex = 0;
-        Image2DPtr img = Image2D::CreateUnsetImagePtr(width, totalHeight);
-        for (size_t i = 0; i != data.size(); ++i) {
-          Image2DCPtr src = data[i]->Data().GetImage(imgIndex);
-          for (size_t y = 0; y != src->Height(); ++y) {
-            num_t* destPtr = img->ValuePtr(0, y + chIndex);
-            const num_t* srcPtr = src->ValuePtr(0, y);
-            for (size_t x = 0; x != src->Width(); ++x) destPtr[x] = srcPtr[x];
-          }
-          chIndex += data[i]->Data().ImageHeight();
-        }
-        tfData.SetImage(imgIndex, img);
-      }
-
-      // Combine the masks
-      for (size_t maskIndex = 0; maskIndex != tfData.MaskCount(); ++maskIndex) {
-        size_t chIndex = 0;
-        Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(width, totalHeight);
-        for (size_t i = 0; i != data.size(); ++i) {
-          Mask2DCPtr src = data[i]->Data().GetMask(maskIndex);
-          for (size_t y = 0; y != src->Height(); ++y) {
-            bool* destPtr = mask->ValuePtr(0, y + chIndex);
-            const bool* srcPtr = src->ValuePtr(0, y);
-            for (size_t x = 0; x != src->Width(); ++x) destPtr[x] = srcPtr[x];
-          }
-          chIndex += data[i]->Data().ImageHeight();
-        }
-        tfData.SetMask(maskIndex, mask);
-      }
-
-      // Combine the metadata
-      TimeFrequencyMetaDataPtr metaData(
-          new TimeFrequencyMetaData(*data[0]->MetaData()));
-      BandInfo band = metaData->Band();
-      size_t chIndex = band.channels.size();
-      band.channels.resize(totalHeight);
-      for (size_t i = 1; i != data.size(); ++i) {
-        const BandInfo& srcBand = data[i]->MetaData()->Band();
-        for (size_t ch = 0; ch != srcBand.channels.size(); ++ch)
-          band.channels[ch + chIndex] = srcBand.channels[ch];
-        chIndex += srcBand.channels.size();
-      }
-
-      metaData->SetBand(band);
-
       const Sequence seq = _joinedSequences[request].sequence;
-      boost::optional<ImageSetIndex> index =
+      std::optional<ImageSetIndex> index =
           Index(seq.antenna1, seq.antenna2, seq.spw, seq.sequenceId);
       if (!index) throw std::runtime_error("Baseline not found");
-      BaselineData combinedData(tfData, metaData, *index);
-      _baselineData.push_back(combinedData);
+      _baselineData.push_back(
+          CombineBaselineData(std::move(data), totalHeight, *index));
     }
     _requests.clear();
   }
 
   std::unique_ptr<BaselineData> GetNextRequested() override {
-    std::unique_ptr<BaselineData> data(new BaselineData(_baselineData.front()));
+    std::unique_ptr<BaselineData> result = std::move(_baselineData.front());
     _baselineData.pop_front();
-    return data;
+    return result;
   }
 
   void AddWriteFlagsTask(const ImageSetIndex& index,
@@ -229,9 +242,9 @@ class JoinedSPWSet final : public IndexableSet {
 
   size_t SequenceCount() const override { return _msImageSet->SequenceCount(); }
 
-  boost::optional<ImageSetIndex> Index(size_t antenna1, size_t antenna2,
-                                       size_t bandIndex,
-                                       size_t sequenceId) const override {
+  std::optional<ImageSetIndex> Index(size_t antenna1, size_t antenna2,
+                                     size_t bandIndex,
+                                     size_t sequenceId) const override {
     for (size_t i = 0; i != _joinedSequences.size(); ++i) {
       const Sequence seq = _joinedSequences[i].sequence;
       bool antennaMatch =
@@ -266,7 +279,7 @@ class JoinedSPWSet final : public IndexableSet {
   };
   std::vector<JoinedSequence> _joinedSequences;
   std::vector<size_t> _requests;
-  std::list<BaselineData> _baselineData;
+  std::list<std::unique_ptr<BaselineData>> _baselineData;
   std::vector<size_t> _nChannels;
 };
 
@@ -284,6 +297,6 @@ std::string JoinedSPWSet::Description(const ImageSetIndex& index) const {
   }
   return sstream.str();
 }
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

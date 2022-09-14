@@ -4,14 +4,14 @@
 #include "imageset.h"
 #include "msimageset.h"
 
-#include "../../structures/msmetadata.h"
-#include "../../util/logger.h"
+#include "../structures/msmetadata.h"
+#include "../util/logger.h"
 
 #include <vector>
 #include <list>
 #include <map>
 
-namespace rfiStrategy {
+namespace imagesets {
 
 using Sequence = MSMetaData::Sequence;
 
@@ -154,9 +154,9 @@ class CoaddedImageSet final : public IndexableSet {
     return _msImageSets.front()->SequenceCount();
   }
 
-  boost::optional<ImageSetIndex> Index(size_t antenna1, size_t antenna2,
-                                       size_t bandIndex,
-                                       size_t sequenceId) const override {
+  std::optional<ImageSetIndex> Index(size_t antenna1, size_t antenna2,
+                                     size_t bandIndex,
+                                     size_t sequenceId) const override {
     return _msImageSets[0]->Index(antenna1, antenna2, bandIndex, sequenceId);
   }
 
@@ -177,6 +177,6 @@ class CoaddedImageSet final : public IndexableSet {
 std::string CoaddedImageSet::Description(const ImageSetIndex& index) const {
   return _msImageSets[0]->Description(index) + " (coadded)";
 }
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

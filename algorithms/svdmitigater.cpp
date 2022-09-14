@@ -1,23 +1,25 @@
-#include "../../util/stopwatch.h"
+#include "../util/stopwatch.h"
 
 #include "svdmitigater.h"
 
 #ifdef HAVE_GTKMM
-#include "../../plot/plot2d.h"
+#include "../plot/xyplot.h"
 #endif
 
 extern "C" {
-int zgesvd_(char *jobu, char *jobvt, integer *m, integer *n, doublecomplex *a,
-            integer *lda, doublereal *s, doublecomplex *u, integer *ldu,
-            doublecomplex *vt, integer *ldvt, doublecomplex *work,
-            integer *lwork, doublereal *rwork, integer *info);
+int zgesvd_(char* jobu, char* jobvt, integer* m, integer* n, doublecomplex* a,
+            integer* lda, doublereal* s, doublecomplex* u, integer* ldu,
+            doublecomplex* vt, integer* ldvt, doublecomplex* work,
+            integer* lwork, doublereal* rwork, integer* info);
 }
 
+namespace algorithms {
+
 SVDMitigater::SVDMitigater()
-    : _background(0),
-      _singularValues(0),
-      _leftSingularVectors(0),
-      _rightSingularVectors(0),
+    : _background(nullptr),
+      _singularValues(nullptr),
+      _leftSingularVectors(nullptr),
+      _rightSingularVectors(nullptr),
       _m(0),
       _n(0),
       _iteration(0),
@@ -31,11 +33,11 @@ void SVDMitigater::Clear() {
     delete[] _singularValues;
     delete[] _leftSingularVectors;
     delete[] _rightSingularVectors;
-    _singularValues = 0;
-    _leftSingularVectors = 0;
-    _rightSingularVectors = 0;
+    _singularValues = nullptr;
+    _leftSingularVectors = nullptr;
+    _rightSingularVectors = nullptr;
   }
-  if (_background != 0) delete _background;
+  if (_background != nullptr) delete _background;
 }
 
 // lda = leading dimension
@@ -57,7 +59,7 @@ void SVDMitigater::Decompose() {
   int minmn = _m < _n ? _m : _n;
   char rowsOfU = 'A';   // all rows of u
   char rowsOfVT = 'A';  // all rows of VT
-  doublecomplex *a = new doublecomplex[_m * _n];
+  doublecomplex* a = new doublecomplex[_m * _n];
   Image2DCPtr real = _data.GetRealPart(), imaginary = _data.GetImaginaryPart();
   for (int t = 0; t < _n; ++t) {
     for (int f = 0; f < _m; ++f) {
@@ -81,7 +83,7 @@ void SVDMitigater::Decompose() {
   long int info = 0;
   doublecomplex complexWorkAreaSize;
   long int workAreaSize = -1;
-  double *workArea2 = new double[5 * minmn];
+  double* workArea2 = new double[5 * minmn];
 
   // Determine optimal workareasize
   zgesvd_(&rowsOfU, &rowsOfVT, &_m, &_n, a, &lda, _singularValues,
@@ -91,7 +93,7 @@ void SVDMitigater::Decompose() {
   if (info == 0) {
     if (_verbose) std::cout << "zgesvd_..." << std::endl;
     workAreaSize = (int)complexWorkAreaSize.r;
-    doublecomplex *workArea1 = new doublecomplex[workAreaSize];
+    doublecomplex* workArea1 = new doublecomplex[workAreaSize];
     zgesvd_(&rowsOfU, &rowsOfVT, &_m, &_n, a, &lda, _singularValues,
             _leftSingularVectors, &_m, _rightSingularVectors, &_n, workArea1,
             &workAreaSize, workArea2, &info);
@@ -137,7 +139,7 @@ void SVDMitigater::Compose() {
       imaginary->SetValue(t, f, a_tf_i);
     }
   }
-  if (_background != 0) delete _background;
+  if (_background != nullptr) delete _background;
   _background =
       new TimeFrequencyData(aocommon::Polarization::StokesI, real, imaginary);
   if (_verbose) std::cout << watch.ToString() << std::endl;
@@ -145,8 +147,8 @@ void SVDMitigater::Compose() {
 
 #ifdef HAVE_GTKMM
 
-void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData &data,
-                                            Plot2D &plot) {
+void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData& data,
+                                            XYPlot& plot) {
   size_t polarisationCount = data.PolarizationCount();
   plot.SetTitle("Distribution of singular values");
   plot.SetLogarithmicYAxis(true);
@@ -157,7 +159,7 @@ void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData &data,
     svd.Decompose();
     size_t minmn = svd._m < svd._n ? svd._m : svd._n;
 
-    Plot2DPointSet &pointSet = plot.StartLine(polarizationData.Description());
+    XYPointSet& pointSet = plot.StartLine(polarizationData.Description());
     pointSet.SetXDesc("Singular value index");
     pointSet.SetYDesc("Singular value");
 
@@ -167,6 +169,8 @@ void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData &data,
 }
 
 #else
-void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData &,
-                                            Plot2D &) {}
+void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData&, XYPlot&) {
+}
 #endif
+
+}  // namespace algorithms

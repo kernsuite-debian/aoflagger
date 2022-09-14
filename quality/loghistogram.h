@@ -23,11 +23,11 @@ class LogHistogram : public Serializable {
 
     long unsigned GetCount() const { return count; }
 
-    AmplitudeBin &operator+=(const AmplitudeBin &other) {
+    AmplitudeBin& operator+=(const AmplitudeBin& other) {
       count += other.count;
       return *this;
     }
-    AmplitudeBin &operator-=(const AmplitudeBin &other) {
+    AmplitudeBin& operator-=(const AmplitudeBin& other) {
       if (count >= other.count)
         count -= other.count;
       else
@@ -35,10 +35,10 @@ class LogHistogram : public Serializable {
       return *this;
     }
 
-    virtual void Serialize(std::ostream &stream) const final override {
+    virtual void Serialize(std::ostream& stream) const final override {
       SerializeToUInt64(stream, count);
     }
-    virtual void Unserialize(std::istream &stream) final override {
+    virtual void Unserialize(std::istream& stream) final override {
       count = UnserializeUInt64(stream);
     }
   };
@@ -46,30 +46,30 @@ class LogHistogram : public Serializable {
  public:
   LogHistogram() {}
 
-  LogHistogram(const LogHistogram &source) : _amplitudes(source._amplitudes) {}
+  LogHistogram(const LogHistogram& source) : _amplitudes(source._amplitudes) {}
 
   void Add(const double amplitude) {
     if (std::isfinite(amplitude)) {
       const double centralAmp = getCentralAmplitude(amplitude);
-      AmplitudeBin &bin = getBin(centralAmp);
+      AmplitudeBin& bin = getBin(centralAmp);
       ++bin.count;
     }
   }
 
-  void Add(const LogHistogram &histogram) {
+  void Add(const LogHistogram& histogram) {
     for (std::map<double, AmplitudeBin>::const_iterator i =
              histogram._amplitudes.begin();
          i != histogram._amplitudes.end(); ++i) {
-      AmplitudeBin &bin = getBin(i->first);
+      AmplitudeBin& bin = getBin(i->first);
       bin += i->second;
     }
   }
 
-  void operator-=(const LogHistogram &histogram) {
+  void operator-=(const LogHistogram& histogram) {
     for (std::map<double, AmplitudeBin>::const_iterator i =
              histogram._amplitudes.begin();
          i != histogram._amplitudes.end(); ++i) {
-      AmplitudeBin &bin = getBin(i->first);
+      AmplitudeBin& bin = getBin(i->first);
       bin -= i->second;
     }
   }
@@ -307,7 +307,7 @@ class LogHistogram : public Serializable {
     return pow(term / -exponent, 1.0 / (exponent + 1.0));
   }
 
-  void GetRFIRegion(double &start, double &end) const {
+  void GetRFIRegion(double& start, double& end) const {
     double sigmaEstimate = AmplitudeWithMaxNormalizedCount();
     double maxAmplitude = MaxAmplitude();
     start = sigmaEstimate * 20.0;
@@ -322,7 +322,7 @@ class LogHistogram : public Serializable {
   }
 
   void SetData(
-      std::vector<HistogramTablesFormatter::HistogramItem> &histogramData) {
+      std::vector<HistogramTablesFormatter::HistogramItem>& histogramData) {
     for (std::vector<HistogramTablesFormatter::HistogramItem>::const_iterator
              i = histogramData.begin();
          i != histogramData.end(); ++i) {
@@ -346,26 +346,26 @@ class LogHistogram : public Serializable {
 
   class const_iterator {
    public:
-    const_iterator(const LogHistogram &histogram,
+    const_iterator(const LogHistogram& histogram,
                    std::map<double, AmplitudeBin>::const_iterator iter)
         : _iterator(iter) {}
-    const_iterator(const const_iterator &source)
+    const_iterator(const const_iterator& source)
         : _iterator(source._iterator) {}
-    const_iterator &operator=(const const_iterator &source) {
+    const_iterator& operator=(const const_iterator& source) {
       _iterator = source._iterator;
       return *this;
     }
-    bool operator==(const const_iterator &other) const {
+    bool operator==(const const_iterator& other) const {
       return other._iterator == _iterator;
     }
-    bool operator!=(const const_iterator &other) const {
+    bool operator!=(const const_iterator& other) const {
       return other._iterator != _iterator;
     }
-    const_iterator &operator++() {
+    const_iterator& operator++() {
       ++_iterator;
       return *this;
     }
-    const_iterator &operator--() {
+    const_iterator& operator--() {
       --_iterator;
       return *this;
     }
@@ -398,7 +398,7 @@ class LogHistogram : public Serializable {
     return const_iterator(*this, _amplitudes.end());
   }
 
-  virtual void Serialize(std::ostream &stream) const final override {
+  virtual void Serialize(std::ostream& stream) const final override {
     SerializeToUInt64(stream, _amplitudes.size());
     for (std::map<double, AmplitudeBin>::const_iterator i = _amplitudes.begin();
          i != _amplitudes.end(); ++i) {
@@ -407,7 +407,7 @@ class LogHistogram : public Serializable {
     }
   }
 
-  virtual void Unserialize(std::istream &stream) final override {
+  virtual void Unserialize(std::istream& stream) final override {
     _amplitudes.clear();
     size_t mapSize = UnserializeUInt64(stream);
     std::map<double, AmplitudeBin>::iterator insertPos = _amplitudes.begin();
@@ -429,7 +429,7 @@ class LogHistogram : public Serializable {
  private:
   std::map<double, AmplitudeBin> _amplitudes;
 
-  AmplitudeBin &getBin(double centralAmplitude) {
+  AmplitudeBin& getBin(double centralAmplitude) {
     std::map<double, class AmplitudeBin>::iterator element =
         _amplitudes.find(centralAmplitude);
 

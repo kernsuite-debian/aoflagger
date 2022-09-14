@@ -3,14 +3,14 @@
 
 #include <cairomm/context.h>
 
-class Plot2D;
+class XYPlot;
 
 class Legend {
  public:
   Legend();
 
   void Initialize(const Cairo::RefPtr<Cairo::Context>& cairo,
-                  const Plot2D& plot);
+                  const XYPlot& plot);
 
   double Height() const { return _height; }
   double Width() const { return _width; }
@@ -21,7 +21,7 @@ class Legend {
   }
 
   void Draw(const Cairo::RefPtr<Cairo::Context>& cairo,
-            const Plot2D& plot) const;
+            const XYPlot& plot) const;
 
  private:
   double _sizeOfM, _xBearing, _yBearing, _textAdvance;

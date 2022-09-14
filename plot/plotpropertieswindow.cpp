@@ -6,13 +6,11 @@
 #include "../util/gtkmm-compat.h"
 
 #include "plotpropertieswindow.h"
-#include "plot2d.h"
 #include "plotwidget.h"
+#include "xyplot.h"
 
-#include "../rfigui/heatmapwidget.h"
-
-PlotPropertiesWindow::PlotPropertiesWindow(Plot2D &plot,
-                                           const std::string &title)
+PlotPropertiesWindow::PlotPropertiesWindow(XYPlot& plot,
+                                           const std::string& title)
     : Gtk::Window(),
       _plot(plot),
       _titleEntry(),
@@ -116,13 +114,13 @@ void PlotPropertiesWindow::initVRangeWidgets() {
 
   switch (_plot.VRangeDetermination()) {
     default:
-    case Plot2D::MinMaxRange:
+    case XYPlot::MinMaxRange:
       _minMaxVRangeButton.set_active(true);
       break;
-    case Plot2D::WinsorizedRange:
+    case XYPlot::WinsorizedRange:
       _winsorizedVRangeButton.set_active(true);
       break;
-    case Plot2D::SpecifiedRange:
+    case XYPlot::SpecifiedRange:
       _specifiedVRangeButton.set_active(true);
       break;
   }
@@ -146,7 +144,7 @@ void PlotPropertiesWindow::initHRangeWidgets() {
 
   _hRangeBox.pack_start(_automaticHRangeButton);
   _automaticHRangeButton.set_active(_plot.HRangeDetermination() !=
-                                    Plot2D::SpecifiedRange);
+                                    XYPlot::SpecifiedRange);
   _automaticHRangeButton.signal_clicked().connect(
       sigc::mem_fun(*this, &PlotPropertiesWindow::onHRangeChanged));
 
@@ -227,19 +225,19 @@ void PlotPropertiesWindow::onApplyClicked() {
   _plot.SetTitle(_titleEntry.get_text());
 
   if (_minMaxVRangeButton.get_active())
-    _plot.SetVRangeDetermination(Plot2D::MinMaxRange);
+    _plot.SetVRangeDetermination(XYPlot::MinMaxRange);
   else if (_winsorizedVRangeButton.get_active())
-    _plot.SetVRangeDetermination(Plot2D::WinsorizedRange);
+    _plot.SetVRangeDetermination(XYPlot::WinsorizedRange);
   else if (_specifiedVRangeButton.get_active()) {
-    _plot.SetVRangeDetermination(Plot2D::SpecifiedRange);
+    _plot.SetVRangeDetermination(XYPlot::SpecifiedRange);
     _plot.SetMinY(atof(_vRangeMinEntry.get_text().c_str()));
     _plot.SetMaxY(atof(_vRangeMaxEntry.get_text().c_str()));
   }
 
   if (_automaticHRangeButton.get_active())
-    _plot.SetHRangeDetermination(Plot2D::MinMaxRange);
+    _plot.SetHRangeDetermination(XYPlot::MinMaxRange);
   else {
-    _plot.SetHRangeDetermination(Plot2D::SpecifiedRange);
+    _plot.SetHRangeDetermination(XYPlot::SpecifiedRange);
     _plot.SetMinX(atof(_hRangeMinEntry.get_text().c_str()));
     _plot.SetMaxX(atof(_hRangeMaxEntry.get_text().c_str()));
   }

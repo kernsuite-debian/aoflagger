@@ -6,7 +6,7 @@
 
 #include "../../quality/qualitytablesformatter.h"
 
-#include "../../plot/plot2d.h"
+#include "../../plot/xyplot.h"
 
 #include "aoqpagecontroller.h"
 
@@ -21,14 +21,14 @@ class AOQPlotPageController : public AOQPageController {
       const StatisticsCollection* statCollection,
       const std::vector<class AntennaInfo>& antennas) override final;
 
-  virtual void CloseStatistics() override final { _statCollection = 0; }
+  virtual void CloseStatistics() override final { _statCollection = nullptr; }
 
-  bool HasStatistics() const { return _statCollection != 0; }
+  bool HasStatistics() const { return _statCollection != nullptr; }
 
   void SavePdf(const std::string& filename,
                QualityTablesFormatter::StatisticKind kind);
 
-  Plot2D& Plot() { return _plot; }
+  XYPlot& Plot() { return _plot; }
 
   void UpdatePlot();
 
@@ -46,10 +46,10 @@ class AOQPlotPageController : public AOQPageController {
   virtual const std::map<double, class DefaultStatistics>& getStatistics()
       const = 0;
 
-  virtual void startLine(Plot2D& plot, const std::string& name, int lineIndex,
+  virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
                          const std::string& yAxisDesc) = 0;
 
-  virtual void processPlot(Plot2D& plot) {}
+  virtual void processPlot(XYPlot& plot) {}
 
   const StatisticsCollection* getStatCollection() const {
     return _statCollection;
@@ -72,7 +72,7 @@ class AOQPlotPageController : public AOQPageController {
                      SelectedPol pol, PhaseType phase, int lineIndex,
                      const std::string& yDesc);
   const StatisticsCollection* _statCollection;
-  Plot2D _plot;
+  XYPlot _plot;
   std::string getYDesc(
       const std::set<QualityTablesFormatter::StatisticKind>& kinds) const;
 };

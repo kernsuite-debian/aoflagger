@@ -10,14 +10,14 @@
 
 class PlotSheet : public Gtk::HBox {
  public:
-  sigc::signal<void, const std::string &> SignalStatusChange() {
+  sigc::signal<void, const std::string&> SignalStatusChange() {
     return _signalStatusChange;
   }
 
-  virtual void InitializeToolbar(Gtk::Toolbar &toolbar){};
+  virtual void InitializeToolbar(Gtk::Toolbar& toolbar){};
 
  protected:
-  sigc::signal<void, const std::string &> _signalStatusChange;
+  sigc::signal<void, const std::string&> _signalStatusChange;
 };
 
 #endif

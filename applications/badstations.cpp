@@ -18,6 +18,9 @@
 
 #include <iostream>
 
+using algorithms::AntennaSelector;
+using algorithms::BaselineSelector;
+
 StatisticsCollection load(const std::string& filename,
                           std::vector<AntennaInfo>& antennae) {
   StatisticsCollection statisticsCollection;
@@ -38,15 +41,15 @@ std::set<size_t> detectRFIPercentage(const char* filename) {
   std::vector<AntennaInfo> antennae;
   StatisticsCollection statisticsCollection = load(filename, antennae);
 
-  rfiStrategy::BaselineSelector selector;
+  BaselineSelector selector;
   selector.SetUseLog(true);
 
   statisticsCollection.IntegrateBaselinesToOneChannel();
   const BaselineStatisticsMap& baselineMap =
       statisticsCollection.BaselineStatistics();
-  const std::vector<std::pair<unsigned, unsigned> > list =
+  const std::vector<std::pair<unsigned, unsigned>> list =
       baselineMap.BaselineList();
-  for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+  for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
            list.begin();
        i != list.end(); ++i) {
     const unsigned a1 = i->first, a2 = i->second;
@@ -54,8 +57,7 @@ std::set<size_t> detectRFIPercentage(const char* filename) {
     DefaultStatistics statistic = baselineMap.GetStatistics(a1, a2);
     selector.Add(statistic, antennae[a1], antennae[a2]);
   }
-  std::vector<rfiStrategy::BaselineSelector::SingleBaselineInfo>
-      markedBaselines;
+  std::vector<BaselineSelector::SingleBaselineInfo> markedBaselines;
   std::set<unsigned> badStations;
 
   selector.Search(markedBaselines);
@@ -71,7 +73,7 @@ std::set<size_t> detectRFIPercentage(const char* filename) {
 std::set<size_t> detectStddev(const char* filename) {
   std::vector<AntennaInfo> antennae;
   StatisticsCollection statisticsCollection = load(filename, antennae);
-  rfiStrategy::AntennaSelector selector;
+  AntennaSelector selector;
   std::vector<size_t> badStations = selector.Run(statisticsCollection);
 
   std::cout << "List of " << badStations.size() << " bad stations:\n";

@@ -1,11 +1,13 @@
 #ifndef CONVOLUTIONS_H
 #define CONVOLUTIONS_H
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
 
-#include "../../util/rng.h"
+#include "../util/rng.h"
 
 #include <cmath>
+
+namespace algorithms {
 
 class Convolutions {
  public:
@@ -31,11 +33,11 @@ class Convolutions {
    * @param kernelSize Number of samples in the kernel, probably desired to be
    * odd if the kernel is symmetric.
    */
-  static void OneDimensionalConvolutionBorderZero(num_t *data,
+  static void OneDimensionalConvolutionBorderZero(num_t* data,
                                                   unsigned dataSize,
-                                                  const num_t *kernel,
+                                                  const num_t* kernel,
                                                   unsigned kernelSize) {
-    num_t *tmp = new num_t[dataSize];
+    num_t* tmp = new num_t[dataSize];
     for (unsigned i = 0; i < dataSize; ++i) {
       unsigned kStart, kEnd;
       const int offset = i - kernelSize / 2;
@@ -82,11 +84,11 @@ class Convolutions {
    * @param kernelSize Number of samples in the kernel, probably desired to be
    * odd if the kernel is symmetric.
    */
-  static void OneDimensionalConvolutionBorderInterp(num_t *data,
+  static void OneDimensionalConvolutionBorderInterp(num_t* data,
                                                     unsigned dataSize,
-                                                    const num_t *kernel,
+                                                    const num_t* kernel,
                                                     unsigned kernelSize) {
-    num_t *tmp = new num_t[dataSize];
+    num_t* tmp = new num_t[dataSize];
     for (unsigned i = 0; i < dataSize; ++i) {
       unsigned kStart, kEnd;
       const int offset = i - kernelSize / 2;
@@ -116,7 +118,7 @@ class Convolutions {
     delete[] tmp;
   }
 
-  static void OneDimensionalGausConvolution(num_t *data, unsigned dataSize,
+  static void OneDimensionalGausConvolution(num_t* data, unsigned dataSize,
                                             num_t sigma) {
     unsigned kernelSize = (unsigned)roundn(sigma * 3.0L);
     if (kernelSize % 2 == 0) ++kernelSize;
@@ -125,7 +127,7 @@ class Convolutions {
       kernelSize = dataSize * 2 - 1;
     }
     unsigned centreElement = kernelSize / 2;
-    num_t *kernel = new num_t[kernelSize];
+    num_t* kernel = new num_t[kernelSize];
     for (unsigned i = 0; i < kernelSize; ++i) {
       num_t x = ((num_t)i - (num_t)centreElement);
       kernel[i] = RNG::EvaluateGaussian(x, sigma);
@@ -145,12 +147,12 @@ class Convolutions {
    *
    * The function is O(dataSize^2).
    */
-  static void OneDimensionalSincConvolution(num_t *data, unsigned dataSize,
+  static void OneDimensionalSincConvolution(num_t* data, unsigned dataSize,
                                             num_t frequency) {
     if (dataSize == 0) return;
     const unsigned kernelSize = dataSize * 2 - 1;
     const unsigned centreElement = kernelSize / 2;
-    num_t *kernel = new num_t[kernelSize];
+    num_t* kernel = new num_t[kernelSize];
     const numl_t factor = 2.0 * frequency * M_PInl;
     numl_t sum = 0.0;
     for (unsigned i = 0; i < kernelSize; ++i) {
@@ -177,13 +179,13 @@ class Convolutions {
    *
    * The function is O(dataSize^2).
    */
-  static void OneDimensionalSincConvolutionHammingWindow(num_t *data,
+  static void OneDimensionalSincConvolutionHammingWindow(num_t* data,
                                                          unsigned dataSize,
                                                          num_t frequency) {
     if (dataSize == 0) return;
     const unsigned kernelSize = dataSize * 2 - 1;
     const unsigned centreElement = kernelSize / 2;
-    num_t *kernel = new num_t[kernelSize];
+    num_t* kernel = new num_t[kernelSize];
     const numl_t sincFactor = 2.0 * frequency * M_PInl;
     const numl_t hammingFactor = 2.0 * M_PInl * (numl_t)(kernelSize - 1);
     numl_t sum = 0.0;
@@ -203,5 +205,7 @@ class Convolutions {
     delete[] kernel;
   }
 };
+
+}  // namespace algorithms
 
 #endif

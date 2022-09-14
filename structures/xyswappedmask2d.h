@@ -21,10 +21,10 @@
 template <typename MaskLike>
 class XYSwappedMask2D {
  public:
-  explicit XYSwappedMask2D(MaskLike &mask) : _mask(mask) {}
+  explicit XYSwappedMask2D(MaskLike& mask) : _mask(mask) {}
 
-  XYSwappedMask2D<MaskLike> &operator=(
-      const XYSwappedMask2D<MaskLike> &source) {
+  XYSwappedMask2D<MaskLike>& operator=(
+      const XYSwappedMask2D<MaskLike>& source) {
     _mask = source._mask;
     return *this;
   }
@@ -44,13 +44,13 @@ class XYSwappedMask2D {
   unsigned Height() const { return _mask.Width(); }
 
  private:
-  MaskLike &_mask;
+  MaskLike& _mask;
 };
 
 template <typename ImageLike>
 class XYSwappedImage2D {
  public:
-  explicit XYSwappedImage2D(ImageLike &image) : _image(image) {}
+  explicit XYSwappedImage2D(ImageLike& image) : _image(image) {}
 
   inline num_t Value(unsigned x, unsigned y) const {
     return _image.Value(y, x);
@@ -65,7 +65,7 @@ class XYSwappedImage2D {
   inline unsigned Height() const { return _image.Width(); }
 
  private:
-  ImageLike &_image;
+  ImageLike& _image;
 };
 
 #endif  // XYSWAPPEDMASK2D_H

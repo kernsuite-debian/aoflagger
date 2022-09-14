@@ -14,13 +14,13 @@ class RefFileEntry {
 
   RefFileEntry() : _size(0) {}
 
-  RefFileEntry(const RefFileEntry &source)
+  RefFileEntry(const RefFileEntry& source)
       : _path(source._path),
         _frequency(source._frequency),
         _size(source._size),
         _node(source._node) {}
 
-  RefFileEntry &operator=(const RefFileEntry &source) {
+  RefFileEntry& operator=(const RefFileEntry& source) {
     _path = source._path;
     _frequency = source._frequency;
     _size = source._size;
@@ -28,12 +28,12 @@ class RefFileEntry {
     return *this;
   }
 
-  const std::string &Path() const { return _path; }
-  const std::string &Frequency() const { return _frequency; }
+  const std::string& Path() const { return _path; }
+  const std::string& Frequency() const { return _frequency; }
   unsigned Size() const { return _size; }
-  const std::string &Node() const { return _node; }
+  const std::string& Node() const { return _node; }
 
-  void SetPath(const std::string &path) { _path = path; }
+  void SetPath(const std::string& path) { _path = path; }
 
  private:
   std::string _path;
@@ -41,7 +41,7 @@ class RefFileEntry {
   unsigned _size;
   std::string _node;
 
-  bool read(std::istream &stream) {
+  bool read(std::istream& stream) {
     std::string line;
     do {
       if (!stream.good()) return false;
@@ -54,12 +54,12 @@ class RefFileEntry {
     return true;
   }
 
-  void write(std::ostream &stream) const {
+  void write(std::ostream& stream) const {
     stream << _path << ' ' << _frequency << ' ' << _size << ' ' << _node
            << "\n";
   }
 
-  void assignFromString(const std::string &line) {
+  void assignFromString(const std::string& line) {
     std::string::const_iterator i = line.begin();
     if (!getNextToken(_path, i, line.end()))
       throw RefFileException("Expecting a path");
@@ -73,7 +73,7 @@ class RefFileEntry {
       throw RefFileException("Expecting a node");
   }
 
-  static bool ignoreLine(const std::string &line) {
+  static bool ignoreLine(const std::string& line) {
     for (std::string::const_iterator i = line.begin(); i != line.end(); ++i) {
       if (*i == '#') return true;
       if (!ignorable(*i)) return false;
@@ -85,7 +85,7 @@ class RefFileEntry {
     return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
   }
 
-  static bool getNextToken(std::string &dest, std::string::const_iterator &ptr,
+  static bool getNextToken(std::string& dest, std::string::const_iterator& ptr,
                            const std::string::const_iterator end) {
     std::ostringstream token;
     while (ptr != end && ignorable(*ptr)) ++ptr;

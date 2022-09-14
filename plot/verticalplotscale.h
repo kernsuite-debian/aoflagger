@@ -1,8 +1,10 @@
-#ifndef VERTICALPLOTSCALE_H
-#define VERTICALPLOTSCALE_H
+#ifndef VERTICAL_PLOT_SCALE_H
+#define VERTICAL_PLOT_SCALE_H
 
 #include "linkable.h"
+#include "axistype.h"
 
+#include <array>
 #include <string>
 #include <vector>
 #include <memory>
@@ -35,7 +37,7 @@ class VerticalPlotScale : public Linkable<VerticalPlotScale> {
     return _width;
   }
 
-  double GetTextHeight(const Cairo::RefPtr<Cairo::Context>& cairo);
+  double GetTickTextHeight(const Cairo::RefPtr<Cairo::Context>& cairo);
 
   void SetDrawWithDescription(bool drawWithDescription) {
     _drawWithDescription = drawWithDescription;
@@ -56,14 +58,21 @@ class VerticalPlotScale : public Linkable<VerticalPlotScale> {
 
   void Draw(const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX,
             double offsetY);
-  void InitializeNumericTicks(double min, double max);
-  void InitializeLogarithmicTicks(double min, double max);
+  void SetAxisType(AxisType axisType) { _axisType = axisType; }
+  void SetTickRange(double min, double max) {
+    _tickRange = std::array<double, 2>{min, max};
+  }
+  double GetTickRangeMin() const { return _tickRange[0]; }
+  double GetTickRangeMax() const { return _tickRange[1]; }
+  void SetLogarithmic(bool logarithmic) { _isLogarithmic = logarithmic; }
+  bool IsLogarithmic() const { return _isLogarithmic; }
+  void InitializeTicks();
   double UnitToAxis(double unitValue) const;
   double AxisToUnit(double axisValue) const;
 
  private:
-  void drawUnits(const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX,
-                 double offsetY);
+  void drawDescription(const Cairo::RefPtr<Cairo::Context>& cairo,
+                       double offsetX, double offsetY);
   bool ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo);
   void initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo);
   double getTickYPosition(const Tick& tick);
@@ -78,6 +87,8 @@ class VerticalPlotScale : public Linkable<VerticalPlotScale> {
   bool _metricsAreInitialized;
   VerticalPlotScale* _alignTo;
   std::unique_ptr<class TickSet> _tickSet;
+  AxisType _axisType;
+  std::array<double, 2> _tickRange;
   bool _isLogarithmic;
   bool _drawWithDescription;
   std::string _unitsCaption;

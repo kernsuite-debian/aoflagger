@@ -1,6 +1,8 @@
 #include "imagecomparisoncontroller.h"
 
-using namespace aocommon;
+#include "../plotimage.h"
+
+using aocommon::Polarization;
 
 ImageComparisonController::ImageComparisonController()
     : _showPP(true),
@@ -19,12 +21,11 @@ TimeFrequencyData ImageComparisonController::GetActiveDataFullSize() const {
 
 TimeFrequencyData ImageComparisonController::GetActiveData() const {
   TimeFrequencyData data(GetActiveDataFullSize());
-  if (_plot.StartHorizontal() != 0.0 || _plot.EndHorizontal() != 1.0 ||
-      _plot.StartVertical() != 0.0 || _plot.EndVertical() != 1.0) {
-    data.Trim(round(_plot.StartHorizontal() * data.ImageWidth()),
-              round(_plot.StartVertical() * data.ImageHeight()),
-              round(_plot.EndHorizontal() * data.ImageWidth()),
-              round(_plot.EndVertical() * data.ImageHeight()));
+  if (!_plot.IsZoomedOut()) {
+    data.Trim(round(_plot.XZoomStart() * data.ImageWidth()),
+              round(_plot.YZoomStart() * data.ImageHeight()),
+              round(_plot.XZoomEnd() * data.ImageWidth()),
+              round(_plot.YZoomEnd() * data.ImageHeight()));
   }
   return data;
 }
@@ -267,7 +268,7 @@ void ImageComparisonController::updateVisualizedImage() {
   if (image == nullptr)
     _plot.Clear();
   else
-    _plot.SetImage(image);
+    _plot.SetImage(std::unique_ptr<PlotImage>(new PlotImage(std::move(image))));
 }
 
 void ImageComparisonController::ClearAllButOriginal() {

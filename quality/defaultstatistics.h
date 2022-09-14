@@ -24,7 +24,7 @@ class DefaultStatistics : public Serializable {
 
   ~DefaultStatistics() { destruct(); }
 
-  DefaultStatistics(const DefaultStatistics &other)
+  DefaultStatistics(const DefaultStatistics& other)
       : _polarizationCount(other._polarizationCount) {
     initialize();
     for (unsigned p = 0; p < _polarizationCount; ++p) {
@@ -38,7 +38,7 @@ class DefaultStatistics : public Serializable {
     }
   }
 
-  DefaultStatistics &operator=(const DefaultStatistics &other) {
+  DefaultStatistics& operator=(const DefaultStatistics& other) {
     if (other._polarizationCount != _polarizationCount) {
       destruct();
       _polarizationCount = other._polarizationCount;
@@ -56,7 +56,7 @@ class DefaultStatistics : public Serializable {
     return *this;
   }
 
-  DefaultStatistics &operator+=(const DefaultStatistics &other) {
+  DefaultStatistics& operator+=(const DefaultStatistics& other) {
     for (unsigned p = 0; p < _polarizationCount; ++p) {
       rfiCount[p] += other.rfiCount[p];
       count[p] += other.count[p];
@@ -69,7 +69,7 @@ class DefaultStatistics : public Serializable {
     return *this;
   }
 
-  bool operator==(const DefaultStatistics &rhs) const {
+  bool operator==(const DefaultStatistics& rhs) const {
     if (_polarizationCount != rhs._polarizationCount) return false;
     for (unsigned p = 0; p < _polarizationCount; ++p) {
       if (rfiCount[p] != rhs.rfiCount[p]) return false;
@@ -83,7 +83,7 @@ class DefaultStatistics : public Serializable {
     return true;
   }
 
-  bool operator!=(const DefaultStatistics &rhs) const {
+  bool operator!=(const DefaultStatistics& rhs) const {
     return !(*this == rhs);
   }
 
@@ -103,7 +103,7 @@ class DefaultStatistics : public Serializable {
     return singlePol;
   }
 
-  virtual void Serialize(std::ostream &stream) const final override {
+  virtual void Serialize(std::ostream& stream) const final override {
     SerializeToUInt32(stream, _polarizationCount);
 
     for (unsigned p = 0; p < _polarizationCount; ++p) {
@@ -117,7 +117,7 @@ class DefaultStatistics : public Serializable {
     }
   }
 
-  virtual void Unserialize(std::istream &stream) final override {
+  virtual void Unserialize(std::istream& stream) final override {
     uint32_t pCount = UnserializeUInt32(stream);
     if (pCount != _polarizationCount) {
       destruct();
@@ -173,13 +173,13 @@ class DefaultStatistics : public Serializable {
                            dSumP2[polarization].imag());
   }
 
-  unsigned long *rfiCount;
-  unsigned long *count;
-  std::complex<long double> *sum;
-  std::complex<long double> *sumP2;
-  unsigned long *dCount;
-  std::complex<long double> *dSum;
-  std::complex<long double> *dSumP2;
+  unsigned long* rfiCount;
+  unsigned long* count;
+  std::complex<long double>* sum;
+  std::complex<long double>* sumP2;
+  unsigned long* dCount;
+  std::complex<long double>* dSum;
+  std::complex<long double>* dSumP2;
 
  private:
   void initialize() {

@@ -1,15 +1,14 @@
 #include "../../lua/telescopefile.h"
 #include "../../interface/aoflagger.h"
 
-#include <boost/test/unit_test.hpp>
+#include <filesystem>
 
-#include <boost/filesystem/operations.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(strategy_files, *boost::unit_test::label("lua"))
 
 BOOST_AUTO_TEST_CASE(find_strategy) {
-  boost::filesystem::path argv0 =
-      boost::filesystem::current_path() / "aoflagger";
+  std::filesystem::path argv0 = std::filesystem::current_path() / "aoflagger";
 
   auto all = TelescopeFile::List();
   for (TelescopeFile::TelescopeId telescope : all) {
@@ -20,17 +19,15 @@ BOOST_AUTO_TEST_CASE(find_strategy) {
 }
 
 BOOST_AUTO_TEST_CASE(find_non_existing_strategy) {
-  boost::filesystem::path argv0 =
-      boost::filesystem::current_path() / "aoflagger";
+  std::filesystem::path argv0 = std::filesystem::current_path() / "aoflagger";
 
   std::string nonExisting = TelescopeFile::FindStrategy(
       argv0.string(), TelescopeFile::GENERIC_TELESCOPE, "_NonExisting");
   BOOST_CHECK_EQUAL(nonExisting, "");
 }
 
-void runStrategy(TelescopeFile::TelescopeId telescope, bool mustThrow = false) {
-  boost::filesystem::path argv0 =
-      boost::filesystem::current_path() / "aoflagger";
+void runStrategy(TelescopeFile::TelescopeId telescope) {
+  std::filesystem::path argv0 = std::filesystem::current_path() / "aoflagger";
 
   aoflagger::AOFlagger flagger;
   const size_t pols = 8, width = 7, height = 10;
@@ -44,6 +41,14 @@ void runStrategy(TelescopeFile::TelescopeId telescope, bool mustThrow = false) {
     }
   }
 
+  aoflagger::Band band;
+  band.id = 0;
+  for (size_t i = 0; i != height; ++i)
+    band.channels.emplace_back(
+        aoflagger::Channel{(1380 + i * 10) * 1e6, 1 * 1e6});
+  flagger.SetBandList(std::vector<aoflagger::Band>{band});
+  imageSet.SetBand(0);
+
   // We set one absurdly high value which all strategies should detect
   size_t rfiX = width / 2, rfiY = height / 2, rfiP = 5;
   float* rfiPixel =
@@ -51,15 +56,11 @@ void runStrategy(TelescopeFile::TelescopeId telescope, bool mustThrow = false) {
   *rfiPixel = 1000.0;
 
   std::string path = TelescopeFile::FindStrategy(argv0.string(), telescope, "");
-  BOOST_CHECK_NE(path, "");
+  BOOST_CHECK(!path.empty());
   aoflagger::Strategy strategy = flagger.LoadStrategyFile(path);
-  if (mustThrow) {
-    BOOST_CHECK_THROW(strategy.Run(imageSet), std::exception);
-  } else {
-    aoflagger::FlagMask mask = strategy.Run(imageSet);
-    bool* rfiPixelFlag = mask.Buffer() + rfiY * mask.HorizontalStride() + rfiX;
-    BOOST_CHECK(*rfiPixelFlag);
-  }
+  aoflagger::FlagMask mask = strategy.Run(imageSet);
+  bool* rfiPixelFlag = mask.Buffer() + rfiY * mask.HorizontalStride() + rfiX;
+  BOOST_CHECK(*rfiPixelFlag);
 }
 
 // This is pretty repetative, but this way it is immeditely clear which strategy
@@ -73,13 +74,14 @@ BOOST_AUTO_TEST_CASE(run_aartfaac) {
 }
 
 BOOST_AUTO_TEST_CASE(run_apertif) {
-  // Apertif needs bandpass file and uses meta data, so fails
-  runStrategy(TelescopeFile::APERTIF_TELESCOPE, true);
+  runStrategy(TelescopeFile::APERTIF_TELESCOPE);
 }
 
 BOOST_AUTO_TEST_CASE(run_arecibo) {
   runStrategy(TelescopeFile::ARECIBO_TELESCOPE);
 }
+
+BOOST_AUTO_TEST_CASE(run_atca) { runStrategy(TelescopeFile::ATCA_TELESCOPE); }
 
 BOOST_AUTO_TEST_CASE(run_bighorns) {
   runStrategy(TelescopeFile::BIGHORNS_TELESCOPE);
@@ -90,6 +92,10 @@ BOOST_AUTO_TEST_CASE(run_jvla) { runStrategy(TelescopeFile::JVLA_TELESCOPE); }
 BOOST_AUTO_TEST_CASE(run_lofar) { runStrategy(TelescopeFile::LOFAR_TELESCOPE); }
 
 BOOST_AUTO_TEST_CASE(run_mwa) { runStrategy(TelescopeFile::MWA_TELESCOPE); }
+
+BOOST_AUTO_TEST_CASE(run_nenufar) {
+  runStrategy(TelescopeFile::NENUFAR_TELESCOPE);
+}
 
 BOOST_AUTO_TEST_CASE(run_parkes) {
   runStrategy(TelescopeFile::PARKES_TELESCOPE);

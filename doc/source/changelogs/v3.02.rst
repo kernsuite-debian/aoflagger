@@ -1,0 +1,63 @@
+v3.02
+=====
+
+========== ================== 
+2022-05-19 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Version 3.2 of aoflagger allows concattenating measurement sets in frequency and process these
+in parallel. One of the use-cases for which this is useful, is the Prefactor/LINC pipeline for
+processing LOFAR data. Apart from that, a few smaller Lua options were added, and various bugs
+were squashed and performance improvements were made.
+
+The full list of changes is given below.
+
+.. default-domain:: lua
+
+New features
+^^^^^^^^^^^^
+
+Generic improvements
+--------------------
+
+* Faster vertical masked sumthreshold algorithm.
+* New Lua functions:
+
+  - :meth:`aoflagger.upsample_mask()`
+  - :meth:`Data.invert_mask()` 
+  - :meth:`Data.set_masked_visibilities()`
+
+* Allow specifying penalty in :meth:`aoflagger.scale_invariant_rank_operator_masked()`.
+* Add support for Sdhdf files. This adds the requirement to have the hdf5 library installed.
+* Add the Apertif 2021-03-09 strategy and set it as default for Apertif.
+* Allow downsampling in ``aoquality query_f``.
+* Support for Function Multi Versioning, which makes the packaged versions run faster.
+* Spectrally concatenate different measurement sets and perform IO in parallel.
+
+New rfigui features
+-------------------
+
+* New 'open file' window that allows opening multiple files and setting options.
+* Ask confirmation when closing rfigui without saving changes.
+* Add time/frequency options to rfigui.
+* Add a new simulate-data window to rfigui with more simulations options.
+* Add 'select zoom' option to rfigui.
+
+Bug fixes  & refactoring
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Data with NaNs would cause some of the sumthreshold algorithms to behave incorrectly.
+* Various fixes for newer compilers (gcc 11/12) or different environments.
+* Fix return value of :meth:`Data.get_complex_state()`, which always returned ``complex``.
+* Report clear error when the Lua version is older than 5.3.
+* Fix default strategy when ``exclude_original_flags = false``.
+* Several plot-drawing improvements.
+* Fix loading of ATCA strategy in rfigui.
+* Let ATCA strategy work when not all polarizations are available.
+* Make Apertif strategy also work when no bandpass is available.
+* Remove libxml2 dependency.
+* Add CMake option for skipping GTKMM builds.
+* Add HINTS to find FFTW3 in cmake.
+* Make sure all python examples run.
+* Improve performance of calculating median window (time threshold operation).
+* Require C++17, use std instead of Boost where possible.

@@ -10,26 +10,26 @@
 class Plot {
  public:
   //[[ deprecated("Superceded by plot2d class") ]]
-  explicit Plot(const std::string &pdfFile);
+  explicit Plot(const std::string& pdfFile);
   ~Plot();
   void StartLine() { StartLine(""); }
-  void StartLine(const std::string &lineTitle);
+  void StartLine(const std::string& lineTitle);
   void StartScatter() { StartScatter(""); }
-  void StartScatter(const std::string &lineTitle);
+  void StartScatter(const std::string& lineTitle);
   void StartBoxes() { StartScatter(""); }
-  void StartBoxes(const std::string &lineTitle);
+  void StartBoxes(const std::string& lineTitle);
   void StartGrid() { StartGrid(""); }
-  void StartGrid(const std::string &gridTitle);
+  void StartGrid(const std::string& gridTitle);
   void PushDataPoint(long double x, long double y);
   void PushDataPoint(long double x, long double y, long double z);
   void PushUnknownDataPoint(long double x, long double y);
   void PushDataBlockEnd();
   void Close();
   void AddRectangle(long double x1, double y1, double x2, double y2);
-  void SetTitle(const std::string &title) throw() { _title = title; }
-  void SetXAxisText(const std::string &text) throw() { _xAxisText = text; }
-  void SetYAxisText(const std::string &text) throw() { _yAxisText = text; }
-  void SetZAxisText(const std::string &text) throw() { _zAxisText = text; }
+  void SetTitle(const std::string& title) throw() { _title = title; }
+  void SetXAxisText(const std::string& text) throw() { _xAxisText = text; }
+  void SetYAxisText(const std::string& text) throw() { _yAxisText = text; }
+  void SetZAxisText(const std::string& text) throw() { _zAxisText = text; }
   void SetXRange(long double min, long double max) throw() {
     _xRangeHasMin = true;
     _xRangeHasMax = true;
@@ -102,12 +102,12 @@ class Plot {
   enum Type { Line, Scatter, Boxes, Grid } _curType;
   void RunGnuplot();
   char _tmpPlotFile[16];
-  void Write(int fd, const std::string &str) {
+  void Write(int fd, const std::string& str) {
     if (write(fd, str.c_str(), str.length()) != (int)str.length())
       throw std::runtime_error("write() reported an error");
   }
   void CloseCurFd();
-  void ExecuteCmd(const std::string &cmd) const;
+  void ExecuteCmd(const std::string& cmd) const;
   std::vector<std::string> _lineFiles, _lineTitles;
   std::vector<Type> _lineTypes;
 

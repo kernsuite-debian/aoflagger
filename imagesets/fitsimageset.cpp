@@ -3,17 +3,17 @@
 #include <sstream>
 #include <vector>
 
-#include "../../structures/date.h"
-#include "../../msio/fitsfile.h"
-#include "../../structures/image2d.h"
-#include "../../structures/timefrequencydata.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/date.h"
+#include "../msio/fitsfile.h"
+#include "../structures/image2d.h"
+#include "../structures/timefrequencydata.h"
+#include "../structures/timefrequencymetadata.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
-FitsImageSet::FitsImageSet(const std::string &file)
+FitsImageSet::FitsImageSet(const std::string& file)
     : ImageSet(),
       _file(new FitsFile(file)),
       _currentBaselineIndex(0),
@@ -22,7 +22,7 @@ FitsImageSet::FitsImageSet(const std::string &file)
   _file->Open(FitsFile::ReadWriteMode);
 }
 
-FitsImageSet::FitsImageSet(const FitsImageSet &source)
+FitsImageSet::FitsImageSet(const FitsImageSet& source)
     : ImageSet(),
       _file(source._file),
       _baselines(source._baselines),
@@ -61,7 +61,7 @@ void FitsImageSet::Initialize() {
       std::vector<long double> parameters(_file->GetParameterCount());
       int baselineIndex = _file->GetGroupParameterIndex("BASELINE");
       size_t groupCount = _file->GetGroupCount();
-      std::set<std::pair<size_t, size_t> > baselineSet;
+      std::set<std::pair<size_t, size_t>> baselineSet;
       for (size_t g = 0; g < groupCount; ++g) {
         _file->ReadGroupParameters(g, parameters.data());
         int a1 = (((int)parameters[baselineIndex]) & 255) - 1;
@@ -69,7 +69,7 @@ void FitsImageSet::Initialize() {
         baselineSet.insert(std::pair<size_t, size_t>(a1, a2));
       }
       Logger::Debug << "Baselines in file: " << baselineSet.size() << '\n';
-      for (std::set<std::pair<size_t, size_t> >::const_iterator i =
+      for (std::set<std::pair<size_t, size_t>>::const_iterator i =
                baselineSet.begin();
            i != baselineSet.end(); ++i)
         _baselines.push_back(*i);
@@ -129,7 +129,7 @@ void FitsImageSet::Initialize() {
   }
 }
 
-BaselineData FitsImageSet::loadData(const ImageSetIndex &index) {
+BaselineData FitsImageSet::loadData(const ImageSetIndex& index) {
   size_t baselineIndex = index.Value() / _bandCount;
   size_t bandIndex = index.Value() % _bandCount;
   _frequencyOffset = 0.0;
@@ -193,7 +193,7 @@ BaselineData FitsImageSet::loadData(const ImageSetIndex &index) {
 
 TimeFrequencyData FitsImageSet::ReadPrimaryGroupTable(
     size_t baselineIndex, int band, int stokes,
-    TimeFrequencyMetaData &metaData) {
+    TimeFrequencyMetaData& metaData) {
   if (!_file->HasGroups() ||
       _file->GetCurrentHDUType() != FitsFile::ImageHDUType)
     throw FitsIOException("Primary table is not a grouped image");
@@ -210,8 +210,8 @@ TimeFrequencyData FitsImageSet::ReadPrimaryGroupTable(
          frequencyStep = stokesCount * complexCount,
          frequencyCount = _file->GetCurrentImageSize(4),
          bandStep = frequencyStep * frequencyCount;
-  std::vector<std::vector<long double> > valuesR(frequencyCount);
-  std::vector<std::vector<long double> > valuesI(frequencyCount);
+  std::vector<std::vector<long double>> valuesR(frequencyCount);
+  std::vector<std::vector<long double>> valuesI(frequencyCount);
   std::vector<long double> data(_file->GetImageSize());
   size_t groupCount = _file->GetGroupCount();
   bool hasDate2 = _file->HasGroupParameter("DATE", 2);
@@ -282,11 +282,11 @@ TimeFrequencyData FitsImageSet::ReadPrimaryGroupTable(
   return TimeFrequencyData(aocommon::Polarization::StokesI, real, imaginary);
 }
 
-void FitsImageSet::ReadPrimarySingleTable(TimeFrequencyData &data,
-                                          TimeFrequencyMetaData &metaData) {}
+void FitsImageSet::ReadPrimarySingleTable(TimeFrequencyData& data,
+                                          TimeFrequencyMetaData& metaData) {}
 
-void FitsImageSet::ReadTable(TimeFrequencyData &data,
-                             TimeFrequencyMetaData &metaData,
+void FitsImageSet::ReadTable(TimeFrequencyData& data,
+                             TimeFrequencyMetaData& metaData,
                              size_t bandIndex) {
   std::string extName = _file->GetKeywordValue("EXTNAME");
   if (extName == "AIPS AN")
@@ -299,7 +299,7 @@ void FitsImageSet::ReadTable(TimeFrequencyData &data,
     ReadSingleDishTable(data, metaData, bandIndex);
 }
 
-void FitsImageSet::ReadAntennaTable(TimeFrequencyMetaData &metaData) {
+void FitsImageSet::ReadAntennaTable(TimeFrequencyMetaData& metaData) {
   Logger::Debug << "Found antenna table\n";
   _frequencyOffset = _file->GetDoubleKeywordValue("FREQ");
   for (std::map<int, BandInfo>::iterator i = _bandInfos.begin();
@@ -332,8 +332,8 @@ void FitsImageSet::ReadAntennaTable(TimeFrequencyMetaData &metaData) {
   }
 }
 
-void FitsImageSet::ReadFrequencyTable(TimeFrequencyData &data,
-                                      TimeFrequencyMetaData &metaData) {
+void FitsImageSet::ReadFrequencyTable(TimeFrequencyData& data,
+                                      TimeFrequencyMetaData& metaData) {
   Logger::Debug << "Found frequency table\n";
   const size_t numberIfs = _file->GetIntKeywordValue("NO_IF");
   Logger::Debug << "Number of ifs: " << numberIfs << '\n';
@@ -371,8 +371,8 @@ void FitsImageSet::ReadCalibrationTable() {
                 << " rows.\n";
 }
 
-void FitsImageSet::ReadDynSpectrum(TimeFrequencyData &data,
-                                   TimeFrequencyMetaData &metaData) {
+void FitsImageSet::ReadDynSpectrum(TimeFrequencyData& data,
+                                   TimeFrequencyMetaData& metaData) {
   _file->MoveToHDU(1);
   size_t width = _file->GetCurrentImageSize(1);
   size_t height = _file->GetCurrentImageSize(2);
@@ -418,8 +418,8 @@ void FitsImageSet::ReadDynSpectrum(TimeFrequencyData &data,
   metaData.SetObservationTimes(times);
 }
 
-void FitsImageSet::ReadSingleDishTable(TimeFrequencyData &data,
-                                       TimeFrequencyMetaData &metaData,
+void FitsImageSet::ReadSingleDishTable(TimeFrequencyData& data,
+                                       TimeFrequencyMetaData& metaData,
                                        size_t ifIndex) {
   const int rowCount = _file->GetRowCount();
   Logger::Debug << "Found single dish table with " << rowCount << " rows.\n";
@@ -519,8 +519,8 @@ void FitsImageSet::ReadSingleDishTable(TimeFrequencyData &data,
         }
       }
 
-      long double *dataPtr = &cellData[0];
-      bool *flagPtr = flagData.get();
+      long double* dataPtr = &cellData[0];
+      bool* flagPtr = flagData.get();
       for (int p = 0; p < polarizationCount; ++p) {
         for (int f = 0; f < freqCount; ++f) {
           images[p]->SetValue(timeIndex, f, *dataPtr);
@@ -563,8 +563,8 @@ void FitsImageSet::ReadSingleDishTable(TimeFrequencyData &data,
   }
 }
 
-void FitsImageSet::AddWriteFlagsTask(const ImageSetIndex &index,
-                                     std::vector<Mask2DCPtr> &flags) {
+void FitsImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
+                                     std::vector<Mask2DCPtr>& flags) {
   switch (_fitsType) {
     case UVFitsType:
       throw std::runtime_error("Not implemented for UV fits files");
@@ -589,7 +589,7 @@ void FitsImageSet::PerformWriteFlagsTask() {
   }
 }
 
-void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr> &flags,
+void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr>& flags,
                                        size_t ifIndex) {
   _file->Close();
   _file->Open(FitsFile::ReadWriteMode);
@@ -637,8 +637,8 @@ void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr> &flags,
     if (ifNumber == specifiedIFNumber) {
       Logger::Debug << row << "\n";
       _file->ReadTableCell(row, dataColumn, &cellData[0], totalSize);
-      double *dataPtr = &cellData[0];
-      bool *flagPtr = flagData.get();
+      double* dataPtr = &cellData[0];
+      bool* flagPtr = flagData.get();
 
       for (int p = 0; p < polarizationCount; ++p) {
         for (int f = 0; f < freqCount; ++f) {
@@ -660,7 +660,7 @@ void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr> &flags,
   }
 }
 
-void FitsImageSet::saveDynSpectrumFlags(const std::vector<Mask2DCPtr> &flags) {
+void FitsImageSet::saveDynSpectrumFlags(const std::vector<Mask2DCPtr>& flags) {
   Logger::Debug << "Writing dynspectrum flags.\n";
   _file->Close();
   _file->Open(FitsFile::ReadWriteMode);
@@ -688,7 +688,7 @@ void FitsImageSet::saveDynSpectrumFlags(const std::vector<Mask2DCPtr> &flags) {
                     std::numeric_limits<num_t>::quiet_NaN());
 }
 
-std::string FitsImageSet::Description(const ImageSetIndex &index) const {
+std::string FitsImageSet::Description(const ImageSetIndex& index) const {
   if (IsDynSpectrumType()) {
     return SourceName();
   } else {
@@ -721,4 +721,4 @@ std::string FitsImageSet::TelescopeName() {
     return "DynSpectrum";
   }
 }
-}  // namespace rfiStrategy
+}  // namespace imagesets

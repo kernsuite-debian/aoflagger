@@ -4,9 +4,11 @@
 
 #include <boost/numeric/conversion/bounds.hpp>
 
-#include "../../util/rng.h"
+#include "../util/rng.h"
 
 #include "thresholdtools.h"
+
+namespace algorithms {
 
 void ThresholdTools::MeanAndStdDev(const Image2D* image, const Mask2D* mask,
                                    num_t& mean, num_t& stddev) {
@@ -751,3 +753,5 @@ Image2DPtr ThresholdTools::ShrinkVertically(size_t factor, const Image2D* input,
   }
   return newImage;
 }
+
+}  // namespace algorithms

@@ -8,7 +8,8 @@ ntimes = 1000
 aoflagger = aof.AOFlagger()
 
 # Load strategy from disk (alternatively use 'make_strategy' to use a default one)
-strategy = aoflagger.load_strategy("example-strategy.rfis")
+path = aoflagger.find_strategy_file(aof.TelescopeId.Generic)
+strategy = aoflagger.load_strategy_file(path)
 
 data = aoflagger.make_image_set(ntimes, nch, 8)
 
@@ -27,7 +28,7 @@ for imgindex in range(8):
     values = numpy.zeros([nch, ntimes])
     data.set_image_buffer(imgindex, values)
 
-flags = aoflagger.run(strategy, data)
+flags = strategy.run(data)
 flagvalues = flags.get_buffer()
 flagcount = sum(sum(flagvalues))
 print("Percentage flags on zero data: " + str(flagcount * 100.0 / (nch*ntimes)) + "%")
@@ -39,8 +40,9 @@ print("Percentage flags on zero data: " + str(flagcount * 100.0 / (nch*ntimes)) 
 timeArray = numpy.linspace(0.0, ntimes, num=ntimes, endpoint=False)
 freqArray = numpy.linspace(0.0, nch, num=nch, endpoint=False)
 qs = aoflagger.make_quality_statistics(timeArray, freqArray, 4, False)
-aoflagger.collect_statistics(qs, data, flags, aoflagger.make_flag_mask(ntimes, nch, False), 0, 1)
+qs.collect_statistics(data, flags, aoflagger.make_flag_mask(ntimes, nch, False), 0, 1)
+
 try:
-    aoflagger.write_statistics(qs, "test.qs")
+    qs.write_statistics("test.qs")
 except:
     print("write_statistics() failed")

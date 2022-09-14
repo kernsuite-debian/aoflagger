@@ -2,12 +2,14 @@
 
 #include <cmath>
 
+namespace algorithms {
+
 SinusFitter::SinusFitter() {}
 
 SinusFitter::~SinusFitter() {}
 
-void SinusFitter::FindPhaseAndAmplitude(num_t &phase, num_t &amplitude,
-                                        const num_t *dataX, const num_t *dataT,
+void SinusFitter::FindPhaseAndAmplitude(num_t& phase, num_t& amplitude,
+                                        const num_t* dataX, const num_t* dataT,
                                         const size_t dataSize,
                                         const num_t frequency) const throw() {
   // calculate 1/N * \sum_t x(t) e^{-i * frequency * t}
@@ -28,8 +30,8 @@ void SinusFitter::FindPhaseAndAmplitude(num_t &phase, num_t &amplitude,
 }
 
 void SinusFitter::FindPhaseAndAmplitudeComplex(
-    num_t &phase, num_t &amplitude, const num_t *dataR, const num_t *dataI,
-    const num_t *dataT, const size_t dataSize, const num_t frequency) const
+    num_t& phase, num_t& amplitude, const num_t* dataR, const num_t* dataI,
+    const num_t* dataT, const size_t dataSize, const num_t frequency) const
     throw() {
   // calculate 1/N * \sum_t x(t) e^{-i * frequency * t}
   num_t sumR = 0.0L, sumI = 0.0L;
@@ -53,7 +55,7 @@ void SinusFitter::FindPhaseAndAmplitudeComplex(
 }
 
 num_t SinusFitter::FindMean(const num_t phase, const num_t amplitude,
-                            const num_t *dataX, const num_t *dataT,
+                            const num_t* dataX, const num_t* dataT,
                             const size_t dataSize, const num_t frequency) {
   num_t sum = 0.0L;
   for (unsigned i = 0; i < dataSize; ++i) {
@@ -61,3 +63,5 @@ num_t SinusFitter::FindMean(const num_t phase, const num_t amplitude,
   }
   return sum / dataSize;
 }
+
+}  // namespace algorithms

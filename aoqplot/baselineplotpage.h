@@ -6,8 +6,6 @@
 #include <gtkmm/frame.h>
 #include <gtkmm/radiobutton.h>
 
-#include "../rfigui/heatmapwidget.h"
-
 #include "../quality/qualitytablesformatter.h"
 
 #include "grayscaleplotpage.h"

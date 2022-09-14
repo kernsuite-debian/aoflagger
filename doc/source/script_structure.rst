@@ -1,5 +1,8 @@
 Execute and options reference
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. default-domain:: lua
+
 The formal specification for the ``execute()`` and ``options()`` functions
 is as follows.
 

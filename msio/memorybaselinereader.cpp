@@ -2,11 +2,11 @@
 
 #include "msselection.h"
 
-#include "../structures/system.h"
-
 #include "../util/logger.h"
-#include "../util/progresslistener.h"
+#include "../util/progress/dummyprogresslistener.h"
 #include "../util/stopwatch.h"
+
+#include <aocommon/system.h>
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
@@ -16,12 +16,16 @@
 
 using namespace casacore;
 
-void MemoryBaselineReader::PerformReadRequests(ProgressListener& progress) {
+void MemoryBaselineReader::PrepareReadWrite(ProgressListener& progress) {
   if (!_isRead) {
     progress.OnStartTask("Reading measurement set into memory");
     readSet(progress);
     _isRead = true;
   }
+}
+
+void MemoryBaselineReader::PerformReadRequests(ProgressListener& progress) {
+  PrepareReadWrite(progress);
 
   for (size_t i = 0; i != _readRequests.size(); ++i) {
     const ReadRequest& request = _readRequests[i];
@@ -94,10 +98,9 @@ void MemoryBaselineReader::readSet(ProgressListener& progress) {
       BaselineMatrix& matrix = baselineCube[s * bandCount + b];
       matrix.resize(antennaCount);
 
-      BandInfo band = MetaData().GetBandInfo(0);
       for (size_t a1 = 0; a1 != antennaCount; ++a1) {
         matrix[a1].resize(antennaCount);
-        for (size_t a2 = 0; a2 != antennaCount; ++a2) matrix[a1][a2] = 0;
+        for (size_t a2 = 0; a2 != antennaCount; ++a2) matrix[a1][a2] = nullptr;
       }
     }
   }
@@ -139,7 +142,7 @@ void MemoryBaselineReader::readSet(ProgressListener& progress) {
     flagArray = flagColumn.get(rowIndex);
 
     Array<double> uvwArray = uvwColumn.get(rowIndex);
-    Array<double>::const_iterator uvwPtr = uvwArray.begin();
+    Array<double>::const_contiter uvwPtr = uvwArray.cbegin();
     UVW uvw;
     uvw.u = *uvwPtr;
     ++uvwPtr;
@@ -203,11 +206,7 @@ void MemoryBaselineReader::readSet(ProgressListener& progress) {
 }
 
 void MemoryBaselineReader::PerformFlagWriteRequests() {
-  if (!_isRead) {
-    DummyProgressListener dummy;
-    readSet(dummy);
-    _isRead = true;
-  }
+  PrepareReadWrite(dummy_progress_);
 
   for (size_t i = 0; i != _writeRequests.size(); ++i) {
     const FlagWriteRequest& request = _writeRequests[i];
@@ -224,7 +223,7 @@ void MemoryBaselineReader::PerformFlagWriteRequests() {
   _writeRequests.clear();
 }
 
-void MemoryBaselineReader::writeFlags() {
+void MemoryBaselineReader::WriteToMs() {
   casacore::MeasurementSet ms(OpenMS(true));
 
   ScalarColumn<int> ant1Column(
@@ -283,8 +282,11 @@ void MemoryBaselineReader::writeFlags() {
 
 bool MemoryBaselineReader::IsEnoughMemoryAvailable(
     const std::string& filename) {
-  uint64_t size = MeasurementSetDataSize(filename);
-  uint64_t totalMem = System::TotalMemory();
+  return IsEnoughMemoryAvailable(MeasurementSetDataSize(filename));
+}
+
+bool MemoryBaselineReader::IsEnoughMemoryAvailable(uint64_t size) {
+  uint64_t totalMem = aocommon::system::TotalMemory();
 
   if (size * 2 >= totalMem) {
     Logger::Warn << (size / 1000000) << " MB required, but "

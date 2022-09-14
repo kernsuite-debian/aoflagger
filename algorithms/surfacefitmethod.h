@@ -1,16 +1,20 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include "../../structures/image2d.h"
-#include "../../structures/timefrequencydata.h"
+#include "../structures/image2d.h"
+#include "../structures/timefrequencydata.h"
 
-#include "../../util/ffttools.h"
+#include "../util/ffttools.h"
+
+namespace algorithms {
 
 class SurfaceFitMethod {
  public:
-  virtual void Initialize(const TimeFrequencyData &input) = 0;
+  virtual void Initialize(const TimeFrequencyData& input) = 0;
   virtual void PerformFit(unsigned taskNumber) = 0;
   virtual ~SurfaceFitMethod() {}
 };
+
+}  // namespace algorithms
 
 #endif

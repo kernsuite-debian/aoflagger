@@ -1,8 +1,13 @@
 #include <boost/test/unit_test.hpp>
-#include <boost/optional/optional_io.hpp>
 
 #include "../../lua/optionsfunction.h"
 #include "../../lua/luathreadgroup.h"
+
+#include <optional>
+
+BOOST_TEST_DONT_PRINT_LOG_VALUE(std::optional<bool>)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(std::optional<unsigned long>)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(std::optional<BaselineIOMode>)
 
 BOOST_AUTO_TEST_SUITE(optionsfunction, *boost::unit_test::label("lua"))
 

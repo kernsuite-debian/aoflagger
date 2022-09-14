@@ -1,13 +1,13 @@
 #include <limits>
 
-#include "../plot/plot2d.h"
+#include "../plot/xyplot.h"
 
 #include "plotframe.h"
 
 using namespace aocommon;
 
 PlotFrame::PlotFrame()
-    : _plotData(0),
+    : _plotData(nullptr),
       _selectedXStart(0),
       _selectedYStart(0),
       _selectedXEnd(0),
@@ -16,14 +16,12 @@ PlotFrame::PlotFrame()
   _plot.show();
 }
 
-PlotFrame::~PlotFrame() {
-  if (_plotData != 0) delete _plotData;
-}
+PlotFrame::~PlotFrame() { delete _plotData; }
 
 void PlotFrame::plot() {
   _plot.Clear();
-  if (_plotData != 0) delete _plotData;
-  _plotData = new Plot2D();
+  if (_plotData != nullptr) delete _plotData;
+  _plotData = new XYPlot();
 
   bool drawn = false;
   if (_data.HasXX()) {
@@ -46,7 +44,6 @@ void PlotFrame::plot() {
   if (_data.PolarizationCount() > 0 &&
       _data.GetPolarization(0) == Polarization::StokesI) {
     plotTimeGraph(_data, "Stokes I");
-    drawn = true;
   } else if (!drawn) {
     plotTimeGraph(_data, "Data");
   }
@@ -54,14 +51,14 @@ void PlotFrame::plot() {
   _plot.SetPlot(*_plotData);
 }
 
-void PlotFrame::plotTimeGraph(const TimeFrequencyData &data,
-                              const std::string &label,
+void PlotFrame::plotTimeGraph(const TimeFrequencyData& data,
+                              const std::string& label,
                               PolarizationEnum polarisation) {
   plotTimeGraph(data.Make(polarisation), label);
 }
 
-void PlotFrame::plotTimeGraph(const TimeFrequencyData &data,
-                              const std::string &label) {
+void PlotFrame::plotTimeGraph(const TimeFrequencyData& data,
+                              const std::string& label) {
   _plotData->StartLine(label);
   Image2DCPtr image = data.GetSingleImage();
   Mask2DCPtr mask = data.GetSingleMask();

@@ -24,13 +24,13 @@ class ParmTable {
     std::string antenna;
 
     GainNameEntry() : index(0), x(0), y(0), component(Real), antenna() {}
-    GainNameEntry(const GainNameEntry &source)
+    GainNameEntry(const GainNameEntry& source)
         : index(source.index),
           x(source.x),
           y(source.y),
           component(source.component),
           antenna(source.antenna) {}
-    void operator=(const GainNameEntry &source) {
+    void operator=(const GainNameEntry& source) {
       index = source.index;
       x = source.x;
       y = source.y;
@@ -39,19 +39,19 @@ class ParmTable {
     }
   };
 
-  ParmTable(const std::string &path) : _path(path) { readNames(); }
+  ParmTable(const std::string& path) : _path(path) { readNames(); }
 
   std::set<std::string> GetAntennas() const {
     std::set<std::string> antennas;
     for (GainNameEntryMap::const_iterator i = _nameEntries.begin();
          i != _nameEntries.end(); ++i) {
-      const GainNameEntry &entry = i->second;
+      const GainNameEntry& entry = i->second;
       antennas.insert(entry.antenna);
     }
     return antennas;
   }
 
-  TimeFrequencyData Read(const std::string &antenna) {
+  TimeFrequencyData Read(const std::string& antenna) {
     Logger::Debug << "Reading antenna " << antenna << "\n";
 
     // find the nameid's that we need to select
@@ -141,11 +141,11 @@ class ParmTable {
                              aocommon::Polarization::YY, yyReal, yyImag);
   }
 
-  const GainNameEntry &FindEntry(int x, int y, enum GainNameEntry::Component c,
-                                 const std::string &antenna) const {
+  const GainNameEntry& FindEntry(int x, int y, enum GainNameEntry::Component c,
+                                 const std::string& antenna) const {
     for (GainNameEntryMap::const_iterator i = _nameEntries.begin();
          i != _nameEntries.end(); ++i) {
-      const GainNameEntry &entry = i->second;
+      const GainNameEntry& entry = i->second;
       if (entry.x == x && entry.y == y && entry.component == c &&
           entry.antenna == antenna) {
         return entry;
@@ -169,8 +169,8 @@ class ParmTable {
     }
   }
 
-  void getImageDimensions(casacore::Table &table, unsigned &width,
-                          unsigned &height, int r00, int /*r11*/, int /*i00*/,
+  void getImageDimensions(casacore::Table& table, unsigned& width,
+                          unsigned& height, int r00, int /*r11*/, int /*i00*/,
                           int /*i11*/) {
     casacore::ROScalarColumn<unsigned int> nameIdColumn(table, "NAMEID");
     casacore::ROScalarColumn<double> startX(table, "STARTX"),
@@ -220,7 +220,7 @@ class ParmTable {
                   << width << " x " << height << "\n";
   }
 
-  void addName(unsigned index, const std::string &line) {
+  void addName(unsigned index, const std::string& line) {
     size_t d1 = line.find(':');
     std::string type = line.substr(0, d1);
     if (type == "Gain") {

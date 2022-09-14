@@ -1,3 +1,6 @@
+#ifndef GTKMM_COMPAT_H
+#define GTKMM_COMPAT_H
+
 #include <gtkmm/button.h>
 #include <gtkmm/image.h>
 
@@ -8,3 +11,5 @@ inline void gtkmm_set_image_from_icon_name(
   image->set_from_icon_name(icon_name, size);
   button.set_image(*image);
 }
+
+#endif

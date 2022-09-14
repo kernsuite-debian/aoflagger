@@ -11,13 +11,13 @@
 
 class HistogramWindow : public Gtk::Window {
  public:
-  explicit HistogramWindow(const HistogramCollection &histograms)
+  explicit HistogramWindow(const HistogramCollection& histograms)
       : _histogramPage(&_controller) {
     _controller.SetHistograms(&histograms);
     add(_histogramPage);
     _histogramPage.show();
   }
-  void SetStatistics(const HistogramCollection &histograms) {
+  void SetStatistics(const HistogramCollection& histograms) {
     _controller.SetHistograms(&histograms);
   }
 

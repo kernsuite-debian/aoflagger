@@ -13,16 +13,18 @@
 #include <casacore/tables/Tables/ScalarColumn.h>
 #include <casacore/tables/TaQL/ExprNode.h>
 
+#include "../util/progress/dummyprogresslistener.h"
 #include "../structures/timefrequencydata.h"
 
 #include "../util/logger.h"
 
 using namespace aocommon;
 
+DummyProgressListener BaselineReader::dummy_progress_;
+
 BaselineReader::BaselineReader(const std::string& msFile)
     : _msMetaData(msFile),
       _dataColumnName("DATA"),
-      _subtractModel(false),
       _readData(true),
       _readFlags(true),
       _polarizations() {}

@@ -1,19 +1,25 @@
 #include "writethread.h"
 
+#include "../imagesets/multibandmsimageset.h"
 #include "../util/logger.h"
 
-WriteThread::WriteThread(rfiStrategy::ImageSet& imageSet,
-                         size_t calcThreadCount, std::mutex* ioMutex)
+WriteThread::WriteThread(imagesets::ImageSet& imageSet, size_t calcThreadCount,
+                         std::mutex* ioMutex)
     : _ioMutex(ioMutex),
       _isWriteFinishing(false),
       _maxWriteBufferItems(calcThreadCount * 5),
       _minWriteBufferItemsForWriting(calcThreadCount * 4) {
-  std::unique_lock<std::mutex> iolock(*_ioMutex);
-  std::unique_ptr<rfiStrategy::ImageSet> localImageSet = imageSet.Clone();
-  iolock.unlock();
   FlushThread flushFunction;
   flushFunction._parent = this;
-  _flusher.reset(new std::thread(flushFunction, std::move(localImageSet)));
+  if (dynamic_cast<imagesets::MultiBandMsImageSet*>(&imageSet)) {
+    // TODO Would this method also be safe for other writers?
+    _flusher.reset(new std::thread(flushFunction, &imageSet));
+  } else {
+    std::unique_lock<std::mutex> iolock(*_ioMutex);
+    std::unique_ptr<imagesets::ImageSet> localImageSet = imageSet.Clone();
+    iolock.unlock();
+    _flusher.reset(new std::thread(flushFunction, std::move(localImageSet)));
+  }
 }
 
 WriteThread::~WriteThread() {
@@ -27,7 +33,7 @@ WriteThread::~WriteThread() {
 }
 
 void WriteThread::SaveFlags(const TimeFrequencyData& data,
-                            rfiStrategy::ImageSetIndex& imageSetIndex) {
+                            imagesets::ImageSetIndex& imageSetIndex) {
   std::vector<Mask2DCPtr> masks;
   if (data.MaskCount() <= 1)
     masks.emplace_back(data.GetSingleMask());
@@ -48,7 +54,11 @@ void WriteThread::pushInWriteBuffer(const BufferItem& newItem) {
 }
 
 void WriteThread::FlushThread::operator()(
-    std::unique_ptr<rfiStrategy::ImageSet> imageSet) {
+    std::unique_ptr<imagesets::ImageSet> imageSet) {
+  operator()(imageSet.get());
+}
+
+void WriteThread::FlushThread::operator()(imagesets::ImageSet* imageSet) {
   std::unique_lock<std::mutex> lock(_parent->_writeMutex);
   do {
     while (_parent->_writeBuffer.size() <

@@ -10,7 +10,7 @@ class StatisticalValue {
         _kindIndex(0),
         _values(new std::complex<float>[_polarizationCount]) {}
 
-  StatisticalValue(const StatisticalValue &source)
+  StatisticalValue(const StatisticalValue& source)
       : _polarizationCount(source._polarizationCount),
         _kindIndex(source._kindIndex),
         _values(new std::complex<float>[source._polarizationCount]) {
@@ -20,7 +20,7 @@ class StatisticalValue {
 
   ~StatisticalValue() { delete[] _values; }
 
-  StatisticalValue &operator=(const StatisticalValue &source) {
+  StatisticalValue& operator=(const StatisticalValue& source) {
     if (_polarizationCount != source._polarizationCount) {
       _polarizationCount = source._polarizationCount;
       delete[] _values;
@@ -47,7 +47,7 @@ class StatisticalValue {
  private:
   unsigned _polarizationCount;
   unsigned _kindIndex;
-  std::complex<float> *_values;
+  std::complex<float>* _values;
 };
 
 #endif

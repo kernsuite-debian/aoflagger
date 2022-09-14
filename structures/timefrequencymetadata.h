@@ -16,10 +16,10 @@ class TimeFrequencyMetaData {
   TimeFrequencyMetaData()
       : _sequenceId(0), _valueDescription("Visibility"), _valueUnits("Jy") {}
 
-  TimeFrequencyMetaData(const AntennaInfo &antenna1,
-                        const AntennaInfo &antenna2, const BandInfo &band,
-                        const FieldInfo &field,
-                        const std::vector<double> &observationTimes)
+  TimeFrequencyMetaData(const AntennaInfo& antenna1,
+                        const AntennaInfo& antenna2, const BandInfo& band,
+                        const FieldInfo& field,
+                        const std::vector<double>& observationTimes)
       : _antenna1(new AntennaInfo(antenna1)),
         _antenna2(new AntennaInfo(antenna2)),
         _band(new BandInfo(band)),
@@ -29,7 +29,7 @@ class TimeFrequencyMetaData {
         _valueDescription("Visibility"),
         _valueUnits("Jy") {}
 
-  TimeFrequencyMetaData(const TimeFrequencyMetaData &source)
+  TimeFrequencyMetaData(const TimeFrequencyMetaData& source)
       : _sequenceId(source._sequenceId),
         _valueDescription(source._valueDescription),
         _valueUnits(source._valueUnits) {
@@ -43,7 +43,7 @@ class TimeFrequencyMetaData {
     if (source._uvw) _uvw.reset(new std::vector<class UVW>(*source._uvw));
   }
 
-  TimeFrequencyMetaData &operator=(const TimeFrequencyMetaData &rhs) {
+  TimeFrequencyMetaData& operator=(const TimeFrequencyMetaData& rhs) {
     _sequenceId = rhs._sequenceId;
     _valueDescription = rhs._valueDescription;
     _valueUnits = rhs._valueUnits;
@@ -57,36 +57,39 @@ class TimeFrequencyMetaData {
     return *this;
   }
 
-  const AntennaInfo &Antenna1() const { return *_antenna1; }
+  const AntennaInfo& Antenna1() const { return *_antenna1; }
   void ClearAntenna1() { _antenna1.reset(); }
-  void SetAntenna1(const AntennaInfo &antenna1) {
+  void SetAntenna1(const AntennaInfo& antenna1) {
     _antenna1.reset(new AntennaInfo(antenna1));
   }
   bool HasAntenna1() const { return static_cast<bool>(_antenna1); }
 
-  const AntennaInfo &Antenna2() const { return *_antenna2; }
+  const AntennaInfo& Antenna2() const { return *_antenna2; }
   void ClearAntenna2() { _antenna2.reset(); }
-  void SetAntenna2(const AntennaInfo &antenna2) {
+  void SetAntenna2(const AntennaInfo& antenna2) {
     _antenna2.reset(new AntennaInfo(antenna2));
   }
   bool HasAntenna2() const { return static_cast<bool>(_antenna2); }
 
-  const BandInfo &Band() const { return *_band; }
+  const BandInfo& Band() const { return *_band; }
   void ClearBand() { _band.reset(); }
-  void SetBand(const BandInfo &band) { _band.reset(new BandInfo(band)); }
+  void SetBand(const BandInfo& band) { _band.reset(new BandInfo(band)); }
   bool HasBand() const { return static_cast<bool>(_band); }
 
-  const FieldInfo &Field() const { return *_field; }
+  const FieldInfo& Field() const { return *_field; }
   void ClearField() { _field.reset(); }
-  void SetField(const FieldInfo &field) { _field.reset(new FieldInfo(field)); }
+  void SetField(const FieldInfo& field) { _field.reset(new FieldInfo(field)); }
   bool HasField() const { return static_cast<bool>(_field); }
 
-  const std::vector<double> &ObservationTimes() const {
+  const std::vector<double>& ObservationTimes() const {
     return *_observationTimes;
   }
   void ClearObservationTimes() { _observationTimes.reset(); }
-  void SetObservationTimes(const std::vector<double> &times) {
+  void SetObservationTimes(const std::vector<double>& times) {
     _observationTimes.reset(new std::vector<double>(times));
+  }
+  void SetObservationTimes(std::vector<double>&& times) {
+    _observationTimes.reset(new std::vector<double>(std::move(times)));
   }
   bool HasObservationTimes() const {
     return static_cast<bool>(_observationTimes);
@@ -95,9 +98,9 @@ class TimeFrequencyMetaData {
   unsigned SequenceId() const { return _sequenceId; }
   void SetSequenceId(unsigned sequenceId) { _sequenceId = sequenceId; }
 
-  const std::vector<class UVW> &UVW() const { return *_uvw; }
+  const std::vector<class UVW>& UVW() const { return *_uvw; }
   void ClearUVW() { _uvw.reset(); }
-  void SetUVW(const std::vector<class UVW> &uvw) {
+  void SetUVW(const std::vector<class UVW>& uvw) {
     _uvw.reset(new std::vector<class UVW>(uvw));
   }
   bool HasUVW() const { return static_cast<bool>(_uvw); }
@@ -107,13 +110,13 @@ class TimeFrequencyMetaData {
     return ::Baseline(*_antenna1, *_antenna2);
   }
 
-  const std::string &ValueDescription() const { return _valueDescription; }
-  void SetValueDescription(const std::string &valueDescription) {
+  const std::string& ValueDescription() const { return _valueDescription; }
+  void SetValueDescription(const std::string& valueDescription) {
     _valueDescription = valueDescription;
   }
 
-  const std::string &ValueUnits() const { return _valueUnits; }
-  void SetValueUnits(const std::string &valueUnits) {
+  const std::string& ValueUnits() const { return _valueUnits; }
+  void SetValueUnits(const std::string& valueUnits) {
     _valueUnits = valueUnits;
   }
 

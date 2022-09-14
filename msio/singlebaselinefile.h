@@ -7,7 +7,7 @@
 #include "../structures/timefrequencydata.h"
 #include "../structures/timefrequencymetadata.h"
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
 
 class SingleBaselineFile {
  public:

@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+using algorithms::Convolutions;
+
 BOOST_AUTO_TEST_SUITE(convolutions, *boost::unit_test::label("algorithms"))
 
 BOOST_AUTO_TEST_CASE(one_dimensional_convolution,

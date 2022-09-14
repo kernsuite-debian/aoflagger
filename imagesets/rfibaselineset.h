@@ -1,11 +1,11 @@
 #ifndef RFI_BASELINE_SET_H
 #define RFI_BASELINE_SET_H
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
 
 #include "singleimageset.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class RFIBaselineSet final : public SingleImageSet {
  public:
@@ -40,6 +40,6 @@ class RFIBaselineSet final : public SingleImageSet {
   RFIBaselineSet(const RFIBaselineSet& source) = default;
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

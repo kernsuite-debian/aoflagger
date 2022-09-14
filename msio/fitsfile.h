@@ -21,7 +21,7 @@
  */
 class FitsIOException : public std::runtime_error {
  public:
-  explicit FitsIOException(const std::string &description)
+  explicit FitsIOException(const std::string& description)
       : std::runtime_error(description) {}
   ~FitsIOException() noexcept {}
 };
@@ -102,7 +102,7 @@ class FitsFile {
    * @param filename The file name of the fits file, to be opened with Open() or
    * created with Create().
    */
-  explicit FitsFile(const std::string &filename);
+  explicit FitsFile(const std::string& filename);
 
   /**
    * Destructor.
@@ -212,7 +212,7 @@ class FitsFile {
    * @param nullValue What value should be used to represent null values.
    * @throws FitsIOException in case reading failed due to an IO error.
    */
-  void ReadCurrentImageData(long startPos, num_t *buffer, long bufferSize,
+  void ReadCurrentImageData(long startPos, num_t* buffer, long bufferSize,
                             long double nullValue = nan("Unset value"));
 
   /**
@@ -224,54 +224,54 @@ class FitsFile {
    * @see ReadCurrentImageData
    * @throws FitsIOException in case writing failed due to an IO error.
    */
-  void WriteImage(long startPos, double *buffer, long bufferSize,
+  void WriteImage(long startPos, double* buffer, long bufferSize,
                   double nullValue = nan("Unset value"));
-  void WriteImage(long startPos, float *buffer, long bufferSize,
+  void WriteImage(long startPos, float* buffer, long bufferSize,
                   float nullValue = nan("Unset value"));
 
   int GetKeywordCount();
-  bool HasKeyword(const std::string &keywordName);
+  bool HasKeyword(const std::string& keywordName);
   std::string GetKeyword(int keywordNumber);
   std::string GetKeywordValue(int keywordNumber);
-  std::string GetKeywordValue(const std::string &keywordName);
-  bool GetKeywordValue(const std::string &keywordName, std::string &value);
+  std::string GetKeywordValue(const std::string& keywordName);
+  bool GetKeywordValue(const std::string& keywordName, std::string& value);
   std::string GetKeywordComment(int keywordNumber);
   int GetRowCount();
   int GetColumnCount();
   int GetColumnType(int colNumber);
   bool HasGroups();
   int GetIntKeywordValue(int keywordNumber);
-  int GetIntKeywordValue(const std::string &keywordName);
+  int GetIntKeywordValue(const std::string& keywordName);
   double GetDoubleKeywordValue(int keywordNumber);
-  double GetDoubleKeywordValue(const std::string &keywordName);
+  double GetDoubleKeywordValue(const std::string& keywordName);
   int GetGroupCount();
   int GetParameterCount();
   long GetImageSize();
   long GetGroupSize();
-  void ReadGroup(long groupIndex, long double *groupData);
-  void ReadGroupData(long groupIndex, long double *groupData);
-  void ReadGroupParameters(long groupIndex, long double *parametersData);
-  void ReadTableCell(int row, int col, long double *output, size_t size);
-  void ReadTableCell(int row, int col, double *output, size_t size);
-  void ReadTableCell(int row, int col, bool *output, size_t size);
-  void ReadTableCell(int row, int col, char *output);
-  void WriteTableCell(int row, int col, double *data, size_t size);
-  void WriteTableCell(int row, int col, const bool *data, size_t size);
-  bool HasTableColumn(const std::string &columnName, int &columnIndex);
-  int GetTableColumnIndex(const std::string &columnName);
+  void ReadGroup(long groupIndex, long double* groupData);
+  void ReadGroupData(long groupIndex, long double* groupData);
+  void ReadGroupParameters(long groupIndex, long double* parametersData);
+  void ReadTableCell(int row, int col, long double* output, size_t size);
+  void ReadTableCell(int row, int col, double* output, size_t size);
+  void ReadTableCell(int row, int col, bool* output, size_t size);
+  void ReadTableCell(int row, int col, char* output);
+  void WriteTableCell(int row, int col, double* data, size_t size);
+  void WriteTableCell(int row, int col, const bool* data, size_t size);
+  bool HasTableColumn(const std::string& columnName, int& columnIndex);
+  int GetTableColumnIndex(const std::string& columnName);
   int GetTableColumnArraySize(int columnIndex);
   std::string GetTableDimensionName(int index);
   std::vector<long> GetColumnDimensions(int columnIndex);
   long GetColumnDimensionSize(int columnIndex, int dimension);
-  int GetGroupParameterIndex(const std::string &parameterName);
-  int GetGroupParameterIndex(const std::string &parameterName, int number);
-  bool HasGroupParameter(const std::string &parameterName);
-  bool HasGroupParameter(const std::string &parameterName, int number);
-  const std::string &Filename() const { return _filename; }
+  int GetGroupParameterIndex(const std::string& parameterName);
+  int GetGroupParameterIndex(const std::string& parameterName, int number);
+  bool HasGroupParameter(const std::string& parameterName);
+  bool HasGroupParameter(const std::string& parameterName, int number);
+  const std::string& Filename() const { return _filename; }
 
  private:
   const std::string _filename;
-  fitsfile *_fptr;
+  fitsfile* _fptr;
   bool _isOpen;
   inline void CheckStatus(int status) const;
   inline void CheckOpen() const;

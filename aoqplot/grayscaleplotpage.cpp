@@ -36,8 +36,9 @@ GrayScalePlotPage::GrayScalePlotPage(HeatMapPageController* controller)
       _medianNormButton(_rangeTypeGroup, "Median"),
       _plotPropertiesButton("Properties..."),
       _selectStatisticKind(QualityTablesFormatter::StandardDeviationStatistic),
-      _imageWidget(&controller->Plot()),
+      _imageWidget(),
       _imagePropertiesWindow(nullptr) {
+  _imageWidget.SetPlot(controller->Plot());
   _imageWidget.set_size_request(300, 300);
 
   pack_start(_imageWidget);
@@ -45,9 +46,7 @@ GrayScalePlotPage::GrayScalePlotPage(HeatMapPageController* controller)
   controller->Attach(this);
 }
 
-GrayScalePlotPage::~GrayScalePlotPage() {
-  if (_imagePropertiesWindow != 0) delete _imagePropertiesWindow;
-}
+GrayScalePlotPage::~GrayScalePlotPage() { delete _imagePropertiesWindow; }
 
 void GrayScalePlotPage::InitializeToolbar(Gtk::Toolbar& toolbar) {
   if (Gtk::IconTheme::get_default()->has_icon("aoflagger")) {
@@ -265,11 +264,31 @@ GrayScalePlotPage::getSelectedPhase() const {
 }
 
 void GrayScalePlotPage::onPropertiesClicked() {
-  if (_imagePropertiesWindow == 0)
+  if (_imagePropertiesWindow == nullptr)
     _imagePropertiesWindow =
         new ImagePropertiesWindow(_imageWidget, "Plotting properties");
   _imagePropertiesWindow->show();
   _imagePropertiesWindow->raise();
+}
+
+void GrayScalePlotPage::onSelectMinMaxRange() {
+  _controller->Plot().SetZRange(Range::MinMax);
+  _imageWidget.Update();
+}
+
+void GrayScalePlotPage::onSelectWinsorizedRange() {
+  _controller->Plot().SetZRange(Range::Winsorized);
+  _imageWidget.Update();
+}
+
+void GrayScalePlotPage::onSelectSpecifiedRange() {
+  _controller->Plot().SetZRange(Range::Specified);
+  _imageWidget.Update();
+}
+
+void GrayScalePlotPage::onLogarithmicScaleClicked() {
+  _controller->Plot().SetLogZScale(_logarithmicScaleButton.get_active());
+  _imageWidget.Update();
 }
 
 void GrayScalePlotPage::Redraw() { _imageWidget.Update(); }

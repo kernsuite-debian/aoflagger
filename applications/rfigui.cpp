@@ -10,9 +10,6 @@
 
 #include <version.h>
 
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-
 #include <gtkmm/application.h>
 
 #include <glibmm/error.h>
@@ -27,9 +24,9 @@ struct SavedBaseline {
   size_t a1Index, a2Index, bandIndex, sequenceIndex;
   std::string filename;
   bool operator<(const SavedBaseline& rhs) const {
-    return boost::tie(a1Index, a2Index, bandIndex, sequenceIndex, filename) <
-           boost::tie(rhs.a1Index, rhs.a2Index, rhs.bandIndex,
-                      rhs.sequenceIndex, rhs.filename);
+    return std::tie(a1Index, a2Index, bandIndex, sequenceIndex, filename) <
+           std::tie(rhs.a1Index, rhs.a2Index, rhs.bandIndex, rhs.sequenceIndex,
+                    rhs.filename);
   }
 };
 
@@ -41,7 +38,7 @@ static void run(int argc, char* argv[]) {
   bool interactive = true;
   std::string dataColumnName = "DATA";
   bool plotFlags = true;
-  boost::optional<size_t> intervalStart, intervalEnd;
+  std::optional<size_t> intervalStart, intervalEnd;
 
   while (argi < argc) {
     if (argv[argi][0] == '-') {
@@ -139,7 +136,6 @@ static void run(int argc, char* argv[]) {
         options.ioMode = DirectReadMode;
         options.dataColumnName = dataColumnName;
         options.combineSPWs = false;
-        options.subtractModel = false;
         options.intervalStart = intervalStart;
         options.intervalEnd = intervalEnd;
         options.baselineIntegration.enable = false;
@@ -148,12 +144,12 @@ static void run(int argc, char* argv[]) {
     }
 
     if (!savedBaselines.empty()) {
-      rfiStrategy::IndexableSet* imageSet =
-          dynamic_cast<rfiStrategy::IndexableSet*>(&controller.GetImageSet());
+      imagesets::IndexableSet* imageSet =
+          dynamic_cast<imagesets::IndexableSet*>(&controller.GetImageSet());
       if (imageSet == nullptr)
         throw std::runtime_error(
             "Option -save-baseline can only be used for measurement sets.\n");
-      HeatMapPlot& plot = controller.TFController().Plot();
+      MaskedHeatMap& plot = controller.TFController().Plot();
       plot.SetShowOriginalMask(plotFlags);
       plot.SetShowXAxisDescription(true);
       plot.SetShowYAxisDescription(true);

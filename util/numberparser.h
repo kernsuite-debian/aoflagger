@@ -1,6 +1,6 @@
-#include <stdexcept>
-
 #include <cmath>
+#include <stdexcept>
+#include <string>
 
 #ifndef HAVE_EXP10
 #define exp10(x) exp((2.3025850929940456840179914546844) * (x))
@@ -8,7 +8,7 @@
 
 class NumberParsingException : public std::runtime_error {
  public:
-  explicit NumberParsingException(const std::string &str)
+  explicit NumberParsingException(const std::string& str)
       : std::runtime_error(std::string("Failed to parse number: ") + str) {}
 };
 
@@ -24,19 +24,19 @@ class NumberParser {
   /**
    * @throws NumberParsingException when @c str can not be parsed.
    */
-  static double ToDouble(const char *str) { return toNumber<double>(str); }
+  static double ToDouble(const char* str) { return toNumber<double>(str); }
 
   /**
    * @throws NumberParsingException when @c str can not be parsed.
    */
-  static short ToShort(const char *str) { return toSignedInteger<short>(str); }
+  static short ToShort(const char* str) { return toSignedInteger<short>(str); }
 
  private:
   /**
    * @throws NumberParsingException when @c str can not be parsed.
    */
   template <typename T>
-  static T toNumber(const char *str) {
+  static T toNumber(const char* str) {
     if (*str == 0) throw NumberParsingException("Supplied string is empty");
 
     // Read optional sign
@@ -80,7 +80,7 @@ class NumberParser {
       try {
         short e = ToShort(str);
         val = val * intPow10(e);
-      } catch (NumberParsingException &e) {
+      } catch (NumberParsingException& e) {
         throw NumberParsingException("Could not parse exponent");
       }
     }
@@ -100,7 +100,7 @@ class NumberParser {
    * @throws NumberParsingException when @c str can not be parsed.
    */
   template <typename T>
-  static T toSignedInteger(const char *str) {
+  static T toSignedInteger(const char* str) {
     if (*str == 0) throw NumberParsingException("Supplied string is empty");
 
     // Read optional sign

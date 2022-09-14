@@ -4,7 +4,9 @@
 #include <string>
 #include <sstream>
 
-TimeFrequencyStatistics::TimeFrequencyStatistics(const TimeFrequencyData &data)
+namespace algorithms {
+
+TimeFrequencyStatistics::TimeFrequencyStatistics(const TimeFrequencyData& data)
     : _data(data) {}
 
 num_t TimeFrequencyStatistics::GetFlaggedRatio() {
@@ -33,3 +35,5 @@ std::string TimeFrequencyStatistics::FormatRatio(num_t ratio) {
     s << (ratio * 100.0) << "%";
   return s.str();
 }
+
+}  // namespace algorithms

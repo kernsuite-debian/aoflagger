@@ -139,8 +139,7 @@ BOOST_AUTO_TEST_CASE(store_statistics) {
                         QualityTablesFormatter::TimeDimension, meanStatIndex),
                     1u);
 
-  std::vector<
-      std::pair<QualityTablesFormatter::TimePosition, StatisticalValue> >
+  std::vector<std::pair<QualityTablesFormatter::TimePosition, StatisticalValue>>
       entries;
   qd.QueryTimeStatistic(meanStatIndex, entries);
   BOOST_CHECK_EQUAL(entries.size(), (size_t)1);

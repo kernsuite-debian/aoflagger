@@ -6,22 +6,22 @@
 #include <vector>
 #include <deque>
 
-#include "../../structures/types.h"
-#include "../../structures/timefrequencydata.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/types.h"
+#include "../structures/timefrequencydata.h"
+#include "../structures/timefrequencymetadata.h"
 
-#include "../../lua/telescopefile.h"
+#include "../lua/telescopefile.h"
 
 #include "imageset.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class ParmImageSet final : public ImageSet {
  public:
-  ParmImageSet(const std::string &path) : _path(path), _parmTable(nullptr) {}
+  ParmImageSet(const std::string& path) : _path(path), _parmTable(nullptr) {}
   ~ParmImageSet() override;
   size_t Size() const override { return AntennaCount(); }
-  inline std::string Description(const ImageSetIndex &index) const override {
+  inline std::string Description(const ImageSetIndex& index) const override {
     return AntennaName(index.Value());
   }
   std::unique_ptr<ImageSet> Clone() override {
@@ -39,16 +39,16 @@ class ParmImageSet final : public ImageSet {
     return TelescopeFile::TelescopeName(TelescopeFile::GENERIC_TELESCOPE);
   }
 
-  TimeFrequencyData *LoadData(const ImageSetIndex &index);
+  TimeFrequencyData* LoadData(const ImageSetIndex& index);
 
-  void AddReadRequest(const ImageSetIndex &index) override {
-    TimeFrequencyData *data = LoadData(index);
-    BaselineData *baseline =
+  void AddReadRequest(const ImageSetIndex& index) override {
+    TimeFrequencyData* data = LoadData(index);
+    BaselineData* baseline =
         new BaselineData(*data, TimeFrequencyMetaDataCPtr(), index);
     delete data;
     _baselineBuffer.push_back(baseline);
   }
-  void PerformReadRequests(class ProgressListener &) override {}
+  void PerformReadRequests(class ProgressListener&) override {}
 
   std::unique_ptr<BaselineData> GetNextRequested() override {
     std::unique_ptr<BaselineData> baseline(std::move(_baselineBuffer.front()));
@@ -62,9 +62,9 @@ class ParmImageSet final : public ImageSet {
  private:
   const std::string _path;
   std::vector<std::string> _antennas;
-  class ParmTable *_parmTable;
-  std::deque<BaselineData *> _baselineBuffer;
+  class ParmTable* _parmTable;
+  std::deque<BaselineData*> _baselineBuffer;
 };
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

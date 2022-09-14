@@ -1,11 +1,13 @@
 #include "rfibaselineset.h"
 
-#include "../../msio/singlebaselinefile.h"
+#include "../msio/singlebaselinefile.h"
 
 #include <fstream>
 #include <sstream>
 
-namespace rfiStrategy {
+#include "../util/progress/dummyprogresslistener.h"
+
+namespace imagesets {
 
 RFIBaselineSet::RFIBaselineSet(const std::string& path)
     : SingleImageSet(), _path(path) {}
@@ -53,4 +55,4 @@ void RFIBaselineSet::Write(const std::vector<Mask2DCPtr>& masks) {
   file.Write(outstr);
 }
 
-}  // namespace rfiStrategy
+}  // namespace imagesets

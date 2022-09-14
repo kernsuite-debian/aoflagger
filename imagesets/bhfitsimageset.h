@@ -9,43 +9,43 @@
 
 #include "imageset.h"
 
-#include "../../structures/antennainfo.h"
-#include "../../structures/types.h"
+#include "../structures/antennainfo.h"
+#include "../structures/types.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class BHFitsImageSet final : public ImageSet {
  public:
-  explicit BHFitsImageSet(const std::string &file);
+  explicit BHFitsImageSet(const std::string& file);
   ~BHFitsImageSet();
   void Initialize() override;
 
   std::unique_ptr<ImageSet> Clone() override;
 
-  std::string Description(const ImageSetIndex &index) const override;
+  std::string Description(const ImageSetIndex& index) const override;
 
   std::string Name() const override { return "Bighorns fits file"; }
   std::vector<std::string> Files() const override;
 
   size_t Size() const override { return _timeRanges.size(); }
 
-  const std::string &RangeName(size_t rangeIndex) const {
+  const std::string& RangeName(size_t rangeIndex) const {
     return _timeRanges[rangeIndex].name;
   }
 
-  void AddReadRequest(const ImageSetIndex &index) override {
+  void AddReadRequest(const ImageSetIndex& index) override {
     _baselineData.push(loadData(index));
   }
-  void PerformReadRequests(class ProgressListener &) override {}
+  void PerformReadRequests(class ProgressListener&) override {}
   std::unique_ptr<BaselineData> GetNextRequested() override {
     std::unique_ptr<BaselineData> data(new BaselineData(_baselineData.top()));
     _baselineData.pop();
     return data;
   }
-  void AddWriteFlagsTask(const ImageSetIndex &index,
-                         std::vector<Mask2DCPtr> &flags) override;
+  void AddWriteFlagsTask(const ImageSetIndex& index,
+                         std::vector<Mask2DCPtr>& flags) override;
   void PerformWriteFlagsTask() override;
-  void PerformWriteDataTask(const ImageSetIndex &, std::vector<Image2DCPtr>,
+  void PerformWriteDataTask(const ImageSetIndex&, std::vector<Image2DCPtr>,
                             std::vector<Image2DCPtr>) override {
     throw std::runtime_error("Not implemented");
   }
@@ -58,10 +58,10 @@ class BHFitsImageSet final : public ImageSet {
     std::string name;
 
     TimeRange() {}
-    TimeRange(const TimeRange &source)
+    TimeRange(const TimeRange& source)
         : start(source.start), end(source.end), name(source.name) {}
 
-    TimeRange &operator=(const TimeRange &source) {
+    TimeRange& operator=(const TimeRange& source) {
       start = source.start;
       end = source.end;
       name = source.name;
@@ -69,12 +69,12 @@ class BHFitsImageSet final : public ImageSet {
     }
   };
 
-  BHFitsImageSet(const BHFitsImageSet &source);
-  BaselineData loadData(const ImageSetIndex &index);
-  void loadImageData(TimeFrequencyData &data,
-                     const TimeFrequencyMetaDataPtr &metaData,
-                     const ImageSetIndex &index);
-  std::pair<int, int> getRangeFromString(const std::string &rangeStr);
+  BHFitsImageSet(const BHFitsImageSet& source);
+  BaselineData loadData(const ImageSetIndex& index);
+  void loadImageData(TimeFrequencyData& data,
+                     const TimeFrequencyMetaDataPtr& metaData,
+                     const ImageSetIndex& index);
+  std::pair<int, int> getRangeFromString(const std::string& rangeStr);
   std::string flagFilePath() const;
 
   std::shared_ptr<class FitsFile> _file;
@@ -83,6 +83,6 @@ class BHFitsImageSet final : public ImageSet {
   int _width, _height;
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

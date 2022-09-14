@@ -9,7 +9,7 @@
 
 class RawDescFile {
  public:
-  explicit RawDescFile(const std::string &filename) : _filename(filename) {
+  explicit RawDescFile(const std::string& filename) : _filename(filename) {
     readFile();
   }
 
@@ -17,7 +17,7 @@ class RawDescFile {
 
   std::string GetSet(size_t index) const { return _sets[index]; }
 
-  const std::string &Filename() const { return _filename; }
+  const std::string& Filename() const { return _filename; }
 
   unsigned BeamCount() const { return _beamCount; }
 

@@ -3,22 +3,26 @@
 #include <cmath>
 #include <iostream>
 
-#include "../../util/plot.h"
-#include "../../util/multiplot.h"
+#include "../util/plot.h"
+#include "../util/multiplot.h"
 
-#include "../../structures/timefrequencydata.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/timefrequencydata.h"
+#include "../structures/timefrequencymetadata.h"
 
 #include "../algorithms/sinusfitter.h"
 #include "../algorithms/thresholdtools.h"
 
-#include "../../plot/plot2d.h"
+#include "../plot/xyplot.h"
 
-using namespace aocommon;
+using aocommon::Polarization;
+using aocommon::PolarizationEnum;
+
+using algorithms::SinusFitter;
+using algorithms::ThresholdTools;
 
 void RFIPlots::Bin(Image2DCPtr image, Mask2DCPtr mask,
-                   std::vector<size_t> &valuesOutput,
-                   std::vector<long double> &binsOutput, size_t binCount,
+                   std::vector<size_t>& valuesOutput,
+                   std::vector<long double>& binsOutput, size_t binCount,
                    long double start, long double end, long double factor,
                    long double stretch) throw() {
   const long double min =
@@ -48,7 +52,7 @@ void RFIPlots::Bin(Image2DCPtr image, Mask2DCPtr mask,
   }
 }
 
-void RFIPlots::MakeDistPlot(Plot2DPointSet &pointSet, Image2DCPtr image,
+void RFIPlots::MakeDistPlot(XYPointSet& pointSet, Image2DCPtr image,
                             Mask2DCPtr mask) {
   std::vector<size_t> valuesOutput;
   std::vector<long double> binsOutput;
@@ -68,11 +72,11 @@ void RFIPlots::MakeDistPlot(Plot2DPointSet &pointSet, Image2DCPtr image,
 }
 
 template <bool Weight>
-void RFIPlots::MakeMeanSpectrumPlot(Plot2DPointSet &pointSet,
-                                    const TimeFrequencyData &data,
-                                    const Mask2DCPtr &mask,
-                                    const TimeFrequencyMetaDataCPtr &metaData) {
-  bool hasBandInfo = metaData != 0 && metaData->HasBand();
+void RFIPlots::MakeMeanSpectrumPlot(XYPointSet& pointSet,
+                                    const TimeFrequencyData& data,
+                                    const Mask2DCPtr& mask,
+                                    const TimeFrequencyMetaDataCPtr& metaData) {
+  bool hasBandInfo = metaData != nullptr && metaData->HasBand();
   if (hasBandInfo) {
     pointSet.SetXDesc("Frequency (MHz)");
     std::stringstream yDesc;
@@ -122,16 +126,15 @@ void RFIPlots::MakeMeanSpectrumPlot(Plot2DPointSet &pointSet,
   pointSet.SetYRange(min * 0.9, max / 0.9);
 }
 template void RFIPlots::MakeMeanSpectrumPlot<true>(
-    class Plot2DPointSet &pointSet, const TimeFrequencyData &data,
-    const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
+    XYPointSet& pointSet, const TimeFrequencyData& data, const Mask2DCPtr& mask,
+    const TimeFrequencyMetaDataCPtr& metaData);
 template void RFIPlots::MakeMeanSpectrumPlot<false>(
-    class Plot2DPointSet &pointSet, const TimeFrequencyData &data,
-    const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
+    XYPointSet& pointSet, const TimeFrequencyData& data, const Mask2DCPtr& mask,
+    const TimeFrequencyMetaDataCPtr& metaData);
 
-void RFIPlots::MakePowerSpectrumPlot(Plot2DPointSet &pointSet,
-                                     const Image2D &real, const Image2D &imag,
-                                     const Mask2D &mask,
-                                     const TimeFrequencyMetaData *metaData) {
+void RFIPlots::MakePowerSpectrumPlot(XYPointSet& pointSet, const Image2D& real,
+                                     const Image2D& imag, const Mask2D& mask,
+                                     const TimeFrequencyMetaData* metaData) {
   bool hasBandInfo = metaData != nullptr && metaData->HasBand();
   if (hasBandInfo) {
     pointSet.SetXDesc("Frequency (MHz)");
@@ -167,7 +170,7 @@ void RFIPlots::MakePowerSpectrumPlot(Plot2DPointSet &pointSet,
   }
 }
 
-void RFIPlots::MakePowerTimePlot(Plot2DPointSet &pointSet, Image2DCPtr image,
+void RFIPlots::MakePowerTimePlot(XYPointSet& pointSet, Image2DCPtr image,
                                  Mask2DCPtr mask,
                                  TimeFrequencyMetaDataCPtr metaData) {
   pointSet.SetXDesc("Time");
@@ -203,8 +206,8 @@ void RFIPlots::MakePowerTimePlot(Plot2DPointSet &pointSet, Image2DCPtr image,
   }
 }
 
-void RFIPlots::MakeComplexPlanePlot(Plot2DPointSet &pointSet,
-                                    const TimeFrequencyData &data,
+void RFIPlots::MakeComplexPlanePlot(XYPointSet& pointSet,
+                                    const TimeFrequencyData& data,
                                     size_t xStart, size_t length, size_t y,
                                     size_t yAvgSize, Mask2DCPtr mask,
                                     bool realVersusImaginary,
@@ -239,8 +242,8 @@ void RFIPlots::MakeComplexPlanePlot(Plot2DPointSet &pointSet,
   }
 }
 
-void RFIPlots::MakeFittedComplexPlot(Plot2DPointSet &pointSet,
-                                     const TimeFrequencyData &data,
+void RFIPlots::MakeFittedComplexPlot(XYPointSet& pointSet,
+                                     const TimeFrequencyData& data,
                                      size_t xStart, size_t length, size_t y,
                                      size_t yAvgSize, Mask2DCPtr mask,
                                      num_t frequency, bool realVersusImaginary,
@@ -319,14 +322,14 @@ void RFIPlots::MakeFittedComplexPlot(Plot2DPointSet &pointSet,
   }
 }
 
-void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex,
-                                   const Image2DCPtr &image,
-                                   const Mask2DCPtr &mask,
-                                   const TimeFrequencyMetaDataCPtr &metaData) {
+void RFIPlots::MakeTimeScatterPlot(class MultiPlot& plot, size_t plotIndex,
+                                   const Image2DCPtr& image,
+                                   const Mask2DCPtr& mask,
+                                   const TimeFrequencyMetaDataCPtr& metaData) {
   plot.SetXAxisText("Time (s)");
   plot.SetYAxisText("Visibility");
   bool useMeta;
-  if (metaData != 0 && metaData->HasObservationTimes())
+  if (metaData != nullptr && metaData->HasObservationTimes())
     useMeta = true;
   else
     useMeta = false;
@@ -357,11 +360,11 @@ void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex,
 }
 
 void RFIPlots::MakeFrequencyScatterPlot(
-    class MultiPlot &plot, size_t plotIndex, const Image2DCPtr &image,
-    const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData) {
+    class MultiPlot& plot, size_t plotIndex, const Image2DCPtr& image,
+    const Mask2DCPtr& mask, const TimeFrequencyMetaDataCPtr& metaData) {
   plot.SetYAxisText("Visibility");
   bool useMeta;
-  if (metaData != 0 && metaData->HasBand())
+  if (metaData != nullptr && metaData->HasBand())
     useMeta = true;
   else
     useMeta = false;
@@ -390,9 +393,9 @@ void RFIPlots::MakeFrequencyScatterPlot(
   }
 }
 
-void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot,
-                                   const TimeFrequencyData &data,
-                                   const TimeFrequencyMetaDataCPtr &metaData,
+void RFIPlots::MakeTimeScatterPlot(class MultiPlot& plot,
+                                   const TimeFrequencyData& data,
+                                   const TimeFrequencyMetaDataCPtr& metaData,
                                    unsigned startIndex) {
   for (size_t polIndex = 0; polIndex != data.PolarizationCount(); ++polIndex) {
     PolarizationEnum pol = data.GetPolarization(polIndex);
@@ -408,8 +411,8 @@ void RFIPlots::MakeTimeScatterPlot(class MultiPlot &plot,
 }
 
 void RFIPlots::MakeFrequencyScatterPlot(
-    class MultiPlot &plot, const TimeFrequencyData &data,
-    const TimeFrequencyMetaDataCPtr &metaData, unsigned startIndex) {
+    class MultiPlot& plot, const TimeFrequencyData& data,
+    const TimeFrequencyMetaDataCPtr& metaData, unsigned startIndex) {
   for (size_t polIndex = 0; polIndex != data.PolarizationCount(); ++polIndex) {
     PolarizationEnum pol = data.GetPolarization(polIndex);
     TimeFrequencyData polTF = data.Make(pol);

@@ -3,7 +3,7 @@
 
 #include "pyfunctions.h"
 
-#include "../structures/polarization.h"
+#include <aocommon/polarization.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
@@ -16,56 +16,6 @@ using namespace aocommon;
 
 PYBIND11_MODULE(aoflagger, m) {
   m.doc() = "AOFlagger module for detection of radio-frequency interference";
-  py::class_<aoflagger_lua::Data>(m, "Data")
-      .def(py::init<aoflagger_lua::Data::Context&>())
-      .def(py::self - py::self)
-      .def("__copy__", &aoflagger_lua::Data::copy)
-      .def("clear_mask", &aoflagger_lua::Data::clear_mask)
-      .def("convert_to_polarization",
-           &aoflagger_lua::Data::convert_to_polarization)
-      .def("convert_to_complex", &aoflagger_lua::Data::convert_to_complex)
-      .def("join_mask", &aoflagger_lua::Data::join_mask)
-      .def("make_complex", &aoflagger_lua::Data::make_complex)
-      .def("polarizations", &aoflagger_python::polarizations)
-      .def("set_visibilities", &aoflagger_lua::Data::set_visibilities)
-      .def("set_polarization_data",
-           &aoflagger_lua::Data::set_polarization_data);
-
-  m.def("downsample", aoflagger_lua::downsample);
-  m.def("high_pass_filter", aoflagger_lua::high_pass_filter);
-  m.def("low_pass_filter", aoflagger_lua::low_pass_filter);
-  m.def("print_polarization_statistics",
-        aoflagger_lua::print_polarization_statistics);
-  m.def("save_heat_map", aoflagger_lua::save_heat_map);
-  m.def("scale_invariant_rank_operator",
-        aoflagger_lua::scale_invariant_rank_operator);
-  m.def("set_flag_function", aoflagger_python::set_flag_function);
-  m.def("sumthreshold", aoflagger_lua::sumthreshold);
-  m.def("threshold_channel_rms", aoflagger_lua::threshold_channel_rms);
-  m.def("threshold_timestep_rms", aoflagger_lua::threshold_timestep_rms);
-  m.def("upsample", aoflagger_lua::upsample);
-
-  py::enum_<PolarizationEnum>(m, "Polarization")
-      .value("StokesI", Polarization::StokesI)
-      .value("StokesQ", Polarization::StokesQ)
-      .value("StokesU", Polarization::StokesU)
-      .value("StokesV", Polarization::StokesV)
-      .value("RR", Polarization::RR)
-      .value("RL", Polarization::RL)
-      .value("LR", Polarization::LR)
-      .value("LL", Polarization::LL)
-      .value("XX", Polarization::XX)
-      .value("XY", Polarization::XY)
-      .value("YX", Polarization::YX)
-      .value("YY", Polarization::YY);
-
-  py::enum_<enum TimeFrequencyData::ComplexRepresentation>(
-      m, "ComplexRepresentation")
-      .value("RealPart", TimeFrequencyData::RealPart)
-      .value("ImaginaryPart", TimeFrequencyData::ImaginaryPart)
-      .value("PhasePart", TimeFrequencyData::PhasePart)
-      .value("AmplitudePart", TimeFrequencyData::AmplitudePart)
-      .value("ComplexParts", TimeFrequencyData::ComplexParts);
 
   py::enum_<enum aoflagger::TelescopeId>(m, "TelescopeId")
       .value("Generic", aoflagger::TelescopeId::GENERIC_TELESCOPE)

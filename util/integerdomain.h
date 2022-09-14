@@ -6,16 +6,16 @@
 
 class IntegerDomain {
  public:
-  IntegerDomain(const IntegerDomain &source);
+  IntegerDomain(const IntegerDomain& source);
   explicit IntegerDomain(int singleValue);
-  IntegerDomain(const int *values, unsigned count);
+  IntegerDomain(const int* values, unsigned count);
   IntegerDomain(int first, unsigned count);
   IntegerDomain(int first, unsigned step, unsigned count);
-  explicit IntegerDomain(const std::string &str);
+  explicit IntegerDomain(const std::string& str);
   ~IntegerDomain() {}
   unsigned ValueCount() const throw() { return _values.size(); }
   int GetValue(unsigned index) const throw() { return _values[index]; }
-  void Join(const IntegerDomain &other) throw();
+  void Join(const IntegerDomain& other) throw();
   bool IsIn(int number) const throw() {
     for (std::vector<int>::const_iterator i = _values.begin();
          i != _values.end(); ++i) {

@@ -4,22 +4,24 @@
 #include <cstring>
 #include <cmath>
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
+
+namespace algorithms {
 
 class SinusFitter {
  public:
   SinusFitter();
   ~SinusFitter();
-  void FindPhaseAndAmplitude(num_t &phase, num_t &amplitude, const num_t *dataX,
-                             const num_t *dataT, const size_t dataSize,
+  void FindPhaseAndAmplitude(num_t& phase, num_t& amplitude, const num_t* dataX,
+                             const num_t* dataT, const size_t dataSize,
                              const num_t frequency) const throw();
-  void FindPhaseAndAmplitudeComplex(num_t &phase, num_t &amplitude,
-                                    const num_t *dataR, const num_t *dataI,
-                                    const num_t *dataT, const size_t dataSize,
+  void FindPhaseAndAmplitudeComplex(num_t& phase, num_t& amplitude,
+                                    const num_t* dataR, const num_t* dataI,
+                                    const num_t* dataT, const size_t dataSize,
                                     const num_t frequency) const throw();
 
-  num_t FindMean(const num_t phase, const num_t amplitude, const num_t *dataX,
-                 const num_t *dataT, const size_t dataSize,
+  num_t FindMean(const num_t phase, const num_t amplitude, const num_t* dataX,
+                 const num_t* dataT, const size_t dataSize,
                  const num_t frequency);
 
   static num_t Value(const num_t phase, const num_t amplitude, const num_t t,
@@ -62,5 +64,7 @@ class SinusFitter {
 
  private:
 };
+
+}  // namespace algorithms
 
 #endif

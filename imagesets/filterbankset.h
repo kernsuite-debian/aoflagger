@@ -6,9 +6,9 @@
 
 #include "imageset.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class FilterBankSet final : public ImageSet {
  public:
@@ -91,6 +91,6 @@ class FilterBankSet final : public ImageSet {
   }
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

@@ -16,7 +16,7 @@ struct OutputReceiver {
 };
 template <>
 struct OutputReceiver<UVImager> {
-  UVImager *_imager;
+  UVImager* _imager;
   void SetUVValue(size_t, double u, double v, double r, double i, double w) {
     _imager->SetUVValue(u, v, r, i, w);
     _imager->SetUVValue(-u, -v, r, -i, w);
@@ -71,7 +71,7 @@ class Model {
  public:
   Model();
   void AddSource(long double dec, long double ra, long double fluxIntensity) {
-    StablePointSource *source = new StablePointSource();
+    StablePointSource* source = new StablePointSource();
     source->dec = dec;
     source->ra = ra;
     source->fluxIntensity = fluxIntensity;
@@ -80,7 +80,7 @@ class Model {
   }
   void AddVariableSource(long double dec, long double ra,
                          long double fluxIntensity) {
-    VariablePointSource *source = new VariablePointSource();
+    VariablePointSource* source = new VariablePointSource();
     source->dec = dec;
     source->ra = ra;
     source->fluxIntensity = fluxIntensity;
@@ -90,22 +90,22 @@ class Model {
   }
   void SimulateAntenna(double time, num_t delayDirectionDEC,
                        num_t delayDirectionRA, num_t dx, num_t dy,
-                       num_t frequency, num_t earthLattitude, num_t &r,
-                       num_t &i);
+                       num_t frequency, num_t earthLattitude, num_t& r,
+                       num_t& i);
   void SimulateUncoherentAntenna(double time, num_t delayDirectionDEC,
                                  num_t delayDirectionRA, num_t dx, num_t dy,
                                  num_t frequency, num_t earthLattitude,
-                                 num_t &r, num_t &i, size_t index);
+                                 num_t& r, num_t& i, size_t index);
 
   template <typename T>
-  void SimulateCorrelation(struct OutputReceiver<T> &receiver,
+  void SimulateCorrelation(struct OutputReceiver<T>& receiver,
                            num_t delayDirectionDEC, num_t delayDirectionRA,
                            num_t dx, num_t dy, num_t dz, num_t frequency,
                            num_t channelWidth, size_t nTimes,
                            double integrationTime);
 
-  void SimulateObservation(class UVImager &imager,
-                           class Observatorium &observatorium,
+  void SimulateObservation(class UVImager& imager,
+                           class Observatorium& observatorium,
                            num_t delayDirectionDEC, num_t delayDirectionRA) {
     srand(1);
     OutputReceiver<UVImager> imagerOutputter;
@@ -115,15 +115,15 @@ class Model {
   }
 
   std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> SimulateObservation(
-      size_t nTimes, class Observatorium &observatorium,
+      size_t nTimes, class Observatorium& observatorium,
       num_t delayDirectionDEC, num_t delayDirectionRA, size_t a1, size_t a2);
 
   template <typename T>
-  void SimulateObservation(struct OutputReceiver<T> &receiver,
-                           class Observatorium &observatorium,
+  void SimulateObservation(struct OutputReceiver<T>& receiver,
+                           class Observatorium& observatorium,
                            num_t delayDirectionDEC, num_t delayDirectionRA);
 
-  static void GetUVPosition(num_t &u, num_t &v, num_t earthLattitudeAngle,
+  static void GetUVPosition(num_t& u, num_t& v, num_t earthLattitudeAngle,
                             num_t delayDirectionDEC, num_t delayDirectionRA,
                             num_t dx, num_t dy, num_t dz, num_t waveLength);
   static num_t GetWPosition(num_t delayDirectionDec, num_t delayDirectionRA,
@@ -139,13 +139,12 @@ class Model {
   void loadUrsaMajorDistortingVariableSource(double ra, double dec,
                                              double factor, bool weak = false,
                                              bool slightlyMiss = false);
-  void loadOnAxisSource(double ra, double dec, double factor);
 
   double NoiseSigma() const { return _noiseSigma; }
   void SetNoiseSigma(double noiseSigma) { _noiseSigma = noiseSigma; }
 
  private:
-  std::vector<Source *> _sources;
+  std::vector<Source*> _sources;
   double _noiseSigma, _sourceSigma;
   double _integrationTime;
 };

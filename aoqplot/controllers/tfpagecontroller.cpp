@@ -15,7 +15,7 @@ TFPageController::constructImage(QualityTablesFormatter::StatisticKind kind) {
 
     std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> data =
         derivator.CreateTFData(kind);
-    if (data.second == 0) {
+    if (data.second == nullptr) {
       Plot().SetXAxisDescription("Time index");
       Plot().SetYAxisDescription("Frequency index");
     } else {

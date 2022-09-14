@@ -22,7 +22,7 @@ class PngFile {
    * @param width Width of the image
    * @param height Height of the image
    */
-  PngFile(const std::string &filename, unsigned width, unsigned height);
+  PngFile(const std::string& filename, size_t width, size_t height);
 
   /**
    * Destructor.
@@ -44,7 +44,7 @@ class PngFile {
    * Returns the size of one pixel in bytes.
    * @return Size of one pixel in bytes.
    */
-  int PixelSize() const throw() { return _pixelSize; }
+  int PixelSize() const { return _pixelSize; }
 
   /**
    * Clears the entire image.
@@ -65,7 +65,7 @@ class PngFile {
    * @param colorB Blue value.
    * @param colorA Alfa value.
    */
-  void PlotPixel(unsigned x, unsigned y, int colorR, int colorG, int colorB,
+  void PlotPixel(size_t x, size_t y, int colorR, int colorG, int colorB,
                  int colorA) {
     _row_pointers[y][x * _pixelSize] = colorR;
     _row_pointers[y][x * _pixelSize + 1] = colorG;
@@ -74,77 +74,18 @@ class PngFile {
   }
 
   /**
-   * Sets a square in the image to a specific color.
-   * @param x x-coordinate.
-   * @param y y-coordinate.
-   * @param colorR Red value.
-   * @param colorG Green value.
-   * @param colorB Blue value.
-   * @param colorA Alfa value.
-   */
-  void PlotDatapoint(unsigned x, unsigned y, int colorR, int colorG, int colorB,
-                     int colorA);
-
-  /**
    * Retrieve the array of row pointers.
    * @return an array of row pointers.
    */
-  png_bytep *RowPointers() const throw() { return _row_pointers; }
-
-  /**
-   * Sets all pixels in the rowpointers to match the image.
-   */
-  void SetFromImage(const class Image2D &image, const class ColorMap &colorMap,
-                    long double normalizeFactor, long double zeroLevel = 0.0);
-
-  /**
-   * Write an image directly to disk. The image will be normalized.
-   * @param image Image containing the data.
-   * @param filename Name of the file to write.
-   * @throws IOException if writing fails.
-   */
-  static void Save(const class Image2D &image, const std::string &filename);
-
-  /**
-   * Write an image directly to disk by using a specific colormap. The image
-   * will be normalized.
-   * @param image Image containing the data.
-   * @param filename Name of the file to write.
-   * @param colorMap ColorMap to use.
-   * @throws IOException if writing fails.
-   */
-  static void Save(const class Image2D &image, const std::string &filename,
-                   const class ColorMap &colorMap);
-
-  /**
-   * Write an image directly to disk by using a specific colormap. The image
-   * will be normalized with a specified factor.
-   * @param image Image containing the data.
-   * @param filename Name of the file to write.
-   * @param colorMap ColorMap to use.
-   * @param normalizeFactor Factor to use for normalisation.
-   * @throws IOException if writing fails.
-   */
-  static void Save(const class Image2D &image, const std::string &filename,
-                   const class ColorMap &colorMap, long double normalizeFactor,
-                   long double zeroLevel = 0.0);
-
-  /**
-   * Fill this instance with the values of the image by using the color map, and
-   * save it to disk.
-   * @param image Image to use.
-   * @param colorMap Color map to use.
-   * @throws IOException if writing fails.
-   */
-  void Save(const class Image2D &image, const class ColorMap &colorMap);
+  png_bytep* RowPointers() const { return _row_pointers; }
 
  private:
   const std::string _filename;
-  const unsigned _width, _height;
-  png_bytep *_row_pointers;
+  const size_t _width, _height;
+  png_bytep* _row_pointers;
   png_structp _png_ptr;
   png_infop _info_ptr;
-  FILE *_fp;
+  FILE* _fp;
   const int _pixelSize;
 };
 

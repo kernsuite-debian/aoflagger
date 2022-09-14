@@ -2,7 +2,7 @@
 
 #include <string>
 
-IntegerDomain::IntegerDomain(const IntegerDomain &source) {
+IntegerDomain::IntegerDomain(const IntegerDomain& source) {
   for (std::vector<int>::const_iterator i = source._values.begin();
        i != source._values.end(); ++i)
     _values.push_back(*i);
@@ -12,7 +12,7 @@ IntegerDomain::IntegerDomain(int singleValue) {
   _values.push_back(singleValue);
 }
 
-IntegerDomain::IntegerDomain(const int *values, unsigned count) {
+IntegerDomain::IntegerDomain(const int* values, unsigned count) {
   for (unsigned i = 0; i < count; ++i) _values.push_back(values[i]);
 }
 
@@ -24,7 +24,7 @@ IntegerDomain::IntegerDomain(int first, unsigned step, unsigned count) {
   for (unsigned i = 0; i < count; ++i) _values.push_back(first + i * step);
 }
 
-IntegerDomain::IntegerDomain(const std::string &str) {
+IntegerDomain::IntegerDomain(const std::string& str) {
   enum State { Accepting, Number, Interval } state = Accepting;
   int number, i1 = 0;
   for (std::string::const_iterator i = str.begin(); i != str.end(); ++i) {
@@ -63,7 +63,7 @@ IntegerDomain::IntegerDomain(const std::string &str) {
   }
 }
 
-void IntegerDomain::Join(const IntegerDomain &other) throw() {
+void IntegerDomain::Join(const IntegerDomain& other) throw() {
   for (std::vector<int>::const_iterator i = other._values.begin();
        i != other._values.end(); ++i) {
     bool found = false;
@@ -83,7 +83,7 @@ IntegerDomain IntegerDomain::Split(unsigned partCount,
   unsigned start = _values.size() * partIndex / partCount;
   unsigned end = _values.size() * (partIndex + 1) / partCount;
 
-  int *values = new int[end - start];
+  int* values = new int[end - start];
   for (unsigned i = start; i < end; ++i) values[i - start] = _values[i];
   IntegerDomain domain(*values, end - start);
   delete[] values;

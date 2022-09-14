@@ -65,16 +65,18 @@ void LuaStrategy::loadaoflagger() {
       {"get_polarizations", Data::get_polarizations},
       {"get_times", Data::get_times},
       {"has_metadata", Data::has_metadata},
+      {"invert_mask", Data::invert_mask},
       {"is_auto_correlation", Data::is_auto_correlation},
       {"is_complex", Data::is_complex},
       {"join_mask", Data::join_mask},
       {"set_mask", Data::set_mask},
       {"set_mask_for_channel_range", Data::set_mask_for_channel_range},
+      {"set_masked_visibilities", Data::set_masked_visibilities},
       {"set_polarization_data", Data::set_polarization_data},
       {"set_visibilities", Data::set_visibilities},
       {"__gc", Data::gc},
       {"__sub", Data::sub},
-      {NULL, NULL}};
+      {nullptr, nullptr}};
   luaL_setfuncs(_state, aofdatamembers, 0);
 
   // New table for package
@@ -107,9 +109,11 @@ void LuaStrategy::loadaoflagger() {
       {"threshold_timestep_rms", Functions::threshold_timestep_rms},
       {"trim_channels", Functions::trim_channels},
       {"trim_frequencies", Functions::trim_frequencies},
-      {"upsample", Functions::upsample},
+      {"upsample", Functions::upsample_image},  // DEPRECATED
+      {"upsample_image", Functions::upsample_image},
+      {"upsample_mask", Functions::upsample_mask},
       {"visualize", Functions::visualize},
-      {NULL, NULL}};
+      {nullptr, nullptr}};
   luaL_setfuncs(_state, aoflib, 0);
 
   // Name the package (which pops the table)

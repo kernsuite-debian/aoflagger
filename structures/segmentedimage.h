@@ -14,9 +14,9 @@ class SegmentedImage {
     delete[] _data;
   }
 
-  static SegmentedImage *Create(size_t width, size_t height,
+  static SegmentedImage* Create(size_t width, size_t height,
                                 size_t initialValue = 0) {
-    SegmentedImage *image = new SegmentedImage(width, height);
+    SegmentedImage* image = new SegmentedImage(width, height);
     for (size_t y = 0; y < height; ++y) {
       for (size_t x = 0; x < width; ++x) image->_data[y][x] = initialValue;
     }
@@ -27,14 +27,14 @@ class SegmentedImage {
     return SegmentedImagePtr(Create(width, height, initialValue));
   }
 
-  static SegmentedImage *CreateUnset(size_t width, size_t height) {
+  static SegmentedImage* CreateUnset(size_t width, size_t height) {
     return new SegmentedImage(width, height);
   }
   static SegmentedImagePtr CreateUnsetPtr(size_t width, size_t height) {
     return SegmentedImagePtr(CreateUnset(width, height));
   }
   static SegmentedImagePtr CreateCopy(SegmentedImagePtr segmentedImage) {
-    SegmentedImage *copy =
+    SegmentedImage* copy =
         CreateUnset(segmentedImage->_width, segmentedImage->_height);
     for (size_t y = 0; y < segmentedImage->_height; ++y) {
       for (size_t x = 0; x < segmentedImage->_width; ++x) {
@@ -81,15 +81,15 @@ class SegmentedImage {
   SegmentedImage(size_t width, size_t height)
       : _width(width),
         _height(height),
-        _data(new size_t *[height]),
+        _data(new size_t*[height]),
         _segmentCount(0) {
     for (size_t y = 0; y < height; ++y) _data[y] = new size_t[width];
   }
-  SegmentedImage(const SegmentedImage &) = delete;
-  SegmentedImage &operator=(const SegmentedImage &) = delete;
+  SegmentedImage(const SegmentedImage&) = delete;
+  SegmentedImage& operator=(const SegmentedImage&) = delete;
 
   size_t _width, _height;
-  size_t **_data;
+  size_t** _data;
   size_t _segmentCount;
 };
 

@@ -1,16 +1,16 @@
 #include "baselineselector.h"
 
-#include "../../util/logger.h"
-#include "../../util/plot.h"
+#include "../util/logger.h"
+#include "../util/plot.h"
 
-#include "../../quality/defaultstatistics.h"
+#include "../quality/defaultstatistics.h"
 
 #include "thresholdtools.h"
 
 #include <algorithm>
 #include <map>
 
-namespace rfiStrategy {
+namespace algorithms {
 
 void BaselineSelector::Add(Mask2DCPtr mask,
                            TimeFrequencyMetaDataCPtr metaData) {
@@ -31,8 +31,8 @@ void BaselineSelector::Add(Mask2DCPtr mask,
   }
 }
 
-void BaselineSelector::Add(DefaultStatistics &baselineStat,
-                           AntennaInfo &antenna1, AntennaInfo &antenna2) {
+void BaselineSelector::Add(DefaultStatistics& baselineStat,
+                           AntennaInfo& antenna1, AntennaInfo& antenna2) {
   if (antenna1.id != antenna2.id) {
     BaselineSelector::SingleBaselineInfo baseline;
     baseline.length = Baseline(antenna1, antenna2).Distance();
@@ -53,7 +53,7 @@ void BaselineSelector::Add(DefaultStatistics &baselineStat,
 }
 
 void BaselineSelector::Search(
-    std::vector<BaselineSelector::SingleBaselineInfo> &markedBaselines) {
+    std::vector<BaselineSelector::SingleBaselineInfo>& markedBaselines) {
   // Perform a first quick threshold to remove baselines which deviate a lot
   // (e.g. 100% flagged baselines). Sometimes, there are a lot of them, causing
   // instability if this would not be done.
@@ -188,8 +188,8 @@ void BaselineSelector::Search(
 }
 
 void BaselineSelector::ImplyStations(
-    const std::vector<BaselineSelector::SingleBaselineInfo> &markedBaselines,
-    double maxRatio, std::set<unsigned> &badStations) const {
+    const std::vector<BaselineSelector::SingleBaselineInfo>& markedBaselines,
+    double maxRatio, std::set<unsigned>& badStations) const {
   std::map<unsigned, unsigned> stations;
   for (std::vector<BaselineSelector::SingleBaselineInfo>::const_iterator i =
            markedBaselines.begin();
@@ -226,4 +226,4 @@ double BaselineSelector::smoothedValue(double length) const {
   return sum / weight;
 }
 
-}  // namespace rfiStrategy
+}  // namespace algorithms

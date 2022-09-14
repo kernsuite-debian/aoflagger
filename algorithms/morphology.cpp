@@ -2,17 +2,19 @@
 #include "morphologicalflagger.h"
 #include "siroperator.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
 #include <stack>
 #include <iostream>
 
+namespace algorithms {
+
 size_t Morphology::BROADBAND_SEGMENT = 1, Morphology::LINE_SEGMENT = 2,
        Morphology::BLOB_SEGMENT = 3;
 
-void Morphology::SegmentByMaxLength(const Mask2D *mask,
+void Morphology::SegmentByMaxLength(const Mask2D* mask,
                                     SegmentedImagePtr output) {
-  int **lengthWidthValues = new int *[mask->Height()];
+  int** lengthWidthValues = new int*[mask->Height()];
   for (size_t y = 0; y < mask->Height(); ++y)
     lengthWidthValues[y] = new int[mask->Width()];
 
@@ -34,7 +36,7 @@ void Morphology::SegmentByMaxLength(const Mask2D *mask,
   delete[] lengthWidthValues;
 }
 
-void Morphology::SegmentByLengthRatio(const Mask2D *mask,
+void Morphology::SegmentByLengthRatio(const Mask2D* mask,
                                       SegmentedImagePtr output) {
   Mask2DPtr maskCopy(new Mask2D(*mask));
 
@@ -86,7 +88,7 @@ void Morphology::SegmentByLengthRatio(const Mask2D *mask,
   delete[] vCounts;
 }
 
-void Morphology::calculateHorizontalCounts(const Mask2D *mask, int **values) {
+void Morphology::calculateHorizontalCounts(const Mask2D* mask, int** values) {
   for (size_t y = 0; y < mask->Height(); ++y) {
     size_t length = 0;
 
@@ -109,7 +111,7 @@ void Morphology::calculateHorizontalCounts(const Mask2D *mask, int **values) {
   }
 }
 
-void Morphology::calculateVerticalCounts(const Mask2D *mask, int **values) {
+void Morphology::calculateVerticalCounts(const Mask2D* mask, int** values) {
   for (size_t x = 0; x < mask->Width(); ++x) {
     size_t length = 0;
 
@@ -132,7 +134,7 @@ void Morphology::calculateVerticalCounts(const Mask2D *mask, int **values) {
   }
 }
 
-void Morphology::calculateOpenings(const Mask2D *mask, int **values) {
+void Morphology::calculateOpenings(const Mask2D* mask, int** values) {
   for (size_t y = 0; y < mask->Height(); ++y) {
     size_t length = 0;
 
@@ -177,8 +179,8 @@ void Morphology::calculateOpenings(const Mask2D *mask, int **values) {
   }
 }
 
-void Morphology::calculateOpenings(const Mask2D *mask, Mask2DPtr *values,
-                                   int **hCounts, int **vCounts) {
+void Morphology::calculateOpenings(const Mask2D* mask, Mask2DPtr* values,
+                                   int** hCounts, int** vCounts) {
   // const int zThreshold = 5;
 
   for (size_t y = 0; y < mask->Height(); ++y) {
@@ -200,8 +202,8 @@ struct MorphologyPoint3D {
   size_t x, y, z;
 };
 
-void Morphology::floodFill(const Mask2D *mask, SegmentedImagePtr output,
-                           const int *const *lengthWidthValues, size_t x,
+void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
+                           const int* const* lengthWidthValues, size_t x,
                            size_t y, size_t value) {
   std::stack<MorphologyPoint2D> points;
   MorphologyPoint2D startPoint;
@@ -256,9 +258,9 @@ void Morphology::floodFill(const Mask2D *mask, SegmentedImagePtr output,
   } while (points.size() != 0);
 }
 
-void Morphology::floodFill(const Mask2D *mask, SegmentedImagePtr output,
-                           Mask2DPtr *matrices, size_t x, size_t y, size_t z,
-                           size_t value, int **hCounts, int **vCounts) {
+void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
+                           Mask2DPtr* matrices, size_t x, size_t y, size_t z,
+                           size_t value, int** hCounts, int** vCounts) {
   std::stack<MorphologyPoint3D> points;
   MorphologyPoint3D startPoint;
   startPoint.x = x;
@@ -324,12 +326,12 @@ void Morphology::Cluster(SegmentedImagePtr segmentedImage) {
 
   for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
        i != segments.end(); ++i) {
-    SegmentInfo &info1 = i->second;
+    SegmentInfo& info1 = i->second;
     for (std::map<size_t, SegmentInfo>::iterator j = segments.begin();
          j != segments.end(); ++j) {
       if (info1.segment != j->second.segment && !(i->second.mark) &&
           !(j->second.mark)) {
-        SegmentInfo &info2 = j->second;
+        SegmentInfo& info2 = j->second;
         size_t hDist = info1.HorizontalDistance(info2);
         size_t vDist = info1.VerticalDistance(info2);
 
@@ -393,7 +395,7 @@ void Morphology::Cluster(SegmentedImagePtr segmentedImage) {
           segmentedImage->MergeSegments(info1.segment, oldSegment);
           for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
                i != segments.end(); ++i) {
-            SegmentInfo &info = i->second;
+            SegmentInfo& info = i->second;
             if (info.segment == oldSegment) info.segment = info1.segment;
           }
         }
@@ -422,7 +424,7 @@ std::map<size_t, Morphology::SegmentInfo> Morphology::createSegmentMap(
           segments.insert(
               std::map<size_t, SegmentInfo>::value_type(segmentValue, segment));
         } else {
-          SegmentInfo &segment = segments.find(segmentValue)->second;
+          SegmentInfo& segment = segments.find(segmentValue)->second;
           segment.AddPoint(x, y);
         }
       }
@@ -431,7 +433,7 @@ std::map<size_t, Morphology::SegmentInfo> Morphology::createSegmentMap(
 
   for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
        i != segments.end(); ++i) {
-    SegmentInfo &info = i->second;
+    SegmentInfo& info = i->second;
     info.width = info.right - info.left;
     info.height = info.bottom - info.top;
   }
@@ -445,7 +447,7 @@ void Morphology::RemoveSmallSegments(SegmentedImagePtr segmentedImage,
 
   for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
        i != segments.end(); ++i) {
-    const SegmentInfo &segment = i->second;
+    const SegmentInfo& segment = i->second;
     if (segment.count <= thresholdLevel) {
       ++removedSegments;
       segmentedImage->RemoveSegment(segment.segment, segment.left,
@@ -461,7 +463,7 @@ void Morphology::Classify(SegmentedImagePtr segmentedImage) {
 
   for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
        i != segments.end(); ++i) {
-    SegmentInfo &info = i->second;
+    SegmentInfo& info = i->second;
     if (info.width > info.height * 10)
       segmentedImage->MergeSegments(LINE_SEGMENT, info.segment);
     else if (info.height > info.width * 10)
@@ -470,3 +472,5 @@ void Morphology::Classify(SegmentedImagePtr segmentedImage) {
       segmentedImage->MergeSegments(BLOB_SEGMENT, info.segment);
   }
 }
+
+}  // namespace algorithms

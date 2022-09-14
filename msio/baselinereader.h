@@ -8,12 +8,13 @@
 
 #include <aocommon/polarization.h>
 
-#include <boost/optional/optional.hpp>
+#include <casacore/ms/MeasurementSets/MeasurementSet.h>
 
 #include <map>
-#include <vector>
-#include <stdexcept>
 #include <memory>
+#include <optional>
+#include <stdexcept>
+#include <vector>
 
 typedef std::shared_ptr<class BaselineReader> BaselineReaderPtr;
 typedef std::shared_ptr<const class BaselineReader> BaselineReaderCPtr;
@@ -22,6 +23,36 @@ class BaselineReader {
  public:
   explicit BaselineReader(const std::string& msFile);
   virtual ~BaselineReader();
+
+  /**
+   * Has the measurement set been modified?
+   *
+   * When it's been modified the changes need to be written to the measurement
+   * set. By default the destructor of the subclasses should execute this
+   * operation. In order to allow writing to multiple measurement sets in
+   * parallel the functionality is exposed.
+   */
+  virtual bool IsModified() const = 0;
+
+  /**
+   * Writes the changes to the measurement set.
+   *
+   * @post @c IsModified() == @c false.
+   */
+  virtual void WriteToMs() = 0;
+
+  /**
+   * Prepares the reader before usage.
+   *
+   * Some readers have a preparation step that can be done in parallel. Calling
+   * this function is optional; when not called manually the reader shall
+   * execute the preparation itself.
+   *
+   * @note When no @a progress is needed use the @ref dummy_progress_.
+   */
+  virtual void PrepareReadWrite(class ProgressListener& progress) = 0;
+
+  static class DummyProgressListener dummy_progress_;
 
   bool ReadFlags() const { return _readFlags; }
   void SetReadFlags(bool readFlags) { _readFlags = readFlags; }
@@ -32,15 +63,12 @@ class BaselineReader {
   const std::string& DataColumnName() const { return _dataColumnName; }
   void SetDataColumnName(const std::string& name) { _dataColumnName = name; }
 
-  bool SubtractModel() const { return _subtractModel; }
-  void SetSubtractModel(bool subtractModel) { _subtractModel = subtractModel; }
-
   const std::vector<aocommon::PolarizationEnum>& Polarizations() {
     initializePolarizations();
     return _polarizations;
   }
 
-  class casacore::MeasurementSet OpenMS(bool writeAccess = false) const {
+  casacore::MeasurementSet OpenMS(bool writeAccess = false) const {
     if (writeAccess)
       return casacore::MeasurementSet(_msMetaData.Path(),
                                       casacore::TableLock::PermanentLockingWait,
@@ -73,8 +101,8 @@ class BaselineReader {
   }
   virtual void PerformReadRequests(class ProgressListener& progress) = 0;
 
-  void AddWriteTask(std::vector<Mask2DCPtr> flags, int antenna1, int antenna2,
-                    int spectralWindow, unsigned sequenceId) {
+  void AddWriteTask(std::vector<Mask2DCPtr> flags, size_t antenna1,
+                    size_t antenna2, size_t spectralWindow, size_t sequenceId) {
     initializePolarizations();
     if (flags.size() != _polarizations.size()) {
       std::stringstream s;
@@ -99,11 +127,11 @@ class BaselineReader {
 
   virtual void PerformDataWriteTask(std::vector<Image2DCPtr> _realImages,
                                     std::vector<Image2DCPtr> _imaginaryImages,
-                                    int antenna1, int antenna2,
-                                    int spectralWindow,
-                                    unsigned sequenceId) = 0;
+                                    size_t antenna1, size_t antenna2,
+                                    size_t spectralWindow,
+                                    size_t sequenceId) = 0;
 
-  class TimeFrequencyData GetNextResult(std::vector<class UVW>& uvw);
+  TimeFrequencyData GetNextResult(std::vector<UVW>& uvw);
 
   virtual size_t GetMinRecommendedBufferSize(size_t threadCount) {
     return threadCount;
@@ -115,7 +143,7 @@ class BaselineReader {
 
   static uint64_t MeasurementSetDataSize(const std::string& filename);
 
-  void SetInterval(boost::optional<size_t> start, boost::optional<size_t> end) {
+  void SetInterval(std::optional<size_t> start, std::optional<size_t> end) {
     _intervalStart = start;
     _intervalEnd = end;
     if (_intervalStart) _msMetaData.SetIntervalStart(IntervalStart());
@@ -127,13 +155,13 @@ class BaselineReader {
 
   size_t IntervalStart() const {
     if (HasIntervalStart())
-      return _intervalStart.get();
+      return *_intervalStart;
     else
       return 0;
   }
   size_t IntervalEnd() const {
     if (HasIntervalEnd())
-      return _intervalEnd.get();
+      return *_intervalEnd;
     else
       return _observationTimesVector.size();
   }
@@ -182,8 +210,8 @@ class BaselineReader {
     std::vector<Image2DPtr> _realImages;
     std::vector<Image2DPtr> _imaginaryImages;
     std::vector<Mask2DPtr> _flags;
-    std::vector<class UVW> _uvw;
-    class BandInfo _bandInfo;
+    std::vector<UVW> _uvw;
+    BandInfo _bandInfo;
   };
 
   void initializeMeta() {
@@ -222,13 +250,12 @@ class BaselineReader {
   MSMetaData _msMetaData;
 
   std::string _dataColumnName;
-  bool _subtractModel;
   bool _readData, _readFlags;
 
   std::vector<std::map<double, size_t>> _observationTimes;
   std::vector<double> _observationTimesVector;
   std::vector<aocommon::PolarizationEnum> _polarizations;
-  boost::optional<size_t> _intervalStart, _intervalEnd;
+  std::optional<size_t> _intervalStart, _intervalEnd;
 };
 
 #endif  // BASELINEREADER_H

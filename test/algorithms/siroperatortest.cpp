@@ -9,6 +9,8 @@
 #include <string>
 #include <sstream>
 
+using algorithms::SIROperator;
+
 BOOST_AUTO_TEST_SUITE(sir_operator_test, *boost::unit_test::label("algorithms"))
 
 static std::string flagsToString(const bool* flags, unsigned size) {

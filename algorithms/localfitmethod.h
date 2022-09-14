@@ -4,11 +4,13 @@
 #include <string>
 #include <mutex>
 
-#include "../../structures/image2d.h"
-#include "../../structures/mask2d.h"
-#include "../../structures/timefrequencydata.h"
+#include "../structures/image2d.h"
+#include "../structures/mask2d.h"
+#include "../structures/timefrequencydata.h"
 
 #include "surfacefitmethod.h"
+
+namespace algorithms {
 
 class LocalFitMethod final : public SurfaceFitMethod {
  public:
@@ -60,7 +62,7 @@ class LocalFitMethod final : public SurfaceFitMethod {
     _vSquareSize = vSquareSize;
     _method = method;
   }
-  virtual void Initialize(const TimeFrequencyData &input) final override;
+  virtual void Initialize(const TimeFrequencyData& input) final override;
   //[[ deprecated("Trying to make surfacemethod go away") ]]
   unsigned TaskCount();
   virtual void PerformFit(unsigned taskNumber) final override;
@@ -68,18 +70,18 @@ class LocalFitMethod final : public SurfaceFitMethod {
 
  private:
   struct ThreadLocal {
-    LocalFitMethod *image;
+    LocalFitMethod* image;
     unsigned currentX, currentY;
     unsigned startX, startY, endX, endY;
     size_t emptyWindows;
   };
   long double CalculateBackgroundValue(unsigned x, unsigned y);
-  long double FitBackground(unsigned x, unsigned y, ThreadLocal &local);
-  long double CalculateAverage(unsigned x, unsigned y, ThreadLocal &local);
-  long double CalculateMedian(unsigned x, unsigned y, ThreadLocal &local);
-  long double CalculateMinimum(unsigned x, unsigned y, ThreadLocal &local);
+  long double FitBackground(unsigned x, unsigned y, ThreadLocal& local);
+  long double CalculateAverage(unsigned x, unsigned y, ThreadLocal& local);
+  long double CalculateMedian(unsigned x, unsigned y, ThreadLocal& local);
+  long double CalculateMinimum(unsigned x, unsigned y, ThreadLocal& local);
   long double CalculateWeightedAverage(unsigned x, unsigned y,
-                                       ThreadLocal &local);
+                                       ThreadLocal& local);
   void ClearWeights();
   void InitializeGaussianWeights();
   void PerformGaussianConvolution(Image2DPtr input);
@@ -92,9 +94,11 @@ class LocalFitMethod final : public SurfaceFitMethod {
   Image2DPtr _background2D;
   Mask2DCPtr _mask;
   unsigned _hSquareSize, _vSquareSize;
-  num_t **_weights;
+  num_t** _weights;
   long double _hKernelSize, _vKernelSize;
   enum Method _method;
 };
+
+}  // namespace algorithms
 
 #endif

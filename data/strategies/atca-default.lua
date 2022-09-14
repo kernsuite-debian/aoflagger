@@ -1,5 +1,5 @@
 --[[
- This is a strategy for ATCA wideband L-band, data version 2020-12-08
+ This is a strategy for ATCA wideband L-band, data version 2021-03-30
  Author: André Offringa
 
  It's based on 3 observations provided by Björn Adebahr and Ancla Müller. It
@@ -16,6 +16,8 @@
    The large bandwidth vs. the "resolved" RFI features make this necessary.
 ]]--
 
+aoflagger.require_min_version("3.0")
+
 function execute(input)
 
   --
@@ -26,7 +28,12 @@ function execute(input)
   -- Other options are e.g.:
   -- { 'XY', 'YX' } to flag only XY and YX, or
   -- { 'I', 'Q' } to flag only on Stokes I and Q
-  local flag_polarizations = {'Q','U','V'}
+  local flag_polarizations
+  if(#input:get_polarizations() == 4) then
+    flag_polarizations = {'Q','U','V'}
+  else
+    flag_polarizations = input:get_polarizations()
+  end
 
   local base_threshold = 1.6  -- lower means more sensitive detection
   -- How to flag complex values, options are: phase, amplitude, real, imaginary, complex
@@ -57,11 +64,12 @@ function execute(input)
   for ipol,polarization in ipairs(flag_polarizations) do
  
     local pol_data = input:convert_to_polarization(polarization)
+    local original_data
 
     for _,representation in ipairs(flag_representations) do
 
       data = pol_data:convert_to_complex(representation)
-      local original_data = data:copy()
+      original_data = data:copy()
 
       for i=1,iteration_count-1 do
         local threshold_factor = math.pow(threshold_factor_step, iteration_count-i)
@@ -110,7 +118,11 @@ function execute(input)
       end
     end -- end of complex representation iteration
 
-    -- Helper function used in the strategy
+    if(exclude_original_flags) then
+      data:join_mask(original_data)
+    end
+
+    -- Helper function used below
     function contains(arr, val)
       for _,v in ipairs(arr) do
         if v == val then return true end

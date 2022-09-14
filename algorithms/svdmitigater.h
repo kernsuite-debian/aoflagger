@@ -3,19 +3,23 @@
 
 #include <iostream>
 
-#include "../../structures/image2d.h"
+#include "../structures/image2d.h"
 
 #include "surfacefitmethod.h"
 
 // Needs to be included LAST
-#include "../../util/f2c.h"
+#include "../util/f2c.h"
+
+class XYPlot;
+
+namespace algorithms {
 
 class SVDMitigater final : public SurfaceFitMethod {
  public:
   SVDMitigater();
   ~SVDMitigater();
 
-  virtual void Initialize(const TimeFrequencyData &data) final override {
+  virtual void Initialize(const TimeFrequencyData& data) final override {
     Clear();
     _data = data;
     _iteration = 0;
@@ -38,7 +42,7 @@ class SVDMitigater final : public SurfaceFitMethod {
     return TimeFrequencyData::ComplexParts;
   }
 
-  bool IsDecomposed() const throw() { return _singularValues != 0; }
+  bool IsDecomposed() const throw() { return _singularValues != nullptr; }
   double SingularValue(unsigned index) const throw() {
     return _singularValues[index];
   }
@@ -46,8 +50,8 @@ class SVDMitigater final : public SurfaceFitMethod {
     _removeCount = removeCount;
   }
   void SetVerbose(bool verbose) throw() { _verbose = verbose; }
-  static void CreateSingularValueGraph(const TimeFrequencyData &data,
-                                       class Plot2D &plot);
+  static void CreateSingularValueGraph(const TimeFrequencyData& data,
+                                       class XYPlot& plot);
 
  private:
   void Clear();
@@ -58,14 +62,16 @@ class SVDMitigater final : public SurfaceFitMethod {
   }
 
   TimeFrequencyData _data;
-  TimeFrequencyData *_background;
-  double *_singularValues;
-  doublecomplex *_leftSingularVectors;
-  doublecomplex *_rightSingularVectors;
+  TimeFrequencyData* _background;
+  double* _singularValues;
+  doublecomplex* _leftSingularVectors;
+  doublecomplex* _rightSingularVectors;
   long int _m, _n;
   unsigned _iteration;
   unsigned _removeCount;
   bool _verbose;
 };
+
+}  // namespace algorithms
 
 #endif

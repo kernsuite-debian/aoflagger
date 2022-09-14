@@ -1,12 +1,14 @@
 #include "indexableset.h"
 
-namespace rfiStrategy {
+#include <limits>
 
-bool IndexableSet::FindExtremeBaseline(rfiStrategy::ImageSet* imageSet,
-                                       rfiStrategy::ImageSetIndex& index,
+namespace imagesets {
+
+bool IndexableSet::FindExtremeBaseline(imagesets::ImageSet* imageSet,
+                                       imagesets::ImageSetIndex& index,
                                        bool longest) {
-  rfiStrategy::IndexableSet* iSet =
-      dynamic_cast<rfiStrategy::IndexableSet*>(imageSet);
+  imagesets::IndexableSet* iSet =
+      dynamic_cast<imagesets::IndexableSet*>(imageSet);
   if (iSet != nullptr) {
     double extremeSq = longest ? 0.0 : std::numeric_limits<double>::max();
     size_t antCount = iSet->AntennaCount();
@@ -14,7 +16,7 @@ bool IndexableSet::FindExtremeBaseline(rfiStrategy::ImageSet* imageSet,
     for (size_t a = 0; a != antCount; a++)
       antennas[a] = iSet->GetAntennaInfo(a);
 
-    rfiStrategy::ImageSetIndex loopIndex(iSet->StartIndex());
+    imagesets::ImageSetIndex loopIndex(iSet->StartIndex());
     if (loopIndex.HasWrapped()) return false;
     const size_t band = iSet->GetBand(index),
                  sequenceId = iSet->GetSequenceId(index);
@@ -47,10 +49,10 @@ bool IndexableSet::FindExtremeBaseline(rfiStrategy::ImageSet* imageSet,
   return false;
 }
 
-bool IndexableSet::FindMedianBaseline(rfiStrategy::ImageSet* imageSet,
-                                      rfiStrategy::ImageSetIndex& index) {
-  rfiStrategy::IndexableSet* iSet =
-      dynamic_cast<rfiStrategy::IndexableSet*>(imageSet);
+bool IndexableSet::FindMedianBaseline(imagesets::ImageSet* imageSet,
+                                      imagesets::ImageSetIndex& index) {
+  imagesets::IndexableSet* iSet =
+      dynamic_cast<imagesets::IndexableSet*>(imageSet);
   if (iSet == nullptr) {
     return false;
   } else {
@@ -59,10 +61,10 @@ bool IndexableSet::FindMedianBaseline(rfiStrategy::ImageSet* imageSet,
     for (size_t a = 0; a != antCount; a++)
       antennas[a] = iSet->GetAntennaInfo(a);
 
-    rfiStrategy::ImageSetIndex loopIndex(iSet->StartIndex());
+    imagesets::ImageSetIndex loopIndex(iSet->StartIndex());
     const size_t band = iSet->GetBand(index),
                  sequenceId = iSet->GetSequenceId(index);
-    std::vector<std::pair<double, rfiStrategy::ImageSetIndex>> distances;
+    std::vector<std::pair<double, imagesets::ImageSetIndex>> distances;
     while (!loopIndex.HasWrapped()) {
       if (sequenceId == iSet->GetSequenceId(loopIndex) &&
           band == iSet->GetBand(loopIndex)) {
@@ -80,8 +82,8 @@ bool IndexableSet::FindMedianBaseline(rfiStrategy::ImageSet* imageSet,
     else {
       std::nth_element(
           distances.begin(), distances.begin() + n / 2, distances.end(),
-          [](const std::pair<double, rfiStrategy::ImageSetIndex>& l,
-             const std::pair<double, rfiStrategy::ImageSetIndex>& r) {
+          [](const std::pair<double, imagesets::ImageSetIndex>& l,
+             const std::pair<double, imagesets::ImageSetIndex>& r) {
             return l.first < r.first;
           });
       index = (distances.begin() + n / 2)->second;
@@ -90,4 +92,4 @@ bool IndexableSet::FindMedianBaseline(rfiStrategy::ImageSet* imageSet,
   }
 }
 
-}  // namespace rfiStrategy
+}  // namespace imagesets

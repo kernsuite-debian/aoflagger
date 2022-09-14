@@ -37,7 +37,7 @@ HistogramPage::HistogramPage(HistogramPageController* controller)
       _drawSlopeButton("Draw"),
       _drawSlope2Button("Draw2"),
       _slopeAutoRangeButton("Auto range"),
-      _plotPropertiesWindow(0) {
+      _plotPropertiesWindow(nullptr) {
   _histogramTypeBox.pack_start(_totalHistogramButton, Gtk::PACK_SHRINK);
   _totalHistogramButton.set_active(true);
   _totalHistogramButton.signal_clicked().connect(
@@ -185,7 +185,7 @@ HistogramPage::HistogramPage(HistogramPageController* controller)
 }
 
 HistogramPage::~HistogramPage() {
-  if (_plotPropertiesWindow != 0) delete _plotPropertiesWindow;
+  delete _plotPropertiesWindow;
   delete _dataWindow;
 }
 
@@ -224,7 +224,7 @@ void HistogramPage::updatePlot() {
 }
 
 void HistogramPage::onPlotPropertiesClicked() {
-  if (_plotPropertiesWindow == 0) {
+  if (_plotPropertiesWindow == nullptr) {
     _plotPropertiesWindow =
         new PlotPropertiesWindow(_controller->Plot(), "Plot properties");
     _plotPropertiesWindow->OnChangesApplied =

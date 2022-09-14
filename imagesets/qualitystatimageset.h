@@ -3,18 +3,18 @@
 
 #include "singleimageset.h"
 
-#include "../../quality/qualitytablesformatter.h"
-#include "../../quality/statisticsderivator.h"
-#include "../../util/logger.h"
-#include "../../lua/telescopefile.h"
+#include "../quality/qualitytablesformatter.h"
+#include "../quality/statisticsderivator.h"
+#include "../util/logger.h"
+#include "../lua/telescopefile.h"
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
 
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class QualityStatImageSet final : public SingleImageSet {
  public:
@@ -23,7 +23,7 @@ class QualityStatImageSet final : public SingleImageSet {
         _statisticKind(QualityTablesFormatter::StandardDeviationStatistic) {
     if (!_filename.empty() && (*_filename.rbegin()) == '/')
       _filename.resize(_filename.size() - 1);
-    boost::filesystem::path p(_filename);
+    std::filesystem::path p(_filename);
     if (p.filename() == "QUALITY_TIME_STATISTIC")
       _filename = p.parent_path().string();
   }
@@ -130,6 +130,6 @@ class QualityStatImageSet final : public SingleImageSet {
   QualityTablesFormatter::StatisticKind _statisticKind;
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

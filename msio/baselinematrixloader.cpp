@@ -7,7 +7,7 @@
 
 #include "../structures/spatialmatrixmetadata.h"
 
-BaselineMatrixLoader::BaselineMatrixLoader(MSMetaData &msMetaData)
+BaselineMatrixLoader::BaselineMatrixLoader(MSMetaData& msMetaData)
     : _sortedTable(),
       _tableIter(),
       _currentIterIndex(0),
@@ -101,13 +101,13 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex) {
           yyr = 0.0, yyi = 0.0;
     size_t xxc = 0, xyc = 0, yxc = 0, yyc = 0;
     for (size_t f = 0; f < (size_t)_frequencyCount; ++f) {
-      const casacore::Complex &xx = *i;
+      const casacore::Complex& xx = *i;
       ++i;
-      const casacore::Complex &xy = *i;
+      const casacore::Complex& xy = *i;
       ++i;
-      const casacore::Complex &yx = *i;
+      const casacore::Complex& yx = *i;
       ++i;
-      const casacore::Complex &yy = *i;
+      const casacore::Complex& yy = *i;
       ++i;
       bool xxF = *fI;
       ++fI;
@@ -196,7 +196,7 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex) {
 }
 
 void BaselineMatrixLoader::LoadPerChannel(
-    size_t timeIndex, std::vector<TimeFrequencyData> &data) {
+    size_t timeIndex, std::vector<TimeFrequencyData>& data) {
   casacore::Block<casacore::String> selectionNames(2);
   selectionNames[0] = "DATA_DESC_ID";
   selectionNames[1] = "TIME";

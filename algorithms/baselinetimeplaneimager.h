@@ -3,15 +3,17 @@
 
 #include <complex>
 
-#include "../../structures/image2d.h"
+#include "../structures/image2d.h"
+
+namespace algorithms {
 
 template <typename NumType>
 class BaselineTimePlaneImager {
  public:
   void Image(NumType uTimesLambda, NumType vTimesLambda, NumType wTimesLambda,
              NumType lowestFrequency, NumType frequencyStep,
-             size_t channelCount, const std::complex<NumType> *data,
-             Image2D &output);
+             size_t channelCount, const std::complex<NumType>* data,
+             Image2D& output);
 
  private:
   template <typename T>
@@ -20,5 +22,7 @@ class BaselineTimePlaneImager {
   }
   static long double speedOfLight() { return 299792458.0L; }
 };
+
+}  // namespace algorithms
 
 #endif

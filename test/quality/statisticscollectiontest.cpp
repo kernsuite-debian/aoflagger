@@ -9,7 +9,7 @@
 BOOST_AUTO_TEST_SUITE(statistics_collection,
                       *boost::unit_test::label("quality"))
 
-static void AssertZero(const DefaultStatistics &statistics) {
+static void AssertZero(const DefaultStatistics& statistics) {
   for (size_t i = 0; i < statistics.PolarizationCount(); ++i) {
     BOOST_CHECK_EQUAL(statistics.count[i], 0ul);
     BOOST_CHECK_EQUAL(statistics.sum[i].real(), 0.0);
@@ -25,7 +25,7 @@ static void AssertZero(const DefaultStatistics &statistics) {
   }
 }
 
-static void AssertBasicExample(const DefaultStatistics &statistics) {
+static void AssertBasicExample(const DefaultStatistics& statistics) {
   BOOST_CHECK_EQUAL(statistics.count[0], 3ul);
   BOOST_CHECK_EQUAL(statistics.sum->real(), 6.0);
   BOOST_CHECK_EQUAL(statistics.sum->imag(), 18.0);
@@ -45,7 +45,7 @@ static void AssertBasicExample(const DefaultStatistics &statistics) {
 }
 
 BOOST_AUTO_TEST_CASE(constructor) {
-  StatisticsCollection *collection = new StatisticsCollection();
+  StatisticsCollection* collection = new StatisticsCollection();
   collection->SetPolarizationCount(1);
   BOOST_CHECK_EQUAL(collection->PolarizationCount(), 1u);
   DefaultStatistics statistics(1);
