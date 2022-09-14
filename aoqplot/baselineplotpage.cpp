@@ -8,10 +8,10 @@ BaselinePlotPage::BaselinePlotPage(BaselinePageController* controller)
     : GrayScalePlotPage(controller), _controller(controller) {
   grayScaleWidget().OnMouseMovedEvent().connect(
       sigc::mem_fun(*this, &BaselinePlotPage::onMouseMoved));
-  grayScaleWidget().Plot().SetXAxisDescription("Antenna 1 index");
-  grayScaleWidget().Plot().SetManualXAxisDescription(true);
-  grayScaleWidget().Plot().SetYAxisDescription("Antenna 2 index");
-  grayScaleWidget().Plot().SetManualYAxisDescription(true);
+  static_cast<HeatMap&>(grayScaleWidget().Plot())
+      .SetXAxisDescription("Antenna 1 index");
+  static_cast<HeatMap&>(grayScaleWidget().Plot())
+      .SetYAxisDescription("Antenna 2 index");
 }
 
 BaselinePlotPage::~BaselinePlotPage() {}
@@ -23,8 +23,12 @@ void BaselinePlotPage::onMouseMoved(size_t x, size_t y) {
   const std::string& kindName = QualityTablesFormatter::KindToName(kind);
 
   std::stringstream text;
+  const size_t stride =
+      static_cast<HeatMap&>(grayScaleWidget().Plot()).Image().Stride();
   text << "Correlation " << antenna1Name << " (" << x << ") x " << antenna2Name
        << " (" << y << "), " << kindName << " = "
-       << grayScaleWidget().Plot().Image()->Value(x, y);
+       << static_cast<HeatMap&>(grayScaleWidget().Plot())
+              .Image()
+              .Data()[y * stride + x];
   _signalStatusChange(text.str());
 }

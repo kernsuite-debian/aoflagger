@@ -11,7 +11,7 @@
 
 #include "../imagesets/msoptions.h"
 
-namespace internal {
+namespace aocommon {
 class MultiBandData;
 }
 
@@ -54,7 +54,7 @@ class MSStatReader {
                       size_t bandIndex, bool includeAutos, bool includeFlags,
                       ProgressListener& progress);
   void fillBand(MSStatReader::Result& result, bool freqDiff,
-                const internal::MultiBandData& bands, size_t bandIndex);
+                const aocommon::MultiBandData& bands, size_t bandIndex);
 
   struct Statistic {
     double data1 = 0.0, data2 = 0.0, data3 = 0.0;

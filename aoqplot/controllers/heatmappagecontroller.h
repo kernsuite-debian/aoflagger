@@ -3,9 +3,10 @@
 
 #include "aoqplotpagecontroller.h"
 
-#include "../../plot/heatmapplot.h"
+#include "../../rfigui/maskedheatmap.h"
+#include "../../structures/timefrequencydata.h"
 
-using namespace aocommon;
+#include <aocommon/polarization.h>
 
 class HeatMapPageController : public AOQPageController {
  public:
@@ -16,12 +17,12 @@ class HeatMapPageController : public AOQPageController {
   void SavePdf(const std::string& filename,
                QualityTablesFormatter::StatisticKind kind, unsigned width,
                unsigned height) {
-    updateImageImpl(kind, Polarization::StokesI,
+    updateImageImpl(kind, aocommon::Polarization::StokesI,
                     TimeFrequencyData::AmplitudePart);
     _heatMap.SavePdf(filename, width, height);
   }
 
-  HeatMapPlot& Plot() { return _heatMap; }
+  HeatMap& Plot() { return _heatMap; }
 
   void UpdateImage() { updateImageImpl(_statisticKind, _polarization, _phase); }
 
@@ -29,7 +30,7 @@ class HeatMapPageController : public AOQPageController {
     _statisticKind = statisticKind;
   }
 
-  void SetPolarization(PolarizationEnum polarization) {
+  void SetPolarization(aocommon::PolarizationEnum polarization) {
     _polarization = polarization;
   }
 
@@ -49,18 +50,18 @@ class HeatMapPageController : public AOQPageController {
   Image2D normalizeXAxis(const Image2D& input);
   Image2D normalizeYAxis(const Image2D& input);
   void updateImageImpl(QualityTablesFormatter::StatisticKind statisticKind,
-                       PolarizationEnum polarisation,
+                       aocommon::PolarizationEnum polarisation,
                        enum TimeFrequencyData::ComplexRepresentation phase);
   void setToPolarization(TimeFrequencyData& data,
-                         PolarizationEnum polarisation);
+                         aocommon::PolarizationEnum polarisation);
   void setToPhase(TimeFrequencyData& data,
                   enum TimeFrequencyData::ComplexRepresentation phase);
 
-  HeatMapPlot _heatMap;
+  MaskedHeatMap _heatMap;
   class GrayScalePlotPage* _page;
 
   QualityTablesFormatter::StatisticKind _statisticKind;
-  PolarizationEnum _polarization;
+  aocommon::PolarizationEnum _polarization;
   enum TimeFrequencyData::ComplexRepresentation _phase;
 
   enum Normalization _normalization;

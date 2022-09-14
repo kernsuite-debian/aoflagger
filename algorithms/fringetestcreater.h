@@ -1,11 +1,13 @@
 #ifndef FRINGETESTCREATER_H
 #define FRINGETESTCREATER_H
 
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/timefrequencymetadata.h"
+
+namespace algorithms {
 
 class FringeTestCreater {
  public:
-  static void AddStaticFringe(class TimeFrequencyData &ftData,
+  static void AddStaticFringe(class TimeFrequencyData& ftData,
                               TimeFrequencyMetaDataCPtr metaData,
                               long double strength);
 
@@ -13,5 +15,7 @@ class FringeTestCreater {
   FringeTestCreater() {}
   ~FringeTestCreater() {}
 };
+
+}  // namespace algorithms
 
 #endif

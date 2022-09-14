@@ -8,11 +8,11 @@
 
 #include "../aoluarunner/runner.h"
 
-#include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <version.h>
 
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <mutex>
@@ -161,6 +161,8 @@ int main(int argc, char** argv) {
       NumberList::ParseIntList(argv[parameterIndex], options.fields);
     } else if (flag == "combine-spws") {
       options.combineSPWs = true;
+    } else if (flag == "concatenate-frequency") {
+      options.concatenateFrequency = true;
     } else if (flag == "preamble") {
       ++parameterIndex;
       options.preamble.emplace_back(argv[parameterIndex]);
@@ -212,7 +214,7 @@ int main(int argc, char** argv) {
     for (int i = parameterIndex; i < argc; ++i)
       options.filenames.emplace_back(argv[i]);
 
-    boost::filesystem::path strategyPath = options.strategyFilename;
+    std::filesystem::path strategyPath = options.strategyFilename;
     if (boost::to_lower_copy(strategyPath.extension().string()) == ".rfis") {
       Logger::Error << "An old .rfis file was specified. AOFlagger version 3 "
                        "supports only Lua scripts and can\n"

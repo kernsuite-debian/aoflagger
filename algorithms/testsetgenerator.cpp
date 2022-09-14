@@ -1,22 +1,59 @@
 #include "testsetgenerator.h"
 
-#include <iostream>
-#include <sstream>
+#include <cmath>
+#include <vector>
 
-#include <math.h>
+#include "../structures/image2d.h"
+#include "../msio/pngfile.h"
 
-#include "../../structures/image2d.h"
-#include "../../msio/pngfile.h"
+#include "../util/logger.h"
+#include "../util/ffttools.h"
+#include "../util/stopwatch.h"
 
-#include "../../util/logger.h"
-#include "../../util/ffttools.h"
-#include "../../util/stopwatch.h"
-
-#include "../../imaging/model.h"
-#include "../../imaging/observatorium.h"
+#include "../imaging/defaultmodels.h"
+#include "../imaging/model.h"
+#include "../imaging/observatorium.h"
 
 #include "combinatorialthresholder.h"
 #include "localfitmethod.h"
+
+namespace algorithms {
+
+void TestSetGenerator::AddSpectralLine(Image2D& data, Mask2D& rfi,
+                                       double lineStrength, size_t startChannel,
+                                       size_t nChannels, double timeRatio,
+                                       double timeOffsetRatio,
+                                       enum BroadbandShape shape) {
+  const size_t width = data.Width();
+  const size_t tStart = size_t(timeOffsetRatio * width);
+  const size_t tEnd = size_t((timeOffsetRatio + timeRatio) * width);
+  const double tDuration = tEnd - tStart;
+  for (size_t t = tStart; t != tEnd; ++t) {
+    // x will run from -1 to 1
+    const double x = (double)((t - tStart) * 2) / tDuration - 1.0;
+    double factor = shapeLevel(shape, x);
+    for (size_t ch = startChannel; ch < startChannel + nChannels; ++ch) {
+      double value = lineStrength * factor;
+      data.AddValue(t, ch, value);
+      if (value != 0.0) rfi.SetValue(t, ch, true);
+    }
+  }
+}
+
+void TestSetGenerator::AddIntermittentSpectralLine(Image2D& data, Mask2D& rfi,
+                                                   double strength,
+                                                   size_t channel,
+                                                   double probability,
+                                                   std::mt19937& mt) {
+  std::uniform_real_distribution<double> distribution(0.0, 1.0);
+  const size_t width = data.Width();
+  for (size_t t = 0; t != width; ++t) {
+    if (distribution(mt) < probability) {
+      data.AddValue(t, channel, strength);
+      rfi.SetValue(t, channel, true);
+    }
+  }
+}
 
 void TestSetGenerator::AddBroadbandLine(Image2D& data, Mask2D& rfi,
                                         double lineStrength, size_t startTime,
@@ -36,7 +73,7 @@ void TestSetGenerator::AddBroadbandLinePos(Image2D& data, Mask2D& rfi,
                                            unsigned frequencyStart,
                                            double frequencyEnd,
                                            enum BroadbandShape shape) {
-  const double s = (frequencyEnd - frequencyStart);
+  const double s = frequencyEnd - frequencyStart;
   for (size_t f = frequencyStart; f < frequencyEnd; ++f) {
     // x will run from -1 to 1
     const double x = (double)((f - frequencyStart) * 2) / s - 1.0;
@@ -104,349 +141,313 @@ Image2D TestSetGenerator::MakeGaussianData(unsigned width, unsigned height) {
   return image;
 }
 
-std::string TestSetGenerator::GetTestSetDescription(int number) {
-  switch (number) {
-    case 0:
-      return "Image of all zero's";
-    case 1:
-      return "Image of all ones";
-    case 2:
-      return "Noise";
-    case 3:
-      return "Several broadband RFI contaminating all channels";
-    case 4:
-      return "Several broadband RFI contaminating a part of channels";
-    case 5:
-      return "Several broadband RFI contaminating a random part of channels";
-    case 6:
-      return "Several broadband RFI on a sine wave background";
-    case 7:
-      return "Several broadband lines on a background of rotating sine waves";
-    case 8:
-      return "Testset 7 with a background fit on the background";
-    case 9:
-      return "Testset 7 in the time-lag domain";
-    case 10:
-      return "Identity matrix";
-    case 11:
-      return "FFT of Identity matrix";
-    case 12:
-      return "Broadband RFI contaminating all channels";
-    case 13:
-      return "Model of three point sources with broadband RFI";
-    case 14:
-      return "Model of five point sources with broadband RFI";
-    case 15:
-      return "Model of five point sources with partial broadband RFI";
-    case 16:
-      return "Model of five point sources with random broadband RFI";
-    case 17:
-      return "Background-fitted model of five point sources with random "
-             "broadband RFI";
-    case 18:
-      return "Model of three point sources with random RFI";
-    case 19:
-      return "Model of three point sources with noise";
-    case 20:
-      return "Model of five point sources with noise";
-    case 21:
-      return "Model of three point sources";
-    case 22:
-      return "Model of five point sources";
-    case 26:
-      return "Gaussian lines";
-    default:
-      return "?";
+std::string TestSetGenerator::GetDescription(BackgroundTestSet backgroundSet) {
+  switch (backgroundSet) {
+    case BackgroundTestSet::Empty:
+      return "Empty";
+    case BackgroundTestSet::LowFrequency:
+      return "Low frequency sinusoid";
+    case BackgroundTestSet::HighFrequency:
+      return "High frequency sinusoids";
+    case BackgroundTestSet::ThreeSources:
+      return "Three sources";
+    case BackgroundTestSet::FiveSources:
+      return "Five sources";
+    case BackgroundTestSet::FiveFilteredSources:
+      return "Five filtered sources";
+    case BackgroundTestSet::StaticSidelobeSource:
+      return "Static sidelobe source";
+    case BackgroundTestSet::StrongVariableSidelobeSource:
+      return "Strong sidelobe source";
+    case BackgroundTestSet::FaintVariableSidelobeSource:
+      return "Faint sidelobe source";
+    case BackgroundTestSet::Checker:
+      return "Checker grid";
+  }
+  return "";
+}
+
+std::string TestSetGenerator::GetDescription(RFITestSet rfiSet) {
+  switch (rfiSet) {
+    case RFITestSet::Empty:
+      return "Empty";
+    case RFITestSet::SpectralLines:
+      return "Spectral lines";
+    case RFITestSet::GaussianSpectralLines:
+      return "Gaussian spectral lines";
+    case RFITestSet::IntermittentSpectralLines:
+      return "Intermittent spectral lines";
+    case RFITestSet::FullBandBursts:
+      return "Full-band bursts / A";
+    case RFITestSet::HalfBandBursts:
+      return "Half-band bursts / B";
+    case RFITestSet::VaryingBursts:
+      return "Varying bursts / C";
+    case RFITestSet::GaussianBursts:
+      return "Gaussian bursts";
+    case RFITestSet::SinusoidalBursts:
+      return "Sinusodial bursts";
+    case RFITestSet::SlewedGaussians:
+      return "Slewed Gaussian bursts";
+    case RFITestSet::FluctuatingBursts:
+      return "Fluctuating bursts";
+    case RFITestSet::StrongPowerLaw:
+      return "Strong power law RFI";
+    case RFITestSet::MediumPowerLaw:
+      return "Medium power law RFI";
+    case RFITestSet::WeakPowerLaw:
+      return "Weak power law RFI";
+    case RFITestSet::PolarizedSpike:
+      return "Polarized spike";
+  }
+  return std::string();
+}
+
+TimeFrequencyData TestSetGenerator::MakeTestSet(RFITestSet rfiSet,
+                                                BackgroundTestSet backgroundSet,
+                                                size_t width, size_t height) {
+  TimeFrequencyData data;
+  if (rfiSet == algorithms::RFITestSet::PolarizedSpike) {
+    std::vector<Image2DPtr> images(8);
+    images[0] = Image2D::CreateZeroImagePtr(width, height);
+    for (size_t p = 1; p != 8; ++p) {
+      images[p] = images[0];
+    }
+    data = TimeFrequencyData::FromLinear(images[0], images[1], images[2],
+                                         images[3], images[4], images[5],
+                                         images[6], images[7]);
+  } else {
+    Image2DPtr real =
+        Image2D::MakePtr(TestSetGenerator::MakeNoise(width, height, 1.0));
+    Image2DPtr imag =
+        Image2D::MakePtr(TestSetGenerator::MakeNoise(width, height, 1.0));
+    data = TimeFrequencyData(aocommon::Polarization::StokesI, real, imag);
+  }
+  TestSetGenerator::MakeTestSet(rfiSet, data);
+  TestSetGenerator::MakeBackground(backgroundSet, data);
+  return data;
+}
+
+void TestSetGenerator::MakeBackground(BackgroundTestSet testSet,
+                                      TimeFrequencyData& data) {
+  if (testSet == BackgroundTestSet::StaticSidelobeSource ||
+      testSet == BackgroundTestSet::StrongVariableSidelobeSource ||
+      testSet == BackgroundTestSet::FaintVariableSidelobeSource) {
+    SourceSet source;
+    switch (testSet) {
+      default:
+      case BackgroundTestSet::StaticSidelobeSource:
+        source = SourceSet::ConstantDistortion;
+        break;
+      case BackgroundTestSet::StrongVariableSidelobeSource:
+        source = SourceSet::StrongVariableDistortion;
+        break;
+      case BackgroundTestSet::FaintVariableSidelobeSource:
+        source = SourceSet::FaintVariableDistortion;
+        break;
+    }
+    size_t channelCount = data.ImageHeight();
+    double bandwidth;
+    bandwidth = (double)channelCount / 16.0 * 2500000.0;
+    std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> pair =
+        DefaultModels::LoadSet(DefaultModels::NCPSet, source, 0.0, channelCount,
+                               bandwidth);
+    data = pair.first;
+  } else {
+    for (size_t polIndex = 0; polIndex != data.PolarizationCount();
+         ++polIndex) {
+      TimeFrequencyData polData = data.MakeFromPolarizationIndex(polIndex);
+      for (size_t imageIndex = 0; imageIndex != polData.ImageCount();
+           ++imageIndex) {
+        const bool isImaginary = imageIndex == 1;
+        if (isImaginary) {
+          Image2DPtr image = Image2D::MakePtr(*polData.GetImage(imageIndex));
+          const size_t width = image->Width();
+          const size_t height = image->Height();
+          switch (testSet) {
+            default:
+            case BackgroundTestSet::Empty:
+              break;
+            case BackgroundTestSet::LowFrequency:
+              for (unsigned y = 0; y < image->Height(); ++y) {
+                for (unsigned x = 0; x < image->Width(); ++x) {
+                  image->AddValue(
+                      x, y,
+                      sinn(num_t(x) * M_PIn * 5.0 / image->Width()) + 0.1);
+                }
+              }
+              break;
+            case BackgroundTestSet::HighFrequency:
+              for (unsigned y = 0; y < image->Height(); ++y) {
+                for (unsigned x = 0; x < image->Width(); ++x) {
+                  image->AddValue(x, y,
+                                  sinn((long double)(x + y * 0.1) * M_PIn *
+                                           5.0L / image->Width() +
+                                       0.1));
+                  image->AddValue(x, y,
+                                  sinn((long double)(x + pown(y, 1.1)) * M_PIn *
+                                           50.0L / image->Width() +
+                                       0.1));
+                }
+              }
+              for (unsigned y = 0; y < image->Height(); ++y) {
+                for (unsigned x = 0; x < image->Width(); ++x) {
+                  image->AddValue(x, y, 1.0);
+                }
+              }
+              break;
+            case BackgroundTestSet::ThreeSources:
+              SetModelData(*image, 3, width, height);
+              break;
+            case BackgroundTestSet::FiveSources:
+              SetModelData(*image, 5, width, height);
+              break;
+            case BackgroundTestSet::FiveFilteredSources:
+              SetModelData(*image, 5, width, height);
+              SubtractBackground(*image);
+              break;
+            case BackgroundTestSet::Checker:
+              for (size_t y = 0; y != height; ++y) {
+                for (size_t x = 0; x != width; ++x) {
+                  image->SetValue(x, y, ((x + y) % 2 == 0) ? -1 : 2);
+                }
+              }
+              break;
+          }
+          polData.SetImage(imageIndex, image);
+        }  // if is imaginary
+      }    // for over image index
+      data.SetPolarizationData(polIndex, polData);
+    }  // for over polarizations
   }
 }
 
-Image2D TestSetGenerator::MakeTestSet(int number, Mask2D& rfi, unsigned width,
-                                      unsigned height, int gaussianNoise) {
-  Image2D image;
-  switch (number) {
-    case 0:  // Image of all zero's
-      return Image2D::MakeZeroImage(width, height);
-    case 1:  // Image of all ones
-      image = Image2D::MakeUnsetImage(width, height);
-      image.SetAll(1.0);
-      break;
-    case 2:  // Noise
-      return MakeNoise(width, height, gaussianNoise);
-    case 3: {  // Several broadband lines
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 1.0);
-    } break;
-    case 4: {  // Several broadband lines
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 0.5);
-    } break;
-    case 5: {  // Several broadband lines of random length
-      image = MakeNoise(width, height, gaussianNoise);
-      AddVarBroadbandToTestSet(image, rfi);
-    } break;
-    case 6: {  // Different broadband lines + low freq background
-      image = MakeNoise(width, height, gaussianNoise);
-      AddVarBroadbandToTestSet(image, rfi);
-      for (unsigned y = 0; y < image.Height(); ++y) {
-        for (unsigned x = 0; x < image.Width(); ++x) {
-          image.AddValue(x, y,
-                         sinn(num_t(x) * M_PIn * 5.0 / image.Width()) + 0.1);
+void TestSetGenerator::MakeTestSet(RFITestSet testSet,
+                                   TimeFrequencyData& data) {
+  for (size_t polIndex = 0; polIndex != data.PolarizationCount(); ++polIndex) {
+    TimeFrequencyData polData = data.MakeFromPolarizationIndex(polIndex);
+    Mask2DPtr rfi(Mask2D::MakePtr(*polData.GetSingleMask()));
+    for (size_t imageIndex = 0; imageIndex != polData.ImageCount();
+         ++imageIndex) {
+      const bool isImaginary = imageIndex == 1;
+      Image2DPtr image = Image2D::MakePtr(*polData.GetImage(imageIndex));
+      const size_t width = image->Width();
+      const size_t height = image->Height();
+      if (polIndex == 2 && isImaginary &&
+          testSet == RFITestSet::PolarizedSpike) {
+        // Set one absurdly high value which all strategies should detect
+        size_t rfiX = width / 2, rfiY = height / 2;
+        image->SetValue(rfiX, rfiY, 1000.0);
+      } else if (!isImaginary) {
+        switch (testSet) {
+          case RFITestSet::Empty:
+            break;
+          case RFITestSet::SpectralLines:
+            AddSpectralLinesToTestSet(*image, *rfi, 1.0, UniformShape);
+            break;
+          case RFITestSet::GaussianSpectralLines:
+            AddSpectralLinesToTestSet(*image, *rfi, 1.0, GaussianShape);
+            break;
+          case RFITestSet::IntermittentSpectralLines:
+            AddIntermittentSpectralLinesToTestSet(*image, *rfi, 10.0);
+            break;
+          case RFITestSet::FullBandBursts:
+            AddBroadbandToTestSet(*image, *rfi, 1.0);
+            break;
+          case RFITestSet::HalfBandBursts:
+            AddBroadbandToTestSet(*image, *rfi, 0.5);
+            break;
+          case RFITestSet::VaryingBursts:
+            AddVarBroadbandToTestSet(*image, *rfi);
+            break;
+          case RFITestSet::GaussianBursts:
+            AddBroadbandToTestSet(*image, *rfi, 1.0, 1.0, GaussianShape);
+            break;
+          case RFITestSet::SinusoidalBursts:
+            AddBroadbandToTestSet(*image, *rfi, 1.0, 1.0, SinusoidalShape);
+            break;
+          case RFITestSet::SlewedGaussians:
+            AddSlewedBroadbandToTestSet(*image, *rfi, 1.0);
+            break;
+          case RFITestSet::FluctuatingBursts:
+            AddBurstBroadbandToTestSet(*image, *rfi);
+            break;
+          case RFITestSet::StrongPowerLaw:
+            *image += sampleRFIDistribution(width, height, 1.0);
+            rfi->SetAll<true>();
+            break;
+          case RFITestSet::MediumPowerLaw:
+            *image += sampleRFIDistribution(width, height, 0.1);
+            rfi->SetAll<true>();
+            break;
+          case RFITestSet::WeakPowerLaw:
+            *image += sampleRFIDistribution(width, height, 0.01);
+            rfi->SetAll<true>();
+            break;
+          case RFITestSet::PolarizedSpike:
+            break;
         }
       }
-    } break;
-    case 7: {  // Different broadband lines + high freq background
-      image = MakeNoise(width, height, gaussianNoise);
-      for (unsigned y = 0; y < image.Height(); ++y) {
-        for (unsigned x = 0; x < image.Width(); ++x) {
-          image.AddValue(
-              x, y,
-              sinn((long double)(x + y * 0.1) * M_PIn * 5.0L / image.Width() +
-                   0.1));
-          image.AddValue(x, y,
-                         sinn((long double)(x + pown(y, 1.1)) * M_PIn * 50.0L /
-                                  image.Width() +
-                              0.1));
-        }
-      }
-      AddVarBroadbandToTestSet(image, rfi);
-      for (unsigned y = 0; y < image.Height(); ++y) {
-        for (unsigned x = 0; x < image.Width(); ++x) {
-          image.AddValue(x, y, 1.0);
-        }
-      }
-    } break;
-    case 8: {  // Different droadband lines + smoothed&subtracted high freq
-               // background
-      image = MakeNoise(width, height, gaussianNoise);
-      for (unsigned y = 0; y < image.Height(); ++y) {
-        for (unsigned x = 0; x < image.Width(); ++x) {
-          image.AddValue(
-              x, y,
-              sinn((num_t)(x + y * 0.1) * M_PIn * 5.0 / image.Width() + 0.1));
-          image.AddValue(
-              x, y,
-              sinn((num_t)(x + pown(y, 1.1)) * M_PIn * 50.0 / image.Width() +
-                   0.1));
-        }
-      }
-      SubtractBackground(image);
-      AddVarBroadbandToTestSet(image, rfi);
-    } break;
-    case 9: {  // FFT of 7
-      image = MakeTestSet(7, rfi, width, height);
-      Image2D copy(image);
-      FFTTools::CreateHorizontalFFTImage(image, copy, false);
-      for (unsigned y = 0; y < rfi.Height(); ++y) {
-        for (unsigned x = 0; x < rfi.Width(); ++x) {
-          image.SetValue(x, y, image.Value(x, y) / sqrtn(image.Width()));
-        }
-      }
-    } break;
-    case 10: {  // Identity matrix
-      image = Image2D::MakeZeroImage(width, height);
-      unsigned min = width < height ? width : height;
-      for (unsigned i = 0; i < min; ++i) {
-        image.SetValue(i, i, 1.0);
-        rfi.SetValue(i, i, true);
-      }
-    } break;
-    case 11: {  // FFT of identity matrix
-      image = MakeTestSet(10, rfi, width, height);
-      Image2D copy(image);
-      FFTTools::CreateHorizontalFFTImage(image, copy, false);
-      for (unsigned y = 0; y < rfi.Height(); ++y) {
-        for (unsigned x = 0; x < rfi.Width(); ++x) {
-          image.SetValue(x, y, image.Value(x, y) / sqrtn(width));
-        }
-      }
-    } break;
-    case 12: {  // Broadband contaminating all channels
-      image = MakeNoise(width, height, gaussianNoise);
-      for (unsigned y = 0; y < image.Height(); ++y) {
-        for (unsigned x = 0; x < image.Width(); ++x) {
-          image.AddValue(
-              x, y,
-              sinn((num_t)(x + y * 0.1) * M_PIn * 5.0 / image.Width() + 0.1));
-          image.AddValue(
-              x, y,
-              sinn((num_t)(x + powl(y, 1.1)) * M_PIn * 50.0 / image.Width() +
-                   0.1));
-        }
-      }
-      AddBroadbandToTestSet(image, rfi, 1.0);
-    } break;
-    case 13: {  // Model of three point sources with broadband RFI
-      SetModelData(image, rfi, 3, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-      AddBroadbandToTestSet(image, rfi, 1.0);
-    } break;
-    case 14: {  // Model of five point sources with broadband RFI
-      SetModelData(image, rfi, 5, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-      AddBroadbandToTestSet(image, rfi, 1.0);
-    } break;
-    case 15: {  // Model of five point sources with partial broadband RFI
-      SetModelData(image, rfi, 5, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-      AddBroadbandToTestSet(image, rfi, 0.5);
-    } break;
-    case 16: {  // Model of five point sources with random broadband RFI
-      SetModelData(image, rfi, 5, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-      AddVarBroadbandToTestSet(image, rfi);
-    } break;
-    case 17: {  // Background-fitted model of five point sources with random
-                // broadband RFI
-      SetModelData(image, rfi, 5, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-      SubtractBackground(image);
-      AddVarBroadbandToTestSet(image, rfi);
-    } break;
-    case 18: {  // Model of three point sources with random RFI
-      SetModelData(image, rfi, 3, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-      AddVarBroadbandToTestSet(image, rfi);
-    } break;
-    case 19: {  // Model of three point sources with noise
-      SetModelData(image, rfi, 3, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-    } break;
-    case 20: {  // Model of five point sources with noise
-      SetModelData(image, rfi, 5, width, height);
-      Image2D noise = MakeNoise(image.Width(), image.Height(), gaussianNoise);
-      image += noise;
-    } break;
-    case 21: {  // Model of three point sources
-      SetModelData(image, rfi, 3, width, height);
-    } break;
-    case 22: {  // Model of five point sources
-      image = Image2D::MakeZeroImage(width, height);
-      SetModelData(image, rfi, 5, width, height);
-    } break;
-    case 23:
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 0.5, 0.1, true);
-      break;
-    case 24:
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 0.5, 10.0, true);
-      break;
-    case 25:
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 0.5, 1.0, true);
-      break;
-    case 26: {  // Several Gaussian broadband lines
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 1.0, 1.0, false, GaussianShape);
-    } break;
-    case 27: {  // Several Sinusoidal broadband lines
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBroadbandToTestSet(image, rfi, 1.0, 1.0, false, SinusoidalShape);
-    } break;
-    case 28: {  // Several slewed Gaussian broadband lines
-      image = MakeNoise(width, height, gaussianNoise);
-      AddSlewedBroadbandToTestSet(image, rfi, 1.0);
-    } break;
-    case 29: {  // Several bursty broadband lines
-      image = MakeNoise(width, height, gaussianNoise);
-      AddBurstBroadbandToTestSet(image, rfi);
-    } break;
-    case 30: {  // noise + RFI ^-2 distribution
-      image = sampleRFIDistribution(width, height, 1.0);
-      rfi.SetAll<true>();
-    } break;
-    case 31: {  // noise + RFI ^-2 distribution
-      image = sampleRFIDistribution(width, height, 0.1);
-      rfi.SetAll<true>();
-    } break;
-    case 32: {  // noise + RFI ^-2 distribution
-      image = sampleRFIDistribution(width, height, 0.01);
-      rfi.SetAll<true>();
-    } break;
+      polData.SetImage(imageIndex, image);
+    }
+    polData.SetGlobalMask(rfi);
+    data.SetPolarizationData(polIndex, polData);
   }
-  return image;
+}
+
+void TestSetGenerator::AddSpectralLinesToTestSet(Image2D& image, Mask2D& rfi,
+                                                 double baseStrength,
+                                                 enum BroadbandShape shape) {
+  for (size_t i = 0; i != 10; ++i) {
+    const size_t channel = ((i * 2 + 1) * image.Height()) / 20;
+    const double strength = baseStrength * (1.0 + (i * 2.0 / 10.0));
+    AddSpectralLine(image, rfi, strength, channel, 1, 1.0, 0.0, shape);
+  }
+}
+
+void TestSetGenerator::AddIntermittentSpectralLinesToTestSet(Image2D& image,
+                                                             Mask2D& rfi,
+                                                             double strength) {
+  std::mt19937 mt;
+  for (size_t i = 0; i != 20; ++i) {
+    const size_t channel = ((i * 2 + 1) * image.Height()) / 40;
+    const double probability = (i + 5) * 1.0 / 28.0;
+    AddIntermittentSpectralLine(image, rfi, strength, channel, probability, mt);
+  }
 }
 
 void TestSetGenerator::AddBroadbandToTestSet(Image2D& image, Mask2D& rfi,
-                                             long double length,
-                                             double strength, bool align,
+                                             double length, double strength,
                                              enum BroadbandShape shape) {
   size_t frequencyCount = image.Height();
   unsigned step = image.Width() / 11;
-  if (align) {
-    // see vertevd.h why this is:
-    unsigned n = (unsigned)floor(0.5 + sqrt(0.25 + 2.0 * frequencyCount));
-    unsigned affectedAntennas = (unsigned)n * (double)length;
-    unsigned index = 0;
-    Logger::Debug << affectedAntennas << " of " << n << " antennas effected."
-                  << '\n';
-    Logger::Debug << "Affected  baselines: ";
-    for (unsigned y = 0; y < n; ++y) {
-      for (unsigned x = y + 1; x < n; ++x) {
-        double a1, a2;
-        if (x < affectedAntennas)
-          a1 = 1.0;
-        else
-          a1 = 0.0;
-        if (y < affectedAntennas)
-          a2 = 1.0;
-        else
-          a2 = 0.0;
+  unsigned fStart = (unsigned)((0.5 - length / 2.0) * frequencyCount);
+  unsigned fEnd = (unsigned)((0.5 + length / 2.0) * frequencyCount);
+  AddBroadbandLinePos(image, rfi, 3.0 * strength, step * 1, 3, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 2.5 * strength, step * 2, 3, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 2.0 * strength, step * 3, 3, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 1.8 * strength, step * 4, 3, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 1.6 * strength, step * 5, 3, fStart, fEnd,
+                      shape);
 
-        if (y < affectedAntennas || x < affectedAntennas) {
-          Logger::Debug << x << " x " << y << ", ";
-          AddRfiPos(image, rfi, 3.0 * strength * a1 * a2, step * 1, 3, index);
-          AddRfiPos(image, rfi, 2.5 * strength * a1 * a2, step * 2, 3, index);
-          AddRfiPos(image, rfi, 2.0 * strength * a1 * a2, step * 3, 3, index);
-          AddRfiPos(image, rfi, 1.8 * strength * a1 * a2, step * 4, 3, index);
-          AddRfiPos(image, rfi, 1.6 * strength * a1 * a2, step * 5, 3, index);
-
-          AddRfiPos(image, rfi, 3.0 * strength * a1 * a2, step * 6, 1, index);
-          AddRfiPos(image, rfi, 2.5 * strength * a1 * a2, step * 7, 1, index);
-          AddRfiPos(image, rfi, 2.0 * strength * a1 * a2, step * 8, 1, index);
-          AddRfiPos(image, rfi, 1.8 * strength * a1 * a2, step * 9, 1, index);
-          AddRfiPos(image, rfi, 1.6 * strength * a1 * a2, step * 10, 1, index);
-        }
-        ++index;
-      }
-    }
-    Logger::Debug << ".\n";
-  } else {
-    unsigned fStart = (unsigned)((0.5 - length / 2.0) * frequencyCount);
-    unsigned fEnd = (unsigned)((0.5 + length / 2.0) * frequencyCount);
-    AddBroadbandLinePos(image, rfi, 3.0 * strength, step * 1, 3, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 2.5 * strength, step * 2, 3, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 2.0 * strength, step * 3, 3, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 1.8 * strength, step * 4, 3, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 1.6 * strength, step * 5, 3, fStart, fEnd,
-                        shape);
-
-    AddBroadbandLinePos(image, rfi, 3.0 * strength, step * 6, 1, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 2.5 * strength, step * 7, 1, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 2.0 * strength, step * 8, 1, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 1.8 * strength, step * 9, 1, fStart, fEnd,
-                        shape);
-    AddBroadbandLinePos(image, rfi, 1.6 * strength, step * 10, 1, fStart, fEnd,
-                        shape);
-  }
+  AddBroadbandLinePos(image, rfi, 3.0 * strength, step * 6, 1, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 2.5 * strength, step * 7, 1, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 2.0 * strength, step * 8, 1, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 1.8 * strength, step * 9, 1, fStart, fEnd,
+                      shape);
+  AddBroadbandLinePos(image, rfi, 1.6 * strength, step * 10, 1, fStart, fEnd,
+                      shape);
 }
 
 void TestSetGenerator::AddSlewedBroadbandToTestSet(Image2D& image, Mask2D& rfi,
-                                                   long double length,
+                                                   double length,
                                                    double strength,
                                                    double slewrate,
                                                    enum BroadbandShape shape) {
@@ -495,9 +496,8 @@ void TestSetGenerator::AddVarBroadbandToTestSet(Image2D& image, Mask2D& rfi) {
   AddBroadbandLine(image, rfi, 1.6, step * 10, 1, 0.444377, 0.240526);
 }
 
-void TestSetGenerator::SetModelData(Image2D& image, Mask2D& rfi,
-                                    unsigned sources, size_t width,
-                                    size_t height) {
+void TestSetGenerator::SetModelData(Image2D& image, unsigned sources,
+                                    size_t width, size_t height) {
   class Model model;
   if (sources >= 5) {
     model.AddSource(0.1, 0.1, 0.5);
@@ -514,7 +514,6 @@ void TestSetGenerator::SetModelData(Image2D& image, Mask2D& rfi,
   std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> data =
       model.SimulateObservation(width, wsrt, 0.05, 0.05, 0, 1);
   image = *data.first.GetRealPart();
-  rfi = Mask2D::MakeSetMask<false>(width, height);
 }
 
 void TestSetGenerator::SubtractBackground(Image2D& image) {
@@ -552,21 +551,4 @@ Image2D TestSetGenerator::sampleRFIDistribution(unsigned width, unsigned height,
   return image;
 }
 
-TimeFrequencyData TestSetGenerator::MakeSpike() {
-  constexpr size_t width = 7, height = 10, pols = 8;
-  Image2DPtr images[pols];
-  for (size_t p = 0; p != pols; ++p) {
-    images[p] = Image2D::CreateUnsetImagePtr(width, height);
-    for (size_t y = 0; y != height; ++y) {
-      for (size_t x = 0; x != width; ++x) {
-        images[p]->SetValue(x, y, ((x + y) % 2 == 0) ? -1 : 2);
-      }
-    }
-  }
-  // We set one absurdly high value which all strategies should detect
-  size_t rfiX = width / 2, rfiY = height / 2;
-  images[5]->SetValue(rfiX, rfiY, 1000.0);
-  return TimeFrequencyData::FromLinear(images[0], images[1], images[2],
-                                       images[3], images[4], images[5],
-                                       images[6], images[7]);
-}
+}  // namespace algorithms

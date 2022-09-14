@@ -15,8 +15,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && \
     libgtkmm-3.0-dev \
     libcfitsio-dev \
     libfftw3-dev \
-    libxml2-dev \
     libgsl-dev \
+    libhdf5-serial-dev \    
     libpng-dev
 
 ADD . /src
@@ -24,6 +24,6 @@ WORKDIR /src
 
 RUN mkdir /build && cd /build && cmake ../src
 
-RUN cd /build && make -j24 && make install && make check -j24
+RUN cd /build && make -j`nproc --all` && make install && make check -j`nproc --all`
 
 RUN cd /build/python && echo "import aoflagger" | python3

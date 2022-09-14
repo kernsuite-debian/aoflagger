@@ -2,19 +2,19 @@
 
 #include <png.h>
 
-std::unique_ptr<rfiStrategy::BaselineData> rfiStrategy::PngReader::Read(
+std::unique_ptr<imagesets::BaselineData> imagesets::PngReader::Read(
     class ProgressListener& progress) {
   FILE* fp = fopen(_path.c_str(), "rb");
-  if (fp == 0) throw std::runtime_error("Could not open file");
+  if (fp == nullptr) throw std::runtime_error("Could not open file");
 
   png_structp png_ptr =
-      png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)0, 0, 0);
+      png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
 
   if (!png_ptr) throw std::runtime_error("Error creating png struct");
 
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
-    png_destroy_read_struct(&png_ptr, (png_infopp)0, (png_infopp)0);
+    png_destroy_read_struct(&png_ptr, nullptr, nullptr);
     throw std::runtime_error("Error creating png read struct");
   }
 
@@ -56,6 +56,6 @@ std::unique_ptr<rfiStrategy::BaselineData> rfiStrategy::PngReader::Read(
 
   TimeFrequencyData tfData(TimeFrequencyData::AmplitudePart,
                            aocommon::Polarization::StokesI, image);
-  return std::unique_ptr<rfiStrategy::BaselineData>(
+  return std::unique_ptr<imagesets::BaselineData>(
       new BaselineData(tfData, TimeFrequencyMetaDataCPtr()));
 }

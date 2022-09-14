@@ -25,8 +25,11 @@ Data downsample(const Data& data, size_t horizontalFactor,
 Data downsample_masked(const Data& data, size_t horizontalFactor,
                        size_t verticalFactor);
 
-void upsample(const Data& input, Data& destination, size_t horizontalFactor,
-              size_t verticalFactor);
+void upsample_image(const Data& input, Data& destination,
+                    size_t horizontalFactor, size_t verticalFactor);
+
+void upsample_mask(const Data& input, Data& destination,
+                   size_t horizontalFactor, size_t verticalFactor);
 
 void high_pass_filter(Data& data, size_t kernelWidth, size_t kernelHeight,
                       double horizontalSigmaSquared,
@@ -47,7 +50,8 @@ void scale_invariant_rank_operator(Data& data, double level_horizontal,
 
 void scale_invariant_rank_operator_masked(Data& data, const Data& missing,
                                           double level_horizontal,
-                                          double level_vertical);
+                                          double level_vertical,
+                                          double penalty);
 
 void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor,
                   bool horizontal, bool vertical);

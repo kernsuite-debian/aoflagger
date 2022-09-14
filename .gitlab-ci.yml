@@ -1,34 +1,121 @@
-image: ubuntu:20.04
+stages:
+  - build
+  - test
+  - package
+  - release
 
-before_script:
- - apt-get update -qq
- - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq 
-    casacore-data casacore-dev 
-    cmake
-    g++
-    git 
-    libblas-dev liblapack-dev 
-    libboost-filesystem-dev libboost-system-dev libboost-date-time-dev 
-    libboost-test-dev 
-    libcfitsio-dev 
-    libfftw3-dev 
-    libgsl-dev 
-    libgtkmm-3.0-dev 
-    liblua5.3-dev 
-    libpng-dev 
-    libpython3-dev 
-    libxml2-dev 
-    pkg-config
-    python3
-    python3-dev python3-numpy
+.dependencies:
+  before_script:
+    - apt-get update -qq
+    - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq
+       casacore-data casacore-tools casacore-dev
+       clang-format-12
+       cmake
+       g++
+       git
+       libblas-dev liblapack-dev
+       libboost-filesystem-dev libboost-system-dev libboost-date-time-dev
+       libboost-test-dev
+       libcfitsio-dev
+       libfftw3-dev
+       libgsl-dev
+       libgtkmm-3.0-dev
+       libhdf5-serial-dev
+       liblua5.3-dev
+       libpng-dev
+       libpython3-dev
+       libxml2-dev
+       pkg-config
+       python3
+       python3-dev
+       python3-numpy
+       python3-pip
+    # The formatter needs a binary named 'clang-format', not 'clang-format-12'.
+    - ln -sf clang-format-12 /usr/bin/clang-format
+    - pip3 install cmake-format pytest
 
 aoflagger:
+  stage: build
+  image: ubuntu:20.04
+  extends: .dependencies
   script:
+    - scripts/run-format.sh
     - mkdir build
     - cd build
     - cmake ../
-    - make
-    - make install
-    - make check
+    - make -j`nproc`
+    - make -j`nproc` install
+    - make -j`nproc` check
     - cd python
     - echo "import aoflagger"|python3
+
+test:
+  stage: test
+  image: ubuntu:20.04
+  extends: .dependencies
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DENABLE_INTEGRATION_TESTS=ON -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" ../
+    - make -j`nproc` all runtests install
+    - ctest
+  artifacts:
+    paths:
+      - build/*.xml
+    reports:
+      junit: build/*.xml
+
+# Test whether aoflagger can be build successfully using the latest Ubuntu
+# release. This version should be updated every 6 months to the then current
+# release. Even when the latest release is an LTS release the update is useful
+# since it tests whether the software builds with ninja.
+test-ubuntu-latest:
+  stage: test
+  image: ubuntu:21.10
+  before_script:
+    - !reference [.dependencies, before_script]
+    - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq ninja-build
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DENABLE_INTEGRATION_TESTS=ON -GNinja ../
+    - ninja all runtests install
+    - ninja check
+    - ctest
+    - cd python
+    - echo "import aoflagger"|python3
+  artifacts:
+    paths:
+      - build/*.xml
+    reports:
+      junit: build/*.xml
+
+.packaging:
+  rules:
+    - if: $CI_COMMIT_TAG
+  variables:
+    PACKAGE_FILE: "aoflagger-${CI_COMMIT_TAG}.tbz2"
+    PACKAGE_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/sources/${CI_COMMIT_TAG}/aoflagger-${CI_COMMIT_TAG}.tbz2"
+
+package:
+  stage: package
+  extends: .packaging
+  image: ubuntu:20.04
+  before_script:
+    - apt-get update -qq
+    - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq curl git python3-pip
+    - pip3 install git-archive-all
+  script:
+    - |
+      git-archive-all --force-submodules ${PACKAGE_FILE}
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file ${PACKAGE_FILE} ${PACKAGE_URL}
+
+release:
+  stage: release
+  extends: .packaging
+  needs: ["package"]
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script:
+    - |
+      release-cli create --name "Release $CI_COMMIT_TAG" --description RELEASE.md \
+        --assets-link "{\"name\":\"${PACKAGE_FILE}\",\"url\":\"${PACKAGE_URL}\",\"link_type\":\"package\"}"

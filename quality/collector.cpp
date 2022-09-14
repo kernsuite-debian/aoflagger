@@ -1,12 +1,13 @@
 #include "collector.h"
 
 #include "../structures/msmetadata.h"
-#include "../structures/system.h"
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
 
 #include "histogramcollection.h"
 #include "statisticscollection.h"
+
+#include <aocommon/system.h>
 
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
@@ -41,7 +42,7 @@ void Collector::Collect(const std::string& filename,
   _statisticsCollection = &statisticsCollection;
   _histogramCollection = &histogramCollection;
   statisticsCollection.SetPolarizationCount(polarizationCount);
-  size_t nCPU = System::ProcessorCount();
+  size_t nCPU = aocommon::system::ProcessorCount();
   _threadStats.clear();
   for (size_t i = 0; i != nCPU; ++i)
     _threadStats.emplace_back(polarizationCount);

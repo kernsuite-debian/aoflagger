@@ -262,7 +262,7 @@ void RSPReader::ReadForStatistics(unsigned beamletCount) {
   std::vector<BeamletStatistics> statistics(beamletCount),
       timeStartStatistics(beamletCount);
 
-  std::vector<std::ofstream *> statFile(beamletCount);
+  std::vector<std::ofstream*> statFile(beamletCount);
   for (unsigned i = 0; i < beamletCount; ++i) {
     std::ostringstream str;
     str << "rsp-statistics" << i << ".txt";
@@ -278,7 +278,7 @@ void RSPReader::ReadForStatistics(unsigned beamletCount) {
     if (end > timesteps) end = timesteps;
     std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> dataPair =
         ReadAllBeamlets(timestepIndex, end, beamletCount);
-    const TimeFrequencyData &data = dataPair.first;
+    const TimeFrequencyData& data = dataPair.first;
     if (startTime == -1.0) {
       startTime = dataPair.second->ObservationTimes()[0];
       periodStartTime = startTime;

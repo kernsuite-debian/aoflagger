@@ -6,13 +6,13 @@
 
 #include "msimageset.h"
 
-#include "../../msio/directbaselinereader.h"
-#include "../../msio/indirectbaselinereader.h"
-#include "../../msio/memorybaselinereader.h"
+#include "../msio/directbaselinereader.h"
+#include "../msio/indirectbaselinereader.h"
+#include "../msio/memorybaselinereader.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 void MSImageSet::Initialize() {
   Logger::Debug << "Initializing image set...\n";
@@ -33,7 +33,7 @@ void MSImageSet::initReader() {
   if (_reader == nullptr) {
     switch (_ioMode) {
       case IndirectReadMode: {
-        IndirectBaselineReader *indirectReader =
+        IndirectBaselineReader* indirectReader =
             new IndirectBaselineReader(_msFile);
         indirectReader->SetReadUVW(_readUVW);
         _reader = BaselineReaderPtr(indirectReader);
@@ -54,30 +54,29 @@ void MSImageSet::initReader() {
   }
   _reader->SetDataColumnName(_dataColumnName);
   _reader->SetInterval(_intervalStart, _intervalEnd);
-  _reader->SetSubtractModel(_subtractModel);
   _reader->SetReadFlags(_readFlags);
   _reader->SetReadData(true);
 }
 
-size_t MSImageSet::EndTimeIndex(const ImageSetIndex &index) const {
+size_t MSImageSet::EndTimeIndex(const ImageSetIndex& index) const {
   return _reader->MetaData()
       .GetObservationTimesSet(GetSequenceId(index))
       .size();
 }
 
 std::vector<double> MSImageSet::ObservationTimesVector(
-    const ImageSetIndex &index) {
+    const ImageSetIndex& index) {
   // StartIndex(msIndex), EndIndex(msIndex)
   unsigned sequenceId = _sequences[index.Value()].sequenceId;
-  const std::set<double> &obsTimesSet =
+  const std::set<double>& obsTimesSet =
       _reader->MetaData().GetObservationTimesSet(sequenceId);
   std::vector<double> obs(obsTimesSet.begin(), obsTimesSet.end());
   return obs;
 }
 
-TimeFrequencyMetaDataCPtr MSImageSet::createMetaData(const ImageSetIndex &index,
-                                                     std::vector<UVW> &uvw) {
-  TimeFrequencyMetaData *metaData = new TimeFrequencyMetaData();
+TimeFrequencyMetaDataCPtr MSImageSet::createMetaData(const ImageSetIndex& index,
+                                                     std::vector<UVW>& uvw) {
+  TimeFrequencyMetaData* metaData = new TimeFrequencyMetaData();
   metaData->SetAntenna1(_metaData.GetAntennaInfo(GetAntenna1(index)));
   metaData->SetAntenna2(_metaData.GetAntennaInfo(GetAntenna2(index)));
   metaData->SetBand(_metaData.GetBandInfo(GetBand(index)));
@@ -89,9 +88,9 @@ TimeFrequencyMetaDataCPtr MSImageSet::createMetaData(const ImageSetIndex &index,
   return TimeFrequencyMetaDataCPtr(metaData);
 }
 
-std::string MSImageSet::Description(const ImageSetIndex &index) const {
+std::string MSImageSet::Description(const ImageSetIndex& index) const {
   std::stringstream sstream;
-  const MSMetaData::Sequence &sequence = _sequences[index.Value()];
+  const MSMetaData::Sequence& sequence = _sequences[index.Value()];
   size_t antenna1 = sequence.antenna1, antenna2 = sequence.antenna2,
          band = sequence.spw, sequenceId = sequence.sequenceId;
   AntennaInfo info1 = GetAntennaInfo(antenna1);
@@ -128,13 +127,13 @@ size_t MSImageSet::findBaselineIndex(size_t antenna1, size_t antenna2,
   return not_found;
 }
 
-void MSImageSet::AddReadRequest(const ImageSetIndex &index) {
+void MSImageSet::AddReadRequest(const ImageSetIndex& index) {
   BaselineData newRequest(index);
   _baselineData.push_back(newRequest);
 }
 
-void MSImageSet::PerformReadRequests(class ProgressListener &progress) {
-  for (BaselineData &bd : _baselineData) {
+void MSImageSet::PerformReadRequests(class ProgressListener& progress) {
+  for (BaselineData& bd : _baselineData) {
     _reader->AddReadRequest(GetAntenna1(bd.Index()), GetAntenna2(bd.Index()),
                             GetBand(bd.Index()), GetSequenceId(bd.Index()),
                             StartTimeIndex(bd.Index()),
@@ -167,8 +166,8 @@ std::unique_ptr<BaselineData> MSImageSet::GetNextRequested() {
   return top;
 }
 
-void MSImageSet::AddWriteFlagsTask(const ImageSetIndex &index,
-                                   std::vector<Mask2DCPtr> &flags) {
+void MSImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
+                                   std::vector<Mask2DCPtr>& flags) {
   size_t seqIndex = index.Value();
   initReader();
   size_t a1 = _sequences[seqIndex].antenna1;
@@ -196,4 +195,4 @@ void MSImageSet::AddWriteFlagsTask(const ImageSetIndex &index,
 void MSImageSet::PerformWriteFlagsTask() {
   _reader->PerformFlagWriteRequests();
 }
-}  // namespace rfiStrategy
+}  // namespace imagesets

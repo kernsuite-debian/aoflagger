@@ -1,13 +1,15 @@
-#ifndef HORIZONTALPLOTSCALE_H
-#define HORIZONTALPLOTSCALE_H
+#ifndef HORIZONTAL_PLOT_SCALE_H
+#define HORIZONTAL_PLOT_SCALE_H
 
-#include <memory>
-#include <string>
-#include <vector>
+#include "axistype.h"
+#include "linkable.h"
 
 #include <gtkmm/drawingarea.h>
 
-#include "linkable.h"
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 struct HorizontalPlotScaleData {
   // These are set in initializeMetrics()
@@ -35,15 +37,22 @@ class HorizontalPlotScale
       Data().metricsAreInitialized = false;
     }
   }
-  double Height() { return _height; }
+  double CalculateHeight(const Cairo::RefPtr<Cairo::Context>& cairo);
   double RightMargin() { return Data().rightMargin; }
   double FromLeft() const { return Data().fromLeft; }
   double PlotWidth() const { return Data().plotWidth; }
   void Draw(const Cairo::RefPtr<Cairo::Context>& cairo);
-  void InitializeNumericTicks(double min, double max);
-  void InitializeTimeTicks(double timeMin, double timeMax);
-  void InitializeTextTicks(const std::vector<std::string>& labels);
-  void InitializeLogarithmicTicks(double min, double max);
+  void SetAxisType(AxisType axisType) { _axisType = axisType; }
+  void SetTickLabels(const std::vector<std::string> labels) {
+    _tickLabels = std::move(labels);
+  }
+  void SetTickRange(double min, double max) {
+    _tickRange = std::array<double, 2>{min, max};
+  }
+  double GetTickRangeMin() const { return _tickRange[0]; }
+  double GetTickRangeMax() const { return _tickRange[1]; }
+  void SetLogarithmic(bool logarithmic) { _isLogarithmic = logarithmic; }
+  void InitializeTicks();
   void SetDrawWithDescription(bool drawWithDescription) {
     _drawWithDescription = drawWithDescription;
     Data().metricsAreInitialized = false;
@@ -72,6 +81,9 @@ class HorizontalPlotScale
   sigc::signal<void>& SignalLinkedRedraw() { return _signalLinkedRedraw; }
 
  private:
+  void initializeNumericTicks(double min, double max);
+  void initializeTimeTicks(double timeMin, double timeMax);
+  void initializeTextTicks(const std::vector<std::string>& labels);
   void drawDescription(const Cairo::RefPtr<Cairo::Context>& cairo);
   bool ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo);
   void initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo);
@@ -83,15 +95,17 @@ class HorizontalPlotScale
   double _widgetWidth, _widgetHeight, _minFromLeft, _fromTop;
   bool _isSecondAxis;
 
-  // These are set in initializeMetrics()
-  double _height;
-
   std::unique_ptr<class TickSet> _tickSet;
+  AxisType _axisType;
+  std::array<double, 2> _tickRange;
+  std::vector<std::string> _tickLabels;
+  bool _isLogarithmic;
+  bool _rotateUnits;
+
   bool _drawWithDescription;
   std::string _unitsCaption;
   double _descriptionFontSize;
   double _tickValuesFontSize;
-  bool _rotateUnits, _isLogarithmic;
   sigc::signal<void> _signalLinkedRedraw;
 };
 

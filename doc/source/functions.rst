@@ -29,7 +29,8 @@ The ``aoflagger`` module provides the following functions:
     - :meth:`downsample`
     - :meth:`high_pass_filter`
     - :meth:`low_pass_filter`
-    - :meth:`upsample`
+    - :meth:`upsample_image`
+    - :meth:`upsample_mask`
     
 * Thresholding:
     - :meth:`sumthreshold`
@@ -131,8 +132,9 @@ Detailed descriptions
    be effective to increase the speed of data smoothing, for example when using
    :meth:`high_pass_filter`. At the function end of :meth:`execute`,
    the data should have the original size. Therefore, a call to downsample
-   should normally be followed by a call to :meth:`upsample` to restore the
-   flags and visibilities to their original resolution.
+   should normally be followed by a call to :meth:`upsample_image` or
+   :meth:`upsample_mask` to restore the
+   visibilities and flags, respectively, to their original resolution.
    
    When the input data is not exactly divisable by the downsampling factors,
    fewer samples will be averaged into the last bins.
@@ -289,12 +291,21 @@ Detailed descriptions
    :param ylevel: aggressiveness in frequency-direction
    :type ylevel: number
 
-.. function:: scale_invariant_rank_operator_masked(data, mask_data, xlevel, ylevel)
+.. function:: scale_invariant_rank_operator_masked(data, mask_data, xlevel, ylevel, penalty)
 
    Perform the same operation as :meth:`scale_invariant_rank_operator`, but
-   with a mask. Data that is flagged in the mask are removed before applying
-   the operator.
+   with an input mask that identifies invalid data.
+   Invalid data is treated differently, and the penalty parameter selects
+   how it is treated. With a penalty of 0, it is as if invalid samples are
+   removed before applying the operator. With a penalty of 1, invalid samples
+   are counted in the same way as unflagged samples (i.e., they penalize
+   their extension). A typical penalty value is 0.1.
+   For backwards compatibility, penalty may be left out, in
+   which case a value of 0.1 is used.
 
+   Available since :doc:`v3.1 <changelogs/v3.01>`. The penalty parameter is
+   available since :doc:`v3.2 <changelogs/v3.02>`.
+   
    :param data: The data (modified in place).
    :type data: :class:`Data`
    :param mask_data: The data that is used as mask.
@@ -303,6 +314,9 @@ Detailed descriptions
    :type xlevel: number
    :param ylevel: aggressiveness in frequency-direction
    :type ylevel: number
+   :param penalty: penalty given to the extension through
+      invalid regions.
+   :type penalty: number
 
 .. function:: set_progress(progress, max_progress)
 
@@ -325,7 +339,7 @@ Detailed descriptions
    :param task_description: Description string.
    :type task_description: string
 
-.. function:: sumthreshold(data, xthreshold_f, ythreshold_f, include_x, include_y)
+.. function:: sumthreshold(data, x_threshold_factor, y_threshold_factor, x_direction, y_direction)
 
    Run the SumThreshold algorithm on the data. This algorithm detects sharp,
    line-shaped features in the time-frequency domain that are typical for RFI.
@@ -337,24 +351,25 @@ Detailed descriptions
    Lower values will detect more features. A reasonable value for the
    thresholds is 1.
    
-   The "include" parameters turn
-   detection in their particular directions on and off. Note that detection in
-   "x" (=time) direction means detection of contiguous high-power samples
+   The ``x_direction``/``y_direction`` parameters turn
+   detection in their particular directions on and off. If a direction is turned off, the
+   threshold factor for that direction is ignored. Note that detection in
+   *x*-direction (which is the time-direction) means detection of contiguous high-power samples
    in time, such as transmitters that occupy the same channel continuously.
-   The y-direction detection is sensitive to transient, broadband RFI.
+   The *y*-direction detection is sensitive to transient, broadband RFI.
 
-   :param data: The data (modified in place).
+   :param data: The data (modified in place)
    :type data: :class:`Data`
-   :param xthreshold_f: Threshold factor in time direction
-   :type xthreshold_f: number
-   :param ythreshold_f: Threshold factor in frequency direction
-   :type ythreshold_f: number
-   :param include_x: The data that is used as mask.
-   :type include_x: :class:`Data`
-   :param include_y: The data that is used as mask.
-   :type include_y: :class:`Data`
+   :param x_threshold_factor: Threshold factor in time direction
+   :type x_threshold_factor: number
+   :param y_threshold_factor: Threshold factor in frequency direction
+   :type y_threshold_factor: number
+   :param x_direction: Enable flagging in time direction
+   :type x_direction: boolean
+   :param y_direction: Enable flagging in frequency direction
+   :type y_direction: boolean
    
-.. function:: sumthreshold_masked(data, mask_data, x_threshold_f, y_threshold_f, x_direction, y_direction)
+.. function:: sumthreshold_masked(data, mask_data, x_threshold_factor, y_threshold_factor, x_direction, y_direction)
 
    Same as :meth:`sumthreshold`, but with a mask. Visibilities that are flagged
    in the mask are considered to be visibilities that have not been sampled and
@@ -364,15 +379,15 @@ Detailed descriptions
 
    :param data: The data (modified in place).
    :type data: :class:`Data`
-   :param mask_data: The data that is used as mask.
+   :param mask_data: The data that is used as mask
    :type mask_data: :class:`Data`
-   :param x_threshold_f: Threshold factor in time direction
-   :type x_threshold_f: number
-   :param y_threshold_f: Threshold factor in frequency direction
-   :type y_threshold_f: number
-   :param x_direction: The data that is used as mask.
+   :param x_threshold_factor: Threshold factor in time direction
+   :type x_threshold_factor: number
+   :param y_threshold_factor: Threshold factor in frequency direction
+   :type y_threshold_factor: number
+   :param x_direction: Enable flagging in time direction
    :type x_direction: boolean
-   :param y_direction: The data that is used as mask.
+   :param y_direction: Enable flagging in frequency direction
    :type y_direction: boolean
    
 .. function:: threshold_channel_rms(data, threshold, flag_low_outliers)
@@ -441,7 +456,7 @@ Detailed descriptions
    :return: A new data object, trimmed as specified.
    :rtype: :class:`Data`
 
-.. function:: upsample(input_data, destination_data, xfactor, yfactor)
+.. function:: upsample_image(input_data, destination_data, xfactor, yfactor)
 
    Increase the resolution of the data. This function is to restore the
    resolution of the data after having called :meth:`downsample`.
@@ -453,6 +468,23 @@ Detailed descriptions
    to `downsample`. The size of the ``destination_data`` is not changed: the
    input data is stretched by the given factors, and trimmed to the destination
    size in case the image dimensions were not exactly divisable by the factors.
+   
+   The function only upsamples the visibilities, not the flags. To upsample the
+   flags, see :meth:`upsample_mask`.
+
+   :param input_data: Input low-resolution data (not modified).
+   :type input_data: :class:`Data`
+   :param destination_data: Where the result will be stored.
+   :type destination_data: :class:`Data`
+   :param xfactor: Upsampling factor in time direction.
+   :type xfactor: integer
+   :param yfactor: Upsampling factor in frequency direction.
+   :type yfactor: integer
+   
+.. function:: upsample_mask(input_data, destination_data, xfactor, yfactor)
+
+   Increase the resolution of the mask. It is identical to :meth:`upsample_image`,
+   but works with the mask (flags) instead of the image (visibilities).
 
    :param input_data: Input low-resolution data (not modified).
    :type input_data: :class:`Data`

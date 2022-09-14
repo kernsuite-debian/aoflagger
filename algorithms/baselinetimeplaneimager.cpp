@@ -1,17 +1,20 @@
 #include "baselinetimeplaneimager.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
+
+#include <fftw3.h>
+
+#include <boost/iterator/iterator_concepts.hpp>
 
 #include <cmath>
 
-#include <fftw3.h>
-#include <boost/iterator/iterator_concepts.hpp>
+namespace algorithms {
 
 template <typename NumType>
 void BaselineTimePlaneImager<NumType>::Image(
     NumType uTimesLambda, NumType vTimesLambda, NumType wTimesLambda,
     NumType lowestFrequency, NumType frequencyStep, size_t channelCount,
-    const std::complex<NumType> *data, Image2D &output) {
+    const std::complex<NumType>* data, Image2D& output) {
   NumType phi = atan2(vTimesLambda, uTimesLambda);
   size_t imgSize = output.Width();
   NumType minLambda = frequencyToWavelength(
@@ -42,9 +45,9 @@ void BaselineTimePlaneImager<NumType>::Image(
   size_t fftSize =
       std::max((size_t)(imgSize * sampleDist / (scale * (2.0 * uvDist))),
                2 * sampleDist);
-  fftw_complex *fftInp =
-      (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * (fftSize / 2 + 1));
-  double *fftOut = (double *)fftw_malloc(sizeof(double) * fftSize);
+  fftw_complex* fftInp =
+      (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fftSize / 2 + 1));
+  double* fftOut = (double*)fftw_malloc(sizeof(double) * fftSize);
   fftw_plan plan = fftw_plan_dft_c2r_1d(fftSize, fftInp, fftOut, FFTW_ESTIMATE);
   size_t startChannel = (lowestFrequency / frequencyStep);
   for (size_t i = 0; i != (fftSize / 2 + 1); ++i) {
@@ -87,7 +90,7 @@ void BaselineTimePlaneImager<NumType>::Image(
   NumType transformY = sinPhi * transformGen;
   NumType tanZsinChi = 1.0, tanZcosChi = 1.0;  // TODO testing!
   for (size_t y = 0; y != imgSize; ++y) {
-    num_t *destPtr = output.ValuePtr(0, y);
+    num_t* destPtr = output.ValuePtr(0, y);
     NumType m = (NumType)y - mid;
     for (size_t x = 0; x != imgSize; ++x) {
       NumType l = (NumType)x - mid;
@@ -116,3 +119,5 @@ void BaselineTimePlaneImager<NumType>::Image(
 
 template class BaselineTimePlaneImager<float>;
 template class BaselineTimePlaneImager<double>;
+
+}  // namespace algorithms

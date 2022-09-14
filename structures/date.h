@@ -21,8 +21,8 @@ class Date {
     double x0 = x1 - floor(36525.0 * c1 / 100.0);
     return (int)x0;
   }
-  static void JDToDate(double jd, int &dayOfMonth, int &month,
-                       int &year) noexcept {
+  static void JDToDate(double jd, int& dayOfMonth, int& month,
+                       int& year) noexcept {
     double x2 = (jd - 1721119.5);  // number of days since year 0
     int c2 = (int)((8.0 * x2 + 7.0) / 292194.0);
     double x1 = x2 - floor(146097.0 * c2 /

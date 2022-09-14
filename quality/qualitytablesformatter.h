@@ -87,7 +87,7 @@ class QualityTablesFormatter {
     double frequency;
   };
 
-  explicit QualityTablesFormatter(const std::string &measurementSetName)
+  explicit QualityTablesFormatter(const std::string& measurementSetName)
       : _measurementSet(),
         _measurementSetName(measurementSetName),
         _kindNameTable(),
@@ -112,13 +112,13 @@ class QualityTablesFormatter {
     return _measurementSet->isReadable(TableToFilename(table));
   }
 
-  static const std::string &KindToName(const enum StatisticKind kind) {
+  static const std::string& KindToName(const enum StatisticKind kind) {
     return _kindToNameTable[(int)kind];
   }
 
-  static enum StatisticKind NameToKind(const std::string &kindName);
+  static enum StatisticKind NameToKind(const std::string& kindName);
 
-  static const std::string &TableToName(const enum QualityTable table) {
+  static const std::string& TableToName(const enum QualityTable table) {
     return _tableToNameTable[(int)table];
   }
 
@@ -184,21 +184,21 @@ class QualityTablesFormatter {
     return StoreKindName(KindToName(kind));
   }
 
-  unsigned StoreKindName(const std::string &name);
+  unsigned StoreKindName(const std::string& name);
 
   void StoreTimeValue(double time, double frequency,
-                      const class StatisticalValue &value);
+                      const class StatisticalValue& value);
   void StoreFrequencyValue(double frequency,
-                           const class StatisticalValue &value);
+                           const class StatisticalValue& value);
   void StoreBaselineValue(unsigned antenna1, unsigned antenna2,
                           double frequency,
-                          const class StatisticalValue &value);
+                          const class StatisticalValue& value);
   void StoreBaselineTimeValue(unsigned antenna1, unsigned antenna2, double time,
                               double frequency,
-                              const class StatisticalValue &value);
+                              const class StatisticalValue& value);
 
   unsigned QueryKindIndex(enum StatisticKind kind);
-  bool QueryKindIndex(enum StatisticKind kind, unsigned &destKindIndex);
+  bool QueryKindIndex(enum StatisticKind kind, unsigned& destKindIndex);
   unsigned StoreOrQueryKindIndex(enum StatisticKind kind) {
     unsigned kindIndex;
     if (QueryKindIndex(kind, kindIndex))
@@ -212,26 +212,26 @@ class QualityTablesFormatter {
 
   void QueryTimeStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<TimePosition, class StatisticalValue> > &entries);
+      std::vector<std::pair<TimePosition, class StatisticalValue>>& entries);
   void QueryFrequencyStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<FrequencyPosition, class StatisticalValue> >
-          &entries);
+      std::vector<std::pair<FrequencyPosition, class StatisticalValue>>&
+          entries);
   void QueryBaselineStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<BaselinePosition, class StatisticalValue> >
-          &entries);
+      std::vector<std::pair<BaselinePosition, class StatisticalValue>>&
+          entries);
   void QueryBaselineTimeStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<BaselineTimePosition, class StatisticalValue> >
-          &entries);
+      std::vector<std::pair<BaselineTimePosition, class StatisticalValue>>&
+          entries);
 
   unsigned GetPolarizationCount();
 
  private:
-  QualityTablesFormatter(const QualityTablesFormatter &) =
+  QualityTablesFormatter(const QualityTablesFormatter&) =
       delete;  // don't allow copies
-  void operator=(const QualityTablesFormatter &) =
+  void operator=(const QualityTablesFormatter&) =
       delete;  // don't allow assignment
 
   const static std::string _kindToNameTable[];
@@ -266,20 +266,20 @@ class QualityTablesFormatter {
    * methods. It holds "Measure"s of time, which is what casacore defines as a
    * value including a unit and a reference frame.
    */
-  void addTimeColumn(casacore::TableDesc &tableDesc);
+  void addTimeColumn(casacore::TableDesc& tableDesc);
 
   /**
    * Add the frequency column to the table descriptor. Used by create..Table()
    * methods. It holds "Quantum"s of frequency, which is what casacore defines
    * as a value including a unit (Hertz).
    */
-  void addFrequencyColumn(casacore::TableDesc &tableDesc);
+  void addFrequencyColumn(casacore::TableDesc& tableDesc);
 
   /**
    * Add value column to the table descriptor. Used by create..Table() methods.
    * It consist of an array of statistics, each element holds a polarization.
    */
-  void addValueColumn(casacore::TableDesc &tableDesc,
+  void addValueColumn(casacore::TableDesc& tableDesc,
                       unsigned polarizationCount);
 
   void createTable(enum QualityTable table, unsigned polarizationCount) {
@@ -335,12 +335,12 @@ class QualityTablesFormatter {
    */
   void createBaselineStatisticTable(unsigned polarizationCount);
   void createBaselineTimeStatisticTable(unsigned polarizationCount);
-  unsigned findFreeKindIndex(casacore::Table &kindTable);
+  unsigned findFreeKindIndex(casacore::Table& kindTable);
 
   void openMainTable(bool needWrite);
 
   void openTable(QualityTable table, bool needWrite,
-                 std::unique_ptr<casacore::Table> &tablePtr);
+                 std::unique_ptr<casacore::Table>& tablePtr);
   void openKindNameTable(bool needWrite) {
     openTable(KindNameTable, needWrite, _kindNameTable);
   }
@@ -356,8 +356,8 @@ class QualityTablesFormatter {
   void openBaselineTimeTable(bool needWrite) {
     openTable(BaselineTimeStatisticTable, needWrite, _baselineTimeTable);
   }
-  casacore::Table &getTable(QualityTable table, bool needWrite) {
-    std::unique_ptr<casacore::Table> *tablePtr = nullptr;
+  casacore::Table& getTable(QualityTable table, bool needWrite) {
+    std::unique_ptr<casacore::Table>* tablePtr = nullptr;
     switch (table) {
       case KindNameTable:
         tablePtr = &_kindNameTable;

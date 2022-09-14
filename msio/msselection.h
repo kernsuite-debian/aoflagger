@@ -10,7 +10,7 @@
 #include <map>
 #include <vector>
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
 
 class MSSelection {
  public:

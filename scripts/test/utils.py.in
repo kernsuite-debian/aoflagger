@@ -1,0 +1,12 @@
+import os
+from subprocess import check_call, check_output
+from testconfig import taql
+
+def assert_taql(command, expected_rows=0):
+    result = check_output([taql, "-noph", command]).decode().strip()
+    assert result == f"select result of {expected_rows} rows"
+
+def untar_ms(source):
+    if not os.path.isfile(source):
+        raise IOError(f"Not able to find {source} containing the reference solutions.")
+    check_call(["tar", "xf", source])

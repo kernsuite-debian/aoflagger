@@ -10,6 +10,8 @@
 #include <gtkmm/textview.h>
 #include <gtkmm/window.h>
 
+class XYPlot;
+
 class DataWindow : public Gtk::Window {
  public:
   DataWindow() {
@@ -33,13 +35,13 @@ class DataWindow : public Gtk::Window {
     set_default_size(300, 400);
   }
   ~DataWindow() {}
-  void SetData(const std::string &data) {
+  void SetData(const std::string& data) {
     _textView.get_buffer()->set_text(data);
   }
-  void SetData(const class Plot2D &plot);
+  void SetData(const XYPlot& plot);
 
  private:
-  DataWindow(const DataWindow &dataWindow) {}
+  DataWindow(const DataWindow& dataWindow) {}
 
   void onComboChange();
   void loadData(size_t plotSetIndex);
@@ -54,7 +56,7 @@ class DataWindow : public Gtk::Window {
   Glib::RefPtr<Gtk::ListStore> _comboListStore;
   Gtk::ScrolledWindow _scrolledWindow;
   Gtk::TextView _textView;
-  const class Plot2D *_plot;
+  const XYPlot* _plot;
 };
 
 #endif

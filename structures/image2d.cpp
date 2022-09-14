@@ -44,13 +44,13 @@ void Image2D::allocate() {
   // OS-X has no posix_memalign, but malloc always uses 16-byte alignment.
   // This is not enough for AVX instructions, so those cannot be executed on
   // apple machines.
-  _dataConsecutive = (num_t *)malloc(_stride * allocHeight * sizeof(num_t));
+  _dataConsecutive = (num_t*)malloc(_stride * allocHeight * sizeof(num_t));
 #else
-  if (posix_memalign((void **)&_dataConsecutive, 32,
+  if (posix_memalign((void**)&_dataConsecutive, 32,
                      _stride * allocHeight * sizeof(num_t)) != 0)
     throw std::bad_alloc();
 #endif
-  _dataPtr = new num_t *[allocHeight];
+  _dataPtr = new num_t*[allocHeight];
   for (size_t y = 0; y < _height; ++y) {
     _dataPtr[y] = &_dataConsecutive[_stride * y];
     // Even though the values after the requested width are never relevant, we
@@ -69,14 +69,14 @@ void Image2D::allocate() {
   }
 }
 
-Image2D::Image2D(const Image2D &source)
+Image2D::Image2D(const Image2D& source)
     : _width(source._width), _height(source._height), _stride(source._stride) {
   allocate();
   std::copy(source._dataConsecutive,
             source._dataConsecutive + _stride * _height, _dataConsecutive);
 }
 
-Image2D::Image2D(Image2D &&source) noexcept
+Image2D::Image2D(Image2D&& source) noexcept
     : _width(source._width),
       _height(source._height),
       _stride(source._stride),
@@ -94,7 +94,7 @@ Image2D::~Image2D() noexcept {
   free(_dataConsecutive);
 }
 
-Image2D &Image2D::operator=(const Image2D &rhs) {
+Image2D& Image2D::operator=(const Image2D& rhs) {
   if (_width != rhs._width || _height != rhs._height ||
       _stride != rhs._stride) {
     delete[] _dataPtr;
@@ -109,7 +109,7 @@ Image2D &Image2D::operator=(const Image2D &rhs) {
   return *this;
 }
 
-Image2D &Image2D::operator=(Image2D &&rhs) noexcept {
+Image2D& Image2D::operator=(Image2D&& rhs) noexcept {
   std::swap(rhs._width, _width);
   std::swap(rhs._stride, _stride);
   std::swap(rhs._height, _height);
@@ -118,21 +118,40 @@ Image2D &Image2D::operator=(Image2D &&rhs) noexcept {
   return *this;
 }
 
-Image2D *Image2D::CreateSetImage(size_t width, size_t height,
+bool operator==(const Image2D& lhs, const Image2D& rhs) {
+  if (lhs._width != rhs._width || lhs._height != rhs._height) return false;
+  for (size_t y = 0; y != lhs._height; ++y) {
+    if (!std::equal(lhs._dataPtr[y], lhs._dataPtr[y] + lhs._width,
+                    rhs._dataPtr[y]))
+      return false;
+  }
+  return true;
+}
+
+Image2D Image2D::MakeFiniteCopy() const {
+  Image2D copy = Image2D::MakeUnsetImage(_width, _height);
+  for (size_t y = 0; y != _height; ++y) {
+    std::transform(_dataPtr[y], _dataPtr[y] + _width, copy._dataPtr[y],
+                   [](num_t v) { return std::isfinite(v) ? v : 0.0; });
+  }
+  return copy;
+}
+
+Image2D* Image2D::CreateSetImage(size_t width, size_t height,
                                  num_t initialValue) {
-  Image2D *image = new Image2D(width, height);
+  Image2D* image = new Image2D(width, height);
   image->SetAll(initialValue);
   return image;
 }
 
-Image2D *Image2D::CreateSetImage(size_t width, size_t height,
+Image2D* Image2D::CreateSetImage(size_t width, size_t height,
                                  num_t initialValue, size_t widthCapacity) {
-  Image2D *image = new Image2D(width, height, widthCapacity);
+  Image2D* image = new Image2D(width, height, widthCapacity);
   image->SetAll(initialValue);
   return image;
 }
 
-Image2D Image2D::MakeFromSum(const Image2D &imageA, const Image2D &imageB) {
+Image2D Image2D::MakeFromSum(const Image2D& imageA, const Image2D& imageB) {
   if (imageA.Width() != imageB.Width() || imageA.Height() != imageB.Height())
     throw std::runtime_error("Images do not match in size");
   Image2D image(imageA.Width(), imageA.Height());
@@ -144,14 +163,14 @@ Image2D Image2D::MakeFromSum(const Image2D &imageA, const Image2D &imageB) {
   return image;
 }
 
-Image2D Image2D::MakeFromDiff(const Image2D &imageA, const Image2D &imageB) {
+Image2D Image2D::MakeFromDiff(const Image2D& imageA, const Image2D& imageB) {
   if (imageA.Width() != imageB.Width() || imageA.Height() != imageB.Height())
     throw std::runtime_error("Images do not match in size");
   Image2D image(imageA.Width(), imageA.Height());
-  const float *lhsPtr = &(imageA._dataConsecutive[0]);
-  const float *rhsPtr = &(imageB._dataConsecutive[0]);
-  float *destPtr = &(image._dataConsecutive[0]);
-  const float *end = lhsPtr + imageA._stride * imageA._height;
+  const float* lhsPtr = &(imageA._dataConsecutive[0]);
+  const float* rhsPtr = &(imageB._dataConsecutive[0]);
+  float* destPtr = &(image._dataConsecutive[0]);
+  const float* end = lhsPtr + imageA._stride * imageA._height;
   while (lhsPtr < end) {
 #ifdef USE_INTRINSICS
     _mm_store_ps(destPtr, _mm_sub_ps(_mm_load_ps(lhsPtr), _mm_load_ps(rhsPtr)));
@@ -169,8 +188,8 @@ Image2D Image2D::MakeFromDiff(const Image2D &imageA, const Image2D &imageB) {
 }
 
 void Image2D::SetAll(num_t value) {
-  float *ptr = &_dataConsecutive[0];
-  float *end = ptr + _stride * _height;
+  float* ptr = &_dataConsecutive[0];
+  float* end = ptr + _stride * _height;
   std::fill(ptr, end, value);
 }
 
@@ -232,6 +251,15 @@ num_t Image2D::GetMinimumFinite() const {
     }
   }
   return min;
+}
+
+bool Image2D::AllFinite() const {
+  for (size_t y = 0; y < _height; ++y) {
+    for (size_t x = 0; x < _width; ++x) {
+      if (!std::isfinite(_dataPtr[y][x])) return false;
+    }
+  }
+  return true;
 }
 
 bool Image2D::ContainsOnlyZeros() const {
@@ -298,12 +326,12 @@ void Image2D::NormalizeVariance() {
   }
 }
 
-void Image2D::SaveToFitsFile(const std::string &filename) const {
+void Image2D::SaveToFitsFile(const std::string& filename) const {
   FitsFile file(filename);
   file.Create();
   file.AppendImageHUD(FitsFile::Double64ImageType, _width, _height);
   long bufferSize = (long)_width * (long)_height;
-  double *buffer = new double[bufferSize];
+  double* buffer = new double[bufferSize];
   size_t i = 0;
   for (size_t y = 0; y < _height; ++y) {
     for (size_t x = 0; x < _width; ++x) {
@@ -314,7 +342,7 @@ void Image2D::SaveToFitsFile(const std::string &filename) const {
   try {
     file.WriteImage(0, buffer, bufferSize);
     file.Close();
-  } catch (FitsIOException &exception) {
+  } catch (FitsIOException& exception) {
     delete[] buffer;
     throw;
   }
@@ -333,7 +361,7 @@ size_t Image2D::GetCountAbove(num_t value) const {
 
 num_t Image2D::GetTresholdForCountAbove(size_t count) const {
   const size_t size = _width * _height;
-  num_t *sorted = new num_t[size];
+  num_t* sorted = new num_t[size];
   size_t i = 0;
   for (size_t y = 0; y < _height; ++y) {
     for (size_t x = 0; x < _width; ++x) {
@@ -347,7 +375,7 @@ num_t Image2D::GetTresholdForCountAbove(size_t count) const {
   return v;
 }
 
-void Image2D::CopyData(num_t *destination) const {
+void Image2D::CopyData(num_t* destination) const {
   size_t i = 0;
   for (size_t y = 0; y < _height; ++y) {
     for (size_t x = 0; x < _width; ++x) {
@@ -364,10 +392,10 @@ void Image2D::MultiplyValues(num_t factor) {
   }
 }
 
-void Image2D::SubtractAsRHS(const Image2DCPtr &lhs) {
-  float *thisPtr = &_dataConsecutive[0];
-  const float *otherPtr = &(lhs->_dataConsecutive[0]);
-  float *end = thisPtr + _stride * _height;
+void Image2D::SubtractAsRHS(const Image2DCPtr& lhs) {
+  float* thisPtr = &_dataConsecutive[0];
+  const float* otherPtr = &(lhs->_dataConsecutive[0]);
+  float* end = thisPtr + _stride * _height;
 #ifdef USE_INTRINSICS
   /* #ifdef __AVX__
           while(thisPtr < end)
@@ -467,8 +495,8 @@ Image2D Image2D::Trim(size_t startX, size_t startY, size_t endX,
   size_t width = endX - startX, height = endY - startY;
   Image2D image(width, height);
   for (size_t y = startY; y < endY; ++y) {
-    num_t *newPtr = image._dataPtr[y - startY];
-    num_t *oldPtr = &_dataPtr[y][startX];
+    num_t* newPtr = image._dataPtr[y - startY];
+    num_t* oldPtr = &_dataPtr[y][startX];
     for (size_t x = startX; x < endX; ++x) {
       *newPtr = *oldPtr;
       ++newPtr;
@@ -529,7 +557,7 @@ void Image2D::ResizeWithoutReallocation(size_t newWidth) {
   _width = newWidth;
 }
 
-Image2D &Image2D::operator+=(const Image2D &rhs) {
+Image2D& Image2D::operator+=(const Image2D& rhs) {
   if (Width() != rhs.Width() || Height() != rhs.Height() ||
       Stride() != rhs.Stride())
     throw std::runtime_error("Images do not match in size");

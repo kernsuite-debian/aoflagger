@@ -4,21 +4,27 @@ void Title::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
   initializeMetrics(cairo);
 
   cairo->set_source_rgb(0.0, 0.0, 0.0);
-  cairo->set_font_size(_fontSize);
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_fontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
+  layout->set_text(_text);
+  const Pango::Rectangle extents = layout->get_pixel_ink_extents();
 
-  Cairo::TextExtents extents;
-  cairo->get_text_extents(_text, extents);
-  cairo->move_to(_plotWidth / 2.0 - extents.width / 2.0,
-                 _topMargin + extents.height + 6);
-  cairo->show_text(_text);
+  cairo->move_to(_plotWidth / 2.0 - extents.get_width() / 2.0,
+                 _topMargin + 6 - extents.get_y());
+  layout->show_in_cairo_context(cairo);
 }
 
 void Title::initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo) {
   if (!_metricsAreInitialized) {
-    cairo->set_font_size(_fontSize);
-    Cairo::TextExtents extents;
-    cairo->get_text_extents(_text, extents);
-    _height = extents.height + 12;
+    Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+    Pango::FontDescription fontDescription;
+    fontDescription.set_size(_fontSize * PANGO_SCALE);
+    layout->set_font_description(fontDescription);
+    layout->set_text(_text);
+    const Pango::Rectangle extents = layout->get_pixel_ink_extents();
+    _height = extents.get_height() + 12;
 
     _metricsAreInitialized = true;
   }

@@ -14,11 +14,11 @@
 #include "../quality/statisticsderivator.h"
 
 #include "../util/plot.h"
-#include "../util/progresslistener.h"
+#include "../util/progress/stdoutreporter.h"
 
-void actionCollect(const std::string &filename, Collector::CollectingMode mode,
-                   size_t flaggedTimesteps, std::set<size_t> &&flaggedAntennae,
-                   const char *dataColumnName, size_t intervalStart,
+void actionCollect(const std::string& filename, Collector::CollectingMode mode,
+                   size_t flaggedTimesteps, std::set<size_t>&& flaggedAntennae,
+                   const char* dataColumnName, size_t intervalStart,
                    size_t intervalEnd) {
   StatisticsCollection statisticsCollection;
   HistogramCollection histogramCollection;
@@ -52,11 +52,11 @@ void actionCollect(const std::string &filename, Collector::CollectingMode mode,
   std::cout << "Done.\n";
 }
 
-void actionCollectHistogram(const std::string &filename,
-                            HistogramCollection &histogramCollection,
+void actionCollectHistogram(const std::string& filename,
+                            HistogramCollection& histogramCollection,
                             size_t flaggedTimesteps,
-                            std::set<size_t> &&flaggedAntennae,
-                            const char *dataColumnName) {
+                            std::set<size_t>&& flaggedAntennae,
+                            const char* dataColumnName) {
   std::cout << "Collecting statistics...\n";
 
   StatisticsCollection tempCollection;
@@ -69,7 +69,7 @@ void actionCollectHistogram(const std::string &filename,
   collector.Collect(filename, tempCollection, histogramCollection, reporter);
 }
 
-void printStatistics(std::complex<long double> *complexStat, unsigned count) {
+void printStatistics(std::complex<long double>* complexStat, unsigned count) {
   if (count != 1) std::cout << '[';
   if (count > 0)
     std::cout << complexStat[0].real() << " + " << complexStat[0].imag() << 'i';
@@ -80,7 +80,7 @@ void printStatistics(std::complex<long double> *complexStat, unsigned count) {
   if (count != 1) std::cout << ']';
 }
 
-void printStatistics(unsigned long *stat, unsigned count) {
+void printStatistics(unsigned long* stat, unsigned count) {
   if (count != 1) std::cout << '[';
   if (count > 0) std::cout << stat[0];
   for (unsigned p = 1; p < count; ++p) {
@@ -89,7 +89,7 @@ void printStatistics(unsigned long *stat, unsigned count) {
   if (count != 1) std::cout << ']';
 }
 
-void printStatistics(const DefaultStatistics &statistics) {
+void printStatistics(const DefaultStatistics& statistics) {
   std::cout << "Count=";
   printStatistics(statistics.count, statistics.PolarizationCount());
   std::cout << "\nSum=";
@@ -107,8 +107,8 @@ void printStatistics(const DefaultStatistics &statistics) {
   std::cout << '\n';
 }
 
-void actionQueryGlobalStat(const std::string &kindName,
-                           const std::string &filename) {
+void actionQueryGlobalStat(const std::string& kindName,
+                           const std::string& filename) {
   MSMetaData ms(filename);
   const unsigned polarizationCount = ms.PolarizationCount();
   BandInfo band;
@@ -143,8 +143,8 @@ void actionQueryGlobalStat(const std::string &kindName,
   std::cout << '\n';
 }
 
-void actionQueryFrequencyRange(const std::string &kindName,
-                               const std::string &filename, double startFreqMHz,
+void actionQueryFrequencyRange(const std::string& kindName,
+                               const std::string& filename, double startFreqMHz,
                                double endFreqMHz) {
   MSMetaData ms(filename);
   const unsigned polarizationCount = ms.PolarizationCount();
@@ -170,8 +170,8 @@ void actionQueryFrequencyRange(const std::string &kindName,
   std::cout << '\n';
 }
 
-void actionQueryBaselines(const std::string &kindName,
-                          const std::string &filename) {
+void actionQueryBaselines(const std::string& kindName,
+                          const std::string& filename) {
   MSMetaData ms(filename);
   const unsigned polarizationCount = ms.PolarizationCount();
 
@@ -181,7 +181,7 @@ void actionQueryBaselines(const std::string &kindName,
   QualityTablesFormatter formatter(filename);
   StatisticsCollection collection(polarizationCount);
   collection.Load(formatter);
-  const std::vector<std::pair<unsigned, unsigned> > &baselines =
+  const std::vector<std::pair<unsigned, unsigned>>& baselines =
       collection.BaselineStatistics().BaselineList();
   StatisticsDerivator derivator(collection);
 
@@ -190,7 +190,7 @@ void actionQueryBaselines(const std::string &kindName,
     std::cout << '\t' << kindName << "_POL" << p << "_R\t" << kindName << "_POL"
               << p << "_I";
   std::cout << '\n';
-  for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+  for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
            baselines.begin();
        i != baselines.end(); ++i) {
     const unsigned antenna1 = i->first, antenna2 = i->second;
@@ -204,39 +204,39 @@ void actionQueryBaselines(const std::string &kindName,
   }
 }
 
-void actionQueryFrequency(const std::string &kindName,
-                          const std::string &filename) {
-  const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
+void actionQueryFrequency(const std::string& kindName,
+                          const std::string& filename,
+                          std::optional<size_t> downsample) {
+  const size_t polarizationCount = MSMetaData::PolarizationCount(filename);
   const QualityTablesFormatter::StatisticKind kind =
       QualityTablesFormatter::NameToKind(kindName);
 
   QualityTablesFormatter formatter(filename);
   StatisticsCollection collection(polarizationCount);
   collection.Load(formatter);
-  const std::map<double, DefaultStatistics> &freqStats =
+  if (downsample) collection.LowerFrequencyResolution(*downsample);
+  const std::map<double, DefaultStatistics>& freqStats =
       collection.FrequencyStatistics();
   StatisticsDerivator derivator(collection);
 
   std::cout << "FREQUENCY";
-  for (unsigned p = 0; p < polarizationCount; ++p)
+  for (size_t p = 0; p < polarizationCount; ++p)
     std::cout << '\t' << kindName << "_POL" << p << "_R\t" << kindName << "_POL"
               << p << "_I";
   std::cout << '\n';
-  for (std::map<double, DefaultStatistics>::const_iterator i =
-           freqStats.begin();
-       i != freqStats.end(); ++i) {
-    const double frequency = i->first;
+  for (const std::pair<const double, DefaultStatistics>& freqStat : freqStats) {
+    const double frequency = freqStat.first;
     std::cout << frequency * 1e-6;
     for (unsigned p = 0; p < polarizationCount; ++p) {
       const std::complex<long double> val =
-          derivator.GetComplexStatistic(kind, i->second, p);
+          derivator.GetComplexStatistic(kind, freqStat.second, p);
       std::cout << '\t' << val.real() << '\t' << val.imag();
     }
     std::cout << '\n';
   }
 }
 
-void actionQueryTime(const std::string &kindName, const std::string &filename) {
+void actionQueryTime(const std::string& kindName, const std::string& filename) {
   const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
   const QualityTablesFormatter::StatisticKind kind =
       QualityTablesFormatter::NameToKind(kindName);
@@ -244,7 +244,7 @@ void actionQueryTime(const std::string &kindName, const std::string &filename) {
   QualityTablesFormatter formatter(filename);
   StatisticsCollection collection(polarizationCount);
   collection.Load(formatter);
-  const std::map<double, DefaultStatistics> &timeStats =
+  const std::map<double, DefaultStatistics>& timeStats =
       collection.TimeStatistics();
   StatisticsDerivator derivator(collection);
 
@@ -267,8 +267,8 @@ void actionQueryTime(const std::string &kindName, const std::string &filename) {
   }
 }
 
-void actionQueryAntenna(const std::string &kindName,
-                        const std::string &filename) {
+void actionQueryAntenna(const std::string& kindName,
+                        const std::string& filename) {
   const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
   const QualityTablesFormatter::StatisticKind kind =
       QualityTablesFormatter::NameToKind(kindName);
@@ -285,7 +285,7 @@ void actionQueryAntenna(const std::string &kindName,
     std::cout << '\t' << kindName << "_POL" << p << "_R\t" << kindName << "_POL"
               << p << "_I";
   std::cout << '\n';
-  for (const std::pair<size_t, DefaultStatistics> &s : stats) {
+  for (const std::pair<const size_t, DefaultStatistics>& s : stats) {
     const size_t antenna = s.first;
     std::cout << antenna;
     for (unsigned p = 0; p < polarizationCount; ++p) {
@@ -297,7 +297,7 @@ void actionQueryAntenna(const std::string &kindName,
   }
 }
 
-void actionSummarize(const std::string &filename) {
+void actionSummarize(const std::string& filename) {
   StatisticsCollection statisticsCollection;
   HistogramCollection histogramCollection;
   MSMetaData ms(filename);
@@ -333,7 +333,7 @@ void actionSummarize(const std::string &filename) {
   printStatistics(statistics);
 }
 
-void actionSummarizeRFI(const std::string &filename) {
+void actionSummarizeRFI(const std::string& filename) {
   MSMetaData ms(filename);
   const unsigned polarizationCount = ms.PolarizationCount();
   const BandInfo band = ms.GetBandInfo(0);
@@ -360,8 +360,8 @@ void actionSummarizeRFI(const std::string &filename) {
             << '\n';
 }
 
-void WriteAntennae(casacore::MeasurementSet &ms,
-                   const std::vector<AntennaInfo> &antennae) {
+void WriteAntennae(casacore::MeasurementSet& ms,
+                   const std::vector<AntennaInfo>& antennae) {
   casacore::MSAntenna antTable = ms.antenna();
   casacore::ScalarColumn<casacore::String> nameCol =
       casacore::ScalarColumn<casacore::String>(
@@ -386,7 +386,7 @@ void WriteAntennae(casacore::MeasurementSet &ms,
   antTable.addRow(antennae.size());
   for (std::vector<AntennaInfo>::const_iterator antPtr = antennae.begin();
        antPtr != antennae.end(); ++antPtr) {
-    const AntennaInfo &ant = *antPtr;
+    const AntennaInfo& ant = *antPtr;
     nameCol.put(rowIndex, ant.name);
     stationCol.put(rowIndex, ant.station);
     typeCol.put(rowIndex, "");
@@ -401,7 +401,7 @@ void WriteAntennae(casacore::MeasurementSet &ms,
   }
 }
 
-void WritePolarizationForLinearPols(casacore::MeasurementSet &ms,
+void WritePolarizationForLinearPols(casacore::MeasurementSet& ms,
                                     bool flagRow = false) {
   casacore::MSPolarization polTable = ms.polarization();
   casacore::ScalarColumn<int> numCorrCol = casacore::ScalarColumn<int>(
@@ -447,10 +447,10 @@ void WritePolarizationForLinearPols(casacore::MeasurementSet &ms,
   flagRowCol.put(rowIndex, flagRow);
 }
 
-void actionCombine(const std::string &outFilename,
-                   const std::vector<std::string> &inFilenames) {
+void actionCombine(const std::string& outFilename,
+                   const std::vector<std::string>& inFilenames) {
   if (!inFilenames.empty()) {
-    const std::string &firstInFilename = *inFilenames.begin();
+    const std::string& firstInFilename = *inFilenames.begin();
     std::cout << "Combining " << inFilenames.size() << " sets into "
               << outFilename << '\n';
 
@@ -477,8 +477,8 @@ void actionCombine(const std::string &outFilename,
     }
     // Create main table
     casacore::TableDesc tableDesc = casacore::MS::requiredTableDesc();
-    casacore::ArrayColumnDesc<std::complex<float> > dataColumnDesc =
-        casacore::ArrayColumnDesc<std::complex<float> >(
+    casacore::ArrayColumnDesc<std::complex<float>> dataColumnDesc =
+        casacore::ArrayColumnDesc<std::complex<float>>(
             casacore::MS::columnName(casacore::MSMainEnums::DATA));
     tableDesc.addColumn(dataColumnDesc);
     casacore::SetupNewTable newTab(outFilename, tableDesc,
@@ -499,22 +499,22 @@ void actionCombine(const std::string &outFilename,
   }
 }
 
-void actionRemove(const std::string &filename) {
+void actionRemove(const std::string& filename) {
   QualityTablesFormatter formatter(filename);
   formatter.RemoveAllQualityTables();
 }
 
 void printRFISlopeForHistogram(const std::map<HistogramCollection::AntennaPair,
-                                              LogHistogram *> &histogramMap,
+                                              LogHistogram*>& histogramMap,
                                char polarizationSymbol,
-                               const AntennaInfo *antennae) {
-  for (std::map<HistogramCollection::AntennaPair,
-                LogHistogram *>::const_iterator i = histogramMap.begin();
+                               const AntennaInfo* antennae) {
+  for (std::map<HistogramCollection::AntennaPair, LogHistogram*>::const_iterator
+           i = histogramMap.begin();
        i != histogramMap.end(); ++i) {
     const unsigned a1 = i->first.first, a2 = i->first.second;
     Baseline baseline(antennae[a1], antennae[a2]);
     double length = baseline.Distance();
-    const LogHistogram &histogram = *i->second;
+    const LogHistogram& histogram = *i->second;
     double start, end;
     histogram.GetRFIRegion(start, end);
     double slope = histogram.NormalizedSlope(start, end);
@@ -524,8 +524,8 @@ void printRFISlopeForHistogram(const std::map<HistogramCollection::AntennaPair,
   }
 }
 
-void actionHistogram(const std::string &filename, const std::string &query,
-                     const char *dataColumnName) {
+void actionHistogram(const std::string& filename, const std::string& query,
+                     const char* dataColumnName) {
   HistogramTablesFormatter histogramFormatter(filename);
   const unsigned polarizationCount = MSMetaData::PolarizationCount(filename);
   if (query == "rfislope") {
@@ -549,15 +549,15 @@ void actionHistogram(const std::string &filename, const std::string &query,
     for (size_t a = 0; a < antennaCount; ++a)
       antennae[a] = set.GetAntennaInfo(a);
 
-    HistogramCollection *summedCollection =
+    HistogramCollection* summedCollection =
         collection.CreateSummedPolarizationCollection();
-    const std::map<HistogramCollection::AntennaPair, LogHistogram *>
-        &histogramMap = summedCollection->GetRFIHistogram(0);
+    const std::map<HistogramCollection::AntennaPair, LogHistogram*>&
+        histogramMap = summedCollection->GetRFIHistogram(0);
     printRFISlopeForHistogram(histogramMap, '*', &antennae[0]);
     delete summedCollection;
     for (unsigned p = 0; p < polarizationCount; ++p) {
-      const std::map<HistogramCollection::AntennaPair, LogHistogram *>
-          &histogramMap = collection.GetRFIHistogram(p);
+      const std::map<HistogramCollection::AntennaPair, LogHistogram*>&
+          histogramMap = collection.GetRFIHistogram(p);
       printRFISlopeForHistogram(histogramMap, '0' + p, &antennae[0]);
     }
   } else if (query == "remove") {
@@ -567,7 +567,7 @@ void actionHistogram(const std::string &filename, const std::string &query,
   }
 }
 
-void printSyntax(std::ostream &stream, char *argv[]) {
+void printSyntax(std::ostream& stream, char* argv[]) {
   stream << "Syntax: " << argv[0]
          << " <action> [options]\n\n"
             "Possible actions:\n"
@@ -596,7 +596,7 @@ void printSyntax(std::ostream &stream, char *argv[]) {
             "sensitive. Run 'aoquality liststats' for a full list.\n";
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #ifdef HAS_LOFARSTMAN
   register_lofarstman();
 #endif  // HAS_LOFARSTMAN
@@ -695,7 +695,7 @@ int main(int argc, char *argv[]) {
       } else {
         int argi = 2;
         bool histograms = false, timeFrequency = false;
-        const char *dataColumnName = "DATA";
+        const char* dataColumnName = "DATA";
         size_t intervalStart = 0, intervalEnd = 0;
         while (argi < argc && argv[argi][0] == '-') {
           std::string p = &argv[argi][1];
@@ -799,12 +799,27 @@ int main(int argc, char *argv[]) {
         actionQueryBaselines(argv[2], argv[3]);
       }
     } else if (action == "query_f") {
-      if (argc != 4) {
-        std::cerr
-            << "Syntax for query times: 'aoquality query_t <KIND> <MS>'\n";
+      if (argc < 4) {
+        std::cerr << "Syntax for query times: 'aoquality query_t [options] "
+                     "<KIND> <MS>'\n"
+                     "Options:\n"
+                     "  -downsample <n_bins>\n"
+                     "    Average down the statistics in frequency to the "
+                     "given nr of bins.\n";
         return -1;
       } else {
-        actionQueryFrequency(argv[2], argv[3]);
+        size_t argi = 2;
+        std::optional<size_t> downsample;
+        while (argv[argi][0] == '-') {
+          std::string p(&argv[argi][1]);
+          if (p == "downsample") {
+            ++argi;
+            downsample = std::atoi(argv[argi]);
+          } else
+            throw std::runtime_error("Invalid parameter: " + p);
+          ++argi;
+        }
+        actionQueryFrequency(argv[argi], argv[argi + 1], downsample);
         return 0;
       }
     } else if (action == "query_fr") {

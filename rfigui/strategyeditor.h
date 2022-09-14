@@ -16,6 +16,10 @@ class StrategyEditor : public Gtk::ScrolledWindow {
     updateHighlighting();
   }
 
+  void ResetChangedStatus() { _isChanged = false; }
+
+  bool IsChanged() { return _isChanged; }
+
  private:
   struct ParseInfo {
     enum { Clear, FunctionStart } state;
@@ -29,9 +33,11 @@ class StrategyEditor : public Gtk::ScrolledWindow {
   void updateChanges() {
     _highlightLine = 0;
     updateHighlighting();
+    _isChanged = true;
   }
   void updateHighlighting();
   std::size_t _highlightLine;
+  bool _isChanged;
 };
 
 #endif

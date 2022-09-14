@@ -5,6 +5,8 @@
 
 #include "../algorithms/restorechannelrange.h"
 
+using algorithms::RestoreChannelRange;
+
 int Data::clear_mask(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
@@ -206,14 +208,19 @@ int Data::get_complex_state(lua_State* L) {
   switch (data->TFData().ComplexRepresentation()) {
     case TimeFrequencyData::PhasePart:
       lua_pushstring(L, "phase");
+      break;
     case TimeFrequencyData::AmplitudePart:
       lua_pushstring(L, "amplitude");
+      break;
     case TimeFrequencyData::RealPart:
       lua_pushstring(L, "real");
+      break;
     case TimeFrequencyData::ImaginaryPart:
       lua_pushstring(L, "imaginary");
+      break;
     case TimeFrequencyData::ComplexParts:
       lua_pushstring(L, "complex");
+      break;
   }
   return 1;
 }
@@ -284,6 +291,17 @@ int Data::has_metadata(lua_State* L) {
   return 1;
 }
 
+int Data::invert_mask(lua_State* L) {
+  aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 1, "AOFlaggerData"));
+  for (size_t i = 0; i != data->TFData().MaskCount(); ++i) {
+    Mask2DPtr mask = Mask2D::MakePtr(*data->TFData().GetMask(i));
+    mask->Invert();
+    data->TFData().SetMask(i, std::move(mask));
+  }
+  return 0;
+}
+
 int Data::is_auto_correlation(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
@@ -347,6 +365,41 @@ int Data::set_mask_for_channel_range(lua_State* L) {
   } catch (std::exception& e) {
     return luaL_error(
         L, (std::string("set_mask_for_channel_range(): ") + e.what()).c_str());
+  }
+  return 0;
+}
+
+int Data::set_masked_visibilities(lua_State* L) {
+  aoflagger_lua::Data* lhs = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 1, "AOFlaggerData"));
+  aoflagger_lua::Data* rhs = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 2, "AOFlaggerData"));
+  if (rhs->TFData().ImageCount() != lhs->TFData().ImageCount() ||
+      rhs->TFData().PolarizationCount() != lhs->TFData().PolarizationCount()) {
+    std::string err =
+        "set_masked_visibilities() was executed with inconsistent data types: "
+        "right "
+        "hand side had " +
+        std::to_string(rhs->TFData().ImageCount()) + ", destination had " +
+        std::to_string(lhs->TFData().ImageCount());
+    return luaL_error(L, err.c_str());
+  }
+  for (size_t p = 0; p != rhs->TFData().PolarizationCount(); ++p) {
+    TimeFrequencyData lPolData = lhs->TFData().MakeFromPolarizationIndex(p);
+    const TimeFrequencyData rPolData =
+        rhs->TFData().MakeFromPolarizationIndex(p);
+    const Mask2DCPtr mask(lPolData.GetSingleMask());
+    for (size_t i = 0; i != rhs->TFData().ImageCount(); ++i) {
+      const Image2DCPtr source(rhs->TFData().GetImage(i));
+      Image2DPtr dest(Image2D::MakePtr(*lhs->TFData().GetImage(i)));
+      for (size_t y = 0; y != source->Height(); ++y) {
+        for (size_t x = 0; x != source->Width(); ++x) {
+          if (mask->Value(x, y)) dest->SetValue(x, y, source->Value(x, y));
+        }
+      }
+      lPolData.SetImage(i, std::move(dest));
+    }
+    lhs->TFData().SetPolarizationData(p, std::move(lPolData));
   }
   return 0;
 }

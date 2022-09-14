@@ -32,7 +32,7 @@ unsigned HistogramTablesFormatter::QueryTypeIndex(enum HistogramType type,
 
 bool HistogramTablesFormatter::QueryTypeIndex(enum HistogramType type,
                                               unsigned polarizationIndex,
-                                              unsigned &destTypeIndex) {
+                                              unsigned& destTypeIndex) {
   openTypeTable(false);
   casacore::ROScalarColumn<int> typeColumn(*_typeTable, ColumnNameType);
   casacore::ROScalarColumn<int> polarizationColumn(*_typeTable,
@@ -54,7 +54,7 @@ bool HistogramTablesFormatter::QueryTypeIndex(enum HistogramType type,
 }
 
 bool HistogramTablesFormatter::hasOneEntry(unsigned typeIndex) {
-  casacore::Table &casaTable = getTable(HistogramCountTable, false);
+  casacore::Table& casaTable = getTable(HistogramCountTable, false);
   casacore::ROScalarColumn<int> typeColumn(casaTable, ColumnNameType);
 
   const unsigned nrRow = casaTable.nrow();
@@ -128,7 +128,7 @@ unsigned HistogramTablesFormatter::StoreType(enum HistogramType type,
 }
 
 unsigned HistogramTablesFormatter::findFreeTypeIndex(
-    casacore::Table &typeTable) {
+    casacore::Table& typeTable) {
   int maxIndex = 0;
 
   casacore::ROScalarColumn<int> typeColumn(typeTable, ColumnNameType);
@@ -142,8 +142,8 @@ unsigned HistogramTablesFormatter::findFreeTypeIndex(
 }
 
 void HistogramTablesFormatter::openTable(enum TableKind table, bool needWrite,
-                                         casacore::Table **tablePtr) {
-  if (*tablePtr == 0) {
+                                         casacore::Table** tablePtr) {
+  if (*tablePtr == nullptr) {
     openMainTable(false);
     *tablePtr = new casacore::Table(
         _measurementSet->keywordSet().asTable(TableName(table)));
@@ -193,7 +193,7 @@ void HistogramTablesFormatter::removeTypeEntry(enum HistogramType type,
 }
 
 void HistogramTablesFormatter::removeEntries(enum TableKind table) {
-  casacore::Table &casaTable = getTable(table, true);
+  casacore::Table& casaTable = getTable(table, true);
   const unsigned nrRow = casaTable.nrow();
   for (int i = nrRow - 1; i >= 0; --i) {
     casaTable.removeRow(i);
@@ -201,8 +201,8 @@ void HistogramTablesFormatter::removeEntries(enum TableKind table) {
 }
 
 void HistogramTablesFormatter::QueryHistogram(
-    unsigned typeIndex, std::vector<HistogramItem> &histogram) {
-  casacore::Table &table(getTable(HistogramCountTable, false));
+    unsigned typeIndex, std::vector<HistogramItem>& histogram) {
+  casacore::Table& table(getTable(HistogramCountTable, false));
   const unsigned nrRow = table.nrow();
 
   casacore::ROScalarColumn<int> typeColumn(table, ColumnNameType);
@@ -222,7 +222,7 @@ void HistogramTablesFormatter::QueryHistogram(
 }
 
 void HistogramTablesFormatter::openMainTable(bool needWrite) {
-  if (_measurementSet == 0) {
+  if (_measurementSet == nullptr) {
     if (needWrite)
       _measurementSet =
           new casacore::Table(_measurementSetName, casacore::Table::Update);

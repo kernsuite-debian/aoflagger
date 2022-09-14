@@ -15,14 +15,23 @@ class IndirectBaselineReader : public BaselineReader {
   explicit IndirectBaselineReader(const std::string& msFile);
   ~IndirectBaselineReader();
 
+  bool IsModified() const override {
+    return reordered_data_files_have_changed_ ||
+           reordered_flag_files_have_changed_;
+  }
+
+  void WriteToMs() override;
+
+  void PrepareReadWrite(ProgressListener& progress) override;
+
   virtual void PerformReadRequests(
       class ProgressListener& progress) final override;
   virtual void PerformFlagWriteRequests() final override;
   virtual void PerformDataWriteTask(std::vector<Image2DCPtr> _realImages,
                                     std::vector<Image2DCPtr> _imaginaryImages,
-                                    int antenna1, int antenna2,
-                                    int spectralWindow,
-                                    unsigned sequenceId) final override;
+                                    size_t antenna1, size_t antenna2,
+                                    size_t spectralWindow,
+                                    size_t sequenceId) final override;
 
   virtual size_t GetMinRecommendedBufferSize(
       size_t /*threadCount*/) final override {
@@ -33,7 +42,7 @@ class IndirectBaselineReader : public BaselineReader {
     return 2;
   }
 
-  void SetReadUVW(bool readUVW) { _readUVW = readUVW; }
+  void SetReadUVW(bool readUVW) { read_uvw_ = readUVW; }
 
  private:
   struct ReorderInfo {
@@ -51,7 +60,7 @@ class IndirectBaselineReader : public BaselineReader {
         : _antennaCount(antennaCount), _table(sequenceCount) {
       size_t maxBaselineCount = antennaCount * antennaCount;
       for (size_t i = 0; i != sequenceCount; ++i) {
-        std::vector<std::vector<size_t> >& spwTable = _table[i];
+        std::vector<std::vector<size_t>>& spwTable = _table[i];
         spwTable.resize(spectralWindowCount);
         for (size_t j = 0; j != spectralWindowCount; ++j) {
           std::vector<size_t>& baselTable = spwTable[j];
@@ -67,7 +76,7 @@ class IndirectBaselineReader : public BaselineReader {
 
    private:
     size_t _antennaCount;
-    std::vector<std::vector<std::vector<size_t> > > _table;
+    std::vector<std::vector<std::vector<size_t>>> _table;
   };
   void reorderMS(class ProgressListener& progress);
   void reorderFull(class ProgressListener& progress);
@@ -83,19 +92,19 @@ class IndirectBaselineReader : public BaselineReader {
 
   void removeTemporaryFiles();
 
-  static void preAllocate(const char* filename, size_t fileSize);
-  static const char* DataFilename() { return "aoflagger-data.tmp"; }
-  static const char* FlagFilename() { return "aoflagger-flags.tmp"; }
-  static const char* MetaFilename() { return "ao-msinfo.tmp"; }
+  static void preAllocate(const std::string& filename, size_t fileSize);
 
-  DirectBaselineReader _directReader;
-  std::unique_ptr<SeqIndexLookupTable> _seqIndexTable;
-  std::vector<size_t> _filePositions;
-  bool _msIsReordered;
-  bool _removeReorderedFiles;
-  bool _reorderedDataFilesHaveChanged;
-  bool _reorderedFlagFilesHaveChanged;
-  bool _readUVW;
+  DirectBaselineReader direct_reader_;
+  std::unique_ptr<SeqIndexLookupTable> sequence_index_table_;
+  std::vector<size_t> file_positions_;
+  std::string data_filename_;
+  std::string flag_filename_;
+  std::string meta_filename_;
+  bool ms_is_reordered_;
+  bool remove_reordered_files_;
+  bool reordered_data_files_have_changed_;
+  bool reordered_flag_files_have_changed_;
+  bool read_uvw_;
 };
 
 #endif  // INDIRECTBASELINEREADER_H

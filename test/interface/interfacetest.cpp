@@ -4,7 +4,11 @@
 
 #include "../../algorithms/testsetgenerator.h"
 
+#include "../../structures/timefrequencydata.h"
+
 #include <version.h>
+
+using algorithms::TestSetGenerator;
 
 BOOST_AUTO_TEST_SUITE(interface, *boost::unit_test::label("interface"))
 
@@ -55,9 +59,11 @@ BOOST_AUTO_TEST_CASE(run_default_strategy_with_input) {
 BOOST_AUTO_TEST_CASE(runs) {
   size_t width = 200, height = 50;
   Mask2D gtMask = Mask2D::MakeSetMask<false>(width, height);
-  Image2D real = TestSetGenerator::MakeTestSet(3, gtMask, width, height),
-          imag = TestSetGenerator::MakeTestSet(3, gtMask, width, height);
-
+  TimeFrequencyData data = TestSetGenerator::MakeTestSet(
+      algorithms::RFITestSet::FullBandBursts,
+      algorithms::BackgroundTestSet::Empty, width, height);
+  Image2DCPtr real = data.GetImage(0);
+  Image2DCPtr imag = data.GetImage(1);
   aoflagger::AOFlagger flagger;
   std::string strategyPath =
       flagger.FindStrategyFile(aoflagger::TelescopeId::GENERIC_TELESCOPE);
@@ -69,9 +75,9 @@ BOOST_AUTO_TEST_CASE(runs) {
   float* realBuffer = imageSet.ImageBuffer(0);
   float* imagBuffer = imageSet.ImageBuffer(1);
   for (size_t y = 0; y != height; ++y) {
-    std::copy_n(real.ValuePtr(0, y), width,
+    std::copy_n(real->ValuePtr(0, y), width,
                 realBuffer + y * imageSet.HorizontalStride());
-    std::copy_n(imag.ValuePtr(0, y), width,
+    std::copy_n(imag->ValuePtr(0, y), width,
                 imagBuffer + y * imageSet.HorizontalStride());
     std::copy_n(gtMask.ValuePtr(0, y), width,
                 inputMask.Buffer() + y * inputMask.HorizontalStride());

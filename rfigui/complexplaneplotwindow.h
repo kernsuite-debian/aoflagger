@@ -15,8 +15,8 @@
 
 class ComplexPlanePlotWindow : public Gtk::Window {
  public:
-  ComplexPlanePlotWindow(class RFIGuiWindow &rfiGuiWindow,
-                         class PlotManager &plotManager);
+  ComplexPlanePlotWindow(class RFIGuiWindow& rfiGuiWindow,
+                         class PlotManager& plotManager);
   ~ComplexPlanePlotWindow();
 
  private:
@@ -55,8 +55,8 @@ class ComplexPlanePlotWindow : public Gtk::Window {
   }
   void setDetailsLabel();
 
-  class RFIGuiWindow &_rfiGuiWindow;
-  class PlotManager &_plotManager;
+  class RFIGuiWindow& _rfiGuiWindow;
+  class PlotManager& _plotManager;
   Gtk::Frame _detailsFrame;
   Gtk::VBox _mainBox, _detailsBox;
   Gtk::Label _detailsLabel, _xPositionLabel, _yPositionLabel, _lengthLabel,

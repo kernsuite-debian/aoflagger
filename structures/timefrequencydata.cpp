@@ -4,22 +4,22 @@
 #include "../util/ffttools.h"
 
 Image2DCPtr TimeFrequencyData::GetAbsoluteFromComplex(
-    const Image2DCPtr &real, const Image2DCPtr &imag) const {
+    const Image2DCPtr& real, const Image2DCPtr& imag) const {
   return Image2DPtr(FFTTools::CreateAbsoluteImage(*real, *imag));
 }
 
-Image2DCPtr TimeFrequencyData::GetSum(const Image2DCPtr &left,
-                                      const Image2DCPtr &right) const {
+Image2DCPtr TimeFrequencyData::GetSum(const Image2DCPtr& left,
+                                      const Image2DCPtr& right) const {
   return StokesImager::CreateSum(left, right);
 }
 
-Image2DCPtr TimeFrequencyData::GetNegatedSum(const Image2DCPtr &left,
-                                             const Image2DCPtr &right) const {
+Image2DCPtr TimeFrequencyData::GetNegatedSum(const Image2DCPtr& left,
+                                             const Image2DCPtr& right) const {
   return StokesImager::CreateNegatedSum(left, right);
 }
 
-Image2DCPtr TimeFrequencyData::GetDifference(const Image2DCPtr &left,
-                                             const Image2DCPtr &right) const {
+Image2DCPtr TimeFrequencyData::GetDifference(const Image2DCPtr& left,
+                                             const Image2DCPtr& right) const {
   return StokesImager::CreateDifference(left, right);
 }
 
@@ -38,7 +38,7 @@ Mask2DCPtr TimeFrequencyData::GetCombinedMask() const {
     Mask2DPtr mask(new Mask2D(*GetMask(0)));
     size_t i = 0;
     while (i != MaskCount()) {
-      const Mask2DCPtr &curMask = GetMask(i);
+      const Mask2DCPtr& curMask = GetMask(i);
       for (unsigned y = 0; y < mask->Height(); ++y) {
         for (unsigned x = 0; x < mask->Width(); ++x) {
           bool v = curMask->Value(x, y);
@@ -76,8 +76,8 @@ TimeFrequencyData TimeFrequencyData::Make(
     data._complexRepresentation = representation;
     data._data.resize(_data.size());
     for (size_t i = 0; i != _data.size(); ++i) {
-      const PolarizedTimeFrequencyData &source = _data[i];
-      PolarizedTimeFrequencyData &dest = data._data[i];
+      const PolarizedTimeFrequencyData& source = _data[i];
+      PolarizedTimeFrequencyData& dest = data._data[i];
       dest._polarization = source._polarization;
       dest._flagging = source._flagging;
       switch (representation) {
@@ -110,7 +110,7 @@ TimeFrequencyData TimeFrequencyData::Make(
 }
 
 TimeFrequencyData TimeFrequencyData::MakeFromComplexCombination(
-    const TimeFrequencyData &real, const TimeFrequencyData &imaginary) {
+    const TimeFrequencyData& real, const TimeFrequencyData& imaginary) {
   if (real.ComplexRepresentation() == ComplexParts ||
       imaginary.ComplexRepresentation() == ComplexParts)
     throw std::runtime_error(
@@ -133,8 +133,8 @@ TimeFrequencyData TimeFrequencyData::MakeFromComplexCombination(
 }
 
 TimeFrequencyData TimeFrequencyData::MakeFromPolarizationCombination(
-    const TimeFrequencyData &xx, const TimeFrequencyData &xy,
-    const TimeFrequencyData &yx, const TimeFrequencyData &yy) {
+    const TimeFrequencyData& xx, const TimeFrequencyData& xy,
+    const TimeFrequencyData& yx, const TimeFrequencyData& yy) {
   if (xx.ComplexRepresentation() != xy.ComplexRepresentation() ||
       xx.ComplexRepresentation() != yx.ComplexRepresentation() ||
       xx.ComplexRepresentation() != yy.ComplexRepresentation())
@@ -155,7 +155,9 @@ TimeFrequencyData TimeFrequencyData::MakeFromPolarizationCombination(
 }
 
 TimeFrequencyData TimeFrequencyData::MakeFromPolarizationCombination(
-    const TimeFrequencyData &first, const TimeFrequencyData &second) {
+    const TimeFrequencyData& first, const TimeFrequencyData& second) {
+  if (first.IsEmpty()) return second;
+  if (second.IsEmpty()) return first;
   if (first.ComplexRepresentation() != second.ComplexRepresentation())
     throw std::runtime_error(
         "Trying to create polarization combination from data with different "
@@ -174,7 +176,7 @@ void TimeFrequencyData::SetImagesToZero() {
         Image2D::CreateZeroImagePtr(ImageWidth(), ImageHeight());
     Mask2DPtr mask =
         Mask2D::CreateSetMaskPtr<false>(ImageWidth(), ImageHeight());
-    for (PolarizedTimeFrequencyData &data : _data) {
+    for (PolarizedTimeFrequencyData& data : _data) {
       data._images[0] = zeroImage;
       if (data._images[1]) data._images[1] = zeroImage;
       data._flagging = mask;
@@ -183,7 +185,7 @@ void TimeFrequencyData::SetImagesToZero() {
 }
 
 void TimeFrequencyData::MultiplyImages(long double factor) {
-  for (PolarizedTimeFrequencyData &data : _data) {
+  for (PolarizedTimeFrequencyData& data : _data) {
     if (data._images[0]) {
       Image2DPtr newImage(new Image2D(*data._images[0]));
       newImage->MultiplyValues(factor);
@@ -197,7 +199,7 @@ void TimeFrequencyData::MultiplyImages(long double factor) {
   }
 }
 
-void TimeFrequencyData::JoinMask(const TimeFrequencyData &other) {
+void TimeFrequencyData::JoinMask(const TimeFrequencyData& other) {
   if (other.MaskCount() == 0) {
     // Nothing to be done; other has no flags
   } else if (other.MaskCount() == MaskCount()) {

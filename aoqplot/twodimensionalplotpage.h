@@ -5,8 +5,8 @@
 
 #include "../quality/qualitytablesformatter.h"
 
-#include "../plot/plot2d.h"
 #include "../plot/plotwidget.h"
+#include "../plot/xyplot.h"
 
 #include "plotsheet.h"
 

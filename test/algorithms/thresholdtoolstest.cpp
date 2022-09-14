@@ -4,6 +4,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+using algorithms::ThresholdTools;
+
 BOOST_AUTO_TEST_SUITE(threshold_tools, *boost::unit_test::label("algorithms"))
 
 BOOST_AUTO_TEST_CASE(winsorized_masked_mean_var) {

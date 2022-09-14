@@ -2,12 +2,10 @@
 
 #include <set>
 
-#include "../../msio/parmtable.h"
+#include "../msio/parmtable.h"
 
-namespace rfiStrategy {
-ParmImageSet::~ParmImageSet() {
-  if (_parmTable != 0) delete _parmTable;
-}
+namespace imagesets {
+ParmImageSet::~ParmImageSet() { delete _parmTable; }
 
 void ParmImageSet::Initialize() {
   delete _parmTable;
@@ -18,8 +16,8 @@ void ParmImageSet::Initialize() {
     _antennas.push_back(*i);
 }
 
-TimeFrequencyData *ParmImageSet::LoadData(const ImageSetIndex &index) {
+TimeFrequencyData* ParmImageSet::LoadData(const ImageSetIndex& index) {
   const std::string antenna = _antennas[index.Value()];
   return new TimeFrequencyData(_parmTable->Read(antenna));
 }
-}  // namespace rfiStrategy
+}  // namespace imagesets

@@ -35,8 +35,9 @@ class RFIGuiMenu {
 
   // View
   sigc::signal<void> OnViewMode, OnViewData, OnViewStrategy, OnViewTimePlot,
-      OnImagePropertiesPressed, OnToggleFlags, OnHightlightPressed, OnZoomFit,
-      OnZoomIn, OnZoomOut, OnShowStats;
+      OnImagePropertiesPressed, OnToggleFlags, OnHightlightPressed;
+  sigc::signal<void> OnZoomFit, OnZoomIn, OnZoomOut, OnZoomSelect;
+  sigc::signal<void> OnShowStats;
 
   // Strategy
   sigc::signal<void> OnExecutePythonStrategy, OnExecuteLuaStrategy,
@@ -67,10 +68,6 @@ class RFIGuiMenu {
   sigc::signal<void> OnLoadMedianBaselinePressed;
 
   // Simulate
-  sigc::signal<void> OnGaussianTestSets;
-  sigc::signal<void> OnRayleighTestSets;
-  sigc::signal<void> OnZeroTestSets;
-
   sigc::signal<void> OnOpenTestSetA;
   sigc::signal<void> OnOpenTestSetB;
   sigc::signal<void> OnOpenTestSetC;
@@ -80,22 +77,6 @@ class RFIGuiMenu {
   sigc::signal<void> OnOpenTestSetG;
   sigc::signal<void> OnOpenTestSetH;
   sigc::signal<void> OnOpenTestSetNoise;
-  sigc::signal<void> OnOpenTestSet3Model;
-  sigc::signal<void> OnOpenTestSet5Model;
-  sigc::signal<void> OnOpenTestSetNoise3Model;
-  sigc::signal<void> OnOpenTestSetNoise5Model;
-  sigc::signal<void> OnOpenTestSetBStrong;
-  sigc::signal<void> OnOpenTestSetBWeak;
-  sigc::signal<void> OnOpenTestSetBAligned;
-
-  sigc::signal<void> OnOpenTestSetGaussianBroadband;
-  sigc::signal<void> OnOpenTestSetSinusoidalBroadband;
-  sigc::signal<void> OnOpenTestSetSlewedGaussianBroadband;
-  sigc::signal<void> OnOpenTestSetBurstBroadband;
-  sigc::signal<void> OnOpenTestSetRFIDistributionLow;
-  sigc::signal<void> OnOpenTestSetRFIDistributionMid;
-  sigc::signal<void> OnOpenTestSetRFIDistributionHigh;
-  sigc::signal<void> OnOpenTestSetSpike;
 
   sigc::signal<void> OnAddStaticFringe;
   sigc::signal<void> OnAdd1SigmaFringe;
@@ -106,13 +87,7 @@ class RFIGuiMenu {
   sigc::signal<void> OnAddNaNs;
   sigc::signal<void> OnMultiplyData;
 
-  sigc::signal<void> OnSimulateCorrelation;
-  sigc::signal<void> OnSimulateSourceSetA;
-  sigc::signal<void> OnSimulateSourceSetB;
-  sigc::signal<void> OnSimulateSourceSetC;
-  sigc::signal<void> OnSimulateSourceSetD;
-  sigc::signal<void> OnSimulateOffAxisSource;
-  sigc::signal<void> OnSimulateOnAxisSource;
+  sigc::signal<void> OnSimulate;
 
   // Data
   sigc::signal<void> OnVisualizedToOriginalPressed;
@@ -139,6 +114,9 @@ class RFIGuiMenu {
   sigc::signal<void> OnSubtractDataFromMem;
   sigc::signal<void> OnClearOriginalFlagsPressed;
   sigc::signal<void> OnClearAltFlagsPressed;
+
+  sigc::signal<void> OnTemporalAveragingPressed;
+  sigc::signal<void> OnSpectralAveragingPressed;
 
   // Segmentation
   sigc::signal<void> OnSegment;
@@ -189,13 +167,6 @@ class RFIGuiMenu {
   void SetShowQQSensitive(bool sensitive) {
     _tbDisplayQQ.set_sensitive(sensitive);
   }
-
-  bool SimulateNCPActive() const { return _miSimNCP.get_active(); }
-  bool SimulateB1834Active() const { return _miSimB1834.get_active(); }
-
-  bool Simulate16ChActive() const { return _miSim16channels.get_active(); }
-  bool Simulate64ChActive() const { return _miSim64channels.get_active(); }
-  bool SimFixBandwidthActive() const { return _miSimFixBandwidth.get_active(); }
 
   void SetZoomToFitSensitive(bool sensitive) {
     _tbZoomFit.set_sensitive(sensitive);
@@ -326,8 +297,8 @@ class RFIGuiMenu {
       _menuSimulate, _menuData, _menuSelectComplex, _menuSelectStokes,
       _menuSelectCircular, _menuSelectLinear, _menuSegmentation,
       _menuRecentFiles;
-  Gtk::MenuItem _miFile, _miView, _miStrategy, _miPlot, _miBrowse, _miSimulate,
-      _miData;
+  Gtk::MenuItem _miFile, _miView, _miStrategy, _miPlot, _miBrowse,
+      _miSimulateMenu, _miData;
   ImgMenuItem _miRecentFiles;
 
   // File menu
@@ -348,6 +319,7 @@ class RFIGuiMenu {
   ImgMenuItem _miViewOriginalFlags, _miViewAlternativeFlags;
   Gtk::SeparatorMenuItem _miViewSep1, _miViewSep2, _miViewSep3;
   ImgMenuItem _miViewZoomFit, _miViewZoomIn, _miViewZoomOut;
+  Gtk::MenuItem _miViewSelectZoom;
   Gtk::MenuItem _miViewStats;
 
   // Strategy menu
@@ -378,20 +350,11 @@ class RFIGuiMenu {
       _miBrowseMedianBaseline, _miBrowseShortestBaseline;
 
   // Simulate menu
+  Gtk::MenuItem _miSimulate;
   Gtk::Menu _menuTestSets;
   Gtk::MenuItem _miTestSetSubMenu;
-  Gtk::SeparatorMenuItem _miTestSep1;
-  Gtk::RadioButtonGroup _testSetGroup;
-  Gtk::RadioMenuItem _miTestGaussian, _miTestRayleigh, _miTestZero;
   Gtk::MenuItem _miTestA, _miTestB, _miTestC, _miTestD, _miTestE;
-  Gtk::MenuItem _miTestF, _miTestG, _miTestH, _miTestNoise, _miTestModel3;
-  Gtk::MenuItem _miTestModel5, _miTestNoiseModel3, _miTestNoiseModel5,
-      _miTestBStrong;
-  Gtk::MenuItem _miTestBWeak, _miTestBAligned, _miTestGaussianBroadband,
-      _miTestSenusoidalBroadband;
-  Gtk::MenuItem _miTestSlewedGaussianBroadband, _miTestBurstBroadband;
-  Gtk::MenuItem _miTestRFIDistLow, _miTestRFIDistMid, _miTestRFIDistHigh;
-  Gtk::MenuItem _miTestSpike;
+  Gtk::MenuItem _miTestF, _miTestG, _miTestH, _miTestNoise;
 
   Gtk::Menu _menuModify;
   Gtk::MenuItem _miSimulateModify;
@@ -400,18 +363,10 @@ class RFIGuiMenu {
   Gtk::MenuItem _miModifyCorrelatorFault, _miModifyAddNaNs, _miModifyMultiply;
 
   Gtk::SeparatorMenuItem _miSimSep1, _miSimSep2;
-  Gtk::RadioButtonGroup _simSetGroup, _simChGroup;
-  Gtk::RadioMenuItem _miSimNCP, _miSimB1834, _miSimEmpty;
-  Gtk::RadioMenuItem _miSim16channels, _miSim64channels, _miSim256channels;
-  Gtk::CheckMenuItem _miSimFixBandwidth;
-  Gtk::MenuItem _miSimCorrelation;
-  Gtk::MenuItem _miSimSourceSetA, _miSimSourceSetB, _miSimSourceSetC,
-      _miSimSourceSetD;
-  Gtk::MenuItem _miSimSourceOffAxis, _miSimSourceOnAxis;
 
   // Data menu
   Gtk::MenuItem _miDataToOriginal;
-  Gtk::SeparatorMenuItem _miDataSep1, _miDataSep2, _miDataSep3;
+  Gtk::SeparatorMenuItem _miDataSep1, _miDataSep2, _miDataSep3, _miDataSep4;
   Gtk::MenuItem _miSelectComplex;
   Gtk::MenuItem _miDataReal, _miDataImaginary, _miDataPhase, _miDataUnrollPhase;
   Gtk::MenuItem _miSelectStokes;
@@ -423,6 +378,8 @@ class RFIGuiMenu {
   Gtk::MenuItem _miSegmentationSubMenu;
   Gtk::MenuItem _miDataStore, _miDataRecall, _miDataSubtract;
   Gtk::MenuItem _miDataClearOriginalFlags, _miDataClearAltFlags;
+  Gtk::MenuItem _miTemporalAveraging;
+  Gtk::MenuItem _miSpectralAveraging;
 
   // Segmentation menu
   Gtk::MenuItem _miSegmSegment, _miSegmCluster, _miSegmClassify,

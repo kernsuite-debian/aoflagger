@@ -3,21 +3,22 @@
 
 #include <vector>
 
-#include "../../structures/image2d.h"
-#include "../../structures/mask2d.h"
+#include "../structures/image2d.h"
+#include "../structures/mask2d.h"
+
+namespace algorithms {
 
 class ThresholdConfig {
  public:
-  enum Method { SumThreshold, VarThreshold };
-  enum Distribution { Uniform, Gaussian, Rayleigh };
+  enum Distribution { Gaussian, Rayleigh };
   ThresholdConfig();
 
   void InitializeLengthsDefault(unsigned count = 0);
 
   void InitializeLengthsSingleSample();
 
-  void InitializeThresholdsFromFirstThreshold(
-      num_t firstThreshold, enum Distribution noiseDistribution);
+  void InitializeThresholdsFromFirstThreshold(num_t firstThreshold,
+                                              Distribution noiseDistribution);
 
   void Execute(const Image2D* image, Mask2D* mask, bool additive,
                num_t timeSensitivity, num_t frequencySensitivity) const;
@@ -25,8 +26,6 @@ class ThresholdConfig {
                           const Mask2D* missing, bool additive,
                           num_t timeSensitivity,
                           num_t frequencySensitivity) const;
-  void SetVerbose(bool verbose) { _verbose = verbose; }
-  void SetMethod(Method method) { _method = method; }
 
   num_t GetHorizontalThreshold(unsigned index) const {
     return _horizontalOperations[index].threshold;
@@ -56,22 +55,21 @@ class ThresholdConfig {
     return _horizontalOperations.size();
   }
   size_t GetVerticalOperations() const { return _horizontalOperations.size(); }
-  void SetMinimumConnectedSamples(size_t val) { _minConnectedSamples = val; }
   void RemoveHorizontalOperations() { _horizontalOperations.clear(); }
   void RemoveVerticalOperations() { _verticalOperations.clear(); }
 
  private:
   struct ThresholdOperation {
+    explicit ThresholdOperation(size_t length_)
+        : length(length_), threshold(0) {}
     size_t length;
     num_t threshold;
-    num_t rate;
   };
   std::vector<ThresholdOperation> _horizontalOperations;
   std::vector<ThresholdOperation> _verticalOperations;
-  Method _method;
   Distribution _distribution;
-  bool _verbose;
-  size_t _minConnectedSamples;
 };
+
+}  // namespace algorithms
 
 #endif

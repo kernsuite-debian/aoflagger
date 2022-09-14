@@ -6,7 +6,7 @@
 #include <gtkmm/toolbutton.h>
 #include <gtkmm/separatortoolitem.h>
 
-#include "../rfigui/heatmapwidget.h"
+#include "../plot/plotwidget.h"
 
 #include "../quality/qualitytablesformatter.h"
 
@@ -36,7 +36,7 @@ class GrayScalePlotPage : public PlotSheet {
 
   void updateImage();
 
-  HeatMapWidget& grayScaleWidget() { return _imageWidget; }
+  PlotWidget& grayScaleWidget() { return _imageWidget; }
 
  private:
   void initStatisticKinds(Gtk::Toolbar& toolbar);
@@ -81,25 +81,10 @@ class GrayScalePlotPage : public PlotSheet {
   }
   void onPropertiesClicked();
 
-  void onSelectMinMaxRange() {
-    _imageWidget.Plot().SetRange(HeatMapPlot::MinMax);
-    _imageWidget.Update();
-  }
-  void onSelectWinsorizedRange() {
-    _imageWidget.Plot().SetRange(HeatMapPlot::Winsorized);
-    _imageWidget.Update();
-  }
-  void onSelectSpecifiedRange() {
-    _imageWidget.Plot().SetRange(HeatMapPlot::Specified);
-    _imageWidget.Update();
-  }
-  void onLogarithmicScaleClicked() {
-    if (_logarithmicScaleButton.get_active())
-      _imageWidget.Plot().SetScaleOption(HeatMapPlot::LogScale);
-    else
-      _imageWidget.Plot().SetScaleOption(HeatMapPlot::NormalScale);
-    _imageWidget.Update();
-  }
+  void onSelectMinMaxRange();
+  void onSelectWinsorizedRange();
+  void onSelectSpecifiedRange();
+  void onLogarithmicScaleClicked();
   void onNormalizeAxesButtonClicked() { updateImage(); }
   void onChangeNormMethod() {
     if (_normalizeYAxisButton.get_active()) updateImage();
@@ -132,7 +117,7 @@ class GrayScalePlotPage : public PlotSheet {
   Gtk::ToolButton _plotPropertiesButton;
 
   QualityTablesFormatter::StatisticKind _selectStatisticKind;
-  HeatMapWidget _imageWidget;
+  PlotWidget _imageWidget;
 
   class ImagePropertiesWindow* _imagePropertiesWindow;
 };

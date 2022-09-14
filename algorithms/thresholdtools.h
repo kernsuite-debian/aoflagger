@@ -5,8 +5,10 @@
 #include <cmath>
 #include <complex>
 
-#include "../../structures/image2d.h"
-#include "../../structures/mask2d.h"
+#include "../structures/image2d.h"
+#include "../structures/mask2d.h"
+
+namespace algorithms {
 
 class ThresholdTools {
  public:
@@ -119,5 +121,7 @@ class ThresholdTools {
     return false;
   }
 };
+
+}  // namespace algorithms
 
 #endif

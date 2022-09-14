@@ -1,7 +1,9 @@
 #include "horizontalplotscale.h"
 
-#include "tickset.h"
-#include <iostream>  //debug
+#include "ticksets/logarithmictickset.h"
+#include "ticksets/numerictickset.h"
+#include "ticksets/texttickset.h"
+#include "ticksets/timetickset.h"
 
 HorizontalPlotScale::HorizontalPlotScale()
     : _widgetWidth(0.0),
@@ -9,52 +11,58 @@ HorizontalPlotScale::HorizontalPlotScale()
       _minFromLeft(0.0),
       _fromTop(0.0),
       _isSecondAxis(false),
-      _height(0.0),
+      _axisType(AxisType::kNumeric),
+      _tickRange({0.0, 1.0}),
+      _tickLabels(),
+      _isLogarithmic(false),
+      _rotateUnits(false),
       _drawWithDescription(true),
       _unitsCaption("x"),
       _descriptionFontSize(14),
-      _tickValuesFontSize(14),
-      _rotateUnits(false),
-      _isLogarithmic(false) {}
+      _tickValuesFontSize(14) {}
 
 HorizontalPlotScale::~HorizontalPlotScale() { Unlink(); }
 
 double HorizontalPlotScale::UnitToAxis(double unitValue) const {
-  return _tickSet->UnitToAxis(unitValue);
+  return _tickSet ? _tickSet->UnitToAxis(unitValue) : 0.0;
 }
 
 double HorizontalPlotScale::AxisToUnit(double axisValue) const {
-  return _tickSet->AxisToUnit(axisValue);
+  return _tickSet ? _tickSet->AxisToUnit(axisValue) : 0.0;
 }
 
 void HorizontalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
   initializeMetrics(cairo);
   cairo->set_source_rgb(0.0, 0.0, 0.0);
-  cairo->set_font_size(_tickValuesFontSize);
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
   double tickDisplacement = _isSecondAxis ? -3.0 : 3.0;
+  const double height = CalculateHeight(cairo);
   // Y position of x-axis line
-  double yPos = _isSecondAxis ? _fromTop + _height : _widgetHeight - _height;
+  double yPos = _isSecondAxis ? _fromTop + height : _widgetHeight - height;
   for (unsigned i = 0; i != _tickSet->Size(); ++i) {
     const Tick tick = _tickSet->GetTick(i);
     double x = tick.first * Data().plotWidth + Data().fromLeft;
     cairo->move_to(x, yPos);
     cairo->line_to(x, yPos + tickDisplacement);
-    Cairo::TextExtents extents;
-    cairo->get_text_extents(tick.second, extents);
+    layout->set_text(tick.second);
+    const Pango::Rectangle extents = layout->get_pixel_ink_extents();
     if (_rotateUnits) {
-      double y = _isSecondAxis ? (yPos + extents.x_bearing - 8)
-                               : (yPos + extents.width + 8);
-      cairo->move_to(x - extents.y_bearing - extents.height / 2, y);
+      double y = _isSecondAxis ? (yPos + extents.get_lbearing() - 8)
+                               : (yPos + extents.get_width() + 8);
+      cairo->move_to(x - extents.get_descent() - extents.get_height() / 2, y);
       cairo->save();
       cairo->rotate(-M_PI * 0.5);
-      cairo->show_text(tick.second);
+      layout->show_in_cairo_context(cairo);
       cairo->restore();
     } else {
       // Room is reserved of size height between the text and the axis
-      double y = _isSecondAxis ? yPos - extents.height
-                               : (yPos - extents.y_bearing + extents.height);
-      cairo->move_to(x - extents.width / 2, y);
-      cairo->show_text(tick.second);
+      double y =
+          _isSecondAxis ? yPos - extents.get_height() : yPos + tickDisplacement;
+      cairo->move_to(x - extents.get_width() / 2, y);
+      layout->show_in_cairo_context(cairo);
     }
   }
   cairo->stroke();
@@ -67,33 +75,36 @@ void HorizontalPlotScale::drawDescription(
   double yPos = _isSecondAxis ? _fromTop : _widgetHeight;
 
   cairo->save();
-  cairo->set_font_size(_descriptionFontSize);
-  Cairo::TextExtents extents;
-  cairo->get_text_extents(_unitsCaption, extents);
-  double y = _isSecondAxis ? (yPos - extents.y_bearing + 5)
-                           : (yPos - extents.y_bearing - extents.height - 5);
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
+  layout->set_text(_unitsCaption);
+  const Pango::Rectangle extents = layout->get_pixel_logical_extents();
+  double y = _isSecondAxis ? (yPos - extents.get_descent() + 5)
+                           : (yPos - extents.get_height() - 5);
   cairo->move_to(Data().fromLeft + 0.3 * Data().plotWidth, y);
-  cairo->show_text(_unitsCaption);
+  layout->show_in_cairo_context(cairo);
   cairo->stroke();
   cairo->restore();
 
   // Base of arrow
-  y = _isSecondAxis ? (yPos + extents.height + 5) : (yPos - 5);
+  y = _isSecondAxis ? (yPos + extents.get_height() + 5) : (yPos - 5);
   cairo->move_to(Data().fromLeft + 0.1 * Data().plotWidth,
-                 y - 0.5 * extents.height);
+                 y - 0.5 * extents.get_height());
   cairo->line_to(Data().fromLeft + 0.275 * Data().plotWidth,
-                 y - 0.5 * extents.height);
+                 y - 0.5 * extents.get_height());
   cairo->stroke();
 
   // The arrow
   cairo->move_to(Data().fromLeft + 0.275 * Data().plotWidth,
-                 y - 0.5 * extents.height);
+                 y - 0.5 * extents.get_height());
   cairo->line_to(Data().fromLeft + 0.25 * Data().plotWidth,
-                 y - 0.1 * extents.height);
+                 y - 0.1 * extents.get_height());
   cairo->line_to(Data().fromLeft + 0.26 * Data().plotWidth,
-                 y - 0.5 * extents.height);
+                 y - 0.5 * extents.get_height());
   cairo->line_to(Data().fromLeft + 0.25 * Data().plotWidth,
-                 y - 0.9 * extents.height);
+                 y - 0.9 * extents.get_height());
   cairo->close_path();
   cairo->fill();
 }
@@ -125,6 +136,46 @@ void HorizontalPlotScale::initializeMetrics(
   }
 }
 
+double HorizontalPlotScale::CalculateHeight(
+    const Cairo::RefPtr<Cairo::Context>& cairo) {
+  std::unique_ptr<TickSet> lTickSet = _tickSet->Clone();
+
+  double height;
+  if (_drawWithDescription) {
+    Glib::RefPtr<Pango::Layout> descTextLayout = Pango::Layout::create(cairo);
+    Pango::FontDescription fontDescription;
+    fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
+    descTextLayout->set_text(_unitsCaption);
+    descTextLayout->set_font_description(fontDescription);
+    height = descTextLayout->get_pixel_logical_extents().get_height();
+  } else {
+    height = 0;
+  }
+
+  int maxTickTextHeight = 0;
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
+  for (size_t i = 0; i != _tickSet->Size(); ++i) {
+    const Tick tick = _tickSet->GetTick(i);
+    layout->set_text(tick.second);
+    if (_rotateUnits) {
+      maxTickTextHeight = std::max(
+          maxTickTextHeight, layout->get_pixel_logical_extents().get_width());
+    } else {
+      maxTickTextHeight = std::max(
+          maxTickTextHeight, layout->get_pixel_logical_extents().get_height());
+    }
+  }
+
+  if (_rotateUnits)
+    height += maxTickTextHeight + 15;
+  else
+    height += maxTickTextHeight + 10;
+  return height;
+}
+
 void HorizontalPlotScale::initializeLocalMetrics(
     const Cairo::RefPtr<Cairo::Context>& cairo, double& plotWidth,
     double& fromLeft, double& rightMargin) {
@@ -132,45 +183,23 @@ void HorizontalPlotScale::initializeLocalMetrics(
   if (_tickSet == nullptr) {
     rightMargin = 0.0;
     plotWidth = 0.0;
-    _height = 0.0;
   } else {
     _tickSet->Reset();
     while (!ticksFit(cairo) && _tickSet->Size() > 2) {
       _tickSet->DecreaseTicks();
     }
-    cairo->set_font_size(_tickValuesFontSize);
-    double maxTextHeight = 0;
-    for (unsigned i = 0; i != _tickSet->Size(); ++i) {
-      const Tick tick = _tickSet->GetTick(i);
-      Cairo::TextExtents extents;
-      cairo->get_text_extents(tick.second, extents);
-      if (_rotateUnits) {
-        if (maxTextHeight < extents.width) maxTextHeight = extents.width;
-      } else {
-        if (maxTextHeight < extents.height) maxTextHeight = extents.height;
-      }
-    }
-
-    if (_rotateUnits)
-      _height = maxTextHeight + 15;
-    else
-      _height = maxTextHeight * 2 + 10;
-
-    if (_drawWithDescription) {
-      cairo->set_font_size(_descriptionFontSize);
-      Cairo::TextExtents extents;
-      cairo->get_text_extents(_unitsCaption, extents);
-      _height += extents.height;
-    }
 
     if (_tickSet->Size() != 0) {
-      cairo->set_font_size(_tickValuesFontSize);
-      Cairo::TextExtents extents;
-      cairo->get_text_extents(_tickSet->GetTick(_tickSet->Size() - 1).second,
-                              extents);
-
-      /// TODO this is TOO MUCH, caption is often not in the rightmost position.
-      rightMargin = extents.width / 2 + 5 > 10 ? extents.width / 2 + 5 : 10;
+      Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+      Pango::FontDescription fontDescription;
+      fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+      layout->set_font_description(fontDescription);
+      const Tick lastTick = _tickSet->GetTick(_tickSet->Size() - 1);
+      layout->set_text(lastTick.second);
+      const int width = layout->get_pixel_logical_extents().get_width();
+      double approxOversize =
+          _widgetWidth * lastTick.first + width / 2 - _widgetWidth;
+      rightMargin = std::max(10.0, approxOversize + 5.0);
     } else {
       rightMargin = 0.0;
     }
@@ -179,48 +208,46 @@ void HorizontalPlotScale::initializeLocalMetrics(
   }
 }
 
-void HorizontalPlotScale::InitializeNumericTicks(double min, double max) {
-  _tickSet.reset(new NumericTickSet(min, max, 25));
-  _isLogarithmic = false;
-  Data().metricsAreInitialized = false;
-}
-
-void HorizontalPlotScale::InitializeLogarithmicTicks(double min, double max) {
-  _tickSet.reset(new LogarithmicTickSet(min, max, 25));
-  _isLogarithmic = true;
-  Data().metricsAreInitialized = false;
-}
-
-void HorizontalPlotScale::InitializeTimeTicks(double timeMin, double timeMax) {
-  _tickSet.reset(new TimeTickSet(timeMin, timeMax, 25));
-  _isLogarithmic = false;
-  Data().metricsAreInitialized = false;
-}
-
-void HorizontalPlotScale::InitializeTextTicks(
-    const std::vector<std::string>& labels) {
-  _tickSet.reset(new TextTickSet(labels, 100));
-  _isLogarithmic = false;
+void HorizontalPlotScale::InitializeTicks() {
+  if (_isLogarithmic)
+    _tickSet.reset(new LogarithmicTickSet(_tickRange[0], _tickRange[1], 25));
+  else {
+    switch (_axisType) {
+      case AxisType::kNumeric:
+        _tickSet.reset(new NumericTickSet(_tickRange[0], _tickRange[1], 25));
+        break;
+      case AxisType::kText:
+        _tickSet.reset(new TextTickSet(_tickLabels, 100));
+        break;
+      case AxisType::kTime:
+        _tickSet.reset(new TimeTickSet(_tickRange[0], _tickRange[1], 25));
+        break;
+    }
+  }
   Data().metricsAreInitialized = false;
 }
 
 bool HorizontalPlotScale::ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo) {
   cairo->set_font_size(16.0);
   double prevEndX = 0.0;
+  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  Pango::FontDescription fontDescription;
+  fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
+  layout->set_font_description(fontDescription);
   for (unsigned i = 0; i != _tickSet->Size(); ++i) {
     const Tick tick = _tickSet->GetTick(i);
-    Cairo::TextExtents extents;
-    cairo->get_text_extents(tick.second + "M", extents);
+    // Use "M" to get at least an "M" of distance between axis
+    layout->set_text(tick.second + "M");
+    const Pango::Rectangle extents = layout->get_pixel_logical_extents();
     const double midX =
         tick.first * (Data().plotWidth - Data().fromLeft) + Data().fromLeft;
     double startX, endX;
     if (_rotateUnits) {
-      // Use "M" to get at least an "M" of distance between axis
-      startX = midX - extents.height / 2, endX = startX + extents.height;
+      startX = midX - extents.get_height() / 2;
+      endX = startX + extents.get_height();
     } else {
-      // Use "M" to get at least an "M" of distance between ticks
-      cairo->get_text_extents(tick.second + "M", extents);
-      startX = midX - extents.width / 2, endX = startX + extents.width;
+      startX = midX - extents.get_width() / 2;
+      endX = startX + extents.get_width();
     }
     if (startX < prevEndX && i != 0) return false;
     prevEndX = endX;

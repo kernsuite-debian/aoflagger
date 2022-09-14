@@ -1,23 +1,24 @@
 #ifndef TIME_FREQUENCY_WIDGET_H
 #define TIME_FREQUENCY_WIDGET_H
 
-#include "heatmapwidget.h"
+#include "../rfigui/maskedheatmap.h"
 
 #include "../plot/plotwidget.h"
-#include "../plot/plot2d.h"
+#include "../plot/xyplot.h"
 
 #include <gtkmm/box.h>
 
 class TimeFrequencyWidget : public Gtk::VBox {
  public:
-  TimeFrequencyWidget(HeatMapPlot* plot) : _heatMap(plot) {
+  TimeFrequencyWidget(MaskedHeatMap& plot) : _heatMap() {
+    _heatMap.SetPlot(plot);
     _timePlotWidget.SetPlot(_timePlot);
     _timePlotWidget.set_size_request(200, 60);
     _timePlot.SetShowXAxis(false);
     pack_start(_timePlotWidget, Gtk::PACK_EXPAND_WIDGET);
     EnableTimePlot();
 
-    _heatMap.Plot().SetShowTitle(true);
+    GetMaskedHeatMap().SetShowTitle(true);
     _heatMap.set_size_request(200, 200);
     pack_start(_heatMap, Gtk::PACK_EXPAND_WIDGET);
     _heatMap.show();
@@ -28,9 +29,15 @@ class TimeFrequencyWidget : public Gtk::VBox {
     _timePlotWidget.Update();
   }
 
-  bool HasImage() const { return _heatMap.Plot().HasImage(); }
+  bool HasImage() const { return GetMaskedHeatMap().HasImage(); }
 
-  HeatMapWidget& HeatMap() { return _heatMap; }
+  PlotWidget& GetHeatMapWidget() { return _heatMap; }
+  MaskedHeatMap& GetMaskedHeatMap() {
+    return static_cast<MaskedHeatMap&>(_heatMap.Plot());
+  }
+  const MaskedHeatMap& GetMaskedHeatMap() const {
+    return static_cast<const MaskedHeatMap&>(_heatMap.Plot());
+  }
 
   void EnableTimePlot() {
     _timePlot.LinkHorizontally(_heatMap.Plot());
@@ -43,12 +50,12 @@ class TimeFrequencyWidget : public Gtk::VBox {
     _timePlot.UnlinkHorizontally();
   }
 
-  Plot2D& TimePlot() { return _timePlot; }
+  XYPlot& TimePlot() { return _timePlot; }
 
  private:
-  HeatMapWidget _heatMap;
+  PlotWidget _heatMap;
   PlotWidget _timePlotWidget;
-  Plot2D _timePlot;
+  XYPlot _timePlot;
 };
 
 #endif

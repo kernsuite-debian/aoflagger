@@ -5,14 +5,14 @@
 
 #include <memory>
 
-namespace rfiStrategy {
+namespace imagesets {
 class Strategy;
 }
 
 class StrategyController {
  public:
-  virtual void SetStrategy(std::unique_ptr<rfiStrategy::Strategy> strategy) = 0;
-  virtual rfiStrategy::Strategy &Strategy() = 0;
+  virtual void SetStrategy(std::unique_ptr<imagesets::Strategy> strategy) = 0;
+  virtual imagesets::Strategy& Strategy() = 0;
   virtual void NotifyChange() { _signalOnStrategyChanged(); }
   virtual sigc::signal<void> SignalOnStrategyChanged() {
     return _signalOnStrategyChanged;

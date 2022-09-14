@@ -1,15 +1,17 @@
 --[[
- This is the MWA AOFlagger strategy, version 2020-03-14
+ This is the MWA AOFlagger strategy, version 2021-03-30
  Author: André Offringa
 ]]--
 
-function execute (input)
+aoflagger.require_min_version("3.0")
+
+function execute(input)
 
   --
   -- Generic settings
   --
 
-  -- What polarizations to flag? Default: input:polarizations() (=all that are in the input data)
+  -- What polarizations to flag? Default: input:get_polarizations() (=all that are in the input data)
   -- Other options are e.g.:
   -- { 'XY', 'YX' } to flag only XY and YX, or
   -- { 'I', 'Q' } to flag only on Stokes I and Q
@@ -21,6 +23,9 @@ function execute (input)
   local flag_representations = { "amplitude" }
   local iteration_count = 3  -- how many iterations to perform?
   local threshold_factor_step = 2.0 -- How much to increase the sensitivity each iteration?
+  -- If the following variable is true, the strategy will consider existing flags
+  -- as bad data. It will exclude flagged data from detection, and make sure that any existing
+  -- flags on input will be flagged on output. If set to false, existing flags are ignored.
   local exclude_original_flags = true
   local frequency_resize_factor = 3 -- Amount of "extra" smoothing in frequency direction
   local transient_threshold_factor = 1 -- decreasing this value makes detection of transient RFI more aggressive
@@ -33,6 +38,7 @@ function execute (input)
 
   local copy_of_input
   if(exclude_original_flags) then
+    -- For collecting statistics
     copy_of_input = input:copy()
   else
     input:clear_mask()
@@ -42,11 +48,12 @@ function execute (input)
  
     local pol_data = input:convert_to_polarization(polarization)
     local data
+    local original_data
 
     for _,representation in ipairs(flag_representations) do
 
       data = pol_data:convert_to_complex(representation)
-      local original_data = data:copy()
+      original_data = data:copy()
 
       for i=1,iteration_count-1 do
         local threshold_factor = math.pow(threshold_factor_step, iteration_count-i)
@@ -97,7 +104,11 @@ function execute (input)
       end
     end -- end of complex representation iteration
 
-    -- Helper function used in the strategy
+    if(exclude_original_flags) then
+      data:join_mask(original_data)
+    end
+
+    -- Helper function used below
     function contains(arr, val)
       for _,v in ipairs(arr) do
         if v == val then return true end

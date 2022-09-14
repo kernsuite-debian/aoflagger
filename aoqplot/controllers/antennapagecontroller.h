@@ -10,32 +10,32 @@
 class AntennaePageController : public AOQPlotPageController {
  protected:
   virtual void processStatistics(
-      const StatisticsCollection *statCollection,
-      const std::vector<AntennaInfo> &antennas) override final {
+      const StatisticsCollection* statCollection,
+      const std::vector<AntennaInfo>& antennas) override final {
     _antennas = antennas;
-    const BaselineStatisticsMap &map = statCollection->BaselineStatistics();
+    const BaselineStatisticsMap& map = statCollection->BaselineStatistics();
 
-    std::vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
-    for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+    std::vector<std::pair<unsigned, unsigned>> baselines = map.BaselineList();
+    for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
              baselines.begin();
          i != baselines.end(); ++i) {
       if (i->first != i->second) {
-        const DefaultStatistics &stats = map.GetStatistics(i->first, i->second);
+        const DefaultStatistics& stats = map.GetStatistics(i->first, i->second);
         addStatistic(i->first, stats);
         addStatistic(i->second, stats);
       }
     }
   }
 
-  virtual const std::map<double, class DefaultStatistics> &getStatistics()
+  virtual const std::map<double, class DefaultStatistics>& getStatistics()
       const override final {
     return _statistics;
   }
 
-  virtual void startLine(Plot2D &plot, const std::string &name, int lineIndex,
-                         const std::string &yAxisDesc) override final {
-    Plot2DPointSet &pointSet = plot.StartLine(
-        name, "Antenna index", yAxisDesc, false, Plot2DPointSet::DrawColumns);
+  virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
+                         const std::string& yAxisDesc) override final {
+    XYPointSet& pointSet = plot.StartLine(name, "Antenna index", yAxisDesc,
+                                          false, XYPointSet::DrawColumns);
 
     std::vector<std::string> labels;
     for (std::vector<AntennaInfo>::const_iterator i = _antennas.begin();
@@ -45,7 +45,7 @@ class AntennaePageController : public AOQPlotPageController {
     pointSet.SetRotateUnits(true);
   }
 
-  void addStatistic(unsigned antIndex, const DefaultStatistics &stats) {
+  void addStatistic(unsigned antIndex, const DefaultStatistics& stats) {
     std::map<double, DefaultStatistics>::iterator iter =
         _statistics.find(antIndex);
     if (iter == _statistics.end())

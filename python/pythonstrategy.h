@@ -1,8 +1,8 @@
 #ifndef PYTHON_STRATEGY_H
 #define PYTHON_STRATEGY_H
 
-#include "../../structures/timefrequencydata.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/timefrequencydata.h"
+#include "../structures/timefrequencymetadata.h"
 
 #include <string>
 

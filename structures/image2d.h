@@ -75,6 +75,12 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
   }
 
   /**
+   * Return a copy of this image in which non-finite values have been
+   * replaced by zero.
+   */
+  Image2D MakeFiniteCopy() const;
+
+  /**
    * Creates an image containing unset values.
    * @param width Width of the new image.
    * @param height Height of the new image.
@@ -261,6 +267,11 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
   void AddValue(size_t x, size_t y, num_t addValue) {
     _dataPtr[y][x] += addValue;
   }
+
+  /**
+   * Returns true if object contains no non-finite values.
+   */
+  bool AllFinite() const;
 
   /**
    * Check whether this image is completely zero.
@@ -460,6 +471,8 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
   friend void swap(Image2D&, Image2D&);
   friend void swap(Image2D&, Image2D&&);
   friend void swap(Image2D&&, Image2D&);
+
+  friend bool operator==(const Image2D& lhs, const Image2D& rhs);
 
   Image2D(size_t width, size_t height) : Image2D(width, height, width) {}
   Image2D(size_t width, size_t height, size_t widthCapacity);

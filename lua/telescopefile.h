@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "../../interface/aoflagger.h"
+#include "../interface/aoflagger.h"
 
 class TelescopeFile {
  public:

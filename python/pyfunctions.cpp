@@ -8,22 +8,6 @@ namespace py = pybind11;
 
 namespace aoflagger_python {
 
-static py::object flagFunction;
-
-py::object get_flag_function() { return flagFunction; }
-
-void set_flag_function(PyObject* callable) {
-  flagFunction = py::reinterpret_borrow<py::object>(py::handle(callable));
-}
-
-py::list polarizations(const aoflagger_lua::Data* data) {
-  const std::vector<aocommon::PolarizationEnum> pols =
-      data->TFData().Polarizations();
-  py::list polList;
-  for (aocommon::PolarizationEnum p : pols) polList.append(p);
-  return polList;
-}
-
 py::array_t<double> GetImageBuffer(const aoflagger::ImageSet* imageSet,
                                    size_t imageIndex) {
   if (imageIndex >= imageSet->ImageCount())

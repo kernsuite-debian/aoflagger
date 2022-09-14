@@ -3,11 +3,13 @@
 
 #include <string>
 
-#include "../../structures/timefrequencydata.h"
+#include "../structures/timefrequencydata.h"
+
+namespace algorithms {
 
 class TimeFrequencyStatistics {
  public:
-  explicit TimeFrequencyStatistics(const TimeFrequencyData &data);
+  explicit TimeFrequencyStatistics(const TimeFrequencyData& data);
 
   num_t GetFlaggedRatio();
 
@@ -16,5 +18,7 @@ class TimeFrequencyStatistics {
  private:
   TimeFrequencyData _data;
 };
+
+}  // namespace algorithms
 
 #endif  // TIMEFREQUENCYSTATISTICS_H

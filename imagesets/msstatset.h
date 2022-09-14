@@ -4,11 +4,11 @@
 #include <memory>
 #include <queue>
 
-#include "../../msio/msstatreader.h"
+#include "../msio/msstatreader.h"
 
 #include "imageset.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class MSStatSet final : public ImageSet {
  public:
@@ -86,11 +86,10 @@ class MSStatSet final : public ImageSet {
   BaselineIntegration::Differencing _diffType;
   bool _includeAutos, _includeFlags;
   std::shared_ptr<MSStatReader> _reader;
-  size_t _size;
   std::vector<ImageSetIndex> _requests;
   std::queue<BaselineData> _results;
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

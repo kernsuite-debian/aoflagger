@@ -3,56 +3,58 @@
 
 #include <vector>
 
-#include "../../structures/image2d.h"
-#include "../../structures/mask2d.h"
-#include "../../structures/samplerow.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/image2d.h"
+#include "../structures/mask2d.h"
+#include "../structures/samplerow.h"
+#include "../structures/timefrequencymetadata.h"
+
+class XYPointSet;
+class MultiPlot;
 
 class RFIPlots {
  public:
-  static void MakeDistPlot(class Plot2DPointSet &pointSet, Image2DCPtr image,
+  static void MakeDistPlot(XYPointSet& pointSet, Image2DCPtr image,
                            Mask2DCPtr mask);
   template <bool Weight>
-  static void MakeMeanSpectrumPlot(class Plot2DPointSet &pointSet,
-                                   const TimeFrequencyData &data,
-                                   const Mask2DCPtr &mask,
-                                   const TimeFrequencyMetaDataCPtr &metaData);
-  static void MakePowerSpectrumPlot(class Plot2DPointSet &pointSet,
-                                    const Image2D &real, const Image2D &imag,
-                                    const Mask2D &mask,
-                                    const TimeFrequencyMetaData *metaData);
-  static void MakeRMSSpectrumPlot(class Plot2DPointSet &plot, Image2DCPtr image,
+  static void MakeMeanSpectrumPlot(XYPointSet& pointSet,
+                                   const TimeFrequencyData& data,
+                                   const Mask2DCPtr& mask,
+                                   const TimeFrequencyMetaDataCPtr& metaData);
+  static void MakePowerSpectrumPlot(XYPointSet& pointSet, const Image2D& real,
+                                    const Image2D& imag, const Mask2D& mask,
+                                    const TimeFrequencyMetaData* metaData);
+  static void MakeRMSSpectrumPlot(XYPointSet& plot, Image2DCPtr image,
                                   Mask2DCPtr mask);
-  static void MakePowerTimePlot(class Plot2DPointSet &plot, Image2DCPtr image,
+  static void MakePowerTimePlot(XYPointSet& plot, Image2DCPtr image,
                                 Mask2DCPtr mask,
                                 TimeFrequencyMetaDataCPtr metaData);
-  static void MakeComplexPlanePlot(class Plot2DPointSet &plot,
-                                   const class TimeFrequencyData &data,
+  static void MakeComplexPlanePlot(XYPointSet& plot,
+                                   const class TimeFrequencyData& data,
                                    size_t xStart, size_t length, size_t y,
                                    size_t yAvgSize, Mask2DCPtr mask,
                                    bool realVersusImaginary, bool imaginary);
-  static void MakeFittedComplexPlot(class Plot2DPointSet &plot,
-                                    const TimeFrequencyData &data,
+  static void MakeFittedComplexPlot(XYPointSet& plot,
+                                    const TimeFrequencyData& data,
                                     size_t xStart, size_t length, size_t y,
                                     size_t yAvgSize, Mask2DCPtr mask,
                                     num_t sampleFringeFrequency,
                                     bool realVersusImaginary, bool imaginary);
 
-  static void MakeTimeScatterPlot(class MultiPlot &plot, size_t plotIndex,
-                                  const Image2DCPtr &image,
-                                  const Mask2DCPtr &mask,
-                                  const TimeFrequencyMetaDataCPtr &metaData);
-  static void MakeTimeScatterPlot(class MultiPlot &plot,
-                                  const TimeFrequencyData &data,
-                                  const TimeFrequencyMetaDataCPtr &metaData,
+  static void MakeTimeScatterPlot(MultiPlot& plot, size_t plotIndex,
+                                  const Image2DCPtr& image,
+                                  const Mask2DCPtr& mask,
+                                  const TimeFrequencyMetaDataCPtr& metaData);
+  static void MakeTimeScatterPlot(MultiPlot& plot,
+                                  const TimeFrequencyData& data,
+                                  const TimeFrequencyMetaDataCPtr& metaData,
                                   unsigned startIndex = 0);
 
   static void MakeFrequencyScatterPlot(
-      class MultiPlot &plot, size_t plotIndex, const Image2DCPtr &image,
-      const Mask2DCPtr &mask, const TimeFrequencyMetaDataCPtr &metaData);
+      MultiPlot& plot, size_t plotIndex, const Image2DCPtr& image,
+      const Mask2DCPtr& mask, const TimeFrequencyMetaDataCPtr& metaData);
   static void MakeFrequencyScatterPlot(
-      class MultiPlot &plot, const TimeFrequencyData &data,
-      const TimeFrequencyMetaDataCPtr &metaData, unsigned startIndex = 0);
+      MultiPlot& plot, const TimeFrequencyData& data,
+      const TimeFrequencyMetaDataCPtr& metaData, unsigned startIndex = 0);
 
  private:
   /**
@@ -74,8 +76,8 @@ class RFIPlots {
    * @param stretch A factor that is applied to all pixel-values before binning
    */
   static void Bin(Image2DCPtr image, Mask2DCPtr mask,
-                  std::vector<size_t> &valuesOutput,
-                  std::vector<long double> &binsOutput, size_t binCount,
+                  std::vector<size_t>& valuesOutput,
+                  std::vector<long double>& binsOutput, size_t binCount,
                   long double start = 0.0, long double end = 0.0,
                   long double factor = 1.0, long double stretch = 1.0) throw();
 

@@ -15,6 +15,8 @@
 #include <xmmintrin.h>
 #endif
 
+namespace algorithms {
+
 class NormalizeBandpass {
  public:
   static void NormalizeStepwise(TimeFrequencyData& data, size_t steps) {
@@ -143,5 +145,7 @@ class NormalizeBandpass {
     }
   }
 };
+
+}  // namespace algorithms
 
 #endif

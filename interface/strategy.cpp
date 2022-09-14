@@ -4,7 +4,7 @@
 #include "../lua/luastrategy.h"
 #include "../lua/scriptdata.h"
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
 
 #include "../structures/timefrequencydata.h"
 

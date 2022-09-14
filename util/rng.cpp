@@ -37,7 +37,7 @@ double RNG::GaussianPartialProduct() {
   return a * b;
 }
 
-void RNG::DoubleGaussian(long double &a, long double &b) {
+void RNG::DoubleGaussian(long double& a, long double& b) {
   long double x1, x2, w;
 
   do {
@@ -94,7 +94,7 @@ double RNG::EvaluateGaussian2D(long double x1, long double x2,
                   (x1 * (1.0L / sigmaX1) * x1 + x2 * (1.0L / sigmaX2) * x2));
 }
 
-void RNG::ComplexGaussianAmplitude(num_t &r, num_t &i) {
+void RNG::ComplexGaussianAmplitude(num_t& r, num_t& i) {
   num_t amplitude = Gaussian();
   num_t phase = Uniform() * 2.0 * M_PIn;
   r = amplitude * std::cos(phase);

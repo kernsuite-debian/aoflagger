@@ -1,11 +1,13 @@
 #ifndef APPLY_BANDPASS_H
 #define APPLY_BANDPASS_H
 
-#include "../../structures/timefrequencydata.h"
+#include "../structures/timefrequencydata.h"
 
 #include "bandpassfile.h"
 
 #include <string>
+
+namespace algorithms {
 
 class ApplyBandpass {
  public:
@@ -82,5 +84,7 @@ class ApplyBandpass {
     return corrected;
   }
 };
+
+}  // namespace algorithms
 
 #endif

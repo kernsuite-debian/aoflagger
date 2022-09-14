@@ -2,13 +2,17 @@
 #define MITIGATIONTESTER_H
 
 #include <cstddef>
-#include <vector>
 #include <fstream>
+#include <random>
 
-#include "../../structures/image2d.h"
-#include "../../structures/mask2d.h"
+#include "../structures/image2d.h"
+#include "../structures/mask2d.h"
 
-#include "../../util/rng.h"
+#include "../util/rng.h"
+
+#include "enums.h"
+
+namespace algorithms {
 
 class TestSetGenerator {
  public:
@@ -60,6 +64,13 @@ class TestSetGenerator {
     AddBroadbandLine(data, rfi, lineStrength, startTime, duration,
                      frequencyRatio, 0.5L - frequencyRatio / 2.0L);
   }
+  static void AddSpectralLine(Image2D& data, Mask2D& rfi, double lineStrength,
+                              size_t startChannel, size_t nChannels,
+                              double timeRatio, double timeOffsetRatio,
+                              enum BroadbandShape shape);
+  static void AddIntermittentSpectralLine(Image2D& data, Mask2D& rfi,
+                                          double lineStrength, size_t channel,
+                                          double probability, std::mt19937& mt);
   static void AddBroadbandLine(Image2D& data, Mask2D& rfi, double lineStrength,
                                size_t startTime, size_t duration,
                                double frequencyRatio,
@@ -79,34 +90,43 @@ class TestSetGenerator {
                         size_t startTime, size_t duration,
                         unsigned frequencyPos);
 
-  static std::string GetTestSetDescription(int number);
-  static Image2D MakeTestSet(int number, Mask2D& rfi, unsigned width,
-                             unsigned height, int gaussianNoise = 1);
+  static std::string GetDescription(BackgroundTestSet backgroundSet);
+  static std::string GetDescription(RFITestSet rfiSet);
+  static TimeFrequencyData MakeTestSet(RFITestSet rfiSet,
+                                       BackgroundTestSet backgroundSet,
+                                       size_t width, size_t height);
+  static void MakeBackground(BackgroundTestSet backgroundSet,
+                             TimeFrequencyData& image);
+  static void MakeTestSet(RFITestSet testSet, TimeFrequencyData& data);
+
+ private:
+  static void AddSpectralLinesToTestSet(Image2D& image, Mask2D& rfi,
+                                        double strength,
+                                        enum BroadbandShape shape);
+  static void AddIntermittentSpectralLinesToTestSet(Image2D& image, Mask2D& rfi,
+                                                    double strength);
   static void AddGaussianBroadbandToTestSet(Image2D& image, Mask2D& rfi) {
-    AddBroadbandToTestSet(image, rfi, 1.0, 1.0, false, GaussianShape);
+    AddBroadbandToTestSet(image, rfi, 1.0, 1.0, GaussianShape);
   }
   static void AddSinusoidalBroadbandToTestSet(Image2D& image, Mask2D& rfi) {
-    AddBroadbandToTestSet(image, rfi, 1.0, 1.0, false, SinusoidalShape);
+    AddBroadbandToTestSet(image, rfi, 1.0, 1.0, SinusoidalShape);
   }
   static void AddBurstBroadbandToTestSet(Image2D& image, Mask2D& rfi) {
-    AddBroadbandToTestSet(image, rfi, 1.0, 1.0, false, BurstShape);
+    AddBroadbandToTestSet(image, rfi, 1.0, 1.0, BurstShape);
   }
   static void AddSlewedGaussianBroadbandToTestSet(Image2D& image, Mask2D& rfi) {
     AddSlewedBroadbandToTestSet(image, rfi, 1.0);
   }
-  static TimeFrequencyData MakeSpike();
 
- private:
-  static void AddBroadbandToTestSet(Image2D& image, Mask2D& rfi,
-                                    long double length, double strength = 1.0,
-                                    bool align = false,
+  static void AddBroadbandToTestSet(Image2D& image, Mask2D& rfi, double length,
+                                    double strength = 1.0,
                                     enum BroadbandShape shape = UniformShape);
   static void AddSlewedBroadbandToTestSet(
-      Image2D& image, Mask2D& rfi, long double length, double strength = 1.0,
+      Image2D& image, Mask2D& rfi, double length, double strength = 1.0,
       double slewrate = 0.02, enum BroadbandShape shape = GaussianShape);
   static void AddVarBroadbandToTestSet(Image2D& image, Mask2D& rfi);
-  static void SetModelData(Image2D& image, Mask2D& rfi, unsigned sources,
-                           size_t width, size_t height);
+  static void SetModelData(Image2D& image, unsigned sources, size_t width,
+                           size_t height);
   static void SubtractBackground(Image2D& image);
   static Image2D sampleRFIDistribution(unsigned width, unsigned height,
                                        double ig_over_rsq);
@@ -125,5 +145,7 @@ class TestSetGenerator {
     throw std::exception();
   }
 };
+
+}  // namespace algorithms
 
 #endif

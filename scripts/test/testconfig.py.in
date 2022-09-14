@@ -1,0 +1,6 @@
+SRC_DIR = "@CMAKE_SOURCE_DIR@/test/integration"
+BIN_DIR = "@CMAKE_BINARY_DIR@"
+RESOURCE_DIR = "@CMAKE_BINARY_DIR@/test_data"
+aoflagger = "@CMAKE_BINARY_DIR@/aoflagger"
+aoquality = "@CMAKE_BINARY_DIR@/aoquality"
+taql = "@TAQL_EXECUTABLE@"

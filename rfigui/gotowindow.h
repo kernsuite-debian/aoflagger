@@ -18,14 +18,14 @@
 
 class GoToWindow : public Gtk::Window {
  public:
-  explicit GoToWindow(class RFIGuiWindow &rfiGuiWindow);
+  explicit GoToWindow(class RFIGuiWindow& rfiGuiWindow);
 
   ~GoToWindow();
 
  private:
   void onLoadClicked();
   void onChange();
-  boost::optional<rfiStrategy::ImageSetIndex> getIndex();
+  std::optional<imagesets::ImageSetIndex> getIndex();
 
   Gtk::ButtonBox _buttonBox;
   Gtk::VBox _vBox;
@@ -78,8 +78,8 @@ class GoToWindow : public Gtk::Window {
 
   Glib::RefPtr<Gtk::ListStore> _antennaeStore, _bandStore, _sequenceStore;
 
-  RFIGuiWindow &_rfiGuiWindow;
-  rfiStrategy::IndexableSet *_imageSet;
+  RFIGuiWindow& _rfiGuiWindow;
+  imagesets::IndexableSet* _imageSet;
 };
 
 #endif

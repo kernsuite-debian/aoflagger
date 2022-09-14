@@ -10,7 +10,7 @@
 
 class RSPReader {
  public:
-  explicit RSPReader(const std::string &rawFile)
+  explicit RSPReader(const std::string& rawFile)
       : _rawFile(rawFile), _clockSpeed(200000000) {}
 
   ~RSPReader() {}
@@ -29,7 +29,7 @@ class RSPReader {
 
   void ReadForStatistics(unsigned beamletCount);
 
-  const std::string &File() const { return _rawFile; }
+  const std::string& File() const { return _rawFile; }
 
   unsigned long TimeStepCount(size_t beamletCount) const;
 
@@ -99,9 +99,9 @@ class RSPReader {
 
     static const unsigned int SIZE;
 
-    void Read(std::ifstream &stream) {
+    void Read(std::ifstream& stream) {
       unsigned char buffer[16];
-      stream.read(reinterpret_cast<char *>(buffer), 16);
+      stream.read(reinterpret_cast<char*>(buffer), 16);
       versionId = buffer[0];
       sourceInfo = buffer[1];
       configurationId = toUShort(buffer[3], buffer[2]);
@@ -132,9 +132,9 @@ class RSPReader {
 
     static const unsigned int SIZE;
 
-    void Read(std::ifstream &stream) {
+    void Read(std::ifstream& stream) {
       unsigned char buffer[8];
-      stream.read(reinterpret_cast<char *>(buffer), 8);
+      stream.read(reinterpret_cast<char*>(buffer), 8);
       xr = toShort(buffer[6], buffer[7]);
       xi = toShort(buffer[4], buffer[5]);
       yr = toShort(buffer[2], buffer[3]);

@@ -1,7 +1,7 @@
 #ifndef PROGRESSWINDOW_H
 #define PROGRESSWINDOW_H
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
 
 #include <glibmm.h>
 
@@ -44,7 +44,6 @@ class ProgressWindow : public Gtk::Window, public ProgressListener {
   Gtk::Grid _grid;
   Gtk::ProgressBar _progressBar;
 
-  double _progressFraction;
   boost::posix_time::ptime _startTime, _lastUpdate;
   bool _started;
   bool _exceptionQueued;

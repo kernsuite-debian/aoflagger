@@ -4,8 +4,33 @@ Python interface
 The external Python API mirrors the external C++ API, and only differs in that it follows
 the common Python naming conventions. For a reference of the functions and a general
 overview of what can be done with the Python interface, see the
-:doc:`C++ interface <cpp_interface>`. This chapter discusses a few practical topics
-related to the Python interface.
+:doc:`C++ interface <cpp_interface>`. A reference of the Python API can also be obtained
+by running ``help(aoflagger)`` in (i)python:
+
+.. code-block:: python
+
+   In [1]: import aoflagger
+
+   In [2]: help(aoflagger)
+   Help on module aoflagger:
+
+   NAME
+       aoflagger - AOFlagger module for detection of radio-frequency interference
+
+   CLASSES
+       pybind11_builtins.pybind11_object(builtins.object)
+           AOFlagger
+           FlagMask
+           ImageSet
+           QualityStatistics
+           Strategy
+           TelescopeId
+    
+       class AOFlagger(pybind11_builtins.pybind11_object)
+        |  Main class that gives access to the aoflagger functions.
+   [..]
+   
+The rest of this chapter discusses a few practical topics related to the Python interface.
 
 Installation
 ^^^^^^^^^^^^

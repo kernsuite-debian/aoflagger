@@ -5,28 +5,26 @@
 
 class RayleighFitter {
  public:
-  RayleighFitter() : _fitLogarithmic(true) {}
+  RayleighFitter()
+      : _fitLogarithmic(true), _hist(nullptr), _minVal(0.0), _maxVal(0.0) {}
 
-  void Fit(double minVal, double maxVal, const LogHistogram &hist,
-           double &sigma, double &n);
-  static double SigmaEstimate(const LogHistogram &hist);
-  static double SigmaEstimate(const LogHistogram &hist, double rangeStart,
+  void Fit(double minVal, double maxVal, const LogHistogram& hist,
+           double& sigma, double& n);
+  static double SigmaEstimate(const LogHistogram& hist);
+  static double SigmaEstimate(const LogHistogram& hist, double rangeStart,
                               double rangeEnd);
-  static double NEstimate(const LogHistogram &hist, double rangeStart,
+  static double NEstimate(const LogHistogram& hist, double rangeStart,
                           double rangeEnd);
   static void FindFitRangeUnderRFIContamination(double minPositiveAmplitude,
                                                 double sigmaEstimate,
-                                                double &minValue,
-                                                double &maxValue);
+                                                double& minValue,
+                                                double& maxValue);
   static double RayleighValue(double sigma, double n, double x) {
     double sigmaP2 = sigma * sigma;
     return n * x / (sigmaP2)*exp(-x * x / (2 * sigmaP2));
   }
-  static double ErrorOfFit(const LogHistogram &histogram, double rangeStart,
+  static double ErrorOfFit(const LogHistogram& histogram, double rangeStart,
                            double rangeEnd, double sigma, double n);
-
-  const LogHistogram *_hist;
-  double _minVal, _maxVal;
 
   bool FitLogarithmic() const { return _fitLogarithmic; }
   void SetFitLogarithmic(bool fitLogarithmic) {
@@ -35,6 +33,10 @@ class RayleighFitter {
 
  private:
   bool _fitLogarithmic;
+
+ public:
+  const LogHistogram* _hist;
+  double _minVal, _maxVal;
 };
 
 #endif

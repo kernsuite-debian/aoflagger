@@ -12,8 +12,6 @@
 #include <gtkmm/radiotoolbutton.h>
 #include <gtkmm/window.h>
 
-#include "../rfigui/heatmapwidget.h"
-
 #include "../quality/qualitytablesformatter.h"
 
 #include "plotsheet.h"

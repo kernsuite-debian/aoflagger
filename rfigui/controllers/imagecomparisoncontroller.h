@@ -11,7 +11,7 @@
 #include "../../structures/timefrequencymetadata.h"
 #include "../../structures/segmentedimage.h"
 
-#include "../../plot/heatmapplot.h"
+#include "../maskedheatmap.h"
 
 class ImageComparisonController {
  public:
@@ -127,8 +127,8 @@ class ImageComparisonController {
 
   void ClearAllButOriginal();
 
-  HeatMapPlot& Plot() { return _plot; }
-  const HeatMapPlot& Plot() const { return _plot; }
+  MaskedHeatMap& Plot() { return _plot; }
+  const MaskedHeatMap& Plot() const { return _plot; }
 
   sigc::signal<void>& VisualizationListChange() {
     return _visualizationListChange;
@@ -157,7 +157,7 @@ class ImageComparisonController {
     else
       data.SetMasksToValue<false>();
   }
-  HeatMapPlot _plot;
+  MaskedHeatMap _plot;
   bool _showPP, _showPQ, _showQP, _showQQ;
   size_t _visualizedImage;
   struct DataEntry {

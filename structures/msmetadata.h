@@ -5,18 +5,17 @@
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 
-#include <boost/optional/optional.hpp>
-
-#include <string>
-#include <vector>
-#include <utility>
+#include <optional>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 class MSMetaData {
  public:
   class Sequence;
 
-  explicit MSMetaData(const std::string &path)
+  explicit MSMetaData(const std::string& path)
       : _path(path), _isMainTableDataInitialized(false) {
     initializeOtherData();
   }
@@ -31,18 +30,18 @@ class MSMetaData {
   }
 
   size_t TimestepCount() {
-    initializeMainTableData();
+    InitializeMainTableData();
     return _observationTimes.size();
   }
 
   size_t TimestepCount(size_t sequenceId) {
-    initializeMainTableData();
+    InitializeMainTableData();
     return _observationTimesPerSequence[sequenceId].size();
   }
 
   size_t PolarizationCount() const { return PolarizationCount(Path()); }
 
-  static size_t PolarizationCount(const std::string &filename);
+  static size_t PolarizationCount(const std::string& filename);
 
   size_t AntennaCount() const { return _antennas.size(); }
 
@@ -50,7 +49,7 @@ class MSMetaData {
 
   size_t FieldCount() const { return _fields.size(); }
 
-  static size_t BandCount(const std::string &filename);
+  static size_t BandCount(const std::string& filename);
 
   /**
    * Get number of sequences. A sequence is a contiguous number of scans
@@ -58,52 +57,83 @@ class MSMetaData {
    * fieldId changes (possibly to a previous field)
    */
   size_t SequenceCount() {
-    initializeMainTableData();
+    InitializeMainTableData();
     return _observationTimesPerSequence.size();
   }
 
-  const AntennaInfo &GetAntennaInfo(unsigned antennaId) const {
+  const AntennaInfo& GetAntennaInfo(unsigned antennaId) const {
     return _antennas[antennaId];
   }
 
-  const BandInfo &GetBandInfo(unsigned bandIndex) const {
+  const BandInfo& GetBandInfo(unsigned bandIndex) const {
     return _bands[bandIndex];
   }
 
-  const FieldInfo &GetFieldInfo(unsigned fieldIndex) const {
+  const FieldInfo& GetFieldInfo(unsigned fieldIndex) const {
     return _fields[fieldIndex];
   }
 
-  void GetDataDescToBandVector(std::vector<size_t> &dataDescToBand);
+  void GetDataDescToBandVector(std::vector<size_t>& dataDescToBand);
 
   std::string Path() const { return _path; }
 
-  void GetBaselines(std::vector<std::pair<size_t, size_t> > &baselines) {
-    initializeMainTableData();
+  /**
+   * Does additional initialization of the metadata.
+   *
+   * Some 'const' versions of the direct getters for the internal vectors
+   * require a call to this function. Otherwise they will return empty
+   * containers.
+   */
+  void InitializeMainTableData();
+
+  void GetBaselines(std::vector<std::pair<size_t, size_t>>& baselines) {
+    InitializeMainTableData();
     baselines = _baselines;
   }
 
-  const std::vector<Sequence> &GetSequences() {
-    initializeMainTableData();
+  /// @pre InitializeMainTableData is called.
+  const std::vector<std::pair<size_t, size_t>>& GetBaselines() const {
+    return _baselines;
+  }
+
+  const std::vector<Sequence>& GetSequences() {
+    InitializeMainTableData();
     return _sequences;
   }
 
-  const std::set<double> &GetObservationTimesSet() {
-    initializeMainTableData();
+  /// @pre InitializeMainTableData is called.
+  const std::vector<Sequence>& GetSequences() const { return _sequences; }
+
+  const std::set<double>& GetObservationTimes() {
+    InitializeMainTableData();
     return _observationTimes;
   }
 
-  const std::set<double> &GetObservationTimesSet(size_t sequenceId) {
-    initializeMainTableData();
+  /// @pre InitializeMainTableData is called.
+  const std::set<double>& GetObservationTimes() const {
+    return _observationTimes;
+  }
+
+  const std::set<double>& GetObservationTimesSet(size_t sequenceId) {
+    InitializeMainTableData();
     return _observationTimesPerSequence[sequenceId];
   }
 
+  /// @pre InitializeMainTableData is called.
+  const std::vector<std::set<double>>& GetObservationTimesPerSequence() const {
+    return _observationTimesPerSequence;
+  }
+
+  const std::vector<AntennaInfo>& GetAntennas() const { return _antennas; }
+  const std::vector<BandInfo>& GetBands() const { return _bands; }
+  const std::vector<FieldInfo>& GetFields() const { return _fields; }
+
   bool HasAOFlaggerHistory();
 
-  void GetAOFlaggerHistory(std::ostream &stream);
+  void GetAOFlaggerHistory(std::ostream& stream);
 
-  void AddAOFlaggerHistory(const std::string &strategy,
-                           const std::string &commandline);
+  void AddAOFlaggerHistory(const std::string& strategy,
+                           const std::string& commandline);
 
   std::string GetStationName() const;
 
@@ -124,7 +154,7 @@ class MSMetaData {
     unsigned sequenceId;
     unsigned fieldId;
 
-    bool operator<(const Sequence &rhs) const {
+    bool operator<(const Sequence& rhs) const {
       if (antenna1 < rhs.antenna1)
         return true;
       else if (antenna1 == rhs.antenna1) {
@@ -141,32 +171,30 @@ class MSMetaData {
       return false;
     }
 
-    bool operator==(const Sequence &rhs) const {
+    bool operator==(const Sequence& rhs) const {
       return antenna1 == rhs.antenna1 && antenna2 == rhs.antenna2 &&
              spw == rhs.spw && sequenceId == rhs.sequenceId;
     }
   };
 
-  static std::string GetTelescopeName(casacore::MeasurementSet &ms);
+  static std::string GetTelescopeName(casacore::MeasurementSet& ms);
 
  private:
-  void initializeMainTableData();
-
   void initializeOtherData();
 
-  void initializeAntennas(casacore::MeasurementSet &ms);
-  void initializeBands(casacore::MeasurementSet &ms);
-  void initializeFields(casacore::MeasurementSet &ms);
+  void initializeAntennas(casacore::MeasurementSet& ms);
+  void initializeBands(casacore::MeasurementSet& ms);
+  void initializeFields(casacore::MeasurementSet& ms);
 
   const std::string _path;
 
   bool _isMainTableDataInitialized;
 
-  std::vector<std::pair<size_t, size_t> > _baselines;
+  std::vector<std::pair<size_t, size_t>> _baselines;
 
   std::set<double> _observationTimes;
 
-  std::vector<std::set<double> > _observationTimesPerSequence;
+  std::vector<std::set<double>> _observationTimesPerSequence;
 
   std::vector<AntennaInfo> _antennas;
 
@@ -176,7 +204,7 @@ class MSMetaData {
 
   std::vector<Sequence> _sequences;
 
-  boost::optional<size_t> _intervalStart, _intervalEnd;
+  std::optional<size_t> _intervalStart, _intervalEnd;
 };
 
 #endif

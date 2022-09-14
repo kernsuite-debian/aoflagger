@@ -7,21 +7,22 @@ class DefaultStatistics;
 #include <map>
 #include <vector>
 
-namespace rfiStrategy {
+namespace algorithms {
 
 class AntennaSelector {
  public:
   AntennaSelector() : _threshold(5.0) {}
 
-  std::vector<size_t> Run(const StatisticsCollection& statisticsCollection);
+  std::vector<std::size_t> Run(
+      const StatisticsCollection& statisticsCollection);
 
  private:
   void addStatistic(unsigned antIndex, const DefaultStatistics& stats,
-                    std::map<size_t, DefaultStatistics>& antStatistics);
+                    std::map<std::size_t, DefaultStatistics>& antStatistics);
 
   double _threshold;
 };
 
-}  // namespace rfiStrategy
+}  // namespace algorithms
 
 #endif

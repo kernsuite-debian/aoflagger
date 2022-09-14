@@ -1,19 +1,19 @@
 #ifndef MS_OPTIONS_H
 #define MS_OPTIONS_H
 
-#include <boost/optional/optional.hpp>
-
+#include <optional>
 #include <string>
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
 
 #include "../aoluarunner/options.h"
 
 struct MSOptions {
   BaselineIOMode ioMode;
   std::string dataColumnName;
-  bool subtractModel, combineSPWs;
-  boost::optional<size_t> intervalStart, intervalEnd;
+  bool combineSPWs;
+  bool concatenateFrequency;
+  std::optional<size_t> intervalStart, intervalEnd;
 
   BaselineIntegration baselineIntegration;
 };

@@ -8,19 +8,19 @@
 class Observatorium {
  public:
   Observatorium() : _channelWidthHz(0.0) {}
-  void AddAntenna(AntennaInfo &antenna) { _antennae.push_back(antenna); }
+  void AddAntenna(AntennaInfo& antenna) { _antennae.push_back(antenna); }
   size_t AntennaCount() const { return _antennae.size(); }
-  const AntennaInfo &GetAntenna(size_t index) const { return _antennae[index]; }
+  const AntennaInfo& GetAntenna(size_t index) const { return _antennae[index]; }
 
   void SetChannelWidthHz(double channelWidthHz) {
     _channelWidthHz = channelWidthHz;
   }
   double ChannelWidthHz() const { return _channelWidthHz; }
 
-  const class BandInfo &BandInfo() const { return _bandInfo; }
+  const class BandInfo& BandInfo() const { return _bandInfo; }
 
  protected:
-  class BandInfo &GetBandInfo() {
+  class BandInfo& GetBandInfo() {
     return _bandInfo;
   }
 
@@ -56,12 +56,12 @@ struct WSRTObservatorium : public Observatorium {
   }
 
  private:
-  void WSRTCommon(AntennaInfo &antenna) {
+  void WSRTCommon(AntennaInfo& antenna) {
     antenna.diameter = 25;
     antenna.mount = "equatorial";
     antenna.station = "WSRT";
   }
-  void WSRTn(size_t antennaIndex, AntennaInfo &antenna) {
+  void WSRTn(size_t antennaIndex, AntennaInfo& antenna) {
     switch (antennaIndex) {
       case 0:
         antenna.id = 0;

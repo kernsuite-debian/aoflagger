@@ -15,10 +15,10 @@ class BaselinePageController : public HeatMapPageController {
     UpdateImage();
   }
   virtual void CloseStatistics() override final {
-    _statCollection = 0;
-    _antennas = 0;
+    _statCollection = nullptr;
+    _antennas = nullptr;
   }
-  bool HasStatistics() const { return _statCollection != 0; }
+  bool HasStatistics() const { return _statCollection != nullptr; }
   std::string AntennaName(size_t index) const;
 
  protected:

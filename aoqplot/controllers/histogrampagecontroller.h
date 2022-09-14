@@ -3,19 +3,19 @@
 
 #include "aoqplotpagecontroller.h"
 
-#include "../../plot/plot2d.h"
+#include "../../plot/xyplot.h"
 
 class HistogramPageController : public AOQPageController {
  public:
   HistogramPageController();
   ~HistogramPageController();
 
-  void Attach(class HistogramPage *page) { _page = page; }
+  void Attach(class HistogramPage* page) { _page = page; }
 
   virtual void SetHistograms(
-      const HistogramCollection *histograms) override final;
+      const HistogramCollection* histograms) override final;
 
-  void SetHistograms(const std::string &filename) {
+  void SetHistograms(const std::string& filename) {
     _statFilename = filename;
     readFromFile();
     updatePlot();
@@ -23,11 +23,11 @@ class HistogramPageController : public AOQPageController {
 
   virtual void CloseStatistics() override final;
 
-  bool HasStatistics() const { return _histograms != 0; }
+  bool HasStatistics() const { return _histograms != nullptr; }
 
-  Plot2D &Plot() { return _plot; }
+  XYPlot& Plot() { return _plot; }
 
-  std::string SlopeText(const class LogHistogram &histogram);
+  std::string SlopeText(const class LogHistogram& histogram);
 
   void SetAutomaticFitRange(bool automaticFitRange) {
     _automaticFitRange = automaticFitRange;
@@ -72,23 +72,23 @@ class HistogramPageController : public AOQPageController {
 
  private:
   void updatePlot();
-  void addHistogramToPlot(const class LogHistogram &histogram);
-  void addRayleighToPlot(const class LogHistogram &histogram, double sigma,
+  void addHistogramToPlot(const class LogHistogram& histogram);
+  void addRayleighToPlot(const class LogHistogram& histogram, double sigma,
                          double n);
-  void addRayleighDifferenceToPlot(const LogHistogram &histogram, double sigma,
+  void addRayleighDifferenceToPlot(const LogHistogram& histogram, double sigma,
                                    double n);
-  void plotPolarization(const HistogramCollection &histogramCollection,
+  void plotPolarization(const HistogramCollection& histogramCollection,
                         unsigned polarization);
-  void plotPolarization(const class LogHistogram &totalHistogram,
-                        const class LogHistogram &rfiHistogram);
-  void plotFit(const class LogHistogram &histogram, const std::string &title);
-  void plotSlope(const class LogHistogram &histogram, const std::string &title,
+  void plotPolarization(const class LogHistogram& totalHistogram,
+                        const class LogHistogram& rfiHistogram);
+  void plotFit(const class LogHistogram& histogram, const std::string& title);
+  void plotSlope(const class LogHistogram& histogram, const std::string& title,
                  bool useLowerLimit2);
   void readFromFile();
 
-  class HistogramPage *_page;
+  class HistogramPage* _page;
   std::string _statFilename;
-  Plot2D _plot;
+  XYPlot _plot;
   std::unique_ptr<class HistogramCollection> _histograms;
   std::unique_ptr<class HistogramCollection> _summedPolarizationHistograms;
 

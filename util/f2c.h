@@ -9,7 +9,7 @@
 
 typedef long int integer;
 typedef unsigned long int uinteger;
-typedef char *address;
+typedef char* address;
 typedef short int shortint;
 typedef float real;
 typedef double doublereal;
@@ -56,16 +56,16 @@ typedef struct {
   flag cierr;
   ftnint ciunit;
   flag ciend;
-  char *cifmt;
+  char* cifmt;
   ftnint cirec;
 } cilist;
 
 /*internal read, write*/
 typedef struct {
   flag icierr;
-  char *iciunit;
+  char* iciunit;
   flag iciend;
-  char *icifmt;
+  char* icifmt;
   ftnint icirlen;
   ftnint icirnum;
 } icilist;
@@ -74,20 +74,20 @@ typedef struct {
 typedef struct {
   flag oerr;
   ftnint ounit;
-  char *ofnm;
+  char* ofnm;
   ftnlen ofnmlen;
-  char *osta;
-  char *oacc;
-  char *ofm;
+  char* osta;
+  char* oacc;
+  char* ofm;
   ftnint orl;
-  char *oblnk;
+  char* oblnk;
 } olist;
 
 /*close*/
 typedef struct {
   flag cerr;
   ftnint cunit;
-  char *csta;
+  char* csta;
 } cllist;
 
 /*rewind, backspace, endfile*/
@@ -100,29 +100,29 @@ typedef struct {
 typedef struct {
   flag inerr;
   ftnint inunit;
-  char *infile;
+  char* infile;
   ftnlen infilen;
-  ftnint *inex; /*parameters in standard's order*/
-  ftnint *inopen;
-  ftnint *innum;
-  ftnint *innamed;
-  char *inname;
+  ftnint* inex; /*parameters in standard's order*/
+  ftnint* inopen;
+  ftnint* innum;
+  ftnint* innamed;
+  char* inname;
   ftnlen innamlen;
-  char *inacc;
+  char* inacc;
   ftnlen inacclen;
-  char *inseq;
+  char* inseq;
   ftnlen inseqlen;
-  char *indir;
+  char* indir;
   ftnlen indirlen;
-  char *infmt;
+  char* infmt;
   ftnlen infmtlen;
-  char *inform;
+  char* inform;
   ftnint informlen;
-  char *inunf;
+  char* inunf;
   ftnlen inunflen;
-  ftnint *inrecl;
-  ftnint *innrec;
-  char *inblank;
+  ftnint* inrecl;
+  ftnint* innrec;
+  char* inblank;
   ftnlen inblanklen;
 } inlist;
 
@@ -144,16 +144,16 @@ typedef union Multitype Multitype;
 /*typedef long int Long;*/ /* No longer used; formerly in Namelist */
 
 struct Vardesc { /* for Namelist */
-  char *name;
-  char *addr;
-  ftnlen *dims;
+  char* name;
+  char* addr;
+  ftnlen* dims;
   int type;
 };
 typedef struct Vardesc Vardesc;
 
 struct Namelist {
-  char *name;
-  Vardesc **vars;
+  char* name;
+  Vardesc** vars;
   int nvars;
 };
 typedef struct Namelist Namelist;

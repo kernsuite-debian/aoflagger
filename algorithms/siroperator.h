@@ -1,9 +1,11 @@
 #ifndef SIROPERATOR_H
 #define SIROPERATOR_H
 
-#include "../../structures/mask2d.h"
-#include "../../structures/types.h"
-#include "../../structures/xyswappedmask2d.h"
+#include "../structures/mask2d.h"
+#include "../structures/types.h"
+#include "../structures/xyswappedmask2d.h"
+
+namespace algorithms {
 
 /**
  * This class contains functions that implement an algorithm to dilate
@@ -119,7 +121,7 @@ class SIROperator {
    * data that any subsequence should have.
    */
   static void OperateHorizontally(Mask2D& mask, num_t eta) {
-    operateHorizontally<Mask2D>(mask, eta);
+    operateHorizontally(mask, eta);
   }
 
   /**
@@ -137,7 +139,22 @@ class SIROperator {
    */
   static void OperateHorizontallyMissing(Mask2D& mask, const Mask2D& missing,
                                          num_t eta) {
-    operateHorizontallyMissing<Mask2D>(mask, missing, eta);
+    operateHorizontallyMissing(mask, missing, eta);
+  }
+
+  /**
+   * Like @ref OperateHorizontallyMissing(), but with a penalty for missing
+   * values.
+   *
+   * @param [in,out] mask The input flag mask to be dilated.
+   * @param [in] missing Flag mask that identifies missing values.
+   * @param [in] eta The η parameter that specifies the minimum number of good
+   * data that any subsequence should have.
+   * @param [in] penalty Penalty given to missing samples.
+   */
+  static void OperateHorizontallyMissing(Mask2D& mask, const Mask2D& missing,
+                                         num_t eta, num_t penalty) {
+    operateHorizontallyMissing(mask, missing, eta, penalty);
   }
 
   /**
@@ -167,6 +184,13 @@ class SIROperator {
     XYSwappedMask2D<Mask2D> swappedMask(mask);
     XYSwappedMask2D<const Mask2D> swappedMissing(missing);
     operateHorizontallyMissing(swappedMask, swappedMissing, eta);
+  }
+
+  static void OperateVerticallyMissing(Mask2D& mask, const Mask2D& missing,
+                                       num_t eta, num_t penalty) {
+    XYSwappedMask2D<Mask2D> swappedMask(mask);
+    XYSwappedMask2D<const Mask2D> swappedMissing(missing);
+    operateHorizontallyMissing(swappedMask, swappedMissing, eta, penalty);
   }
 
  private:
@@ -236,61 +260,14 @@ class SIROperator {
    */
   template <typename MaskLikeA, typename MaskLikeB>
   static void operateHorizontallyMissing(MaskLikeA& mask,
-                                         const MaskLikeB& missing, num_t eta) {
-    const unsigned width = mask.Width(), maxWSize = width + 1;
-    std::unique_ptr<num_t[]> values(new num_t[width]), w(new num_t[maxWSize]);
-    std::unique_ptr<unsigned[]> minIndices(new unsigned[maxWSize]),
-        maxIndices(new unsigned[maxWSize]);
+                                         const MaskLikeB& missing, num_t eta);
 
-    for (unsigned row = 0; row < mask.Height(); ++row) {
-      unsigned nAvailable = 0;
-      for (unsigned i = 0; i < width; ++i) {
-        if (!missing.Value(i, row)) {
-          if (mask.Value(i, row))
-            values[nAvailable] = eta;
-          else
-            values[nAvailable] = eta - 1.0;
-          ++nAvailable;
-        }
-      }
-
-      if (nAvailable != 0) {
-        unsigned wSize = nAvailable + 1;
-        w[0] = 0.0;
-        unsigned currentMinIndex = 0;
-        minIndices[0] = 0;
-        for (unsigned i = 1; i != wSize; ++i) {
-          w[i] = w[i - 1] + values[i - 1];
-
-          if (w[i] < w[currentMinIndex]) {
-            currentMinIndex = i;
-          }
-          minIndices[i] = currentMinIndex;
-        }
-
-        // Calculate the maximum suffixes
-        unsigned currentMaxIndex = wSize - 1;
-        for (unsigned i = nAvailable - 1; i != 0; --i) {
-          maxIndices[i] = currentMaxIndex;
-          if (w[i] > w[currentMaxIndex]) {
-            currentMaxIndex = i;
-          }
-        }
-        maxIndices[0] = currentMaxIndex;
-
-        // See if max sequence exceeds limit.
-        nAvailable = 0;
-        for (unsigned i = 0; i != width; ++i) {
-          if (!missing.Value(i, row)) {
-            const num_t maxW =
-                w[maxIndices[nAvailable]] - w[minIndices[nAvailable]];
-            mask.SetValue(i, row, (maxW >= 0.0));
-            ++nAvailable;
-          }
-        }
-      }
-    }
-  }
+  template <typename MaskLikeA, typename MaskLikeB>
+  static void operateHorizontallyMissing(MaskLikeA& mask,
+                                         const MaskLikeB& missing, num_t eta,
+                                         num_t penalty);
 };
+
+}  // namespace algorithms
 
 #endif

@@ -68,7 +68,7 @@ class SummaryPageController : public AOQPageController {
 
   void addBaselineAverages(std::ostringstream& str) {
     const BaselineStatisticsMap& map = _statCollection->BaselineStatistics();
-    std::vector<std::pair<unsigned, unsigned> > list = map.BaselineList();
+    std::vector<std::pair<unsigned, unsigned>> list = map.BaselineList();
     std::vector<double> totalStdDev(map.PolarizationCount()),
         totalSNR(map.PolarizationCount());
     std::vector<size_t> count(map.PolarizationCount());
@@ -77,7 +77,7 @@ class SummaryPageController : public AOQPageController {
       totalSNR[p] = 0.0;
       count[p] = 0;
     }
-    for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+    for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
              list.begin();
          i != list.end(); ++i) {
       unsigned a1 = i->first, a2 = i->second;

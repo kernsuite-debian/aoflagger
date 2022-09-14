@@ -14,13 +14,13 @@
  */
 class BaselineMatrixLoader {
  public:
-  explicit BaselineMatrixLoader(MSMetaData &measurementSet);
+  explicit BaselineMatrixLoader(MSMetaData& measurementSet);
 
   TimeFrequencyData Load(size_t timeIndex) { return LoadSummed(timeIndex); }
-  void LoadPerChannel(size_t timeIndex, std::vector<TimeFrequencyData> &data);
+  void LoadPerChannel(size_t timeIndex, std::vector<TimeFrequencyData>& data);
 
   size_t TimeIndexCount() const { return _timeIndexCount; }
-  class SpatialMatrixMetaData &MetaData() const {
+  class SpatialMatrixMetaData& MetaData() const {
     return *_metaData;
   }
   size_t FrequencyCount() const { return _frequencyCount; }

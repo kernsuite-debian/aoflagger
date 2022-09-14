@@ -24,8 +24,8 @@ UVImager::UVImager(unsigned long xRes, unsigned long yRes, ImageKind imageKind)
       _uvWeights(),
       _uvFTReal(),
       _uvFTImaginary(),
-      _antennas(0),
-      _fields(0),
+      _antennas(nullptr),
+      _fields(nullptr),
       _imageKind(imageKind),
       _invertFlagging(false),
       _directFT(false),
@@ -37,13 +37,13 @@ UVImager::UVImager(unsigned long xRes, unsigned long yRes, ImageKind imageKind)
 UVImager::~UVImager() { Clear(); }
 
 void UVImager::Clear() {
-  if (_antennas != 0) {
+  if (_antennas != nullptr) {
     delete[] _antennas;
-    _antennas = 0;
+    _antennas = nullptr;
   }
-  if (_fields != 0) {
+  if (_fields != nullptr) {
     delete[] _fields;
-    _fields = 0;
+    _fields = nullptr;
   }
 }
 
@@ -56,7 +56,7 @@ void UVImager::Empty() {
   _uvFTImaginary = Image2D::MakeZeroImage(_xRes, _yRes);
 }
 
-void UVImager::Image(MSMetaData &msMetaData, unsigned band) {
+void UVImager::Image(MSMetaData& msMetaData, unsigned band) {
   unsigned frequencyCount = msMetaData.FrequencyCount(band);
   IntegerDomain frequencies(0, frequencyCount);
   _msMetaData = &msMetaData;
@@ -65,15 +65,15 @@ void UVImager::Image(MSMetaData &msMetaData, unsigned band) {
   Image(frequencies);
 }
 
-void UVImager::Image(class MSMetaData &msMetaData, unsigned band,
-                     const IntegerDomain &frequencies) {
+void UVImager::Image(class MSMetaData& msMetaData, unsigned band,
+                     const IntegerDomain& frequencies) {
   _msMetaData = &msMetaData;
   _band = _msMetaData->GetBandInfo(band);
 
   Image(frequencies);
 }
 
-void UVImager::Image(const IntegerDomain &frequencies) {
+void UVImager::Image(const IntegerDomain& frequencies) {
   Empty();
 
   _antennaCount = _msMetaData->AntennaCount();
@@ -100,9 +100,9 @@ void UVImager::Image(const IntegerDomain &frequencies) {
  * Add several frequency channels to the uv plane for several combinations
  * of antenna pairs.
  */
-void UVImager::Image(const IntegerDomain &frequencies,
-                     const IntegerDomain &antenna1Domain,
-                     const IntegerDomain &antenna2Domain) {
+void UVImager::Image(const IntegerDomain& frequencies,
+                     const IntegerDomain& antenna1Domain,
+                     const IntegerDomain& antenna2Domain) {
   _scanCount = _msMetaData->TimestepCount();
   std::cout << "Requesting " << frequencies.ValueCount() << " x "
             << antenna1Domain.ValueCount() << " x "
@@ -112,14 +112,14 @@ void UVImager::Image(const IntegerDomain &frequencies,
                 antenna2Domain.ValueCount() * _scanCount *
                 sizeof(SingleFrequencySingleBaselineData) / (1024 * 1024))
             << "MB of memory..." << std::endl;
-  SingleFrequencySingleBaselineData ****data =
-      new SingleFrequencySingleBaselineData ***[frequencies.ValueCount()];
+  SingleFrequencySingleBaselineData**** data =
+      new SingleFrequencySingleBaselineData***[frequencies.ValueCount()];
   for (unsigned f = 0; f < frequencies.ValueCount(); ++f) {
     data[f] =
-        new SingleFrequencySingleBaselineData **[antenna1Domain.ValueCount()];
+        new SingleFrequencySingleBaselineData**[antenna1Domain.ValueCount()];
     for (unsigned a1 = 0; a1 < antenna1Domain.ValueCount(); ++a1) {
       data[f][a1] =
-          new SingleFrequencySingleBaselineData *[antenna2Domain.ValueCount()];
+          new SingleFrequencySingleBaselineData*[antenna2Domain.ValueCount()];
       for (unsigned a2 = 0; a2 < antenna2Domain.ValueCount(); ++a2) {
         data[f][a1][a2] = new SingleFrequencySingleBaselineData[_scanCount];
         for (unsigned scan = 0; scan < _scanCount; ++scan) {
@@ -183,7 +183,7 @@ void UVImager::Image(const IntegerDomain &frequencies,
         ++cdI;
       }
       for (unsigned f = 0; f < frequencies.ValueCount(); ++f) {
-        SingleFrequencySingleBaselineData &curData =
+        SingleFrequencySingleBaselineData& curData =
             data[f][index1][index2][scan];
         casacore::Complex xxData = *cdI;
         ++cdI;
@@ -241,9 +241,9 @@ void UVImager::Image(const IntegerDomain &frequencies,
   delete[] data;
 }
 
-void UVImager::Image(unsigned frequencyIndex, AntennaInfo &antenna1,
-                     AntennaInfo &antenna2,
-                     SingleFrequencySingleBaselineData *data) {
+void UVImager::Image(unsigned frequencyIndex, AntennaInfo& antenna1,
+                     AntennaInfo& antenna2,
+                     SingleFrequencySingleBaselineData* data) {
   num_t frequency = _band.channels[frequencyIndex].frequencyHz;
   num_t speedOfLight = 299792458.0L;
   AntennaCache cache;
@@ -280,8 +280,8 @@ void UVImager::Image(unsigned frequencyIndex, AntennaInfo &antenna1,
   }
 }
 
-void UVImager::Image(const class TimeFrequencyData &data,
-                     class SpatialMatrixMetaData *metaData) {
+void UVImager::Image(const class TimeFrequencyData& data,
+                     class SpatialMatrixMetaData* metaData) {
   if (!_uvReal.Empty()) Empty();
   Image2DCPtr real = data.GetRealPart(), imaginary = data.GetImaginaryPart();
   Mask2DCPtr flags = data.GetSingleMask();
@@ -298,7 +298,7 @@ void UVImager::Image(const class TimeFrequencyData &data,
   }
 }
 
-void UVImager::Image(const TimeFrequencyData &data,
+void UVImager::Image(const TimeFrequencyData& data,
                      TimeFrequencyMetaDataCPtr metaData,
                      unsigned frequencyIndex) {
   if (!_uvReal.Empty()) Empty();
@@ -408,7 +408,7 @@ void UVImager::PerformFFT() {
   FFTTools::CreateFFTImage(_uvReal, _uvImaginary, _uvFTReal, _uvFTImaginary);
 }
 
-void UVImager::GetUVPosition(num_t &u, num_t &v, size_t timeIndex,
+void UVImager::GetUVPosition(num_t& u, num_t& v, size_t timeIndex,
                              size_t frequencyIndex,
                              TimeFrequencyMetaDataCPtr metaData) {
   num_t frequency = metaData->Band().channels[frequencyIndex].frequencyHz;
@@ -416,9 +416,9 @@ void UVImager::GetUVPosition(num_t &u, num_t &v, size_t timeIndex,
   v = metaData->UVW()[timeIndex].v * frequency / SpeedOfLight();
 }
 
-void UVImager::GetUVPosition(num_t &u, num_t &v,
-                             const SingleFrequencySingleBaselineData &data,
-                             const AntennaCache &cache) {
+void UVImager::GetUVPosition(num_t& u, num_t& v,
+                             const SingleFrequencySingleBaselineData& data,
+                             const AntennaCache& cache) {
   unsigned field = data.field;
   num_t pointingLattitude = _fields[field].delayDirectionRA;
   num_t pointingLongitude = _fields[field].delayDirectionDec;
@@ -466,7 +466,7 @@ void UVImager::GetUVPosition(num_t &u, num_t &v,
 }
 
 num_t UVImager::GetFringeStopFrequency(size_t timeIndex,
-                                       const Baseline & /*baseline*/,
+                                       const Baseline& /*baseline*/,
                                        num_t /*delayDirectionRA*/,
                                        num_t delayDirectionDec,
                                        num_t /*frequency*/,
@@ -494,9 +494,9 @@ num_t UVImager::GetFringeCount(size_t timeIndexStart, size_t timeIndexEnd,
          metaData->Band().channels[channelIndex].frequencyHz / 299792458.0L;
 }
 
-void UVImager::InverseImage(MSMetaData &prototype, unsigned band,
-                            const Image2D & /*uvReal*/,
-                            const Image2D & /*uvImaginary*/,
+void UVImager::InverseImage(MSMetaData& prototype, unsigned band,
+                            const Image2D& /*uvReal*/,
+                            const Image2D& /*uvImaginary*/,
                             unsigned antenna1Index, unsigned antenna2Index) {
   _timeFreq = Image2D::MakeZeroImage(prototype.TimestepCount(),
                                      prototype.FrequencyCount(band));

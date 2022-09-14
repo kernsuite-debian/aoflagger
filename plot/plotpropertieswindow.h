@@ -17,9 +17,11 @@
 
 #include <functional>
 
+class XYPlot;
+
 class PlotPropertiesWindow : public Gtk::Window {
  public:
-  PlotPropertiesWindow(class Plot2D &plot, const std::string &title);
+  PlotPropertiesWindow(XYPlot& plot, const std::string& title);
   ~PlotPropertiesWindow() {}
 
   std::function<void()> OnChangesApplied;
@@ -47,7 +49,7 @@ class PlotPropertiesWindow : public Gtk::Window {
   void updateHMinMaxEntries();
   void updateVMinMaxEntries();
 
-  class Plot2D &_plot;
+  XYPlot& _plot;
 
   Gtk::ButtonBox _bottomButtonBox;
   Gtk::VBox _topVBox;

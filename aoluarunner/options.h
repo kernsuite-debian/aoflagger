@@ -1,12 +1,11 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include <boost/optional/optional.hpp>
-
 #include "../structures/types.h"
 
 #include "../util/logger.h"
 
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -24,9 +23,9 @@ struct BaselineIntegration {
   enum Mode { Count, Average, AverageAbs, Squared, Stddev };
   enum Differencing { NoDifference, TimeDifference, FrequencyDifference };
 
-  boost::optional<bool> enable, withAutos, withFlagged;
-  boost::optional<Mode> mode;
-  boost::optional<Differencing> differencing;
+  std::optional<bool> enable, withAutos, withFlagged;
+  std::optional<Mode> mode;
+  std::optional<Differencing> differencing;
 
   /**
    * All options that are set in @ref other will override the settings
@@ -50,22 +49,23 @@ struct BaselineIntegration {
 struct Options {
   std::set<size_t> antennaeToInclude, antennaeToSkip;
   std::set<size_t> bands;
-  boost::optional<BaselineSelection> baselineSelection;
+  std::optional<BaselineSelection> baselineSelection;
   BaselineIntegration baselineIntegration;
   size_t chunkSize;
-  boost::optional<bool> combineSPWs;
+  std::optional<bool> combineSPWs;
+  std::optional<bool> concatenateFrequency;
   std::string dataColumn;
   std::string executeFilename;
   std::string executeFunctionName;
   std::set<size_t> fields;
-  boost::optional<BaselineIOMode> readMode;
-  boost::optional<bool> readUVW;
+  std::optional<BaselineIOMode> readMode;
+  std::optional<bool> readUVW;
   std::string scriptVersion;
-  boost::optional<bool> skipFlagged;
-  boost::optional<size_t> startTimestep, endTimestep;
+  std::optional<bool> skipFlagged;
+  std::optional<size_t> startTimestep, endTimestep;
   std::string strategyFilename;
   size_t threadCount;
-  boost::optional<Logger::VerbosityLevel> logVerbosity;
+  std::optional<Logger::VerbosityLevel> logVerbosity;
 
   std::vector<std::string> preamble;
   std::string commandLine;
@@ -86,6 +86,8 @@ struct Options {
     if (other.baselineSelection) baselineSelection = other.baselineSelection;
     if (other.chunkSize) chunkSize = other.chunkSize;
     if (other.combineSPWs) combineSPWs = other.combineSPWs;
+    if (other.concatenateFrequency)
+      concatenateFrequency = other.concatenateFrequency;
     if (!other.dataColumn.empty()) dataColumn = other.dataColumn;
     if (!other.executeFilename.empty()) executeFilename = other.executeFilename;
     if (!other.executeFunctionName.empty())
@@ -114,6 +116,7 @@ struct Options {
            baselineIntegration == rhs.baselineIntegration &&
            baselineSelection == rhs.baselineSelection &&
            chunkSize == rhs.chunkSize && combineSPWs == rhs.combineSPWs &&
+           concatenateFrequency == rhs.concatenateFrequency &&
            dataColumn == rhs.dataColumn &&
            executeFilename == rhs.executeFilename &&
            executeFunctionName == rhs.executeFunctionName &&

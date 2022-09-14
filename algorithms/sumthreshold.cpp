@@ -1,18 +1,25 @@
 #include "sumthreshold.h"
 
-#include "../../structures/image2d.h"
+#include "../structures/image2d.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
 #include <boost/align/aligned_alloc.hpp>
 
-#ifdef __SSE__
+#if defined(__SSE__) || defined(__x86_64__)
 
 #include <stdint.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
 #endif
+
+namespace algorithms {
+
+SumThreshold::VerticalScratch::VerticalScratch()
+    : lastFlaggedPos(nullptr, [](void*) noexcept {}),
+      sum(nullptr, [](void*) noexcept {}),
+      count(nullptr, [](void*) noexcept {}) {}
 
 SumThreshold::VerticalScratch::VerticalScratch(size_t width, size_t)
     : lastFlaggedPos(static_cast<int*>(boost::alignment::aligned_alloc(
@@ -137,7 +144,7 @@ void SumThreshold::VerticalLarge(const Image2D* input, Mask2D* mask,
           ++count;
         }
         // Check
-        if (count > 0 && fabs(sum / count) > threshold) {
+        if (count > 0 && std::fabs(sum / count) > threshold) {
           for (size_t i = 0; i < Length; ++i)
             scratch->SetValue(x, yTop + i, true);
         }
@@ -226,10 +233,11 @@ void SumThreshold::VerticalLargeReference(const Image2D* input, Mask2D* mask,
   }
 }
 
-#ifdef __SSE__
-void SumThreshold::VerticalLargeSSE(const Image2D* input, Mask2D* mask,
-                                    Mask2D* scratch, size_t length,
-                                    num_t threshold) {
+#if defined(__SSE__) || defined(__x86_64__)
+
+__attribute__((target("sse"))) void SumThreshold::VerticalLargeSSE(
+    const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length,
+    num_t threshold) {
   switch (length) {
     case 1:
       Vertical<1>(input, mask, threshold);
@@ -263,9 +271,9 @@ void SumThreshold::VerticalLargeSSE(const Image2D* input, Mask2D* mask,
   }
 }
 
-void SumThreshold::HorizontalLargeSSE(const Image2D* input, Mask2D* mask,
-                                      Mask2D* scratch, size_t length,
-                                      num_t threshold) {
+__attribute__((target("sse"))) void SumThreshold::HorizontalLargeSSE(
+    const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length,
+    num_t threshold) {
   switch (length) {
     case 1:
       Horizontal<1>(input, mask, threshold);
@@ -298,12 +306,13 @@ void SumThreshold::HorizontalLargeSSE(const Image2D* input, Mask2D* mask,
       throw std::runtime_error("Invalid value for length");
   }
 }
-#endif  // SSE
+#endif  // defined(__SSE__) || defined(__x86_64__)
 
-#ifdef __AVX2__
-void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask,
-                                    Mask2D* scratch, size_t length,
-                                    num_t threshold) {
+#if defined(__AVX2__) || defined(__x86_64__)
+
+__attribute__((target("avx2"))) void SumThreshold::VerticalLargeAVX(
+    const Image2D* input, Mask2D* mask, Mask2D* scratch, size_t length,
+    num_t threshold) {
   switch (length) {
     case 1:
       Vertical<1>(input, mask, threshold);
@@ -337,8 +346,8 @@ void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask,
   }
 }
 
-void SumThreshold::HorizontalAVXDumas(const Image2D* input, Mask2D* mask,
-                                      size_t length, num_t threshold) {
+__attribute__((target("avx2"))) void SumThreshold::HorizontalAVXDumas(
+    const Image2D* input, Mask2D* mask, size_t length, num_t threshold) {
   switch (length) {
     case 1:
       HorizontalAVXDumas<1>(input, mask, threshold);
@@ -372,9 +381,9 @@ void SumThreshold::HorizontalAVXDumas(const Image2D* input, Mask2D* mask,
   }
 }
 
-void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask,
-                                    VerticalScratch* scratch, size_t length,
-                                    num_t threshold) {
+__attribute__((target("avx2"))) void SumThreshold::VerticalAVXDumas(
+    const Image2D* input, Mask2D* mask, VerticalScratch* scratch, size_t length,
+    num_t threshold) {
   switch (length) {
     case 1:
       VerticalAVXDumas<1>(input, mask, scratch, threshold);
@@ -408,9 +417,9 @@ void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask,
   }
 }
 
-#endif  // AVX2
+#endif  // defined(__AVX2__) || defined(__x86_64__)
 
-#ifdef __SSE__
+#if defined(__SSE__) || defined(__x86_64__)
 /**
  * The SSE version of the Vertical SumThreshold algorithm using intrinsics.
  *
@@ -434,8 +443,8 @@ void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask,
  * optimal at that size.
  */
 template <size_t Length>
-void SumThreshold::VerticalLargeSSE(const Image2D* input, Mask2D* mask,
-                                    Mask2D* scratch, num_t threshold) {
+__attribute__((target("sse"))) void SumThreshold::VerticalLargeSSE(
+    const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold) {
   *scratch = *mask;
   const size_t width = mask->Width(), height = mask->Height();
   const __m128 zero4 = _mm_set1_ps(0.0);
@@ -548,8 +557,8 @@ void SumThreshold::VerticalLargeSSE(const Image2D* input, Mask2D* mask,
 }
 
 template <size_t Length>
-void SumThreshold::HorizontalLargeSSE(const Image2D* input, Mask2D* mask,
-                                      Mask2D* scratch, num_t threshold) {
+__attribute__((target("sse"))) void SumThreshold::HorizontalLargeSSE(
+    const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold) {
   // The idea of the horizontal SSE version is to read four ('y') rows and
   // process them simultaneously.
 
@@ -765,13 +774,13 @@ template void SumThreshold::HorizontalLargeSSE<256>(const Image2D* input,
 
 #endif
 
-#ifdef __AVX2__
+#if defined(__AVX2__) || defined(__x86_64__)
 
 #include <immintrin.h>
 
 template <size_t Length>
-void SumThreshold::VerticalLargeAVX(const Image2D* input, Mask2D* mask,
-                                    Mask2D* scratch, num_t threshold) {
+__attribute__((target("avx2"))) void SumThreshold::VerticalLargeAVX(
+    const Image2D* input, Mask2D* mask, Mask2D* scratch, num_t threshold) {
   *scratch = *mask;
   const size_t width = mask->Width(), height = mask->Height();
   const __m256 zero8 = _mm256_set1_ps(0.0);
@@ -1037,8 +1046,9 @@ template void SumThreshold::VerticalLargeAVX<256>(const Image2D* input,
                                                   num_t threshold);
 
 template <size_t Length>
-void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask,
-                                    VerticalScratch* scratch, num_t threshold) {
+__attribute__((target("avx2"))) void SumThreshold::VerticalAVXDumas(
+    const Image2D* input, Mask2D* mask, VerticalScratch* scratch,
+    num_t threshold) {
   if (Length <= mask->Height()) {
     int* lastFlaggedPos = scratch->lastFlaggedPos.get();
     num_t* sum = scratch->sum.get();
@@ -1285,8 +1295,8 @@ void SumThreshold::VerticalAVXDumas(const Image2D* input, Mask2D* mask,
 }
 
 template <size_t Length>
-void SumThreshold::HorizontalAVXDumas(const Image2D* input, Mask2D* mask,
-                                      num_t threshold) {
+__attribute__((target("avx2"))) void SumThreshold::HorizontalAVXDumas(
+    const Image2D* input, Mask2D* mask, num_t threshold) {
   if (Length <= mask->Width()) {
 #ifndef NDEBUG
     if (input->Stride() * 7 * sizeof(float) > 0xFFFFFFFF) {
@@ -1602,6 +1612,6 @@ template void SumThreshold::HorizontalAVXDumas<256>(const Image2D* input,
                                                     Mask2D* mask,
                                                     num_t threshold);
 
-#else
-#warning "AVX2 optimization of SumThreshold algorithm is not used"
-#endif
+#endif  // defined(__AVX2__) || defined(__x86_64__)
+
+}  // namespace algorithms

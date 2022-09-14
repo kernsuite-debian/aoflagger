@@ -10,7 +10,7 @@ Data class
     It may hold information for multiple polarizations, channels and timesteps,
     such that it contains the data for a particular observing field,
     spectral window (band) and antenna-pair (or single dish).
-    The data objects thus holds a dynamic spectrum for each polarization.
+    The data object thus holds a dynamic spectrum for each polarization.
     
     The visibility data can consist of complex values, or single-float
     values representing the real, imaginary, amplitude or phase of the
@@ -35,9 +35,11 @@ Method summary
     - :meth:`~Data.copy`
     - :meth:`~Data.flag_nans`
     - :meth:`~Data.flag_zeros`
+    - :meth:`~Data.invert_mask`
     - :meth:`~Data.join_mask`
     - :meth:`~Data.set_mask`
     - :meth:`~Data.set_mask_for_channel_range`
+    - :meth:`~Data.set_masked_visibilities`
     - :meth:`~Data.set_polarization_data`
     - :meth:`~Data.set_visibilities`
     - :meth:`~Data.__sub`
@@ -296,7 +298,14 @@ Detailed descriptions
         :return: ``true`` in case all metadata is available, ``false`` otherwise.
         :rtype: boolean
     
-    .. method:: Data.is_auto_correlation(data)
+   .. method:: Data.invert_mask(data)
+   
+        Changes masked values to be unmasked and vice versa.
+        
+        :param data: Destination data (modified in place)
+        :type data: :class:`Data`
+    
+   .. method:: Data.is_auto_correlation(data)
     
         Determine whether this baseline is an auto-correlation.
         This is the case if :meth:`get_antenna1_index` ==
@@ -384,6 +393,18 @@ Detailed descriptions
     
         Assign the visibility data from one :class:`Data` object to another.
         The flagmask and meta-data are unchanged. The two sets should have
+        the same number of polarizations and the same complex state.
+        
+        :param destination_data: Destination data (changed inplace).
+        :type destination_data: :class:`Data`
+        :param visibility_data: Source data (unmodified).
+        :type visibility_data: :class:`Data`
+    
+    .. method:: Data.set_masked_visibilities(destination_data, visibility_data)
+    
+        Conditionally assign the visibility data from one :class:`Data` object
+        to another. Only visibilities that are set to `true` in the destination mask
+        are altered. The flagmask and meta-data are unchanged. The two sets should have
         the same number of polarizations and the same complex state.
         
         :param destination_data: Destination data (changed inplace).

@@ -20,8 +20,10 @@
 
 #include "rfiguiwindow.h"
 
-ComplexPlanePlotWindow::ComplexPlanePlotWindow(RFIGuiWindow &rfiGuiWindow,
-                                               PlotManager &plotManager)
+using algorithms::FringeStoppingFitter;
+
+ComplexPlanePlotWindow::ComplexPlanePlotWindow(RFIGuiWindow& rfiGuiWindow,
+                                               PlotManager& plotManager)
     : _rfiGuiWindow(rfiGuiWindow),
       _plotManager(plotManager),
       _detailsFrame("Location details"),
@@ -142,20 +144,20 @@ ComplexPlanePlotWindow::~ComplexPlanePlotWindow() {}
 void ComplexPlanePlotWindow::onPlotPressed() {
   if (_rfiGuiWindow.HasImage()) {
     try {
-      Plot2D &plot = _plotManager.NewPlot2D("Complex plane");
+      XYPlot& plot = _plotManager.NewPlot2D("Complex plane");
       size_t x = (size_t)_xPositionScale.get_value();
       size_t y = (size_t)_yPositionScale.get_value();
       size_t length = (size_t)_lengthScale.get_value();
       size_t avgSize = (size_t)_ySumLengthScale.get_value();
       bool realVersusImaginary = _realVersusImaginaryButton.get_active();
-      const TimeFrequencyData &data = _rfiGuiWindow.GetActiveData();
+      const TimeFrequencyData& data = _rfiGuiWindow.GetActiveData();
 
       if (_allValuesButton.get_active()) {
-        Plot2DPointSet *pointSet;
+        XYPointSet* pointSet;
         if (realVersusImaginary)
-          pointSet = &plot.StartLine("Data", Plot2DPointSet::DrawPoints);
+          pointSet = &plot.StartLine("Data", XYPointSet::DrawPoints);
         else
-          pointSet = &plot.StartLine("Data (real)", Plot2DPointSet::DrawPoints);
+          pointSet = &plot.StartLine("Data (real)", XYPointSet::DrawPoints);
         Mask2DPtr mask =
             Mask2D::CreateSetMaskPtr<false>(_rfiGuiWindow.AltMask()->Width(),
                                             _rfiGuiWindow.AltMask()->Height());
@@ -164,14 +166,14 @@ void ComplexPlanePlotWindow::onPlotPressed() {
 
         if (!realVersusImaginary) {
           pointSet =
-              &plot.StartLine("Data (imaginary)", Plot2DPointSet::DrawPoints);
+              &plot.StartLine("Data (imaginary)", XYPointSet::DrawPoints);
           RFIPlots::MakeComplexPlanePlot(*pointSet, data, x, length, y, avgSize,
                                          mask, realVersusImaginary, true);
         }
       }
 
       if (_unmaskedValuesButton.get_active()) {
-        Plot2DPointSet *pointSet = &plot.StartLine("Without RFI");
+        XYPointSet* pointSet = &plot.StartLine("Without RFI");
         RFIPlots::MakeComplexPlanePlot(*pointSet, data, x, length, y, avgSize,
                                        _rfiGuiWindow.AltMask(),
                                        realVersusImaginary, false);
@@ -184,7 +186,7 @@ void ComplexPlanePlotWindow::onPlotPressed() {
       }
 
       if (_maskedValuesButton.get_active()) {
-        Plot2DPointSet *pointSet = &plot.StartLine("Only RFI");
+        XYPointSet* pointSet = &plot.StartLine("Only RFI");
         Mask2DPtr mask = Mask2D::MakePtr(*_rfiGuiWindow.AltMask());
         mask->Invert();
         RFIPlots::MakeComplexPlanePlot(*pointSet, data, x, length, y, avgSize,
@@ -197,7 +199,7 @@ void ComplexPlanePlotWindow::onPlotPressed() {
       }
 
       if (_fittedValuesButton.get_active()) {
-        Plot2DPointSet *pointSet;
+        XYPointSet* pointSet;
         if (realVersusImaginary)
           pointSet = &plot.StartLine("Fit");
         else
@@ -234,7 +236,7 @@ void ComplexPlanePlotWindow::onPlotPressed() {
         fitter.SetMetaData(_rfiGuiWindow.SelectedMetaData());
         fitter.PerformStaticFrequencyFitOnOneChannel(y);
 
-        Plot2DPointSet *pointSet;
+        XYPointSet* pointSet;
         if (realVersusImaginary)
           pointSet = &plot.StartLine("Fit");
         else
@@ -311,7 +313,7 @@ void ComplexPlanePlotWindow::onPlotPressed() {
         else
           fitter.PerformDynamicFrequencyFit(y, y + avgSize);
 
-        Plot2DPointSet *pointSet;
+        XYPointSet* pointSet;
         if (realVersusImaginary)
           pointSet = &plot.StartLine("Fit");
         else
@@ -333,7 +335,7 @@ void ComplexPlanePlotWindow::onPlotPressed() {
 
       _plotManager.Update();
 
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
       Gtk::MessageDialog dialog(*this, e.what(), false, Gtk::MESSAGE_ERROR);
       dialog.run();
     }

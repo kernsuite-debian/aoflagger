@@ -4,10 +4,9 @@
 #include "../lua/scriptdata.h"
 
 #include "../structures/antennainfo.h"
-#include "../structures/system.h"
 
 #include "../util/logger.h"
-#include "../util/progresslistener.h"
+#include "../util/progress/dummyprogresslistener.h"
 #include "../util/stopwatch.h"
 
 #include "../imagesets/bhfitsimageset.h"
@@ -19,6 +18,8 @@
 #include "../imagesets/rfibaselineset.h"
 
 #include "writethread.h"
+
+#include <aocommon/system.h>
 
 #include <sstream>
 #include <vector>
@@ -36,7 +37,7 @@ BaselineIterator::BaselineIterator(std::mutex* ioMutex, const Options& options)
 
 BaselineIterator::~BaselineIterator() {}
 
-void BaselineIterator::Run(rfiStrategy::ImageSet& imageSet, LuaThreadGroup& lua,
+void BaselineIterator::Run(imagesets::ImageSet& imageSet, LuaThreadGroup& lua,
                            ScriptData& scriptData) {
   _lua = &lua;
   _imageSet = &imageSet;
@@ -45,11 +46,11 @@ void BaselineIterator::Run(rfiStrategy::ImageSet& imageSet, LuaThreadGroup& lua,
   _writeThread.reset(new WriteThread(imageSet, _threadCount, _ioMutex));
   _globalScriptData = &scriptData;
 
-  rfiStrategy::MSImageSet* msImageSet =
-      dynamic_cast<rfiStrategy::MSImageSet*>(&imageSet);
+  imagesets::MSImageSet* msImageSet =
+      dynamic_cast<imagesets::MSImageSet*>(&imageSet);
   if (msImageSet) {
     // Check memory usage
-    rfiStrategy::ImageSetIndex tempIndex = msImageSet->StartIndex();
+    imagesets::ImageSetIndex tempIndex = msImageSet->StartIndex();
     size_t timeStepCount = msImageSet->ObservationTimesVector(tempIndex).size();
     size_t channelCount = msImageSet->GetBandInfo(0).channels.size();
     double estMemorySizePerThread =
@@ -61,7 +62,7 @@ void BaselineIterator::Run(rfiStrategy::ImageSet& imageSet, LuaThreadGroup& lua,
     size_t compThreadCount = _threadCount;
     if (compThreadCount > 0) --compThreadCount;
 
-    int64_t memSize = System::TotalMemory();
+    int64_t memSize = aocommon::system::TotalMemory();
     Logger::Debug << "Detected " << memToStr(memSize) << " of system memory.\n";
 
     if (estMemorySizePerThread * double(compThreadCount) > memSize) {
@@ -79,7 +80,7 @@ void BaselineIterator::Run(rfiStrategy::ImageSet& imageSet, LuaThreadGroup& lua,
       _threadCount = maxThreads;
     }
   }
-  if (dynamic_cast<rfiStrategy::FilterBankSet*>(&imageSet) != nullptr &&
+  if (dynamic_cast<imagesets::FilterBankSet*>(&imageSet) != nullptr &&
       _threadCount != 1) {
     Logger::Info << "This is a Filterbank set -- disabling multi-threading\n";
     _threadCount = 1;
@@ -101,7 +102,7 @@ void BaselineIterator::Run(rfiStrategy::ImageSet& imageSet, LuaThreadGroup& lua,
   _nextIndex = 0;
 
   // Count the baselines that are to be processed
-  rfiStrategy::ImageSetIndex iteratorIndex = imageSet.StartIndex();
+  imagesets::ImageSetIndex iteratorIndex = imageSet.StartIndex();
   while (!iteratorIndex.HasWrapped()) {
     if (IsBaselineSelected(iteratorIndex)) ++_baselineCount;
     iteratorIndex.Next();
@@ -130,9 +131,9 @@ void BaselineIterator::Run(rfiStrategy::ImageSet& imageSet, LuaThreadGroup& lua,
         "the baselines: the RFI strategy will not continue.");
 }
 
-bool BaselineIterator::IsBaselineSelected(rfiStrategy::ImageSetIndex& index) {
-  rfiStrategy::IndexableSet* idImageSet =
-      dynamic_cast<rfiStrategy::IndexableSet*>(_imageSet);
+bool BaselineIterator::IsBaselineSelected(imagesets::ImageSetIndex& index) {
+  imagesets::IndexableSet* idImageSet =
+      dynamic_cast<imagesets::IndexableSet*>(_imageSet);
   size_t a1id, a2id;
   if (idImageSet != nullptr) {
     a1id = idImageSet->GetAntenna1(index);
@@ -160,7 +161,7 @@ bool BaselineIterator::IsBaselineSelected(rfiStrategy::ImageSetIndex& index) {
   // hold for single-"baseline" files.
   if (!_imageSet->HasCrossCorrelations()) return true;
 
-  switch (_options.baselineSelection.get_value_or(
+  switch (_options.baselineSelection.value_or(
       BaselineSelection::CrossCorrelations)) {
     case BaselineSelection::All:
       return true;
@@ -177,18 +178,18 @@ bool BaselineIterator::IsBaselineSelected(rfiStrategy::ImageSetIndex& index) {
   return false;
 }
 
-rfiStrategy::ImageSetIndex BaselineIterator::GetNextIndex() {
+imagesets::ImageSetIndex BaselineIterator::GetNextIndex() {
   std::lock_guard<std::mutex> lock(_mutex);
   while (!_loopIndex.HasWrapped()) {
     if (IsBaselineSelected(_loopIndex)) {
-      rfiStrategy::ImageSetIndex newIndex(_loopIndex);
+      imagesets::ImageSetIndex newIndex(_loopIndex);
       _loopIndex.Next();
 
       return newIndex;
     }
     _loopIndex.Next();
   }
-  return rfiStrategy::ImageSetIndex();
+  return imagesets::ImageSetIndex();
 }
 
 void BaselineIterator::SetExceptionOccured() {
@@ -204,11 +205,6 @@ void BaselineIterator::SetFinishedBaselines() {
 }
 
 void BaselineIterator::ProcessingThread::operator()() {
-  std::unique_lock<std::mutex> ioLock(*_parent._ioMutex);
-  std::unique_ptr<rfiStrategy::ImageSet> privateImageSet =
-      _parent._imageSet->Clone();
-  ioLock.unlock();
-
   ScriptData scriptData;
   const std::string executeFunctionName =
       _parent._options.executeFunctionName.empty()
@@ -216,7 +212,7 @@ void BaselineIterator::ProcessingThread::operator()() {
           : _parent._options.executeFunctionName;
 
   try {
-    std::unique_ptr<rfiStrategy::BaselineData> baseline =
+    std::unique_ptr<imagesets::BaselineData> baseline =
         _parent.GetNextBaseline();
 
     while (baseline != nullptr) {
@@ -247,9 +243,10 @@ void BaselineIterator::ProcessingThread::operator()() {
     _parent.SetExceptionOccured();
   }
 
-  ioLock.lock();
-  _parent._globalScriptData->Combine(std::move(scriptData));
-  ioLock.unlock();
+  {
+    std::unique_lock<std::mutex> ioLock(*_parent._ioMutex);
+    _parent._globalScriptData->Combine(std::move(scriptData));
+  }
 
   Logger::Debug << "Processing thread finished.\n";
 }
@@ -259,8 +256,8 @@ void BaselineIterator::ReaderThread::operator()() {
   bool finished = false;
   size_t threadCount = _parent._threadCount;
   size_t minRecommendedBufferSize, maxRecommendedBufferSize;
-  rfiStrategy::MSImageSet* msImageSet =
-      dynamic_cast<rfiStrategy::MSImageSet*>(_parent._imageSet);
+  imagesets::MSImageSet* msImageSet =
+      dynamic_cast<imagesets::MSImageSet*>(_parent._imageSet);
   if (msImageSet != nullptr) {
     minRecommendedBufferSize =
         msImageSet->Reader()->GetMinRecommendedBufferSize(threadCount);
@@ -284,7 +281,7 @@ void BaselineIterator::ReaderThread::operator()() {
       watch.Start();
 
       for (size_t i = 0; i < wantedCount; ++i) {
-        rfiStrategy::ImageSetIndex index = _parent.GetNextIndex();
+        imagesets::ImageSetIndex index = _parent.GetNextIndex();
         if (!index.Empty()) {
           _parent._imageSet->AddReadRequest(index);
           ++requestedCount;
@@ -300,7 +297,7 @@ void BaselineIterator::ReaderThread::operator()() {
         watch.Pause();
 
         for (size_t i = 0; i < requestedCount; ++i) {
-          std::unique_ptr<rfiStrategy::BaselineData> baseline =
+          std::unique_ptr<imagesets::BaselineData> baseline =
               _parent._imageSet->GetNextRequested();
 
           std::lock_guard<std::mutex> bufferLock(_parent._mutex);

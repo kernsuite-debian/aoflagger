@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-Plot::Plot(const std::string &pdfFile)
+Plot::Plot(const std::string& pdfFile)
     : _curLineFd(-1),
       _pdfFile(pdfFile),
       _open(true),
@@ -155,7 +155,7 @@ void Plot::CloseCurFd() {
   }
 }
 
-void Plot::StartLine(const std::string &lineTitle) {
+void Plot::StartLine(const std::string& lineTitle) {
   CloseCurFd();
   char tmpLineFile[] = "/tmp/line.txt-XXXXXX";
   _curLineFd = mkstemp(tmpLineFile);
@@ -169,7 +169,7 @@ void Plot::StartLine(const std::string &lineTitle) {
   _curType = Line;
 }
 
-void Plot::StartScatter(const std::string &lineTitle) {
+void Plot::StartScatter(const std::string& lineTitle) {
   CloseCurFd();
   char tmpLineFile[] = "/tmp/line.txt-XXXXXX";
   _curLineFd = mkstemp(tmpLineFile);
@@ -183,7 +183,7 @@ void Plot::StartScatter(const std::string &lineTitle) {
   _curType = Scatter;
 }
 
-void Plot::StartBoxes(const std::string &lineTitle) {
+void Plot::StartBoxes(const std::string& lineTitle) {
   _hasBoxes = true;
   CloseCurFd();
   char tmpLineFile[] = "/tmp/line.txt-XXXXXX";
@@ -198,7 +198,7 @@ void Plot::StartBoxes(const std::string &lineTitle) {
   _curType = Boxes;
 }
 
-void Plot::StartGrid(const std::string &lineTitle) {
+void Plot::StartGrid(const std::string& lineTitle) {
   CloseCurFd();
   char tmpLineFile[] = "/tmp/line.txt-XXXXXX";
   _curLineFd = mkstemp(tmpLineFile);
@@ -249,7 +249,7 @@ void Plot::AddRectangle(long double x1, double y1, double x2, double y2) {
   _extraHeaders.push_back(s.str());
 }
 
-void Plot::ExecuteCmd(const std::string &cmd) const {
+void Plot::ExecuteCmd(const std::string& cmd) const {
   if (system(cmd.c_str()) != 0)
     throw std::runtime_error("system() returned non-zero");
 }

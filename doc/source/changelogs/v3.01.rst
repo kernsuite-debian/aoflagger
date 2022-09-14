@@ -40,7 +40,7 @@ Bug fixes  & refactoring
 
 * pybind11 is now put into the source as submodule, which means it is no longer a dependency.
 * Fix the 'select active data' option so that it honours zoom settings.
-* Fix "Export baeline" dialog so that it shows `.rfibl` files.
+* Fix "Export baseline" dialog so that it shows `.rfibl` files.
 * Fix a crash when using `aoquality query_fr`/`query_g` on collected quality statistic sets.
 * Fix hang when reading (sd)fits files.
 * Add CPack options to CMakeLists.txt to enable creating Debian packages.

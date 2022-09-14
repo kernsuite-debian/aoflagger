@@ -127,7 +127,7 @@ void ProgressWindow::updateProgress() {
   }
 }
 
-void ProgressWindow::OnStartTask(const std::string &description) {
+void ProgressWindow::OnStartTask(const std::string& description) {
   std::unique_lock<std::mutex> lock(_mutex);
   _taskDescription = description;
   lock.unlock();
@@ -152,7 +152,7 @@ void ProgressWindow::OnProgress(size_t progress, size_t maxProgress) {
   _progressChangeSignal();
 }
 
-void ProgressWindow::OnException(std::exception &thrownException) {
+void ProgressWindow::OnException(std::exception& thrownException) {
   std::unique_lock<std::mutex> lock(_mutex);
   _exceptionQueued = true;
   _exceptionDescription = thrownException.what();

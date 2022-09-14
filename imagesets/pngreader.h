@@ -7,15 +7,15 @@
 #include <map>
 #include <cmath>
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
 
 #include "../lua/telescopefile.h"
 
 #include "singleimageset.h"
 
-#include "../../util/logger.h"
+#include "../util/logger.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class PngReader final : public SingleImageSet {
  public:
@@ -44,6 +44,6 @@ class PngReader final : public SingleImageSet {
   std::string _path;
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

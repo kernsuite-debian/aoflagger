@@ -26,14 +26,14 @@ class MSRowData : public Serializable {
         _realData(polarizationCount * channelCount),
         _imagData(polarizationCount * channelCount) {}
 
-  virtual void Serialize(std::ostream &stream) const final override {
+  virtual void Serialize(std::ostream& stream) const final override {
     SerializeToUInt32(stream, _polarizationCount);
     SerializeToUInt32(stream, _channelCount);
     for (num_t val : _realData) SerializeToFloat(stream, val);
     for (num_t val : _imagData) SerializeToFloat(stream, val);
   }
 
-  virtual void Unserialize(std::istream &stream) final override {
+  virtual void Unserialize(std::istream& stream) final override {
     _polarizationCount = UnserializeUInt32(stream);
     _channelCount = UnserializeUInt32(stream);
     const size_t size = _polarizationCount * _channelCount;
@@ -44,20 +44,20 @@ class MSRowData : public Serializable {
   }
   unsigned PolarizationCount() const { return _polarizationCount; }
   unsigned ChannelCount() const { return _channelCount; }
-  const num_t *RealPtr() const { return _realData.data(); }
-  const num_t *ImagPtr() const { return _imagData.data(); }
-  num_t *RealPtr() { return _realData.data(); }
-  num_t *ImagPtr() { return _imagData.data(); }
-  const num_t *RealPtr(size_t channel) const {
+  const num_t* RealPtr() const { return _realData.data(); }
+  const num_t* ImagPtr() const { return _imagData.data(); }
+  num_t* RealPtr() { return _realData.data(); }
+  num_t* ImagPtr() { return _imagData.data(); }
+  const num_t* RealPtr(size_t channel) const {
     return &_realData[_polarizationCount * channel];
   }
-  const num_t *ImagPtr(size_t channel) const {
+  const num_t* ImagPtr(size_t channel) const {
     return &_imagData[_polarizationCount * channel];
   }
-  num_t *RealPtr(size_t channel) {
+  num_t* RealPtr(size_t channel) {
     return &_realData[_polarizationCount * channel];
   }
-  num_t *ImagPtr(size_t channel) {
+  num_t* ImagPtr(size_t channel) {
     return &_imagData[_polarizationCount * channel];
   }
 

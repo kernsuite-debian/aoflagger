@@ -9,6 +9,7 @@
 #include "../../imagesets/imageset.h"
 #include "../../imagesets/msimageset.h"
 #include "../../imagesets/msoptions.h"
+#include "../../imagesets/multibandmsimageset.h"
 #include "../../imagesets/joinedspwset.h"
 
 #include "../../lua/luastrategy.h"
@@ -24,7 +25,7 @@
 #include "../../structures/spatialmatrixmetadata.h"
 
 #include "../../util/multiplot.h"
-#include "../../util/progresslistener.h"
+#include "../../util/progress/progresslistener.h"
 #include "../../util/process.h"
 #include "../../util/rfiplots.h"
 
@@ -32,9 +33,17 @@
 
 #include "imagecomparisoncontroller.h"
 
+#include <aocommon/system.h>
+
 #include <gtkmm/messagedialog.h>
 
 #include <boost/filesystem/operations.hpp>
+
+#include <algorithm>
+#include <thread>
+
+using algorithms::SVDMitigater;
+using algorithms::TestSetGenerator;
 
 RFIGuiController::RFIGuiController()
     : _showOriginalFlags(true),
@@ -78,12 +87,12 @@ TimeFrequencyMetaDataCPtr RFIGuiController::SelectedMetaData() const {
 void RFIGuiController::plotMeanSpectrum(bool weight) {
   if (IsImageLoaded()) {
     std::string title = weight ? "Sum spectrum" : "Mean spectrum";
-    Plot2D& plot = _plotManager->NewPlot2D(title);
+    XYPlot& plot = _plotManager->NewPlot2D(title);
 
     TimeFrequencyData data = ActiveData();
     Mask2DCPtr mask =
         Mask2D::CreateSetMaskPtr<false>(data.ImageWidth(), data.ImageHeight());
-    Plot2DPointSet& beforeSet = plot.StartLine("Without flagging");
+    XYPointSet& beforeSet = plot.StartLine("Without flagging");
     if (weight)
       RFIPlots::MakeMeanSpectrumPlot<true>(beforeSet, data, mask,
                                            SelectedMetaData());
@@ -93,7 +102,7 @@ void RFIGuiController::plotMeanSpectrum(bool weight) {
 
     mask.reset(new Mask2D(*data.GetSingleMask()));
     if (!mask->AllFalse()) {
-      Plot2DPointSet& afterSet = plot.StartLine("Flagged");
+      XYPointSet& afterSet = plot.StartLine("Flagged");
       if (weight)
         RFIPlots::MakeMeanSpectrumPlot<true>(afterSet, data, mask,
                                              SelectedMetaData());
@@ -108,21 +117,21 @@ void RFIGuiController::plotMeanSpectrum(bool weight) {
 
 void RFIGuiController::PlotDist() {
   if (IsImageLoaded()) {
-    Plot2D& plot = _plotManager->NewPlot2D("Distribution");
+    XYPlot& plot = _plotManager->NewPlot2D("Distribution");
 
     TimeFrequencyData activeData = ActiveData();
     Image2DCPtr image = activeData.GetSingleImage();
     Mask2DPtr mask =
         Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
-    Plot2DPointSet& totalSet = plot.StartLine("Total");
+    XYPointSet& totalSet = plot.StartLine("Total");
     RFIPlots::MakeDistPlot(totalSet, image, mask);
 
-    Plot2DPointSet& uncontaminatedSet = plot.StartLine("Uncontaminated");
+    XYPointSet& uncontaminatedSet = plot.StartLine("Uncontaminated");
     mask.reset(new Mask2D(*activeData.GetSingleMask()));
     RFIPlots::MakeDistPlot(uncontaminatedSet, image, mask);
 
     mask->Invert();
-    Plot2DPointSet& rfiSet = plot.StartLine("RFI");
+    XYPointSet& rfiSet = plot.StartLine("RFI");
     RFIPlots::MakeDistPlot(rfiSet, image, mask);
 
     _plotManager->Update();
@@ -145,7 +154,7 @@ void RFIGuiController::PlotLogLogDist() {
 
 void RFIGuiController::PlotPowerSpectrum() {
   if (IsImageLoaded()) {
-    Plot2D& plot = _plotManager->NewPlot2D("Power spectrum");
+    XYPlot& plot = _plotManager->NewPlot2D("Power spectrum");
     plot.SetLogarithmicYAxis(true);
 
     TimeFrequencyData data = ActiveData();
@@ -158,13 +167,13 @@ void RFIGuiController::PlotPowerSpectrum() {
     }
     Mask2DPtr mask = Mask2D::CreateSetMaskPtr<false>(images[0]->Width(),
                                                      images[0]->Height());
-    Plot2DPointSet& beforeSet = plot.StartLine("Flags not applied");
+    XYPointSet& beforeSet = plot.StartLine("Flags not applied");
     RFIPlots::MakePowerSpectrumPlot(beforeSet, *images[0], *images[1], *mask,
                                     SelectedMetaData().get());
 
     mask = Mask2D::MakePtr(*data.GetSingleMask());
     if (!mask->AllFalse()) {
-      Plot2DPointSet& afterSet = plot.StartLine("Flags applied");
+      XYPointSet& afterSet = plot.StartLine("Flags applied");
       RFIPlots::MakePowerSpectrumPlot(afterSet, *images[0], *images[1], *mask,
                                       SelectedMetaData().get());
     }
@@ -182,7 +191,7 @@ void RFIGuiController::PlotFrequencyScatter() {
   }
 }
 
-void RFIGuiController::DrawTimeMean(Plot2D& plot) {
+void RFIGuiController::DrawTimeMean(XYPlot& plot) {
   plot.SetTitle("Mean over time");
   plot.SetLogarithmicYAxis(true);
 
@@ -190,12 +199,12 @@ void RFIGuiController::DrawTimeMean(Plot2D& plot) {
   Image2DCPtr image = activeData.GetSingleImage();
   Mask2DPtr mask =
       Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
-  Plot2DPointSet& totalPlot = plot.StartLine("Without flagging");
+  XYPointSet& totalPlot = plot.StartLine("Without flagging");
   RFIPlots::MakePowerTimePlot(totalPlot, image, mask, SelectedMetaData());
 
   mask = Mask2D::MakePtr(*activeData.GetSingleMask());
   if (!mask->AllFalse()) {
-    Plot2DPointSet& uncontaminatedPlot = plot.StartLine("With flagging");
+    XYPointSet& uncontaminatedPlot = plot.StartLine("With flagging");
     RFIPlots::MakePowerTimePlot(uncontaminatedPlot, image, mask,
                                 SelectedMetaData());
   }
@@ -203,7 +212,7 @@ void RFIGuiController::DrawTimeMean(Plot2D& plot) {
 
 void RFIGuiController::PlotTimeMean() {
   if (IsImageLoaded()) {
-    Plot2D& plot = _plotManager->NewPlot2D("Mean over time");
+    XYPlot& plot = _plotManager->NewPlot2D("Mean over time");
     DrawTimeMean(plot);
     _plotManager->Update();
   }
@@ -220,14 +229,14 @@ void RFIGuiController::PlotTimeScatter() {
 
 void RFIGuiController::PlotSingularValues() {
   if (IsImageLoaded()) {
-    Plot2D& plot = _plotManager->NewPlot2D("Singular values");
+    XYPlot& plot = _plotManager->NewPlot2D("Singular values");
 
     SVDMitigater::CreateSingularValueGraph(ActiveData(), plot);
     _plotManager->Update();
   }
 }
 
-void RFIGuiController::open(std::unique_ptr<rfiStrategy::ImageSet> imageSet) {
+void RFIGuiController::open(std::unique_ptr<imagesets::ImageSet> imageSet) {
   std::vector<std::string> filenames = imageSet->Files();
   if (filenames.size() == 1)
     Logger::Info << "Opened " << filenames[0] << '\n';
@@ -244,22 +253,42 @@ void RFIGuiController::Open(const std::vector<std::string>& filenames) {
   MSOptions options;
   options.ioMode = DirectReadMode;
   options.baselineIntegration.enable = false;
-  std::unique_ptr<rfiStrategy::ImageSet> imageSet(
-      rfiStrategy::ImageSet::Create(filenames, options));
+  std::unique_ptr<imagesets::ImageSet> imageSet(
+      imagesets::ImageSet::Create(filenames, options));
   imageSet->Initialize();
   lock.unlock();
 
   open(std::move(imageSet));
 }
 
+void RFIGuiController::OpenMsConcatenated(
+    const std::vector<std::string>& filenames, const MSOptions& options) {
+  constexpr size_t kMaxIoThreads = 16;
+  const size_t n_io_threads = std::min<size_t>(
+      {kMaxIoThreads, aocommon::system::ProcessorCount(), filenames.size()});
+
+  std::unique_ptr<imagesets::ImageSet> image_set =
+      std::make_unique<imagesets::MultiBandMsImageSet>(
+          filenames, options.ioMode, options.intervalStart,
+          options.intervalStart, n_io_threads);
+
+  image_set->Initialize();
+
+  open(std::move(image_set));
+}
+
 void RFIGuiController::OpenMS(const std::vector<std::string>& filenames,
                               const MSOptions& options) {
-  std::unique_ptr<rfiStrategy::ImageSet> imageSet(
-      rfiStrategy::ImageSet::Create(filenames, options));
-  rfiStrategy::MSImageSet* msImageSet =
-      dynamic_cast<rfiStrategy::MSImageSet*>(imageSet.get());
+  if (options.concatenateFrequency) {
+    OpenMsConcatenated(filenames, options);
+    return;
+  }
+
+  std::unique_ptr<imagesets::ImageSet> imageSet(
+      imagesets::ImageSet::Create(filenames, options));
+  imagesets::MSImageSet* msImageSet =
+      dynamic_cast<imagesets::MSImageSet*>(imageSet.get());
   if (msImageSet != nullptr) {
-    msImageSet->SetSubtractModel(options.subtractModel);
     msImageSet->SetDataColumnName(options.dataColumnName);
     msImageSet->SetInterval(options.intervalStart, options.intervalEnd);
 
@@ -268,8 +297,8 @@ void RFIGuiController::OpenMS(const std::vector<std::string>& filenames,
     if (options.combineSPWs) {
       msImageSet->Initialize();
       imageSet.release();
-      std::unique_ptr<rfiStrategy::MSImageSet> msImageSetPtr(msImageSet);
-      imageSet.reset(new rfiStrategy::JoinedSPWSet(std::move(msImageSetPtr)));
+      std::unique_ptr<imagesets::MSImageSet> msImageSetPtr(msImageSet);
+      imageSet.reset(new imagesets::JoinedSPWSet(std::move(msImageSetPtr)));
     }
   }
   imageSet->Initialize();
@@ -318,8 +347,10 @@ std::vector<std::string> RFIGuiController::RecentFiles() const {
   return shownFiles;
 }
 
-void RFIGuiController::OpenTestSet(unsigned index, bool gaussianTestSets) {
-  unsigned width = 1024, height = 512;
+void RFIGuiController::OpenTestSet(
+    algorithms::RFITestSet rfiSet,
+    algorithms::BackgroundTestSet backgroundSet) {
+  size_t width = 1024, height = 512;
   TimeFrequencyMetaDataCPtr metaData;
   if (IsImageLoaded()) {
     TimeFrequencyData activeData = ActiveData();
@@ -331,22 +362,8 @@ void RFIGuiController::OpenTestSet(unsigned index, bool gaussianTestSets) {
   }
   CloseImageSet();
 
-  TimeFrequencyData data;
-  if (index >= 1000) {
-    data = TestSetGenerator::MakeSpike();
-    metaData.reset(new TimeFrequencyMetaData());
-  } else {
-    Mask2D rfi = Mask2D::MakeSetMask<false>(width, height);
-    Image2D testSetReal(TestSetGenerator::MakeTestSet(index, rfi, width, height,
-                                                      gaussianTestSets));
-    Image2D testSetImaginary(
-        TestSetGenerator::MakeTestSet(2, rfi, width, height, gaussianTestSets));
-    data = TimeFrequencyData(aocommon::Polarization::StokesI,
-                             Image2D::MakePtr(testSetReal),
-                             Image2D::MakePtr(testSetImaginary));
-    data.SetGlobalMask(Mask2D::MakePtr(rfi));
-  }
-
+  TimeFrequencyData data =
+      TestSetGenerator::MakeTestSet(rfiSet, backgroundSet, width, height);
   _tfController.SetNewData(data, metaData);
   const char* name = "Simulated test set";
   _tfController.Plot().SetTitleText(name);
@@ -411,13 +428,13 @@ void RFIGuiController::JoinLuaThread() {
 }
 
 void RFIGuiController::SetImageSet(
-    std::unique_ptr<rfiStrategy::ImageSet> newImageSet) {
+    std::unique_ptr<imagesets::ImageSet> newImageSet) {
   _imageSetIndex = newImageSet->StartIndex();
   _imageSet = std::move(newImageSet);
 }
 
 void RFIGuiController::SetImageSetIndex(
-    const rfiStrategy::ImageSetIndex& newImageSetIndex) {
+    const imagesets::ImageSetIndex& newImageSetIndex) {
   _imageSetIndex = newImageSetIndex;
 }
 
@@ -466,7 +483,7 @@ void RFIGuiController::LoadCurrentTFDataFinish(bool success) {
 
     if (_rfiGuiWindow != nullptr) {
       // Disable forward/back buttons when only one baseline is available
-      rfiStrategy::ImageSetIndex firstIndex = _imageSet->StartIndex();
+      imagesets::ImageSetIndex firstIndex = _imageSet->StartIndex();
       firstIndex.Next();
       bool multipleBaselines = !firstIndex.HasWrapped();
 

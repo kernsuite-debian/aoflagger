@@ -3,7 +3,9 @@
 
 #include <string>
 
-#include "../../structures/mask2d.h"
+#include "../structures/mask2d.h"
+
+namespace algorithms {
 
 class MorphologicalFlagger {
  public:
@@ -23,5 +25,7 @@ class MorphologicalFlagger {
   static void FlagTime(Mask2D* mask, size_t x);
   static void FlagFrequency(Mask2D* mask, size_t y);
 };
+
+}  // namespace algorithms
 
 #endif

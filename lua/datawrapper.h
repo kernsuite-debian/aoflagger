@@ -27,11 +27,13 @@ class Data {
   static int get_polarizations(lua_State* L);
   static int get_times(lua_State* L);
   static int has_metadata(lua_State* L);
+  static int invert_mask(lua_State* L);
   static int is_auto_correlation(lua_State* L);
   static int is_complex(lua_State* L);
   static int join_mask(lua_State* L);
   static int set_mask(lua_State* L);
   static int set_mask_for_channel_range(lua_State* L);
+  static int set_masked_visibilities(lua_State* L);
   static int set_visibilities(lua_State* L);
   static int set_polarization_data(lua_State* L);
   static int gc(lua_State* L);

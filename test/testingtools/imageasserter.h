@@ -11,8 +11,8 @@
 
 class ImageAsserter {
  public:
-  static void AssertEqual(const Image2DCPtr &actual,
-                          const Image2DCPtr &expected) {
+  static void AssertEqual(const Image2DCPtr& actual,
+                          const Image2DCPtr& expected) {
     BOOST_CHECK_EQUAL(actual->Width(), expected->Width());
     BOOST_CHECK_EQUAL(actual->Height(), expected->Height());
 
@@ -23,7 +23,7 @@ class ImageAsserter {
     }
   }
 
-  static void AssertConstant(const Image2DCPtr &actual, const num_t &expected) {
+  static void AssertConstant(const Image2DCPtr& actual, const num_t& expected) {
     for (size_t y = 0; y < actual->Height(); ++y) {
       for (size_t x = 0; x < actual->Width(); ++x) {
         BOOST_CHECK_CLOSE(actual->Value(x, y), expected, 1e-3);
@@ -31,7 +31,7 @@ class ImageAsserter {
     }
   }
 
-  static void AssertFinite(const Image2DCPtr &actual) {
+  static void AssertFinite(const Image2DCPtr& actual) {
     size_t nonFinites = 0;
     for (size_t y = 0; y < actual->Height(); ++y) {
       for (size_t x = 0; x < actual->Width(); ++x) {

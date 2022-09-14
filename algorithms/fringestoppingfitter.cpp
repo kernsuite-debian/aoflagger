@@ -1,15 +1,17 @@
-#include "../../structures/antennainfo.h"
+#include "../structures/antennainfo.h"
 
-#include "../../imaging/uvimager.h"
+#include "../imaging/uvimager.h"
 
-#include "../../util/logger.h"
-#include "../../util/rng.h"
+#include "../util/logger.h"
+#include "../util/rng.h"
 
 #include "../algorithms/fringestoppingfitter.h"
 #include "../algorithms/sinusfitter.h"
 
+namespace algorithms {
+
 FringeStoppingFitter::FringeStoppingFitter()
-    : _originalData(0),
+    : _originalData(nullptr),
       _fringesToConsider(1.0),
       _minWindowSize(32),
       _maxWindowSize(128),
@@ -97,7 +99,7 @@ void FringeStoppingFitter::PerformFringeStop() {
   }
 }
 
-num_t FringeStoppingFitter::CalculateMaskedAverage(const Image2D &image,
+num_t FringeStoppingFitter::CalculateMaskedAverage(const Image2D& image,
                                                    size_t x, size_t yFrom,
                                                    size_t yLength) {
   num_t average = 0.0L;
@@ -111,7 +113,7 @@ num_t FringeStoppingFitter::CalculateMaskedAverage(const Image2D &image,
   return average / (long double)count;
 }
 
-num_t FringeStoppingFitter::CalculateUnmaskedAverage(const Image2D &image,
+num_t FringeStoppingFitter::CalculateUnmaskedAverage(const Image2D& image,
                                                      size_t x, size_t yFrom,
                                                      size_t yLength) {
   num_t average = 0.0L;
@@ -125,10 +127,10 @@ num_t FringeStoppingFitter::CalculateUnmaskedAverage(const Image2D &image,
   return average / (num_t)count;
 }
 
-void FringeStoppingFitter::CalculateFitValue(const Image2D &real,
-                                             const Image2D &imaginary, size_t x,
+void FringeStoppingFitter::CalculateFitValue(const Image2D& real,
+                                             const Image2D& imaginary, size_t x,
                                              size_t yFrom, size_t yLength,
-                                             num_t &rValue, num_t &iValue) {
+                                             num_t& rValue, num_t& iValue) {
   size_t windowWidth;
   size_t yMid = yFrom + yLength / 2;
   num_t estimatedFrequency = GetFringeFrequency(x, yMid);
@@ -153,9 +155,9 @@ void FringeStoppingFitter::CalculateFitValue(const Image2D &real,
   }
 
   num_t fringeFrequency = GetFringeFrequency(x, yMid);
-  num_t *dataT = new num_t[xRight - xLeft];
-  num_t *dataR = new num_t[xRight - xLeft];
-  num_t *dataI = new num_t[xRight - xLeft];
+  num_t* dataT = new num_t[xRight - xLeft];
+  num_t* dataR = new num_t[xRight - xLeft];
+  num_t* dataI = new num_t[xRight - xLeft];
 
   size_t index = 0;
   for (size_t i = xLeft; i < xRight; ++i) {
@@ -227,7 +229,7 @@ num_t FringeStoppingFitter::GetFringeFrequency(size_t x, size_t y) {
                                                       _metaData);
 }
 
-void FringeStoppingFitter::GetRFIValue(num_t &r, num_t &i, int x, int y,
+void FringeStoppingFitter::GetRFIValue(num_t& r, num_t& i, int x, int y,
                                        num_t rfiPhase, num_t rfiStrength) {
   const numl_t earthRotation = UVImager::TimeToEarthLattitude(x, _metaData);
   const Baseline baseline = _metaData->Baseline();
@@ -242,9 +244,9 @@ void FringeStoppingFitter::GetRFIValue(num_t &r, num_t &i, int x, int y,
   i = -sinn(rotations * 2.0 * M_PIn + rfiPhase) * rfiStrength;
 }
 
-void FringeStoppingFitter::GetMeanValue(num_t &rMean, num_t &iMean, num_t phase,
-                                        num_t amplitude, const SampleRow &real,
-                                        const SampleRow &imaginary,
+void FringeStoppingFitter::GetMeanValue(num_t& rMean, num_t& iMean, num_t phase,
+                                        num_t amplitude, const SampleRow& real,
+                                        const SampleRow& imaginary,
                                         unsigned xStart, unsigned xEnd,
                                         unsigned y) {
   rMean = 0.0;
@@ -259,9 +261,9 @@ void FringeStoppingFitter::GetMeanValue(num_t &rMean, num_t &iMean, num_t phase,
   iMean /= (num_t)(xEnd - xStart);
 }
 
-void FringeStoppingFitter::MinimizeRFIFitError(num_t &phase, num_t &amplitude,
-                                               const SampleRow &real,
-                                               const SampleRow &imaginary,
+void FringeStoppingFitter::MinimizeRFIFitError(num_t& phase, num_t& amplitude,
+                                               const SampleRow& real,
+                                               const SampleRow& imaginary,
                                                unsigned xStart, unsigned xEnd,
                                                unsigned y) const throw() {
   // calculate 1/N * \sum_x v(t) e^{2 i \pi \tau_g(t)}, where \tau_g(t) is the
@@ -314,7 +316,7 @@ void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneChannel(unsigned y) {
 }
 
 void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(
-    const SampleRow &real, const SampleRow &imaginary, unsigned y) {
+    const SampleRow& real, const SampleRow& imaginary, unsigned y) {
   num_t phase, strength;
   MinimizeRFIFitError(phase, strength, real, imaginary, 0,
                       _originalData->ImageWidth(), y);
@@ -347,7 +349,7 @@ void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneChannel(
 }
 
 void FringeStoppingFitter::PerformDynamicFrequencyFitOnOneRow(
-    const SampleRow &real, const SampleRow &imaginary, unsigned y,
+    const SampleRow& real, const SampleRow& imaginary, unsigned y,
     unsigned windowSize) {
   unsigned halfWindowSize = windowSize / 2;
   for (size_t x = 0; x < real.Size(); ++x) {
@@ -416,3 +418,5 @@ num_t FringeStoppingFitter::GetAmplitude(unsigned yStart, unsigned yEnd) {
                       _originalData->ImageWidth(), y);
   return amplitude;
 }
+
+}  // namespace algorithms

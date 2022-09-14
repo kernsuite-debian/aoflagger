@@ -1,9 +1,11 @@
 #include "antennaselector.h"
 
-#include "../../quality/statisticscollection.h"
-#include "../../quality/statisticsderivator.h"
+#include "../quality/statisticscollection.h"
+#include "../quality/statisticsderivator.h"
 
-namespace rfiStrategy {
+using std::size_t;
+
+namespace algorithms {
 
 std::vector<size_t> AntennaSelector::Run(
     const StatisticsCollection& statisticsCollection) {
@@ -15,7 +17,8 @@ std::vector<size_t> AntennaSelector::Run(
   for (size_t p = 0; p != 4; ++p) {
     double meanStddev = 0.0;
     stddevs.clear();
-    for (const std::pair<size_t, DefaultStatistics>& antenna : antStatistics) {
+    for (const std::pair<const size_t, DefaultStatistics>& antenna :
+         antStatistics) {
       double stddev = StatisticsDerivator::GetStatisticAmplitude(
           QualityTablesFormatter::StandardDeviationStatistic, antenna.second,
           p);
@@ -31,7 +34,8 @@ std::vector<size_t> AntennaSelector::Run(
 
     size_t index = 0;
     double limit = _threshold * stddevOfStddev;
-    for (const std::pair<size_t, DefaultStatistics>& antenna : antStatistics) {
+    for (const std::pair<const size_t, DefaultStatistics>& antenna :
+         antStatistics) {
       if (std::fabs(stddevs[index] - meanStddev) > limit ||
           stddevs[index] == 0.0) {
         if (antenna.second.count[p] != 0) badAntennas.insert(antenna.first);
@@ -42,4 +46,4 @@ std::vector<size_t> AntennaSelector::Run(
   return std::vector<size_t>(badAntennas.begin(), badAntennas.end());
 }
 
-}  // namespace rfiStrategy
+}  // namespace algorithms

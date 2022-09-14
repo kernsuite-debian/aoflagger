@@ -5,10 +5,20 @@
 #include <gtkmm/treemodel.h>
 
 #include "../imagesets/msimageset.h"
+#include "../imagesets/multibandmsimageset.h"
 
 #include "controllers/rfiguicontroller.h"
 
 #include "rfiguiwindow.h"
+
+static const std::vector<MSMetaData::Sequence>& GetSequences(
+    const imagesets::IndexableSet* image_set) {
+  if (const auto* multi_band_image_set =
+          dynamic_cast<const imagesets::MultiBandMsImageSet*>(image_set))
+    return multi_band_image_set->Sequences();
+
+  return image_set->Reader()->MetaData().GetSequences();
+}
 
 GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
     : Gtk::Window(),
@@ -19,17 +29,16 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
       _loadButton("Load"),
       _keepOpenCB("Keep window open"),
       _rfiGuiWindow(rfiGuiWindow),
-      _imageSet(&static_cast<rfiStrategy::IndexableSet&>(
+      _imageSet(&static_cast<imagesets::IndexableSet&>(
           rfiGuiWindow.Controller().GetImageSet())) {
   set_default_size(0, 500);
   _antennaeStore = Gtk::ListStore::create(_antennaModelColumns);
   _bandStore = Gtk::ListStore::create(_bandModelColumns);
   _sequenceStore = Gtk::ListStore::create(_sequenceModelColumns);
 
-  const std::vector<MSMetaData::Sequence>& _sequences =
-      _imageSet->Reader()->MetaData().GetSequences();
+  const std::vector<MSMetaData::Sequence>& _sequences = GetSequences(_imageSet);
 
-  const rfiStrategy::ImageSetIndex& setIndex =
+  const imagesets::ImageSetIndex& setIndex =
       _rfiGuiWindow.Controller().GetImageSetIndex();
   const unsigned antenna1Index = _imageSet->GetAntenna1(setIndex);
   const unsigned antenna2Index = _imageSet->GetAntenna2(setIndex);
@@ -79,10 +88,10 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
     while (_sequences[lastSeqIndex].sequenceId != i) {
       ++lastSeqIndex;
     }
-    boost::optional<rfiStrategy::ImageSetIndex> index(_imageSet->Index(
+    std::optional<imagesets::ImageSetIndex> index(_imageSet->Index(
         _sequences[lastSeqIndex].antenna1, _sequences[lastSeqIndex].antenna2,
         _sequences[lastSeqIndex].spw, i));
-    size_t fIndex = _imageSet->GetField(index.get());
+    size_t fIndex = _imageSet->GetField(*index);
     FieldInfo field = _imageSet->GetFieldInfo(fIndex);
     desc << field.name << " (" << fIndex << ')';
     (*iter)[_sequenceModelColumns.sequenceDescription] = desc.str();
@@ -156,7 +165,7 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
 
 GoToWindow::~GoToWindow() {}
 
-boost::optional<rfiStrategy::ImageSetIndex> GoToWindow::getIndex() {
+std::optional<imagesets::ImageSetIndex> GoToWindow::getIndex() {
   Glib::RefPtr<Gtk::TreeSelection> a1 = _antenna1View.get_selection();
   Gtk::TreeModel::iterator iterA1 = a1->get_selected();
 
@@ -180,11 +189,11 @@ boost::optional<rfiStrategy::ImageSetIndex> GoToWindow::getIndex() {
     size_t sIndex = sRow[_sequenceModelColumns.sequenceIndex];
     return _imageSet->Index(a1Index, a2Index, bIndex, sIndex);
   }
-  return boost::optional<rfiStrategy::ImageSetIndex>();
+  return std::optional<imagesets::ImageSetIndex>();
 }
 
 void GoToWindow::onChange() {
-  boost::optional<rfiStrategy::ImageSetIndex> index = getIndex();
+  std::optional<imagesets::ImageSetIndex> index = getIndex();
   if (index) {
     const size_t a1Index = _imageSet->GetAntenna1(*index),
                  a2Index = _imageSet->GetAntenna2(*index);
@@ -206,9 +215,9 @@ void GoToWindow::onChange() {
 }
 
 void GoToWindow::onLoadClicked() {
-  boost::optional<rfiStrategy::ImageSetIndex> index = getIndex();
+  std::optional<imagesets::ImageSetIndex> index = getIndex();
   if (index) {
-    _rfiGuiWindow.SetImageSetIndex(index.get());
+    _rfiGuiWindow.SetImageSetIndex(*index);
     if (!_keepOpenCB.get_active()) hide();
   }
 }

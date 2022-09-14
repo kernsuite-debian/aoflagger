@@ -5,8 +5,10 @@
 
 #include "../algorithms/surfacefitmethod.h"
 
-#include "../../structures/samplerow.h"
-#include "../../structures/timefrequencymetadata.h"
+#include "../structures/samplerow.h"
+#include "../structures/timefrequencymetadata.h"
+
+namespace algorithms {
 
 class FringeStoppingFitter final : public SurfaceFitMethod {
  public:
@@ -21,7 +23,7 @@ class FringeStoppingFitter final : public SurfaceFitMethod {
     _antenna2Info = &metaData->Antenna2();
     _observationTimes = &metaData->ObservationTimes();
   }
-  virtual void Initialize(const TimeFrequencyData &input) final override {
+  virtual void Initialize(const TimeFrequencyData& input) final override {
     _originalData = &input;
     _realBackground = Image2D::CreateZeroImagePtr(_originalData->ImageWidth(),
                                                   _originalData->ImageHeight());
@@ -77,43 +79,43 @@ class FringeStoppingFitter final : public SurfaceFitMethod {
   }
 
  private:
-  num_t CalculateFitValue(const Image2D &image, size_t y);
-  inline num_t CalculateMaskedAverage(const Image2D &image, size_t x,
+  num_t CalculateFitValue(const Image2D& image, size_t y);
+  inline num_t CalculateMaskedAverage(const Image2D& image, size_t x,
                                       size_t yFrom, size_t yLength);
-  inline num_t CalculateUnmaskedAverage(const Image2D &image, size_t x,
+  inline num_t CalculateUnmaskedAverage(const Image2D& image, size_t x,
                                         size_t yFrom, size_t yLength);
-  void CalculateFitValue(const Image2D &real, const Image2D &imaginary,
-                         size_t x, size_t yFrom, size_t yLength, num_t &rValue,
-                         num_t &iValue);
+  void CalculateFitValue(const Image2D& real, const Image2D& imaginary,
+                         size_t x, size_t yFrom, size_t yLength, num_t& rValue,
+                         num_t& iValue);
   num_t GetFringeFrequency(size_t x, size_t y);
 
-  void GetRFIValue(num_t &r, num_t &i, int x, int y, num_t rfiPhase,
+  void GetRFIValue(num_t& r, num_t& i, int x, int y, num_t rfiPhase,
                    num_t rfiStrength);
-  void GetMeanValue(num_t &rMean, num_t &iMean, num_t phase, num_t amplitude,
-                    const SampleRow &real, const SampleRow &imaginary,
+  void GetMeanValue(num_t& rMean, num_t& iMean, num_t phase, num_t amplitude,
+                    const SampleRow& real, const SampleRow& imaginary,
                     unsigned xStart, unsigned xEnd, unsigned y);
-  void MinimizeRFIFitError(num_t &phase, num_t &amplitude,
-                           const SampleRow &real, const SampleRow &imaginary,
+  void MinimizeRFIFitError(num_t& phase, num_t& amplitude,
+                           const SampleRow& real, const SampleRow& imaginary,
                            unsigned xStart, unsigned xEnd, unsigned y) const
       throw();
 
-  void PerformDynamicFrequencyFitOnOneRow(const SampleRow &real,
-                                          const SampleRow &imaginary,
+  void PerformDynamicFrequencyFitOnOneRow(const SampleRow& real,
+                                          const SampleRow& imaginary,
                                           unsigned y);
-  void PerformDynamicFrequencyFitOnOneRow(const SampleRow &real,
-                                          const SampleRow &imaginary,
+  void PerformDynamicFrequencyFitOnOneRow(const SampleRow& real,
+                                          const SampleRow& imaginary,
                                           unsigned y, unsigned windowSize);
 
   Mask2DCPtr _originalMask;
-  const class TimeFrequencyData *_originalData;
+  const class TimeFrequencyData* _originalData;
 
   Image2DPtr _realBackground, _imaginaryBackground;
 
   TimeFrequencyMetaDataCPtr _metaData;
-  const class FieldInfo *_fieldInfo;
-  const class BandInfo *_bandInfo;
+  const class FieldInfo* _fieldInfo;
+  const class BandInfo* _bandInfo;
   const class AntennaInfo *_antenna1Info, *_antenna2Info;
-  const std::vector<double> *_observationTimes;
+  const std::vector<double>* _observationTimes;
   num_t _fringesToConsider;
   size_t _minWindowSize, _maxWindowSize;
   bool _fitChannelsIndividually;
@@ -121,5 +123,7 @@ class FringeStoppingFitter final : public SurfaceFitMethod {
   bool _fringeFit;
   numl_t _newPhaseCentreDec, _newPhaseCentreRA;
 };
+
+}  // namespace algorithms
 
 #endif

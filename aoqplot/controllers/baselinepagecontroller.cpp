@@ -3,12 +3,14 @@
 #include "../../quality/statisticscollection.h"
 #include "../../quality/statisticsderivator.h"
 
+using aocommon::Polarization;
+
 std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr>
 BaselinePageController::constructImage(
     QualityTablesFormatter::StatisticKind kind) {
   if (HasStatistics()) {
     const unsigned polarizationCount = _statCollection->PolarizationCount();
-    std::vector<std::pair<unsigned, unsigned> > baselines =
+    std::vector<std::pair<unsigned, unsigned>> baselines =
         _statCollection->BaselineStatistics().BaselineList();
     StatisticsDerivator derivator(*_statCollection);
 
@@ -26,7 +28,7 @@ BaselinePageController::constructImage(
       mask[p] = Mask2D::CreateSetMaskPtr<true>(antennaCount, antennaCount);
     }
 
-    for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+    for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
              baselines.begin();
          i != baselines.end(); ++i) {
       const unsigned antenna1 = i->first, antenna2 = i->second;
@@ -69,7 +71,7 @@ BaselinePageController::constructImage(
 
 std::string BaselinePageController::AntennaName(size_t index) const {
   std::string name;
-  if (_antennas == 0) {
+  if (_antennas == nullptr) {
     std::stringstream s;
     s << index;
     name = s.str();

@@ -1,14 +1,14 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
-#include "plot2dpointset.h"
+#include "xypointset.h"
 
 class Dimension {
  public:
   Dimension() : _pointSets(0) {}
   ~Dimension() {}
 
-  void AdjustRanges(Plot2DPointSet &pointSet) {
+  void AdjustRanges(XYPointSet& pointSet) {
     if (_pointSets == 0) {
       _xRangeMin = pointSet.XRangeMin();
       _xRangeMax = pointSet.XRangeMax();

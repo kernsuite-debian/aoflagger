@@ -18,23 +18,23 @@
 
 class HistogramPage : public PlotSheet {
  public:
-  HistogramPage(class HistogramPageController *controller);
+  HistogramPage(class HistogramPageController* controller);
   ~HistogramPage();
 
   void updatePlot();
 
   void Redraw() { _plotWidget.Update(); }
 
-  void SetSlopeFrame(const std::string &str);
-  void SetFitText(const std::string &str) {
+  void SetSlopeFrame(const std::string& str);
+  void SetFitText(const std::string& str) {
     _fitTextView.get_buffer()->set_text(str);
   }
 
  private:
   void onPlotPropertiesClicked();
   void onDataExportClicked();
-  void updateSlopeFrame(const class LogHistogram &histogram);
-  std::string SlopeText(std::stringstream &str, const LogHistogram &histogram,
+  void updateSlopeFrame(const class LogHistogram& histogram);
+  std::string SlopeText(std::stringstream& str, const LogHistogram& histogram,
                         bool updateRange);
   void updateDataWindow();
 
@@ -52,7 +52,7 @@ class HistogramPage : public PlotSheet {
     if (autoRange) updatePlot();
   }
 
-  class HistogramPageController *_controller;
+  class HistogramPageController* _controller;
 
   Gtk::Expander _expander;
   Gtk::VBox _sideBox;
@@ -90,8 +90,8 @@ class HistogramPage : public PlotSheet {
   Gtk::Entry _slopeStartEntry, _slopeEndEntry, _slopeRFIRatio;
 
   PlotWidget _plotWidget;
-  class PlotPropertiesWindow *_plotPropertiesWindow;
-  class DataWindow *_dataWindow;
+  class PlotPropertiesWindow* _plotPropertiesWindow;
+  class DataWindow* _dataWindow;
 };
 
 #endif

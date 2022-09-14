@@ -4,7 +4,7 @@
 
 #include "../algorithms/normalizebandpass.h"
 
-#include "../util/progresslistener.h"
+#include "../util/progress/progresslistener.h"
 
 #include "functions.h"
 #include "scriptdata.h"
@@ -12,6 +12,8 @@
 #include "version.h"
 
 #include "../structures/versionstring.h"
+
+using algorithms::NormalizeBandpass;
 
 int Functions::apply_bandpass(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
@@ -213,8 +215,8 @@ int Functions::save_heat_map(lua_State* L) {
 int Functions::scale_invariant_rank_operator(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  double level_horizontal = luaL_checknumber(L, 2),
-         level_vertical = luaL_checknumber(L, 3);
+  const double level_horizontal = luaL_checknumber(L, 2);
+  const double level_vertical = luaL_checknumber(L, 3);
   try {
     aoflagger_lua::scale_invariant_rank_operator(*data, level_horizontal,
                                                  level_vertical);
@@ -225,15 +227,17 @@ int Functions::scale_invariant_rank_operator(lua_State* L) {
 }
 
 int Functions::scale_invariant_rank_operator_masked(lua_State* L) {
+  bool hasPenalty = lua_gettop(L) >= 5;
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
   const aoflagger_lua::Data* missing = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 2, "AOFlaggerData"));
-  double level_horizontal = luaL_checknumber(L, 3),
-         level_vertical = luaL_checknumber(L, 4);
+  const double level_horizontal = luaL_checknumber(L, 3);
+  const double level_vertical = luaL_checknumber(L, 4);
+  const double penalty = hasPenalty ? luaL_checknumber(L, 5) : 0.1;
   try {
     aoflagger_lua::scale_invariant_rank_operator_masked(
-        *data, *missing, level_horizontal, level_vertical);
+        *data, *missing, level_horizontal, level_vertical, penalty);
   } catch (std::exception& e) {
     luaL_error(L, e.what());
   }
@@ -349,7 +353,7 @@ int Functions::trim_frequencies(lua_State* L) {
   return 1;
 }
 
-int Functions::upsample(lua_State* L) {
+int Functions::upsample_image(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
   aoflagger_lua::Data* destination = reinterpret_cast<aoflagger_lua::Data*>(
@@ -357,8 +361,24 @@ int Functions::upsample(lua_State* L) {
   long horizontalFactor = luaL_checkinteger(L, 3),
        verticalFactor = luaL_checkinteger(L, 4);
   try {
-    aoflagger_lua::upsample(*data, *destination, horizontalFactor,
-                            verticalFactor);
+    aoflagger_lua::upsample_image(*data, *destination, horizontalFactor,
+                                  verticalFactor);
+  } catch (std::exception& e) {
+    luaL_error(L, e.what());
+  }
+  return 0;
+}
+
+int Functions::upsample_mask(lua_State* L) {
+  aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 1, "AOFlaggerData"));
+  aoflagger_lua::Data* destination = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 2, "AOFlaggerData"));
+  long horizontalFactor = luaL_checkinteger(L, 3),
+       verticalFactor = luaL_checkinteger(L, 4);
+  try {
+    aoflagger_lua::upsample_mask(*data, *destination, horizontalFactor,
+                                 verticalFactor);
   } catch (std::exception& e) {
     luaL_error(L, e.what());
   }

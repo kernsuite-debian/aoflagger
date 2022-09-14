@@ -3,8 +3,8 @@
 template <bool IsDiff>
 void StatisticsCollection::addTimeAndBaseline(
     unsigned antenna1, unsigned antenna2, double time, double centralFrequency,
-    int polarization, const float *reals, const float *imags, const bool *isRFI,
-    const bool *origFlags, unsigned nsamples, unsigned step, unsigned stepRFI,
+    int polarization, const float* reals, const float* imags, const bool* isRFI,
+    const bool* origFlags, unsigned nsamples, unsigned step, unsigned stepRFI,
     unsigned stepFlags) {
   unsigned long rfiCount = 0;
   unsigned long count = 0;
@@ -33,11 +33,11 @@ void StatisticsCollection::addTimeAndBaseline(
   }
 
   if (antenna1 != antenna2) {
-    DefaultStatistics &timeStat = getTimeStatistic(time, centralFrequency);
+    DefaultStatistics& timeStat = getTimeStatistic(time, centralFrequency);
     addToStatistic<IsDiff>(timeStat, polarization, count, sum_R, sum_I, sumP2_R,
                            sumP2_I, rfiCount);
   }
-  DefaultStatistics &baselineStat =
+  DefaultStatistics& baselineStat =
       getBaselineStatistic(antenna1, antenna2, centralFrequency);
   addToStatistic<IsDiff>(baselineStat, polarization, count, sum_R, sum_I,
                          sumP2_R, sumP2_I, rfiCount);
@@ -45,15 +45,15 @@ void StatisticsCollection::addTimeAndBaseline(
 
 template <bool IsDiff>
 void StatisticsCollection::addFrequency(
-    unsigned band, int polarization, const float *reals, const float *imags,
-    const bool *isRFI, const bool *origFlags, unsigned nsamples, unsigned step,
+    unsigned band, int polarization, const float* reals, const float* imags,
+    const bool* isRFI, const bool* origFlags, unsigned nsamples, unsigned step,
     unsigned stepRFI, unsigned stepFlags, bool shiftOneUp) {
-  std::vector<DefaultStatistics *> &bandStats = _bands.find(band)->second;
+  std::vector<DefaultStatistics*>& bandStats = _bands.find(band)->second;
   const unsigned fAdd = shiftOneUp ? 1 : 0;
   for (unsigned j = 0; j < nsamples; ++j) {
     if (!*origFlags) {
       if (std::isfinite(*reals) && std::isfinite(*imags)) {
-        DefaultStatistics &freqStat = *bandStats[j + fAdd];
+        DefaultStatistics& freqStat = *bandStats[j + fAdd];
         if (*isRFI) {
           addToStatistic<IsDiff>(freqStat, polarization, 0, 0.0, 0.0, 0.0, 0.0,
                                  1);
@@ -73,8 +73,8 @@ void StatisticsCollection::addFrequency(
 
 void StatisticsCollection::Add(unsigned antenna1, unsigned antenna2,
                                double time, unsigned band, int polarization,
-                               const float *reals, const float *imags,
-                               const bool *isRFI, const bool *origFlags,
+                               const float* reals, const float* imags,
+                               const bool* isRFI, const bool* origFlags,
                                unsigned nsamples, unsigned step,
                                unsigned stepRFI, unsigned stepFlags) {
   if (nsamples == 0) return;
@@ -92,8 +92,8 @@ void StatisticsCollection::Add(unsigned antenna1, unsigned antenna2,
   // a diff element, even if nsamples=1.
   std::vector<float> diffReals(nsamples);
   std::vector<float> diffImags(nsamples);
-  bool *diffRFIFlags = new bool[nsamples];
-  bool *diffOrigFlags = new bool[nsamples];
+  bool* diffRFIFlags = new bool[nsamples];
+  bool* diffOrigFlags = new bool[nsamples];
   for (unsigned i = 0; i < nsamples - 1; ++i) {
     diffReals[i] = (reals[(i + 1) * step] - reals[i * step]) * M_SQRT1_2;
     diffImags[i] = (imags[(i + 1) * step] - imags[i * step]) * M_SQRT1_2;
@@ -118,8 +118,8 @@ void StatisticsCollection::Add(unsigned antenna1, unsigned antenna2,
 
 void StatisticsCollection::AddToTimeFrequency(
     unsigned antenna1, unsigned antenna2, double time, unsigned band,
-    int polarization, const float *reals, const float *imags, const bool *isRFI,
-    const bool *origFlags, unsigned nsamples, unsigned step, unsigned stepRFI,
+    int polarization, const float* reals, const float* imags, const bool* isRFI,
+    const bool* origFlags, unsigned nsamples, unsigned step, unsigned stepRFI,
     unsigned stepFlags) {
   if (nsamples == 0) return;
 
@@ -133,8 +133,8 @@ void StatisticsCollection::AddToTimeFrequency(
   // a diff element, even if nsamples=1.
   std::vector<float> diffReals(nsamples);
   std::vector<float> diffImags(nsamples);
-  bool *diffRFIFlags = new bool[nsamples];
-  bool *diffOrigFlags = new bool[nsamples];
+  bool* diffRFIFlags = new bool[nsamples];
+  bool* diffOrigFlags = new bool[nsamples];
   for (unsigned i = 0; i < nsamples - 1; ++i) {
     diffReals[i] = (reals[(i + 1) * step] - reals[i * step]) * M_SQRT1_2;
     diffImags[i] = (imags[(i + 1) * step] - imags[i * step]) * M_SQRT1_2;
@@ -153,25 +153,25 @@ void StatisticsCollection::AddToTimeFrequency(
 }
 
 void StatisticsCollection::AddImage(unsigned antenna1, unsigned antenna2,
-                                    const double *times, unsigned band,
+                                    const double* times, unsigned band,
                                     int polarization,
-                                    const Image2DCPtr &realImage,
-                                    const Image2DCPtr &imagImage,
-                                    const Mask2DCPtr &rfiMask,
-                                    const Mask2DCPtr &correlatorMask) {
+                                    const Image2DCPtr& realImage,
+                                    const Image2DCPtr& imagImage,
+                                    const Mask2DCPtr& rfiMask,
+                                    const Mask2DCPtr& correlatorMask) {
   if (realImage->Width() == 0 || realImage->Height() == 0) return;
 
   const double centralFrequency = _centralFrequencies.find(band)->second;
-  DefaultStatistics &baselineStat =
+  DefaultStatistics& baselineStat =
       getBaselineStatistic(antenna1, antenna2, centralFrequency);
-  std::vector<DefaultStatistics *> &bandStats = _bands.find(band)->second;
-  std::vector<DefaultStatistics *> timeStats(realImage->Width());
+  std::vector<DefaultStatistics*>& bandStats = _bands.find(band)->second;
+  std::vector<DefaultStatistics*> timeStats(realImage->Width());
 
   for (size_t t = 0; t != realImage->Width(); ++t)
     timeStats[t] = &getTimeStatistic(times[t], centralFrequency);
 
   for (size_t f = 0; f < realImage->Height(); ++f) {
-    DefaultStatistics &freqStat = *bandStats[f];
+    DefaultStatistics& freqStat = *bandStats[f];
     const bool *origFlags = correlatorMask->ValuePtr(0, f),
                *nextOrigFlags = origFlags + correlatorMask->Stride(),
                *isRFI = rfiMask->ValuePtr(0, f),
@@ -204,7 +204,7 @@ void StatisticsCollection::AddImage(unsigned antenna1, unsigned antenna2,
         }
 
         if (f != realImage->Height() - 1) {
-          DefaultStatistics &nextFreqStat = *bandStats[f + 1];
+          DefaultStatistics& nextFreqStat = *bandStats[f + 1];
           if (!*nextOrigFlags && std::isfinite(*nextReal) &&
               std::isfinite(*nextImag)) {
             real = (*nextReal - *reals) * M_SQRT1_2;
@@ -243,7 +243,7 @@ void StatisticsCollection::AddImage(unsigned antenna1, unsigned antenna2,
 }
 
 void StatisticsCollection::lowerResolution(
-    StatisticsCollection::DoubleStatMap &map, size_t maxSteps) const {
+    StatisticsCollection::DoubleStatMap& map, size_t maxSteps) const {
   if (map.size() > maxSteps) {
     DoubleStatMap newMap;
     double gridStep, gridStart;
@@ -288,15 +288,15 @@ void StatisticsCollection::lowerResolution(
 
 template <bool IsDiff>
 void StatisticsCollection::addToTimeFrequency(
-    double time, const double *frequencies, int polarization,
-    const float *reals, const float *imags, const bool *isRFI,
-    const bool *origFlags, unsigned nsamples, unsigned step, unsigned stepRFI,
+    double time, const double* frequencies, int polarization,
+    const float* reals, const float* imags, const bool* isRFI,
+    const bool* origFlags, unsigned nsamples, unsigned step, unsigned stepRFI,
     unsigned stepFlags, bool shiftOneUp) {
   const unsigned fAdd = shiftOneUp ? 1 : 0;
   for (unsigned j = 0; j < nsamples; ++j) {
     if (!*origFlags) {
       if (std::isfinite(*reals) && std::isfinite(*imags)) {
-        DefaultStatistics &timeStat =
+        DefaultStatistics& timeStat =
             getTimeStatistic(time, frequencies[j + fAdd]);
         if (*isRFI) {
           addToStatistic<IsDiff>(timeStat, polarization, 0, 0.0, 0.0, 0.0, 0.0,
@@ -315,7 +315,7 @@ void StatisticsCollection::addToTimeFrequency(
   }
 }
 
-void StatisticsCollection::saveTime(QualityTablesFormatter &qd) const {
+void StatisticsCollection::saveTime(QualityTablesFormatter& qd) const {
   initializeEmptyStatistics(qd, QualityTablesFormatter::TimeDimension);
 
   Indices indices;
@@ -329,18 +329,18 @@ void StatisticsCollection::saveTime(QualityTablesFormatter &qd) const {
            _timeStatistics.begin();
        j != _timeStatistics.end(); ++j) {
     saver.frequency = j->first;
-    const DoubleStatMap &map = j->second;
+    const DoubleStatMap& map = j->second;
 
     for (DoubleStatMap::const_iterator i = map.begin(); i != map.end(); ++i) {
       saver.time = i->first;
-      const DefaultStatistics &stat = i->second;
+      const DefaultStatistics& stat = i->second;
 
       saveEachStatistic(saver, stat, indices);
     }
   }
 }
 
-void StatisticsCollection::saveFrequency(QualityTablesFormatter &qd) const {
+void StatisticsCollection::saveFrequency(QualityTablesFormatter& qd) const {
   if (!_frequencyStatistics.empty()) {
     initializeEmptyStatistics(qd, QualityTablesFormatter::FrequencyDimension);
 
@@ -354,14 +354,14 @@ void StatisticsCollection::saveFrequency(QualityTablesFormatter &qd) const {
     for (DoubleStatMap::const_iterator i = _frequencyStatistics.begin();
          i != _frequencyStatistics.end(); ++i) {
       saver.frequency = i->first;
-      const DefaultStatistics &stat = i->second;
+      const DefaultStatistics& stat = i->second;
 
       saveEachStatistic(saver, stat, indices);
     }
   }
 }
 
-void StatisticsCollection::saveBaseline(QualityTablesFormatter &qd) const {
+void StatisticsCollection::saveBaseline(QualityTablesFormatter& qd) const {
   if (!_baselineStatistics.empty()) {
     initializeEmptyStatistics(qd, QualityTablesFormatter::BaselineDimension);
 
@@ -377,18 +377,18 @@ void StatisticsCollection::saveBaseline(QualityTablesFormatter &qd) const {
              _baselineStatistics.begin();
          j != _baselineStatistics.end(); ++j) {
       saver.frequency = j->first;
-      const BaselineStatisticsMap &map = j->second;
+      const BaselineStatisticsMap& map = j->second;
 
-      const std::vector<std::pair<unsigned, unsigned> > baselines =
+      const std::vector<std::pair<unsigned, unsigned>> baselines =
           map.BaselineList();
 
-      for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+      for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
                baselines.begin();
            i != baselines.end(); ++i) {
         saver.antenna1 = i->first;
         saver.antenna2 = i->second;
 
-        const DefaultStatistics &stat =
+        const DefaultStatistics& stat =
             map.GetStatistics(saver.antenna1, saver.antenna2);
 
         saveEachStatistic(saver, stat, indices);

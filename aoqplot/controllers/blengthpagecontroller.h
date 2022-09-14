@@ -14,19 +14,19 @@ class BLengthPageController : public AOQPlotPageController {
 
  protected:
   virtual void processStatistics(
-      const StatisticsCollection *statCollection,
-      const std::vector<AntennaInfo> &antennas) override final {
+      const StatisticsCollection* statCollection,
+      const std::vector<AntennaInfo>& antennas) override final {
     _statisticsWithAutocorrelations.clear();
     _statisticsWithoutAutocorrelations.clear();
 
-    const BaselineStatisticsMap &map = statCollection->BaselineStatistics();
+    const BaselineStatisticsMap& map = statCollection->BaselineStatistics();
 
-    std::vector<std::pair<unsigned, unsigned> > baselines = map.BaselineList();
-    for (std::vector<std::pair<unsigned, unsigned> >::const_iterator i =
+    std::vector<std::pair<unsigned, unsigned>> baselines = map.BaselineList();
+    for (std::vector<std::pair<unsigned, unsigned>>::const_iterator i =
              baselines.begin();
          i != baselines.end(); ++i) {
       Baseline bline(antennas[i->first], antennas[i->second]);
-      const DefaultStatistics &statistics =
+      const DefaultStatistics& statistics =
           map.GetStatistics(i->first, i->second);
       _statisticsWithAutocorrelations.insert(
           std::pair<double, DefaultStatistics>(bline.Distance(), statistics));
@@ -36,16 +36,16 @@ class BLengthPageController : public AOQPlotPageController {
     }
   }
 
-  virtual const std::map<double, class DefaultStatistics> &getStatistics()
+  virtual const std::map<double, class DefaultStatistics>& getStatistics()
       const override final {
     return _includeAutoCorrelations ? _statisticsWithAutocorrelations
                                     : _statisticsWithoutAutocorrelations;
   }
 
-  virtual void startLine(Plot2D &plot, const std::string &name, int lineIndex,
-                         const std::string &yAxisDesc) override final {
+  virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
+                         const std::string& yAxisDesc) override final {
     plot.StartLine(name, "Baseline length (m)", yAxisDesc, false,
-                   Plot2DPointSet::DrawPoints);
+                   XYPointSet::DrawPoints);
   }
 
  private:

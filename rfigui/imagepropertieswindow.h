@@ -16,12 +16,11 @@
 #include <gtkmm/scale.h>
 #include <gtkmm/window.h>
 
-#include "../structures/colormap.h"
+#include "../plot/colormap.h"
 
 class ImagePropertiesWindow : public Gtk::Window {
  public:
-  ImagePropertiesWindow(class HeatMapWidget &imageWidget,
-                        const std::string &title);
+  ImagePropertiesWindow(class PlotWidget& plotWidget, const std::string& title);
   ~ImagePropertiesWindow() {}
 
  private:
@@ -43,13 +42,14 @@ class ImagePropertiesWindow : public Gtk::Window {
 
   void updateMinMaxEntries();
 
-  class HeatMapWidget &_imageWidget;
+  class PlotWidget& _plotWidget;
+  class MaskedHeatMap* _maskedHeatMap;
 
   Gtk::ButtonBox _bottomButtonBox;
   Gtk::VBox _topVBox;
   Gtk::HBox _framesHBox;
 
-  void addColorMap(const Glib::ustring &name, ColorMap::Type map) {
+  void addColorMap(const Glib::ustring& name, ColorMap::Type map) {
     Gtk::TreeModel::Row row = (*_colorMapStore->append());
     row[_colorMapColumns.name] = name;
     row[_colorMapColumns.colorMap] = map;
@@ -81,7 +81,7 @@ class ImagePropertiesWindow : public Gtk::Window {
 
   Gtk::Frame _optionsFrame;
   Gtk::VBox _optionsBox;
-  Gtk::RadioButton _normalOptionsButton, _logScaleButton, _zeroSymmetricButton;
+  Gtk::RadioButton _normalOptionsButton, _logScaleButton;
 
   Gtk::Frame _filterFrame;
   Gtk::VBox _filterBox;
@@ -95,8 +95,8 @@ class ImagePropertiesWindow : public Gtk::Window {
   Gtk::HBox _titleBox, _xAxisBox, _yAxisBox, _zAxisBox;
   Gtk::CheckButton _showTitleButton, _showXAxisDescriptionButton,
       _showYAxisDescriptionButton, _showZAxisDescriptionButton;
-  Gtk::CheckButton _manualTitle, _manualXAxisDescription,
-      _manualYAxisDescription, _manualZAxisDescription;
+  Gtk::CheckButton _manualXAxisDescription, _manualYAxisDescription,
+      _manualZAxisDescription;
   Gtk::Entry _titleEntry, _xAxisDescriptionEntry, _yAxisDescriptionEntry,
       _zAxisDescriptionEntry;
 };

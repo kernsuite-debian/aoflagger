@@ -1,20 +1,22 @@
 #include "localfitmethod.h"
 
-#include "../../structures/image2d.h"
-#include "../../msio/pngfile.h"
+#include "../structures/image2d.h"
+#include "../msio/pngfile.h"
 
-#include "../../util/rng.h"
+#include "../util/rng.h"
 
 #include "thresholdtools.h"
 
 #include <cmath>
 #include <iostream>
 
-LocalFitMethod::LocalFitMethod() : _weights(0) {}
+namespace algorithms {
+
+LocalFitMethod::LocalFitMethod() : _weights(nullptr) {}
 
 LocalFitMethod::~LocalFitMethod() { ClearWeights(); }
 
-void LocalFitMethod::Initialize(const TimeFrequencyData &input) {
+void LocalFitMethod::Initialize(const TimeFrequencyData& input) {
   ClearWeights();
   _original = input.GetSingleImage();
   _background2D =
@@ -43,12 +45,12 @@ void LocalFitMethod::ClearWeights() {
   if (_weights) {
     for (unsigned y = 0; y < _vSquareSize * 2 + 1; ++y) delete[] _weights[y];
     delete[] _weights;
-    _weights = 0;
+    _weights = nullptr;
   }
 }
 
 void LocalFitMethod::InitializeGaussianWeights() {
-  _weights = new num_t *[_vSquareSize * 2 + 1];
+  _weights = new num_t*[_vSquareSize * 2 + 1];
   for (int y = 0; y < (int)(_vSquareSize * 2 + 1); ++y) {
     _weights[y] = new num_t[_hSquareSize * 2 + 1];
     for (int x = 0; x < (int)(_hSquareSize * 2 + 1); ++x) {
@@ -67,7 +69,7 @@ unsigned LocalFitMethod::TaskCount() {
 }
 
 void LocalFitMethod::PerformFit(unsigned taskNumber) {
-  if (_mask == 0) throw std::runtime_error("Mask has not been set!");
+  if (_mask == nullptr) throw std::runtime_error("Mask has not been set!");
   if (_method == FastGaussianWeightedAverage) {
     CalculateWeightedAverageFast();
   } else {
@@ -117,7 +119,7 @@ long double LocalFitMethod::CalculateBackgroundValue(unsigned x, unsigned y) {
 }
 
 long double LocalFitMethod::CalculateAverage(unsigned x, unsigned y,
-                                             ThreadLocal &local) {
+                                             ThreadLocal& local) {
   long double sum = 0.0;
   unsigned long count = 0;
   for (unsigned yi = local.startY; yi <= local.endY; ++yi) {
@@ -135,7 +137,7 @@ long double LocalFitMethod::CalculateAverage(unsigned x, unsigned y,
 }
 
 long double LocalFitMethod::CalculateMedian(unsigned x, unsigned y,
-                                            ThreadLocal &local) {
+                                            ThreadLocal& local) {
   // unsigned maxSize = (local.endY-local.startY)*(local.endX-local.startX);
   std::vector<long double> orderList;
   unsigned long count = 0;
@@ -167,7 +169,7 @@ long double LocalFitMethod::CalculateMedian(unsigned x, unsigned y,
 }
 
 long double LocalFitMethod::CalculateMinimum(unsigned x, unsigned y,
-                                             ThreadLocal &local) {
+                                             ThreadLocal& local) {
   long double minimum = 1e100;
   unsigned long count = 0;
   for (unsigned yi = local.startY; yi <= local.endY; ++yi) {
@@ -186,7 +188,7 @@ long double LocalFitMethod::CalculateMinimum(unsigned x, unsigned y,
 }
 
 long double LocalFitMethod::CalculateWeightedAverage(unsigned x, unsigned y,
-                                                     ThreadLocal &local) {
+                                                     ThreadLocal& local) {
   long double sum = 0.0;
   long double totalWeight = 0.0;
   for (unsigned j = local.startY; j <= local.endY; ++j) {
@@ -298,3 +300,5 @@ void LocalFitMethod::PerformGaussianConvolution(Image2DPtr input) {
     }
   }
 }
+
+}  // namespace algorithms

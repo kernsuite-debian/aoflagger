@@ -1,6 +1,7 @@
 #include "mask2d.h"
 #include "image2d.h"
 
+#include <algorithm>
 #include <iostream>
 
 Mask2D::Mask2D()
@@ -105,6 +106,22 @@ template Mask2D* Mask2D::CreateSetMask<false>(
     const class Image2D& templateImage);
 template Mask2D* Mask2D::CreateSetMask<true>(
     const class Image2D& templateImage);
+
+Mask2DPtr Mask2D::CreatePtrFromRows(const Mask2D& source, size_t offset,
+                                    size_t count) {
+  assert(offset <= source._height && offset + count <= source._height &&
+         "The selected rows exceed the height of the source.");
+
+  Mask2DPtr result = Mask2D::CreateUnsetMaskPtr(source._width, count);
+
+  assert(result->_valuesConsecutive && source._valuesConsecutive &&
+         "The construction of a mask should always allocate memory.");
+
+  std::copy_n(source._valuesConsecutive + result->_stride * offset,
+              result->_stride * count, result->_valuesConsecutive);
+
+  return result;
+}
 
 Mask2D Mask2D::ShrinkHorizontally(int factor) const {
   size_t newWidth = (_width + factor - 1) / factor;

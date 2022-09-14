@@ -4,11 +4,11 @@
 #include <string>
 #include <stdexcept>
 
-#include "../../structures/types.h"
+#include "../structures/types.h"
 
 #include "imageset.h"
 
-namespace rfiStrategy {
+namespace imagesets {
 
 class SingleImageSet : public ImageSet {
  public:
@@ -82,6 +82,6 @@ class SingleImageSet : public ImageSet {
   std::vector<Mask2DCPtr> _writeFlagsMasks;
 };
 
-}  // namespace rfiStrategy
+}  // namespace imagesets
 
 #endif

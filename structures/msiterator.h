@@ -19,13 +19,13 @@ class [[deprecated]] MSIterator {
   }
 
   casacore::Complex Data(unsigned frequencyIndex, unsigned polarisation) {
-    return (_dataCol)(_row)(
-        casacore::IPosition(2, frequencyIndex, polarisation));
+    return (
+        _dataCol)(_row)(casacore::IPosition(2, frequencyIndex, polarisation));
   }
 
   bool Flag(unsigned frequencyIndex, unsigned polarisation) {
-    return (_flagCol)(_row)(
-        casacore::IPosition(2, frequencyIndex, polarisation));
+    return (
+        _flagCol)(_row)(casacore::IPosition(2, frequencyIndex, polarisation));
   }
 
   casacore::Array<bool>::const_iterator FlagIterator() {
@@ -34,8 +34,8 @@ class [[deprecated]] MSIterator {
 
   casacore::Complex CorrectedData(unsigned frequencyIndex,
                                   unsigned polarisation) {
-    return (*_correctedDataCol)(_row)(
-        casacore::IPosition(2, frequencyIndex, polarisation));
+    return (*_correctedDataCol)(
+        _row)(casacore::IPosition(2, frequencyIndex, polarisation));
   }
 
   casacore::Array<casacore::Complex>::const_iterator CorrectedDataIterator() {

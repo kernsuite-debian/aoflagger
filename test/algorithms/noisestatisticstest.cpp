@@ -4,9 +4,11 @@
 
 #include <boost/test/unit_test.hpp>
 
+using algorithms::NoiseStatistics;
+
 BOOST_AUTO_TEST_SUITE(noise_statistics, *boost::unit_test::label("algorithms"))
 
-static void AssertValues(const NoiseStatistics &statistics, long unsigned count,
+static void AssertValues(const NoiseStatistics& statistics, long unsigned count,
                          NoiseStatistics::stat_t sum,
                          NoiseStatistics::stat_t sum2,
                          NoiseStatistics::stat_t sum3,
@@ -19,7 +21,7 @@ static void AssertValues(const NoiseStatistics &statistics, long unsigned count,
 }
 
 static void AssertValues(
-    const NoiseStatistics &statistics, long unsigned count,
+    const NoiseStatistics& statistics, long unsigned count,
     NoiseStatistics::stat_t sum, NoiseStatistics::stat_t sum2,
     NoiseStatistics::stat_t sum3, NoiseStatistics::stat_t sum4,
     NoiseStatistics::stat_t mean, NoiseStatistics::stat_t moment2,
@@ -36,7 +38,7 @@ static void AssertValues(
                     varianceOfVarianceEst, 1e-5);
 }
 
-static void AssertRunnable(const NoiseStatistics &statistics) {
+static void AssertRunnable(const NoiseStatistics& statistics) {
   statistics.Count();
   statistics.Sum();
   statistics.Sum2();
