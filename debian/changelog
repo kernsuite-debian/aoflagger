@@ -1,3 +1,10 @@
+aoflagger (3.2.0-1kern1) focal; urgency=medium
+
+  [ Athanaseus Javas Ramaila ]
+  * New upstream version 3.2.0
+
+ -- KERN packaging <packaging@kernsuite.info>  Wed, 14 Sep 2022 13:00:54 +0000
+
 aoflagger (3.1.0-1kern2) focal; urgency=medium
 
   [ Athanaseus Javas Ramaila ]

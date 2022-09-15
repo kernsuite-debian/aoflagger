@@ -2,7 +2,7 @@ Source: aoflagger
 Section: science
 Priority: optional
 Maintainer: Debian Astro Team <debian-astro-maintainers@lists.alioth.debian.org>
-Uploaders: Gijs Molenaar <gijs@pythonic.nl>, Ole Streicher <olebole@debian.org>
+Uploaders: Gijs Molenaar <gijs@pythonic.nl>, Ole Streicher <olebole@debian.org>, Athanaseus Ramaila <aramaila@sarao.ac.za>
 Build-Depends: casacore-dev,
                cmake,
                debhelper-compat (= 12),
@@ -19,11 +19,13 @@ Build-Depends: casacore-dev,
                libcfitsio-dev,
                libfftw3-dev,
                libgtkmm-3.0-dev,
+               libgsl-dev,
                liblapack-dev,
                liblua5.3-dev,
                libpng-dev,
                libpython3-dev,
                libxml2-dev,
+               pkg-config,
                pybind11-dev,
                python3-dev,
                zlib1g-dev
