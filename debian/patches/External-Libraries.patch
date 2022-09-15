@@ -1,0 +1,12 @@
+Index: aoflagger/external/aocommon
+===================================================================
+--- /dev/null
++++ aoflagger/external/aocommon
+@@ -0,0 +1 @@
++Subproject commit 9f7459ca6c1354376d8b95f1eb8ee9fd74cb6f20
+Index: aoflagger/external/pybind11
+===================================================================
+--- /dev/null
++++ aoflagger/external/pybind11
+@@ -0,0 +1 @@
++Subproject commit 98f1bbb8004f654ba9e26717bdf5912fb899b05a
