@@ -1,3 +1,10 @@
+aoflagger (3.2.0-2kern1) focal; urgency=medium
+
+  [ Athanaseus Javas Ramaila ]
+  * Remove redundant lib
+
+ -- KERN packaging <packaging@kernsuite.info>  Tue, 20 Sep 2022 08:24:24 +0000
+
 aoflagger (3.2.0-1kern1) focal; urgency=medium
 
   [ Athanaseus Javas Ramaila ]
