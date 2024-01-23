@@ -6,6 +6,7 @@
 #include "bandpassfile.h"
 
 #include <string>
+#include <utility>
 
 namespace algorithms {
 

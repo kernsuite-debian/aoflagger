@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <fstream>
 #include <random>
+#include <string>
 
 #include "../structures/image2d.h"
 #include "../structures/mask2d.h"

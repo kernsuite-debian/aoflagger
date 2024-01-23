@@ -80,12 +80,12 @@ void IntegerDomain::Join(const IntegerDomain& other) throw() {
 
 IntegerDomain IntegerDomain::Split(unsigned partCount,
                                    unsigned partIndex) const {
-  unsigned start = _values.size() * partIndex / partCount;
-  unsigned end = _values.size() * (partIndex + 1) / partCount;
+  const unsigned start = _values.size() * partIndex / partCount;
+  const unsigned end = _values.size() * (partIndex + 1) / partCount;
 
   int* values = new int[end - start];
   for (unsigned i = start; i < end; ++i) values[i - start] = _values[i];
-  IntegerDomain domain(*values, end - start);
+  const IntegerDomain domain(*values, end - start);
   delete[] values;
   return domain;
 }

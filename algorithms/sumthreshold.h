@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <memory>
 
 #include "../structures/image2d.h"
 #include "../structures/mask2d.h"

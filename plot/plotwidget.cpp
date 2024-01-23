@@ -30,7 +30,7 @@ PlotWidget::~PlotWidget() { _linkedRedrawConnection.disconnect(); }
 
 bool PlotWidget::onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
   _beforeDrawSignal();
-  Glib::RefPtr<Gdk::Window> window = get_window();
+  const Glib::RefPtr<Gdk::Window> window = get_window();
   if (window && get_width() > 0 && get_height() > 0) {
     if (_plot != nullptr) {
       _plot->Draw(cr, get_width(), get_height());
@@ -57,7 +57,7 @@ void PlotWidget::Update() { queue_draw(); }
 bool PlotWidget::onMotion(GdkEventMotion* event) {
   if (_plot) {
     double posX, posY;
-    bool isInside = _plot->ConvertToPlot(event->x, event->y, posX, posY);
+    const bool isInside = _plot->ConvertToPlot(event->x, event->y, posX, posY);
     if (_isZooming) {
       _mouseX = event->x;
       _mouseY = event->y;

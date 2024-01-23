@@ -26,7 +26,7 @@
 
 BaselineIterator::BaselineIterator(std::mutex* ioMutex, const Options& options)
     : _options(options),
-      _baselineCount(0),
+      _sequenceCount(0),
       _nextIndex(0),
       _threadCount(4),
       _loopIndex(),
@@ -50,10 +50,11 @@ void BaselineIterator::Run(imagesets::ImageSet& imageSet, LuaThreadGroup& lua,
       dynamic_cast<imagesets::MSImageSet*>(&imageSet);
   if (msImageSet) {
     // Check memory usage
-    imagesets::ImageSetIndex tempIndex = msImageSet->StartIndex();
-    size_t timeStepCount = msImageSet->ObservationTimesVector(tempIndex).size();
-    size_t channelCount = msImageSet->GetBandInfo(0).channels.size();
-    double estMemorySizePerThread =
+    const imagesets::ImageSetIndex tempIndex = msImageSet->StartIndex();
+    const size_t timeStepCount =
+        msImageSet->ObservationTimesVector(tempIndex).size();
+    const size_t channelCount = msImageSet->GetBandInfo(0).channels.size();
+    const double estMemorySizePerThread =
         8.0 /*bp complex*/ * 4.0 /*polarizations*/ * double(timeStepCount) *
         double(channelCount) *
         3.0 /* approx copies of the data that will be made in memory*/;
@@ -62,7 +63,7 @@ void BaselineIterator::Run(imagesets::ImageSet& imageSet, LuaThreadGroup& lua,
     size_t compThreadCount = _threadCount;
     if (compThreadCount > 0) --compThreadCount;
 
-    int64_t memSize = aocommon::system::TotalMemory();
+    const int64_t memSize = aocommon::system::TotalMemory();
     Logger::Debug << "Detected " << memToStr(memSize) << " of system memory.\n";
 
     if (estMemorySizePerThread * double(compThreadCount) > memSize) {
@@ -87,37 +88,37 @@ void BaselineIterator::Run(imagesets::ImageSet& imageSet, LuaThreadGroup& lua,
   }
   if (!_options.antennaeToSkip.empty()) {
     Logger::Debug << "The following antennas will be skipped: ";
-    for (size_t a : _options.antennaeToSkip) Logger::Debug << a << ' ';
+    for (const size_t a : _options.antennaeToSkip) Logger::Debug << a << ' ';
     Logger::Debug << '\n';
   }
   if (!_options.antennaeToInclude.empty()) {
     Logger::Debug << "Only the following antennas will be included: ";
-    for (size_t a : _options.antennaeToInclude) Logger::Debug << a << ' ';
+    for (const size_t a : _options.antennaeToInclude) Logger::Debug << a << ' ';
     Logger::Debug << '\n';
   }
 
   _finishedBaselines = false;
-  _baselineCount = 0;
+  _sequenceCount = 0;
   _baselineProgress = 0;
   _nextIndex = 0;
 
-  // Count the baselines that are to be processed
+  // Count the sequences that are to be processed
   imagesets::ImageSetIndex iteratorIndex = imageSet.StartIndex();
   while (!iteratorIndex.HasWrapped()) {
-    if (IsBaselineSelected(iteratorIndex)) ++_baselineCount;
+    if (IsSequenceSelected(iteratorIndex)) ++_sequenceCount;
     iteratorIndex.Next();
   }
-  Logger::Debug << "Will process " << _baselineCount << " baselines.\n";
+  Logger::Debug << "Will process " << _sequenceCount << " sequences.\n";
 
   // Initialize thread data and threads
   _loopIndex = imageSet.StartIndex();
 
   std::vector<std::thread> threadGroup;
-  ReaderThread reader(*this);
+  const ReaderThread reader(*this);
   threadGroup.emplace_back(reader);
 
   for (unsigned i = 0; i < _threadCount; ++i) {
-    ProcessingThread function(*this, i);
+    const ProcessingThread function(*this, i);
     threadGroup.emplace_back(function);
   }
 
@@ -131,7 +132,7 @@ void BaselineIterator::Run(imagesets::ImageSet& imageSet, LuaThreadGroup& lua,
         "the baselines: the RFI strategy will not continue.");
 }
 
-bool BaselineIterator::IsBaselineSelected(imagesets::ImageSetIndex& index) {
+bool BaselineIterator::IsSequenceSelected(imagesets::ImageSetIndex& index) {
   imagesets::IndexableSet* idImageSet =
       dynamic_cast<imagesets::IndexableSet*>(_imageSet);
   size_t a1id, a2id;
@@ -179,9 +180,9 @@ bool BaselineIterator::IsBaselineSelected(imagesets::ImageSetIndex& index) {
 }
 
 imagesets::ImageSetIndex BaselineIterator::GetNextIndex() {
-  std::lock_guard<std::mutex> lock(_mutex);
+  const std::lock_guard<std::mutex> lock(_mutex);
   while (!_loopIndex.HasWrapped()) {
-    if (IsBaselineSelected(_loopIndex)) {
+    if (IsSequenceSelected(_loopIndex)) {
       imagesets::ImageSetIndex newIndex(_loopIndex);
       _loopIndex.Next();
 
@@ -193,14 +194,14 @@ imagesets::ImageSetIndex BaselineIterator::GetNextIndex() {
 }
 
 void BaselineIterator::SetExceptionOccured() {
-  std::lock_guard<std::mutex> lock(_mutex);
+  const std::lock_guard<std::mutex> lock(_mutex);
   _exceptionOccured = true;
   _dataProcessed.notify_all();
   _dataAvailable.notify_all();
 }
 
 void BaselineIterator::SetFinishedBaselines() {
-  std::lock_guard<std::mutex> lock(_mutex);
+  const std::lock_guard<std::mutex> lock(_mutex);
   _finishedBaselines = true;
 }
 
@@ -244,7 +245,7 @@ void BaselineIterator::ProcessingThread::operator()() {
   }
 
   {
-    std::unique_lock<std::mutex> ioLock(*_parent._ioMutex);
+    const std::unique_lock<std::mutex> ioLock(*_parent._ioMutex);
     _parent._globalScriptData->Combine(std::move(scriptData));
   }
 
@@ -254,7 +255,7 @@ void BaselineIterator::ProcessingThread::operator()() {
 void BaselineIterator::ReaderThread::operator()() {
   Stopwatch watch(true);
   bool finished = false;
-  size_t threadCount = _parent._threadCount;
+  const size_t threadCount = _parent._threadCount;
   size_t minRecommendedBufferSize, maxRecommendedBufferSize;
   imagesets::MSImageSet* msImageSet =
       dynamic_cast<imagesets::MSImageSet*>(_parent._imageSet);
@@ -273,7 +274,7 @@ void BaselineIterator::ReaderThread::operator()() {
     watch.Pause();
     _parent.WaitForReadBufferAvailable(minRecommendedBufferSize);
     if (!_parent._exceptionOccured) {
-      size_t wantedCount =
+      const size_t wantedCount =
           maxRecommendedBufferSize - _parent.GetBaselinesInBufferCount();
       size_t requestedCount = 0;
 
@@ -281,7 +282,7 @@ void BaselineIterator::ReaderThread::operator()() {
       watch.Start();
 
       for (size_t i = 0; i < wantedCount; ++i) {
-        imagesets::ImageSetIndex index = _parent.GetNextIndex();
+        const imagesets::ImageSetIndex index = _parent.GetNextIndex();
         if (!index.Empty()) {
           _parent._imageSet->AddReadRequest(index);
           ++requestedCount;
@@ -300,7 +301,7 @@ void BaselineIterator::ReaderThread::operator()() {
           std::unique_ptr<imagesets::BaselineData> baseline =
               _parent._imageSet->GetNextRequested();
 
-          std::lock_guard<std::mutex> bufferLock(_parent._mutex);
+          const std::lock_guard<std::mutex> bufferLock(_parent._mutex);
           _parent._baselineBuffer.emplace(std::move(baseline));
         }
       }

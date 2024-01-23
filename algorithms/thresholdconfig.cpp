@@ -1,7 +1,8 @@
 #include "thresholdconfig.h"
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
-#include <math.h>
 
 #include "../structures/image2d.h"
 
@@ -35,19 +36,14 @@ void ThresholdConfig::InitializeLengthsSingleSample() {
 
 void ThresholdConfig::InitializeThresholdsFromFirstThreshold(
     num_t firstThreshold, Distribution noiseDistribution) {
-  constexpr num_t expFactor = 1.5;
-  const num_t log2 = std::log(2.0);
-  for (size_t i = 0; i < _horizontalOperations.size(); ++i) {
-    _horizontalOperations[i].threshold =
-        firstThreshold *
-        std::pow(expFactor, std::log(_horizontalOperations[i].length) / log2) /
-        _horizontalOperations[i].length;
+  constexpr num_t exp_base = 1.5;
+  for (ThresholdConfig::ThresholdOperation& op : _horizontalOperations) {
+    op.threshold =
+        firstThreshold * std::pow(exp_base, std::log2(op.length)) / op.length;
   }
-  for (size_t i = 0; i < _verticalOperations.size(); ++i) {
-    _verticalOperations[i].threshold =
-        firstThreshold *
-        std::pow(expFactor, std::log(_verticalOperations[i].length) / log2) /
-        _verticalOperations[i].length;
+  for (ThresholdConfig::ThresholdOperation& op : _verticalOperations) {
+    op.threshold =
+        firstThreshold * std::pow(exp_base, std::log2(op.length)) / op.length;
   }
   _distribution = noiseDistribution;
 }
@@ -102,9 +98,7 @@ void ThresholdConfig::ExecuteWithMissing(const Image2D* image, Mask2D* mask,
   Mask2D scratch(*mask);
 
   const size_t operationCount =
-      _horizontalOperations.size() > _verticalOperations.size()
-          ? _horizontalOperations.size()
-          : _verticalOperations.size();
+      std::max(_horizontalOperations.size(), _verticalOperations.size());
   SumThreshold::VerticalScratch normalScratch(mask->Width(), mask->Height());
   SumThresholdMissing::VerticalCache vMissingCache;
   if (missing)

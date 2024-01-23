@@ -1,6 +1,9 @@
 #ifndef RESTORE_CHANNEL_RANGE_H
 #define RESTORE_CHANNEL_RANGE_H
 
+#include <utility>
+#include <vector>
+
 #include "../structures/timefrequencydata.h"
 #include "../structures/timefrequencymetadata.h"
 

@@ -37,7 +37,7 @@ void ColorScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
     backValue.green = 1.0;
     backValue.blue = 1.0;
   }
-  double barX =
+  const double barX =
       _textOnLeft ? (_plotWidth - _width + _scaleWidth) : (_plotWidth - _width);
   cairo->rectangle(barX, scaleTop, BAR_WIDTH, scaleHeight);
   cairo->set_source_rgb(backValue.red, backValue.green, backValue.blue);
@@ -45,7 +45,7 @@ void ColorScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
 
   const double min = _verticalPlotScale.GetTickRangeMin();
   const double max = _verticalPlotScale.GetTickRangeMax();
-  for (std::pair<const double, ColorValue>& item : _colorValues) {
+  for (const std::pair<const double, ColorValue>& item : _colorValues) {
     double val;
     if (_verticalPlotScale.IsLogarithmic()) {
       const double minLog10 = std::log10(min);
@@ -69,7 +69,7 @@ void ColorScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
   cairo->rectangle(barX, scaleTop, BAR_WIDTH, scaleHeight);
   cairo->set_source_rgb(0.0, 0.0, 0.0);
   cairo->stroke();
-  double scaleX =
+  const double scaleX =
       _textOnLeft ? (_plotWidth - _width) : (_plotWidth - _width + BAR_WIDTH);
   _verticalPlotScale.Draw(cairo, scaleX, _topMargin + textHeight);
 }

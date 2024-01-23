@@ -5,25 +5,29 @@
 
 #include <vector>
 
-class TextTickSet : public TickSet {
+class TextTickSet final : public TickSet {
  public:
-  TextTickSet(const std::vector<std::string>& labels, size_t sizeRequest)
+  TextTickSet(const std::vector<std::pair<double, std::string>>& labels,
+              size_t sizeRequest)
       : _sizeRequest(sizeRequest), _labels(labels) {
     set(sizeRequest);
   }
 
   std::unique_ptr<TickSet> Clone() const override {
-    return std::unique_ptr<TickSet>(new TextTickSet(*this));
+    return std::make_unique<TextTickSet>(*this);
   }
 
-  size_t Size() const final override { return _ticks.size(); }
+  size_t Size() const override { return _ticks.size(); }
 
-  Tick GetTick(size_t i) const final override {
+  Tick GetTick(size_t i) const override {
     const size_t labelIndex = _ticks[i];
-    const double val = (_labels.size() == 1)
-                           ? 0.5
-                           : (double)labelIndex / (double)(_labels.size() - 1);
-    return Tick(val, _labels[labelIndex]);
+    const double x = _labels[labelIndex].first;
+    const double min = _labels.front().first;
+    const double max = _labels.back().first;
+    if (max - min == 0.0)
+      return Tick(0.5, _labels[labelIndex].second);
+    else
+      return Tick((x - min) / (max - min), _labels[labelIndex].second);
   }
 
   void Reset() final override {
@@ -49,7 +53,7 @@ class TextTickSet : public TickSet {
   }
 
   size_t _sizeRequest;
-  std::vector<std::string> _labels;
+  std::vector<std::pair<double, std::string>> _labels;
   std::vector<size_t> _ticks;
 };
 

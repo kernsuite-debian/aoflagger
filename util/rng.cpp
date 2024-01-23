@@ -41,8 +41,8 @@ void RNG::DoubleGaussian(long double& a, long double& b) {
   long double x1, x2, w;
 
   do {
-    long double r1 = (long double)rand() / (long double)RAND_MAX;
-    long double r2 = (long double)rand() / (long double)RAND_MAX;
+    const long double r1 = (long double)rand() / (long double)RAND_MAX;
+    const long double r2 = (long double)rand() / (long double)RAND_MAX;
     x1 = 2.0 * r1 - 1.0;
     x2 = 2.0 * r2 - 1.0;
     w = x1 * x1 + x2 * x2;
@@ -95,8 +95,8 @@ double RNG::EvaluateGaussian2D(long double x1, long double x2,
 }
 
 void RNG::ComplexGaussianAmplitude(num_t& r, num_t& i) {
-  num_t amplitude = Gaussian();
-  num_t phase = Uniform() * 2.0 * M_PIn;
+  const num_t amplitude = Gaussian();
+  const num_t phase = Uniform() * 2.0 * M_PIn;
   r = amplitude * std::cos(phase);
   i = amplitude * std::sin(phase);
 }

@@ -8,27 +8,21 @@
 BOOST_AUTO_TEST_SUITE(strategy_files, *boost::unit_test::label("lua"))
 
 BOOST_AUTO_TEST_CASE(find_strategy) {
-  std::filesystem::path argv0 = std::filesystem::current_path() / "aoflagger";
-
   auto all = TelescopeFile::List();
   for (TelescopeFile::TelescopeId telescope : all) {
-    std::string path =
-        TelescopeFile::FindStrategy(argv0.string(), telescope, "");
+    std::string path = TelescopeFile::FindStrategy(telescope);
     BOOST_CHECK_NE(path, "");
   }
 }
 
 BOOST_AUTO_TEST_CASE(find_non_existing_strategy) {
-  std::filesystem::path argv0 = std::filesystem::current_path() / "aoflagger";
-
   std::string nonExisting = TelescopeFile::FindStrategy(
-      argv0.string(), TelescopeFile::GENERIC_TELESCOPE, "_NonExisting");
+      TelescopeFile::GENERIC_TELESCOPE, "_NonExisting");
   BOOST_CHECK_EQUAL(nonExisting, "");
 }
 
-void runStrategy(TelescopeFile::TelescopeId telescope) {
-  std::filesystem::path argv0 = std::filesystem::current_path() / "aoflagger";
-
+void runStrategy(TelescopeFile::TelescopeId telescope,
+                 const std::string& strategy_scenario = {}) {
   aoflagger::AOFlagger flagger;
   const size_t pols = 8, width = 7, height = 10;
   aoflagger::ImageSet imageSet = flagger.MakeImageSet(width, height, pols);
@@ -55,7 +49,7 @@ void runStrategy(TelescopeFile::TelescopeId telescope) {
       imageSet.ImageBuffer(rfiP) + rfiY * imageSet.HorizontalStride() + rfiX;
   *rfiPixel = 1000.0;
 
-  std::string path = TelescopeFile::FindStrategy(argv0.string(), telescope, "");
+  std::string path = TelescopeFile::FindStrategy(telescope, strategy_scenario);
   BOOST_CHECK(!path.empty());
   aoflagger::Strategy strategy = flagger.LoadStrategyFile(path);
   aoflagger::FlagMask mask = strategy.Run(imageSet);
@@ -90,6 +84,14 @@ BOOST_AUTO_TEST_CASE(run_bighorns) {
 BOOST_AUTO_TEST_CASE(run_jvla) { runStrategy(TelescopeFile::JVLA_TELESCOPE); }
 
 BOOST_AUTO_TEST_CASE(run_lofar) { runStrategy(TelescopeFile::LOFAR_TELESCOPE); }
+
+BOOST_AUTO_TEST_CASE(run_lofar_beamformed) {
+  runStrategy(TelescopeFile::LOFAR_TELESCOPE, "beamformed");
+}
+
+BOOST_AUTO_TEST_CASE(run_lofar_lba) {
+  runStrategy(TelescopeFile::LOFAR_TELESCOPE, "lba-wideband");
+}
 
 BOOST_AUTO_TEST_CASE(run_mwa) { runStrategy(TelescopeFile::MWA_TELESCOPE); }
 

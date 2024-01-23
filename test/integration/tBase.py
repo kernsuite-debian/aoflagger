@@ -44,3 +44,23 @@ def test():
     )
     # Did we write one history record?
     assert_taql(f"select from {MS}/HISTORY", 1)
+
+    # Only test gui components if they have been built
+    if config.enable_gui == "ON":
+        # Test rfigui save baseline functionality (parameters: filename, a1, a2, band, sequence)
+        # The output isn't checked -- this is just to see if the command succeeds.
+        check_call(
+            [
+                config.rfigui,
+                MS,
+                "-save-baseline",
+                "baseline-test.pdf",
+                "0",
+                "1",
+                "0",
+                "0",
+            ]
+        )
+
+        # Test if the statistic plots (pdf files) can be saved.
+        check_call([config.aoqplot, MS, "-save", "test", "StandardDeviation"])

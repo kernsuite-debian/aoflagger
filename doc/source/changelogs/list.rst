@@ -4,15 +4,19 @@ Change logs
 Version 3 releases
 ^^^^^^^^^^^^^^^^^^
 
-AOFlagger version 3 is the current major release number. It is in development since 2022-05-19. Stable releases:
+AOFlagger version 3 is the current major release number. The first release of version 3 was released on 2022-05-19. Stable releases:
 
 .. toctree::
    :hidden:
  
+   v3.04
+   v3.03
    v3.02
    v3.01
    v3.00
 
+* :doc:`v3.4 <v3.04>` (2023-10-06)
+* :doc:`v3.3 <v3.03>` (2023-03-20)
 * :doc:`v3.2 <v3.02>` (2022-05-19)
 * :doc:`v3.1 <v3.01>` (2021-02-24)
 * :doc:`v3.0 <v3.00>` (2020-07-19)

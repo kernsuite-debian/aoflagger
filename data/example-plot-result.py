@@ -10,32 +10,34 @@ npol = 2
 aoflagger = aof.AOFlagger()
 path = aoflagger.find_strategy_file(aof.TelescopeId.Generic)
 strategy = aoflagger.load_strategy_file(path)
-data = aoflagger.make_image_set(ntimes, nch, npol*2)
+data = aoflagger.make_image_set(ntimes, nch, npol * 2)
 
 # Several consecutive values at the same frequency are increased
 # in amplitude to simulate a RFI source. These values define
 # the channel and the start and duration of the added signal.
-rfi_y = int(nch*0.3)
-rfi_x_start = int(ntimes*0.2)
-rfi_x_end = int(ntimes*0.4)
-rfi_strength = 1 # 1 sigma above the noise
+rfi_y = int(nch * 0.3)
+rfi_x_start = int(ntimes * 0.2)
+rfi_x_end = int(ntimes * 0.4)
+rfi_strength = 1  # 1 sigma above the noise
 
-for imgindex in range(npol*2):
+for imgindex in range(npol * 2):
     # Initialize data with random numbers
     values = numpy.random.normal(0, 1, [nch, ntimes])
     # Add fake transmitter
-    values[rfi_y,rfi_x_start:rfi_x_end] = values[rfi_y,rfi_x_start:rfi_x_end] + rfi_strength
+    values[rfi_y, rfi_x_start:rfi_x_end] = (
+        values[rfi_y, rfi_x_start:rfi_x_end] + rfi_strength
+    )
     data.set_image_buffer(imgindex, values)
-    
+
 
 flags = strategy.run(data)
 flagvalues = flags.get_buffer()
-flagvalues = flagvalues*1
+flagvalues = flagvalues * 1
 
-plt.imshow(values, cmap='viridis')
+plt.imshow(values, cmap="viridis")
 plt.colorbar()
 plt.show()
 
-plt.imshow(flagvalues, cmap='viridis')
+plt.imshow(flagvalues, cmap="viridis")
 plt.colorbar()
 plt.show()

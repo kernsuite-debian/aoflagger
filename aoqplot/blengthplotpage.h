@@ -7,15 +7,15 @@
 
 #include "controllers/blengthpagecontroller.h"
 
-class BLengthPlotPage : public TwoDimensionalPlotPage {
+class BLengthPlotPage final : public TwoDimensionalPlotPage {
  public:
-  BLengthPlotPage(BLengthPageController* controller)
+  explicit BLengthPlotPage(BLengthPageController* controller)
       : TwoDimensionalPlotPage(controller),
         _controller(controller),
         _includeAutoCorrelationsButton("Auto-correlations") {}
 
  protected:
-  virtual void addCustomPlotButtons(Gtk::Toolbar& container) override final {
+  void addCustomPlotButtons(Gtk::Toolbar& container) override {
     _includeAutoCorrelationsButton.signal_clicked().connect(
         sigc::mem_fun(*this, &BLengthPlotPage::onAutoCorrelationsClicked));
     container.append(_includeAutoCorrelationsButton);

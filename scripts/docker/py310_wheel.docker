@@ -1,0 +1,47 @@
+FROM quay.io/casacore/casacore:master_wheel36
+
+ENV HDF5_VERSION 1.12.2
+ENV HDF5_DIR /opt/hdf5
+ENV LUA_VERSION 5.3.6
+ENV LUA_DIR /opt/lua
+ENV FFTW_VERSION 3.3.8
+ENV FFTW_DIR /opt/fftw3
+
+COPY scripts/docker/install_*.sh /
+
+# Install AOFlagger dependencies
+RUN bash /install_lua.sh
+RUN bash /install_hdf5.sh
+RUN bash /install_fftw.sh
+RUN bash /install_boost.sh
+
+ENV CFLAGS="-I /opt/hdf5/include -L/opt/hdf5/lib -I/usr/include/cfitsio"
+ENV LD_LIBRARY_PATH="/usr/local/lib"
+ENV CMAKE_ARGS="-DCMAKE_PREFIX_PATH='${HDF5_DIR};${LUA_DIR};${FFTW_DIR};/opt/boost' -DCMAKE_CXX_FLAGS='-Wl,--unresolved-symbols=ignore-all'"
+# Create fake libpython to stop the linker from complaining. The wheel should find the user's libpython at runtime.
+RUN touch /usr/lib64/libpython${PYMAJOR}.${PYMINOR}${PYUNICODE}.so
+
+# Wheels should not actually link to libpython, since they find the user's python at runtime.
+# So prevent aoflagger to even find libpython (which is not even included in the manylinux images)
+
+RUN yum install -y libpng-devel
+
+ADD . /aoflagger
+WORKDIR /aoflagger
+
+
+# Change the following lines from CMakeLists.txt:
+# find_package(
+#   Python
+#   COMPONENTS Interpreter Development
+#   REQUIRED)
+# - Add a specific exact Python version.
+# - Use "Development.Module" instead of "Development"
+RUN sed -i -z "s=\(find_package(\n  Python\)\(\n  COMPONENTS Interpreter Development\)=\1 ${PYMAJOR}.${PYMINOR} EXACT\2.Module=" CMakeLists.txt
+
+
+# Build and copy wheel outside of Docker container
+
+RUN /opt/python/${TARGET}/bin/python ./setup.py build_ext -j${THREADS}
+RUN /opt/python/${TARGET}/bin/python ./setup.py bdist_wheel -d .
+RUN auditwheel repair --plat manylinux2014_x86_64 -w /output *.whl

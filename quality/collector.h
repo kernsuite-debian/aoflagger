@@ -10,6 +10,10 @@
 #include <aocommon/lane.h>
 #include <aocommon/uvector.h>
 
+class HistogramCollection;
+class StatisticsCollection;
+class ProgressListener;
+
 class Collector {
  public:
   enum CollectingMode {
@@ -18,17 +22,14 @@ class Collector {
     CollectTimeFrequency
   };
 
-  Collector()
-      : _mode(CollectDefault),
-        _dataColumnName("DATA"),
-        _intervalStart(0),
-        _intervalEnd(0),
-        _flaggedTimesteps(0) {}
+  Collector();
+
+  ~Collector();
 
   void Collect(const std::string& filename,
-               class StatisticsCollection& statisticsCollection,
-               class HistogramCollection& histogramCollection,
-               class ProgressListener& progressListener);
+               StatisticsCollection& statisticsCollection,
+               HistogramCollection& histogramCollection,
+               ProgressListener& progressListener);
 
   void SetMode(CollectingMode mode) { _mode = mode; }
   void SetDataColumn(const std::string& dataColumnName) {

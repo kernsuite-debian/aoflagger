@@ -91,7 +91,7 @@ class ParmTable;
 
 enum BaselineIOMode {
   DirectReadMode,
-  IndirectReadMode,
+  ReorderingReadMode,
   MemoryReadMode,
   AutoReadMode
 };

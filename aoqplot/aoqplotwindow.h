@@ -1,6 +1,10 @@
 #ifndef AOQPLOT_WINDOW_H
 #define AOQPLOT_WINDOW_H
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <gtkmm/application.h>
 #include <gtkmm/box.h>
 #include <gtkmm/notebook.h>
@@ -23,7 +27,7 @@
 
 class AOQPlotWindow : public Gtk::Window {
  public:
-  AOQPlotWindow(class AOQPlotController* controller);
+  explicit AOQPlotWindow(class AOQPlotController* controller);
 
   void Open(const std::vector<std::string>& files);
   void Open(const std::string& file) {

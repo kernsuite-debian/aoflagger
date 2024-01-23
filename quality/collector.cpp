@@ -14,6 +14,15 @@
 
 #include <memory>
 
+Collector::Collector()
+    : _mode(CollectDefault),
+      _dataColumnName("DATA"),
+      _intervalStart(0),
+      _intervalEnd(0),
+      _flaggedTimesteps(0) {}
+
+Collector::~Collector() = default;
+
 void Collector::Collect(const std::string& filename,
                         StatisticsCollection& statisticsCollection,
                         HistogramCollection& histogramCollection,
@@ -27,11 +36,9 @@ void Collector::Collect(const std::string& filename,
   const std::string stationName = ms->GetStationName();
   std::vector<BandInfo> bands(bandCount);
   std::vector<std::vector<double>> frequencies(bandCount);
-  unsigned totalChannels = 0;
   for (unsigned b = 0; b < bandCount; ++b) {
     bands[b] = ms->GetBandInfo(b);
     frequencies[b].resize(bands[b].channels.size());
-    totalChannels += bands[b].channels.size();
     for (unsigned c = 0; c < bands[b].channels.size(); ++c) {
       frequencies[b][c] = bands[b].channels[c].frequencyHz;
     }
@@ -42,7 +49,7 @@ void Collector::Collect(const std::string& filename,
   _statisticsCollection = &statisticsCollection;
   _histogramCollection = &histogramCollection;
   statisticsCollection.SetPolarizationCount(polarizationCount);
-  size_t nCPU = aocommon::system::ProcessorCount();
+  const size_t nCPU = aocommon::system::ProcessorCount();
   _threadStats.clear();
   for (size_t i = 0; i != nCPU; ++i)
     _threadStats.emplace_back(polarizationCount);
@@ -68,14 +75,15 @@ void Collector::Collect(const std::string& filename,
   histogramCollection.SetPolarizationCount(polarizationCount);
 
   // get columns
-  casacore::Table table(filename);
-  casacore::ArrayColumn<casacore::Complex> dataColumn(table, _dataColumnName);
-  casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
-  casacore::ScalarColumn<double> timeColumn(table, "TIME");
+  const casacore::Table table(filename);
+  const casacore::ArrayColumn<casacore::Complex> dataColumn(table,
+                                                            _dataColumnName);
+  const casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
+  const casacore::ScalarColumn<double> timeColumn(table, "TIME");
   casacore::ScalarColumn<int> antenna1Column(table, "ANTENNA1"),
       antenna2Column(table, "ANTENNA2"), windowColumn(table, "DATA_DESC_ID");
 
-  size_t channelCount = bands[0].channels.size();
+  const size_t channelCount = bands[0].channels.size();
   _correlatorFlags.assign(channelCount, false);
   _correlatorFlagsForBadAntenna.assign(channelCount, true);
 
@@ -85,7 +93,7 @@ void Collector::Collect(const std::string& filename,
     threads.emplace_back(
         [&, i]() { process(&workLane, &_threadStats[i], polarizationCount); });
 
-  bool hasInterval = !(_intervalStart == 0 && _intervalEnd == 0);
+  const bool hasInterval = !(_intervalStart == 0 && _intervalEnd == 0);
 
   const size_t nrow = table.nrow();
   size_t timestepIndex = (size_t)-1;
@@ -202,7 +210,7 @@ void Collector::process(aocommon::Lane<Work>* workLane,
       }
     }
   }
-  std::unique_lock<std::mutex> lock(_mutex);
+  const std::unique_lock<std::mutex> lock(_mutex);
   _statisticsCollection->Add(*stats);
   _histogramCollection->Add(histos);
 }

@@ -169,7 +169,7 @@ long FitsFile::GetCurrentImageSize(int dimension) {
   int status = 0;
   long* sizes = new long[dimension];
   fits_get_img_size(_fptr, dimension, sizes, &status);
-  long size = sizes[dimension - 1];
+  const long size = sizes[dimension - 1];
   delete[] sizes;
   CheckStatus(status);
   return size;
@@ -400,7 +400,7 @@ long FitsFile::GetGroupSize() {
 void FitsFile::ReadGroupParameters(long groupIndex,
                                    long double* parametersData) {
   int status = 0;
-  long pSize = GetParameterCount();
+  const long pSize = GetParameterCount();
   double* parameters = new double[pSize];
 
   fits_read_grppar_dbl(_fptr, groupIndex + 1, 1, pSize, parameters, &status);
@@ -413,10 +413,10 @@ void FitsFile::ReadGroupParameters(long groupIndex,
 
 void FitsFile::ReadGroup(long groupIndex, long double* groupData) {
   int status = 0;
-  long size = GetImageSize();
-  long pSize = GetParameterCount();
+  const long size = GetImageSize();
+  const long pSize = GetParameterCount();
   double* parameters = new double[pSize];
-  double nulValue = std::numeric_limits<double>::quiet_NaN();
+  const double nulValue = std::numeric_limits<double>::quiet_NaN();
   int anynul = 0;
 
   fits_read_grppar_dbl(_fptr, groupIndex + 1, 1, pSize, parameters, &status);
@@ -440,8 +440,8 @@ void FitsFile::ReadGroup(long groupIndex, long double* groupData) {
 
 void FitsFile::ReadGroupData(long groupIndex, long double* groupData) {
   int status = 0;
-  long size = GetImageSize();
-  double nulValue = std::numeric_limits<double>::quiet_NaN();
+  const long size = GetImageSize();
+  const double nulValue = std::numeric_limits<double>::quiet_NaN();
   int anynul = 0;
 
   double* data = new double[size];
@@ -459,7 +459,7 @@ void FitsFile::ReadGroupData(long groupIndex, long double* groupData) {
 
 int FitsFile::GetGroupParameterIndex(const std::string& parameterName) {
   if (!HasGroups()) throw FitsIOException("HDU has no groups");
-  int parameterCount = GetParameterCount();
+  const int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
     std::stringstream s;
     s << "PTYPE" << i;
@@ -472,7 +472,7 @@ int FitsFile::GetGroupParameterIndex(const std::string& parameterName) {
 int FitsFile::GetGroupParameterIndex(const std::string& parameterName,
                                      int number) {
   if (!HasGroups()) throw FitsIOException("HDU has no groups");
-  int parameterCount = GetParameterCount();
+  const int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
     std::stringstream s;
     s << "PTYPE" << i;
@@ -487,7 +487,7 @@ int FitsFile::GetGroupParameterIndex(const std::string& parameterName,
 
 bool FitsFile::HasGroupParameter(const std::string& parameterName) {
   if (!HasGroups()) return false;
-  int parameterCount = GetParameterCount();
+  const int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
     std::stringstream s;
     s << "PTYPE" << i;
@@ -498,7 +498,7 @@ bool FitsFile::HasGroupParameter(const std::string& parameterName) {
 
 bool FitsFile::HasGroupParameter(const std::string& parameterName, int number) {
   if (!HasGroups()) return false;
-  int parameterCount = GetParameterCount();
+  const int parameterCount = GetParameterCount();
   for (int i = 1; i <= parameterCount; ++i) {
     std::stringstream s;
     s << "PTYPE" << i;
@@ -511,7 +511,7 @@ bool FitsFile::HasGroupParameter(const std::string& parameterName, int number) {
 }
 
 bool FitsFile::HasTableColumn(const std::string& columnName, int& columnIndex) {
-  int colCount = GetColumnCount();
+  const int colCount = GetColumnCount();
   for (int i = 1; i <= colCount; ++i) {
     std::stringstream s;
     s << "TTYPE" << i;
@@ -524,7 +524,7 @@ bool FitsFile::HasTableColumn(const std::string& columnName, int& columnIndex) {
 }
 
 int FitsFile::GetTableColumnIndex(const std::string& columnName) {
-  int colCount = GetColumnCount();
+  const int colCount = GetColumnCount();
   for (int i = 1; i <= colCount; ++i) {
     std::stringstream s;
     s << "TTYPE" << i;

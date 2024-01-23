@@ -40,7 +40,6 @@ class MemoryBaselineReader final : public BaselineReader {
         "reader");
   }
 
-  static bool IsEnoughMemoryAvailable(const std::string& msFile);
   static bool IsEnoughMemoryAvailable(uint64_t size);
 
   size_t GetMinRecommendedBufferSize(size_t /*threadCount*/) override {
@@ -69,12 +68,12 @@ class MemoryBaselineReader final : public BaselineReader {
     unsigned antenna1, antenna2, spw, sequenceId;
 
     bool operator<(const BaselineID& other) const {
-      if (antenna1 < other.antenna1)
+      if (antenna1 < other.antenna1) {
         return true;
-      else if (antenna1 == other.antenna1) {
-        if (antenna2 < other.antenna2)
+      } else if (antenna1 == other.antenna1) {
+        if (antenna2 < other.antenna2) {
           return true;
-        else if (antenna2 == other.antenna2) {
+        } else if (antenna2 == other.antenna2) {
           if (spw < other.spw)
             return true;
           else if (spw == other.spw)

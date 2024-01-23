@@ -3,6 +3,7 @@
 #include "../structures/xyswappedmask2d.h"
 
 #include <vector>
+#include <utility>
 
 #include "sumthreshold.h"
 
@@ -184,9 +185,9 @@ void SumThresholdMissing::VerticalReference(const Image2D& input, Mask2D& mask,
                                             const Mask2D& missing,
                                             Mask2D& scratch, size_t length,
                                             num_t threshold) {
-  XYSwappedImage2D<const Image2D> swappedInput(input);
+  const XYSwappedImage2D<const Image2D> swappedInput(input);
   XYSwappedMask2D<Mask2D> swappedMask(mask);
-  XYSwappedMask2D<const Mask2D> swappedMissing(missing);
+  const XYSwappedMask2D<const Mask2D> swappedMissing(missing);
   XYSwappedMask2D<Mask2D> swappedScratch(scratch);
   horizontal(swappedInput, swappedMask, swappedMissing, swappedScratch, length,
              threshold);

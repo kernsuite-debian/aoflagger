@@ -1,6 +1,9 @@
 #ifndef HEATMAP_PAGE_CONTROLLER_H
 #define HEATMAP_PAGE_CONTROLLER_H
 
+#include <string>
+#include <utility>
+
 #include "aoqplotpagecontroller.h"
 
 #include "../../rfigui/maskedheatmap.h"

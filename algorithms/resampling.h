@@ -1,6 +1,10 @@
 #ifndef AOFLAGGER_ALGORITHMS_RESAMPLING_H
 #define AOFLAGGER_ALGORITHMS_RESAMPLING_H
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include "../structures/timefrequencydata.h"
 #include "../structures/timefrequencymetadata.h"
 

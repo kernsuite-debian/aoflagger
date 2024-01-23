@@ -39,16 +39,13 @@ class TelescopeFile {
   /**
    * @brief Searches a strategy for a given telescope.
    *
-   * @param argv0 The argv[0] variable passed to main(), or empty if it is not
-   * available.
    * @param telescopeId One of the telescopes, if known, otherwise
    * GENERIC_TELESCOPE.
    * @param scenario Used as 'suffix' to the name of the telescope. This allows
    * multiple versions for the same telescope.
    * @returns Path to the strategy, or empty string if not found.
    */
-  static std::string FindStrategy(const std::string& argv0,
-                                  enum TelescopeId telescopeId,
+  static std::string FindStrategy(enum TelescopeId telescopeId,
                                   const std::string& scenario = "");
 
   static std::string TelescopeName(TelescopeFile::TelescopeId telescopeId);

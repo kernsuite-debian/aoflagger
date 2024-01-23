@@ -7,9 +7,12 @@
 
 #include "../structures/msmetadata.h"
 
-#include <vector>
+#include <algorithm>
 #include <list>
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace imagesets {
 
@@ -52,7 +55,7 @@ class JoinedSPWSet final : public IndexableSet {
     newSet->_msImageSet.reset(new MSImageSet(*_msImageSet));
     newSet->_joinedSequences = _joinedSequences;
     newSet->_nChannels = _nChannels;
-    return std::move(newSet);
+    return newSet;
   }
 
   size_t Size() const override { return _joinedSequences.size(); }

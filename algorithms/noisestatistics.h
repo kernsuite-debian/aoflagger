@@ -78,9 +78,9 @@ class NoiseStatistics {
   stat_t StdDevEstimator() const { return std::sqrt(VarianceEstimator()); }
 
   stat_t VarianceEstimator() const {
-    if (_count <= 1)
+    if (_count <= 1) {
       return 0.0;
-    else {
+    } else {
       const stat_t n = _count;
       const stat_t sumMeanSquared = (_sum * _sum) / n;
       return (_sum2 + sumMeanSquared - (_sum * 2.0 * _sum / n)) / (n - 1.0);
@@ -88,9 +88,9 @@ class NoiseStatistics {
   }
 
   stat_t SecondMoment() const {
-    if (_count == 0)
+    if (_count == 0) {
       return 0.0;
-    else {
+    } else {
       const stat_t n = _count;
       const stat_t sumMeanSquared = (_sum * _sum) / n;
       return (_sum2 + sumMeanSquared - (_sum * 2.0 * _sum / n)) / n;
@@ -98,9 +98,9 @@ class NoiseStatistics {
   }
 
   stat_t FourthMoment() const {
-    if (_count == 0)
+    if (_count == 0) {
       return 0.0;
-    else {
+    } else {
       const stat_t n = _count, mean = _sum / n, mean2 = mean * mean;
       return (_sum4 - 4.0 * (_sum3 * mean + _sum * mean2 * mean) +
               6.0 * _sum2 * mean2) /
@@ -111,9 +111,9 @@ class NoiseStatistics {
 
   stat_t VarianceOfVarianceEstimator() const {
     const long double n = _count;
-    if (n <= 1)
+    if (n <= 1) {
       return 0.0;
-    else {
+    } else {
       const long double moment2 = SecondMoment();
       return (FourthMoment() - moment2 * moment2 * (n - 3.0) / (n - 1.0)) / n;
     }

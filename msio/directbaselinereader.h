@@ -52,12 +52,12 @@ class DirectBaselineReader final : public BaselineReader {
              sequenceId == rhs.sequenceId;
     }
     bool operator<(const BaselineCacheIndex& rhs) const {
-      if (antenna1 < rhs.antenna1)
+      if (antenna1 < rhs.antenna1) {
         return true;
-      else if (antenna1 == rhs.antenna1) {
-        if (antenna2 < rhs.antenna2)
+      } else if (antenna1 == rhs.antenna1) {
+        if (antenna2 < rhs.antenna2) {
           return true;
-        else if (antenna2 == rhs.antenna2) {
+        } else if (antenna2 == rhs.antenna2) {
           if (spectralWindow < rhs.spectralWindow)
             return true;
           else if (spectralWindow == rhs.spectralWindow)

@@ -9,7 +9,7 @@ namespace aoflagger {
 std::string AOFlagger::FindStrategyFile(enum TelescopeId telescopeId,
                                         const std::string& scenario) {
   return TelescopeFile::FindStrategy(
-      "", static_cast<TelescopeFile::TelescopeId>(telescopeId), scenario);
+      static_cast<TelescopeFile::TelescopeId>(telescopeId), scenario);
 }
 
 QualityStatistics AOFlagger::MakeQualityStatistics(

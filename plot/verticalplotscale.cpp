@@ -31,7 +31,7 @@ double VerticalPlotScale::GetTickTextHeight(
     const Cairo::RefPtr<Cairo::Context>& cairo) {
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   layout->set_font_description(fontDescription);
   layout->set_text("M");
   return layout->get_pixel_logical_extents().get_height();
@@ -50,15 +50,15 @@ void VerticalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo,
   offsetY += _fromTop;
   initializeMetrics(cairo);
   cairo->set_source_rgb(0.0, 0.0, 0.0);
-  double x = _isSecondAxis ? offsetX : _width + offsetX;
-  double tickX = _isSecondAxis ? 3 : -3;
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const double x = _isSecondAxis ? offsetX : _width + offsetX;
+  const double tickX = _isSecondAxis ? 3 : -3;
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);
   for (unsigned i = 0; i != _tickSet->Size(); ++i) {
     const Tick tick = _tickSet->GetTick(i);
-    double y = getTickYPosition(tick);
+    const double y = getTickYPosition(tick);
     cairo->move_to(x + tickX, y + offsetY);
     cairo->line_to(x, y + offsetY);
     layout->set_text(tick.second);
@@ -81,13 +81,14 @@ void VerticalPlotScale::drawDescription(
     const Cairo::RefPtr<Cairo::Context>& cairo, double offsetX,
     double offsetY) {
   cairo->save();
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);
   layout->set_text(_unitsCaption);
   const Pango::Rectangle extents = layout->get_pixel_logical_extents();
-  double x = _isSecondAxis ? offsetX + 2 + _width - _captionSize : offsetX + 2;
+  const double x =
+      _isSecondAxis ? offsetX + 2 + _width - _captionSize : offsetX + 2;
   cairo->translate(x - extents.get_ascent(), offsetY + 0.7 * _plotHeight);
   cairo->rotate(M_PI * 1.5);
   cairo->move_to(0.0, 0.0);
@@ -125,13 +126,13 @@ void VerticalPlotScale::initializeMetrics(
       while (!ticksFit(cairo) && _tickSet->Size() > 2) {
         _tickSet->DecreaseTicks();
       }
-      Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+      const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
       Pango::FontDescription fontDescription;
       fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
       layout->set_font_description(fontDescription);
       int maxWidth = 0;
       for (unsigned i = 0; i != _tickSet->Size(); ++i) {
-        Tick tick = _tickSet->GetTick(i);
+        const Tick tick = _tickSet->GetTick(i);
         layout->set_text(tick.second);
         maxWidth =
             std::max(maxWidth, layout->get_pixel_logical_extents().get_width());
@@ -139,7 +140,7 @@ void VerticalPlotScale::initializeMetrics(
       _width = maxWidth + 10;
     }
     if (_drawWithDescription) {
-      Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+      const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
       Pango::FontDescription fontDescription;
       fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
       layout->set_font_description(fontDescription);

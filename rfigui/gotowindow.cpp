@@ -57,17 +57,17 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
   // Now we make a store that contains all antennas. This store is shared for
   // both a1 and a2 views.
   for (std::set<size_t>::const_iterator i = set.begin(); i != set.end(); ++i) {
-    Gtk::TreeModel::iterator iter = _antennaeStore->append();
+    const Gtk::TreeModel::iterator iter = _antennaeStore->append();
     (*iter)[_antennaModelColumns.antennaIndex] = *i;
-    AntennaInfo antenna = _imageSet->GetAntennaInfo(*i);
+    const AntennaInfo antenna = _imageSet->GetAntennaInfo(*i);
     (*iter)[_antennaModelColumns.antennaName] = antenna.name;
     if (antenna1Index == *i) a1Row = iter;
     if (antenna2Index == *i) a2Row = iter;
   }
 
-  size_t bandCount = _imageSet->BandCount();
+  const size_t bandCount = _imageSet->BandCount();
   for (size_t i = 0; i < bandCount; ++i) {
-    Gtk::TreeModel::iterator iter = _bandStore->append();
+    const Gtk::TreeModel::iterator iter = _bandStore->append();
     (*iter)[_bandModelColumns.bandIndex] = i;
     std::stringstream desc;
     BandInfo band = _imageSet->GetBandInfo(i);
@@ -78,10 +78,10 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
     if (i == bandIndex) bandRow = iter;
   }
 
-  size_t sequenceIdCount = _imageSet->SequenceCount();
+  const size_t sequenceIdCount = _imageSet->SequenceCount();
   size_t lastSeqIndex = 0;
   for (size_t i = 0; i < sequenceIdCount; ++i) {
-    Gtk::TreeModel::iterator iter = _sequenceStore->append();
+    const Gtk::TreeModel::iterator iter = _sequenceStore->append();
     (*iter)[_sequenceModelColumns.sequenceIndex] = i;
     std::stringstream desc;
     // Find some index that has this sequence.
@@ -91,8 +91,8 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
     std::optional<imagesets::ImageSetIndex> index(_imageSet->Index(
         _sequences[lastSeqIndex].antenna1, _sequences[lastSeqIndex].antenna2,
         _sequences[lastSeqIndex].spw, i));
-    size_t fIndex = _imageSet->GetField(*index);
-    FieldInfo field = _imageSet->GetFieldInfo(fIndex);
+    const size_t fIndex = _imageSet->GetField(*index);
+    const FieldInfo field = _imageSet->GetFieldInfo(fIndex);
     desc << field.name << " (" << fIndex << ')';
     (*iter)[_sequenceModelColumns.sequenceDescription] = desc.str();
     if (i == sequenceIndex) sequenceRow = iter;
@@ -166,27 +166,27 @@ GoToWindow::GoToWindow(RFIGuiWindow& rfiGuiWindow)
 GoToWindow::~GoToWindow() {}
 
 std::optional<imagesets::ImageSetIndex> GoToWindow::getIndex() {
-  Glib::RefPtr<Gtk::TreeSelection> a1 = _antenna1View.get_selection();
-  Gtk::TreeModel::iterator iterA1 = a1->get_selected();
+  const Glib::RefPtr<Gtk::TreeSelection> a1 = _antenna1View.get_selection();
+  const Gtk::TreeModel::iterator iterA1 = a1->get_selected();
 
-  Glib::RefPtr<Gtk::TreeSelection> a2 = _antenna2View.get_selection();
-  Gtk::TreeModel::iterator iterA2 = a2->get_selected();
+  const Glib::RefPtr<Gtk::TreeSelection> a2 = _antenna2View.get_selection();
+  const Gtk::TreeModel::iterator iterA2 = a2->get_selected();
 
-  Glib::RefPtr<Gtk::TreeSelection> b = _bandView.get_selection();
-  Gtk::TreeModel::iterator iterB = b->get_selected();
+  const Glib::RefPtr<Gtk::TreeSelection> b = _bandView.get_selection();
+  const Gtk::TreeModel::iterator iterB = b->get_selected();
 
-  Glib::RefPtr<Gtk::TreeSelection> s = _sequenceView.get_selection();
-  Gtk::TreeModel::iterator iterS = s->get_selected();
+  const Glib::RefPtr<Gtk::TreeSelection> s = _sequenceView.get_selection();
+  const Gtk::TreeModel::iterator iterS = s->get_selected();
 
   if (iterA1 && iterA2 && iterB && iterS) {
-    Gtk::TreeModel::Row a1Row = *iterA1;
-    Gtk::TreeModel::Row a2Row = *iterA2;
-    Gtk::TreeModel::Row bRow = *iterB;
-    Gtk::TreeModel::Row sRow = *iterS;
-    size_t a1Index = a1Row[_antennaModelColumns.antennaIndex];
-    size_t a2Index = a2Row[_antennaModelColumns.antennaIndex];
-    size_t bIndex = bRow[_bandModelColumns.bandIndex];
-    size_t sIndex = sRow[_sequenceModelColumns.sequenceIndex];
+    const Gtk::TreeModel::Row a1Row = *iterA1;
+    const Gtk::TreeModel::Row a2Row = *iterA2;
+    const Gtk::TreeModel::Row bRow = *iterB;
+    const Gtk::TreeModel::Row sRow = *iterS;
+    const size_t a1Index = a1Row[_antennaModelColumns.antennaIndex];
+    const size_t a2Index = a2Row[_antennaModelColumns.antennaIndex];
+    const size_t bIndex = bRow[_bandModelColumns.bandIndex];
+    const size_t sIndex = sRow[_sequenceModelColumns.sequenceIndex];
     return _imageSet->Index(a1Index, a2Index, bIndex, sIndex);
   }
   return std::optional<imagesets::ImageSetIndex>();
@@ -199,7 +199,7 @@ void GoToWindow::onChange() {
                  a2Index = _imageSet->GetAntenna2(*index);
     const AntennaInfo a1 = _imageSet->GetAntennaInfo(a1Index),
                       a2 = _imageSet->GetAntennaInfo(a2Index);
-    double distance = a1.position.Distance(a2.position);
+    const double distance = a1.position.Distance(a2.position);
     std::ostringstream str;
     str << a1.name + " x " + a2.name + " (";
     if (distance < 1000)

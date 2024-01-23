@@ -5,6 +5,8 @@
 #include <gtkmm/main.h>
 #include <gtkmm/filechooserdialog.h>
 
+#include <pangomm/init.h>
+
 #include <version.h>
 
 #include "../util/logger.h"
@@ -15,7 +17,7 @@ bool SelectFile(AOQPlotWindow& window, std::string& filename) {
   fileDialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
   fileDialog.add_button("_Open", Gtk::RESPONSE_OK);
 
-  Glib::RefPtr<Gtk::FileFilter> filter = Gtk::FileFilter::create();
+  const Glib::RefPtr<Gtk::FileFilter> filter = Gtk::FileFilter::create();
   filter->set_name("Observation sets (*.{vds,gds,ref,MS})");
   filter->add_pattern("*.vds");
   filter->add_pattern("*.gds");
@@ -27,8 +29,9 @@ bool SelectFile(AOQPlotWindow& window, std::string& filename) {
   if (fileDialog.run() == Gtk::RESPONSE_OK) {
     filename = fileDialog.get_filename();
     return true;
-  } else
+  } else {
     return false;
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -108,7 +111,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (openGUI) {
-    Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(
+    const Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(
         altArgc, argv, "", Gio::APPLICATION_HANDLES_OPEN);
     window.reset(new AOQPlotWindow(&controller));
     window->show_all();
@@ -122,6 +125,8 @@ int main(int argc, char* argv[]) {
     window->Open(files);
     app->run(*window);
   } else {
+    Pango::init();
+
     if (files.empty()) {
       Logger::Error << "No observation specified.\n";
       return 1;

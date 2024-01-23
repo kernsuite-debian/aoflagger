@@ -76,8 +76,8 @@ void CompareHorizontalSumThreshold(SumThresholdFunction algorithm) {
 
   referenceMask.SwapXY();
   mask.SwapXY();
-  real->SwapXY();
-  imag->SwapXY();
+  real->Transpose();
+  imag->Transpose();
 
   Image2DCPtr image =
       TimeFrequencyData(Polarization::XX, real, imag).GetSingleImage();

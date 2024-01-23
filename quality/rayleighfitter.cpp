@@ -16,7 +16,7 @@ static int fit_f(const gsl_vector* xvec, void* data, gsl_vector* f) {
   const double n = gsl_vector_get(xvec, 1);
 
   size_t t = 0;
-  RayleighFitter& fitter = *static_cast<RayleighFitter*>(data);
+  const RayleighFitter& fitter = *static_cast<RayleighFitter*>(data);
   const LogHistogram& hist = *fitter._hist;
   const double minVal = fitter._minVal;
   const double maxVal = fitter._maxVal;
@@ -28,8 +28,8 @@ static int fit_f(const gsl_vector* xvec, void* data, gsl_vector* f) {
       // const double logval = log(val);
       // const double weight = logval;
 
-      double sigmaP2 = sigma * sigma;
-      double Yi = x * exp(-(x * x) / (2 * sigmaP2)) * n / sigmaP2;
+      const double sigmaP2 = sigma * sigma;
+      const double Yi = x * exp(-(x * x) / (2 * sigmaP2)) * n / sigmaP2;
       if (fitter.FitLogarithmic())
         gsl_vector_set(f, t, log(Yi) - log(val));
       else
@@ -46,7 +46,7 @@ int fit_df(const gsl_vector* xvec, void* data, gsl_matrix* J) {
   const double n = gsl_vector_get(xvec, 1);
 
   size_t t = 0;
-  RayleighFitter& fitter = *static_cast<RayleighFitter*>(data);
+  const RayleighFitter& fitter = *static_cast<RayleighFitter*>(data);
   const LogHistogram& hist = *fitter._hist;
   const double minVal = fitter._minVal;
   const double maxVal = fitter._maxVal;
@@ -87,8 +87,8 @@ int fit_fdf(const gsl_vector* x, void* data, gsl_vector* f, gsl_matrix* J) {
 }
 
 void print_state(size_t iter, gsl_multifit_fdfsolver* s) {
-  double sigma = gsl_vector_get(s->x, 0);
-  double N = gsl_vector_get(s->x, 1);
+  const double sigma = gsl_vector_get(s->x, 0);
+  const double N = gsl_vector_get(s->x, 1);
   std::cout << "iteration " << iter << ", sigma=" << sigma << ", N=" << N
             << "\n";
 }
@@ -114,7 +114,7 @@ void RayleighFitter::Fit(double minVal, double maxVal, const LogHistogram& hist,
   std::cout << "ndata=" << nData << "\n";
 
   double x_init[nVars] = {sigma, n};
-  gsl_vector_view x = gsl_vector_view_array(x_init, nVars);
+  const gsl_vector_view x = gsl_vector_view_array(x_init, nVars);
 
   gsl_multifit_function_fdf f;
   f.f = &fit_f;
@@ -203,10 +203,10 @@ double RayleighFitter::ErrorOfFit(const LogHistogram& histogram,
     if (x >= rangeStart && x < rangeEnd && std::isfinite(x)) {
       const double val = i.normalizedCount();
 
-      double sigmaP2 = sigma * sigma;
-      double Yi = x * exp(-(x * x) / (2 * sigmaP2)) * n / sigmaP2;
+      const double sigmaP2 = sigma * sigma;
+      const double Yi = x * exp(-(x * x) / (2 * sigmaP2)) * n / sigmaP2;
 
-      double error = (Yi - val) * (Yi - val);
+      const double error = (Yi - val) * (Yi - val);
       sum += error;
       ++count;
     }

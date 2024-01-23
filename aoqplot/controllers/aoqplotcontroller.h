@@ -5,7 +5,9 @@
 
 #include "../../quality/qualitytablesformatter.h"
 
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 class AOQPlotController {
@@ -35,7 +37,6 @@ class AOQPlotController {
  private:
   void close();
   void readMetaInfoFromMS(const std::string& filename);
-  void readAndCombine(const std::string& filename);
 
   bool _isOpen;
   std::unique_ptr<class StatisticsCollection> _statCollection;

@@ -68,7 +68,7 @@ The following libraries are required to build the AOFlagger:
   Version >=2.0 is required.
 * `Lua <https://www.lua.org/>`_, for scripting.
 * `FFTW <http://www.fftw.org/>`_, used to perform Fourier transformations.
-* `Boost <http://www.boost.org/>`_, used for date and time calculations, Python connections and some other general functionalities.
+* `Boost <http://www.boost.org/>`_, used for date and time calculations and some other general functionalities.
 * `LAPACK <http://www.netlib.org/lapack/>`_, for linear algebra, such as singular value decomposition.
 * `CFITSIO <http://heasarc.nasa.gov/fitsio/>`_, for reading and writing FITS files.
 * `Gtkmm <http://www.gtkmm.org/>`_ (only for rfigui and other graphical programs, but you probably want that). Version 3.10 or later is required (since AOFlagger 2.7; AOFlagger version 2.5 required gtkmm >= 3.0; earlier versions required gtkmm 2.x).
@@ -93,8 +93,6 @@ that installs all dependencies:
       libblas-dev liblapack-dev \
       python3 \
       libboost-date-time-dev \
-      libboost-filesystem-dev \
-      libboost-system-dev \
       libboost-test-dev \
       libcfitsio-dev \
       libfftw3-dev \

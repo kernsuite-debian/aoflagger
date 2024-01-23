@@ -4,8 +4,10 @@
 #include "../../quality/statisticsderivator.h"
 
 TFPageController::TFPageController() : _statCollection(nullptr) {
-  Plot().SetXAxisDescription("Time index");
-  Plot().SetYAxisDescription("Frequency index");
+  HeatMap& map = Plot();
+  map.SetXAxisDescription("Time index");
+  map.SetXAxisType(AxisType::kTime);
+  map.SetYAxisDescription("Frequency index");
 }
 
 std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr>

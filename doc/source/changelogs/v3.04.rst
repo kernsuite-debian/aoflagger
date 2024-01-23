@@ -1,0 +1,20 @@
+v3.04
+=====
+
+========== ================== 
+2023-10-06 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Version 3.4 contains a few relatively small bugfixes, and fixes compatibility with newer HDF5 libraries.
+
+Full change list
+^^^^^^^^^^^^^^^^
+
+* Fix compiling issues when using HDF5 1.14.
+* Add a LOFAR HBA wideband strategy, thanks to testing by A. Drabent.
+* Various plotting improvements.
+* Sort measurement sets in frequency when using frequency concatenation.
+* Make it possible to query statistics over multiple measurement sets in ``aoquality``.
+* A few documentation improvements.
+* Option ``aoqplot -save`` would produce incorrect pdfs.
+

@@ -60,7 +60,7 @@ class BaselineData {
 
 class ImageSet {
  public:
-  virtual ~ImageSet(){};
+  virtual ~ImageSet() {}
   virtual std::unique_ptr<ImageSet> Clone() = 0;
 
   virtual std::string Description(const ImageSetIndex& index) const = 0;
@@ -105,6 +105,7 @@ class ImageSet {
   static bool IsSdhdfFile(const std::string& file);
   static bool IsFitsFile(const std::string& file);
   static bool IsBHFitsFile(const std::string& file);
+  static bool IsH5File(const std::string& file);
   static bool IsRCPRawFile(const std::string& file);
   static bool IsTKPRawFile(const std::string& file);
   static bool IsRawDescFile(const std::string& file);

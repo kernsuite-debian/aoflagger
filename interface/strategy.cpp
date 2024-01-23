@@ -12,11 +12,11 @@
 
 namespace aoflagger {
 
-class ErrorListener : public ProgressListener {
-  virtual void OnStartTask(const std::string&) final override {}
-  virtual void OnProgress(size_t, size_t) final override {}
-  virtual void OnFinish() final override {}
-  virtual void OnException(std::exception& e) final override {
+class ErrorListener final : public ProgressListener {
+  void OnStartTask(const std::string&) override {}
+  void OnProgress(size_t, size_t) override {}
+  void OnFinish() override {}
+  void OnException(std::exception& e) override {
     std::cerr << "*** EXCEPTION OCCURED IN THE AOFLAGGER ***\n"
                  "The AOFlagger encountered a bug or the given strategy was "
                  "invalid!\n"
@@ -26,18 +26,18 @@ class ErrorListener : public ProgressListener {
   }
 };
 
-class ForwardingListener : public ProgressListener {
+class ForwardingListener final : public ProgressListener {
  public:
   explicit ForwardingListener(StatusListener* destination)
       : _destination(destination) {}
-  virtual void OnStartTask(const std::string& description) final override {
+  void OnStartTask(const std::string& description) override {
     _destination->OnStartTask(description);
   }
-  virtual void OnProgress(size_t progress, size_t maxProgress) final override {
+  void OnProgress(size_t progress, size_t maxProgress) override {
     _destination->OnProgress(progress, maxProgress);
   }
-  virtual void OnFinish() final override { _destination->OnFinish(); }
-  virtual void OnException(std::exception& thrownException) final override {
+  void OnFinish() override { _destination->OnFinish(); }
+  void OnException(std::exception& thrownException) override {
     _destination->OnException(thrownException);
   }
 
@@ -134,7 +134,7 @@ FlagMask Strategy::run(const ImageSet& input,
     inputMask = preExistingFlags->_data->mask;
 
   TimeFrequencyData inputData;
-  Image2DPtr zeroImage =
+  const Image2DPtr zeroImage =
       Image2D::CreateZeroImagePtr(input.Width(), input.Height());
   switch (input.ImageCount()) {
     case 1:
@@ -167,7 +167,7 @@ FlagMask Strategy::run(const ImageSet& input,
       break;
   }
 
-  TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
+  const TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
   if (input.HasAntennas() && !_aoflagger->_antennas.empty()) {
     metaData->SetAntenna1(
         ConvertAntenna(_aoflagger->_antennas[input.Antenna1()]));

@@ -3,18 +3,30 @@
 
 #include "heatmappagecontroller.h"
 
-class BaselinePageController : public HeatMapPageController {
+#include <string>
+#include <utility>
+#include <vector>
+
+class AntennaInfo;
+
+class BaselinePageController final : public HeatMapPageController {
  public:
   BaselinePageController() : _statCollection(nullptr), _antennas(nullptr) {}
 
-  virtual void SetStatistics(
-      const StatisticsCollection* statCollection,
-      const std::vector<class AntennaInfo>& antennas) override final {
+  void SetStatistics(const StatisticsCollection* statCollection,
+                     const std::vector<class AntennaInfo>& antennas) override {
     _statCollection = statCollection;
     _antennas = &antennas;
+    HeatMap& map = Plot();
+    map.SetXAxisDescription("Antenna 1 index");
+    map.SetXAxisMin(0);
+    map.SetXAxisMax(antennas.size() - 1);
+    map.SetYAxisDescription("Antenna 2 index");
+    map.SetYAxisMin(0);
+    map.SetYAxisMax(antennas.size() - 1);
     UpdateImage();
   }
-  virtual void CloseStatistics() override final {
+  void CloseStatistics() override {
     _statCollection = nullptr;
     _antennas = nullptr;
   }
@@ -22,12 +34,12 @@ class BaselinePageController : public HeatMapPageController {
   std::string AntennaName(size_t index) const;
 
  protected:
-  virtual std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr>
-  constructImage(QualityTablesFormatter::StatisticKind kind) override final;
+  std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> constructImage(
+      QualityTablesFormatter::StatisticKind kind) override;
 
  private:
   const StatisticsCollection* _statCollection;
-  const std::vector<class AntennaInfo>* _antennas;
+  const std::vector<AntennaInfo>* _antennas;
 };
 
 #endif

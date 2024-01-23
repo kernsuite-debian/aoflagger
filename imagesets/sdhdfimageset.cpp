@@ -14,9 +14,9 @@ struct ObsParams {
 };
 
 SdhdfImageSet::SdhdfImageSet(const std::string& path) : _path(path) {
-  H5::H5File file(_path, H5F_ACC_RDONLY, H5P_DEFAULT);
-  H5::DataSet headerSet = file.openDataSet("metadata/primary_header");
-  H5::DataSpace headerSpace = headerSet.getSpace();
+  const H5::H5File file(_path, H5F_ACC_RDONLY);
+  const H5::DataSet headerSet = file.openDataSet("metadata/primary_header");
+  const H5::DataSpace headerSpace = headerSet.getSpace();
   if (headerSpace.getSimpleExtentNdims() != 1)
     throw std::runtime_error(
         "Incorrect dimensionality of metadata/primary_header");
@@ -26,16 +26,16 @@ SdhdfImageSet::SdhdfImageSet(const std::string& path) : _path(path) {
     throw std::runtime_error(
         "Incorrect nr of elements in metadata/primary_header data set");
 
-  H5::CompType headerType(sizeof(Header));
+  const H5::CompType headerType(sizeof(Header));
   headerType.insertMember("TELESCOPE", HOFFSET(Header, telescopeName),
                           H5::StrType(H5::PredType::C_S1, 64));
   headerType.insertMember("N_BEAMS", HOFFSET(Header, nBeams),
                           H5::PredType::NATIVE_INT);
   Header header;
-  headerSet.read(&header, headerType, H5S_ALL, H5S_ALL, H5P_DEFAULT);
+  headerSet.read(&header, headerType);
   _beams.resize(header.nBeams);
 
-  H5::CompType bandParamsType(sizeof(BandParams));
+  const H5::CompType bandParamsType(sizeof(BandParams));
   bandParamsType.insertMember("LABEL", HOFFSET(BandParams, label),
                               H5::StrType(H5::PredType::C_S1, 64));
   bandParamsType.insertMember("CENTRE_FREQ",
@@ -55,9 +55,9 @@ SdhdfImageSet::SdhdfImageSet(const std::string& path) : _path(path) {
                 << " with " << _beams.size() << " beam(s).\n";
 
   for (size_t beamIndex = 0; beamIndex != _beams.size(); ++beamIndex) {
-    H5::DataSet beamSet = file.openDataSet("beam_" + std::to_string(beamIndex) +
-                                           "/metadata/band_params");
-    H5::DataSpace space = beamSet.getSpace();
+    const H5::DataSet beamSet = file.openDataSet(
+        "beam_" + std::to_string(beamIndex) + "/metadata/band_params");
+    const H5::DataSpace space = beamSet.getSpace();
     std::vector<hsize_t> dims(space.getSimpleExtentNdims());
     if (dims.size() != 1)
       throw std::runtime_error("Invalid dimensionality of band_params");
@@ -67,8 +67,7 @@ SdhdfImageSet::SdhdfImageSet(const std::string& path) : _path(path) {
     Beam& beam = _beams[beamIndex];
     beam.bandParams.resize(nBands);
 
-    beamSet.read(beam.bandParams.data(), bandParamsType, H5S_ALL, H5S_ALL,
-                 H5P_DEFAULT);
+    beamSet.read(beam.bandParams.data(), bandParamsType);
 
     for (size_t bandIndex = 0; bandIndex != nBands; ++bandIndex)
       _indexTable.emplace_back(beamIndex, bandIndex);
@@ -80,8 +79,8 @@ SdhdfImageSet::~SdhdfImageSet() {}
 void SdhdfImageSet::Initialize() {}
 
 std::string SdhdfImageSet::Description(const ImageSetIndex& index) const {
-  size_t beam = _indexTable[index.Value()].first;
-  size_t band = _indexTable[index.Value()].second;
+  const size_t beam = _indexTable[index.Value()].first;
+  const size_t band = _indexTable[index.Value()].second;
   return "Beam " + std::to_string(beam) + ", " +
          _beams[beam].bandParams[band].label;
 }
@@ -92,8 +91,9 @@ bool SdhdfImageSet::tryOpen(H5::DataSet& dataSet, H5::H5File& file,
   if (file.exists(name)) {
     dataSet = file.openDataSet(name);
     return true;
-  } else
+  } else {
     return false;
+  }
 #else
   // file.exists(name) doesn't work in older HDF5 libs, so use trial
   // and error. Unfortunately this generates output on the cmdline
@@ -115,12 +115,12 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
   const BandParams& bandParams = _beams[beam].bandParams[band];
   const std::string label = bandParams.label;
   Logger::Info << "Reading beam " << beam << ", " << label << "...\n";
-  H5::H5File file(_path, H5F_ACC_RDONLY, H5P_DEFAULT);
+  H5::H5File file(_path, H5F_ACC_RDONLY);
 
   const std::string beamPrefix = "beam_" + std::to_string(beam) + "/" + label;
   const std::string dataPrefix = beamPrefix + "/astronomy_data/";
-  H5::DataSet dataSet = file.openDataSet(dataPrefix + "data");
-  H5::DataSpace space = dataSet.getSpace();
+  const H5::DataSet dataSet = file.openDataSet(dataPrefix + "data");
+  const H5::DataSpace space = dataSet.getSpace();
   std::vector<hsize_t> ddims(space.getSimpleExtentNdims());
   space.getSimpleExtentDims(ddims.data());
   // should be time, beam, polarization, frequency, bin
@@ -140,8 +140,7 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
   aocommon::UVector<float> data(nTimes * bandParams.nPolarizations *
                                 bandParams.nChannels);
   progress.OnProgress(1, 10);
-  dataSet.read(data.data(), H5::PredType::NATIVE_FLOAT, H5S_ALL, H5S_ALL,
-               H5P_DEFAULT);
+  dataSet.read(data.data(), H5::PredType::NATIVE_FLOAT);
 
   std::vector<Image2DPtr> images(bandParams.nPolarizations);
   for (int pol = 0; pol != bandParams.nPolarizations; ++pol)
@@ -161,7 +160,7 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
   if (tryOpen(flagsSet, file, dataPrefix + "flag")) {
     progress.OnProgress(5, 10);
     Logger::Info << "Reading flags...\n";
-    H5::DataSpace space = flagsSet.getSpace();
+    const H5::DataSpace space = flagsSet.getSpace();
     std::vector<hsize_t> fdims(space.getSimpleExtentNdims());
     space.getSimpleExtentDims(fdims.data());
     // should be time, frequency
@@ -176,8 +175,7 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
           "Frequency axis of flag data has incorrect size");
     aocommon::UVector<unsigned char> flags(nTimes * bandParams.nChannels);
     progress.OnProgress(6, 10);
-    flagsSet.read(flags.data(), H5::PredType::NATIVE_UINT8, H5S_ALL, H5S_ALL,
-                  H5P_DEFAULT);
+    flagsSet.read(flags.data(), H5::PredType::NATIVE_UINT8);
 
     mask = Mask2D::CreateUnsetMaskPtr(nTimes, bandParams.nChannels);
     const unsigned char* valuePtr = flags.data();
@@ -207,14 +205,14 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
         "Don't know how to convert the polarizations in this data set");
   if (mask) tfData.SetGlobalMask(mask);
 
-  TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
+  const TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
 
-  H5::CompType obsParamsType(sizeof(ObsParams));
+  const H5::CompType obsParamsType(sizeof(ObsParams));
   obsParamsType.insertMember("MJD", HOFFSET(ObsParams, mjd),
                              H5::PredType::NATIVE_DOUBLE);
-  H5::DataSet obsParamsSet =
+  const H5::DataSet obsParamsSet =
       file.openDataSet(beamPrefix + "/metadata/obs_params");
-  H5::DataSpace obsParamsSpace = obsParamsSet.getSpace();
+  const H5::DataSpace obsParamsSpace = obsParamsSet.getSpace();
   if (obsParamsSpace.getSimpleExtentNdims() != 1)
     throw std::runtime_error(
         "Incorrect dimensionality of metadata/obs_params for this beam/band");
@@ -225,17 +223,16 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
         "Incorrect nr of elements in metadata/obs_params data set for this "
         "beam/band");
   std::vector<ObsParams> obsParams(nTimes);
-  obsParamsSet.read(obsParams.data(), obsParamsType, H5S_ALL, H5S_ALL,
-                    H5P_DEFAULT);
+  obsParamsSet.read(obsParams.data(), obsParamsType);
   std::vector<double> times;
   times.reserve(nTimes);
-  for (ObsParams& obsParamsEl : obsParams)
+  for (const ObsParams& obsParamsEl : obsParams)
     times.emplace_back(obsParamsEl.mjd * 24.0 * 60.0 * 60.0);
   metaData->SetObservationTimes(std::move(times));
 
-  H5::DataSet frequencySet =
+  const H5::DataSet frequencySet =
       file.openDataSet(beamPrefix + "/astronomy_data/frequency");
-  H5::DataSpace frequencySpace = frequencySet.getSpace();
+  const H5::DataSpace frequencySpace = frequencySet.getSpace();
   if (frequencySpace.getSimpleExtentNdims() != 1)
     throw std::runtime_error(
         "Incorrect dimensionality of astronomy_data/frequency for this "
@@ -247,8 +244,7 @@ BaselineData SdhdfImageSet::loadData(ProgressListener& progress,
         "Incorrect nr of elements (" + std::to_string(frequencySpaceDims) +
         ") in astronomy_data/frequency for this beam/band");
   std::vector<float> channels(bandParams.nChannels);
-  frequencySet.read(channels.data(), H5::PredType::NATIVE_FLOAT, H5S_ALL,
-                    H5S_ALL, H5P_DEFAULT);
+  frequencySet.read(channels.data(), H5::PredType::NATIVE_FLOAT);
   BandInfo bandInfo;
   bandInfo.channels.resize(bandParams.nChannels);
   for (int ch = 0; ch != bandParams.nChannels; ++ch) {
@@ -265,7 +261,7 @@ void SdhdfImageSet::PerformReadRequests(ProgressListener& progress) {
   for (size_t i = 0; i != _requests.size(); ++i) {
     const ImageSetIndex& index = _requests[i];
     SubTaskListener subListener(progress, i, _requests.size());
-    _baselineBuffer.emplace_back(loadData(subListener, index));
+    _baselineBuffer.emplace(loadData(subListener, index));
     progress.OnProgress(i + 1, _requests.size());
   }
   progress.OnFinish();
@@ -280,7 +276,7 @@ void SdhdfImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
   const std::string label = bandParams.label;
   const size_t nTimes = flags.front()->Width();
   Logger::Info << "Writing flags for beam " << beam << ", " << label << "...\n";
-  H5::H5File file(_path, H5F_ACC_RDWR, H5P_DEFAULT);
+  H5::H5File file(_path, H5F_ACC_RDWR);
 
   const std::string beamPrefix =
       "beam_" + std::to_string(beam) + '/' + label + '/';
@@ -289,9 +285,9 @@ void SdhdfImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
   H5::DataSet flagsSet;
   if (!tryOpen(flagsSet, file, dataPrefix + "flag")) {
     // Create the data set
-    H5::DataType dataType(H5::PredType::NATIVE_UINT8);
+    const H5::DataType dataType(H5::PredType::NATIVE_UINT8);
     const hsize_t dimsf[2]{nTimes, hsize_t(bandParams.nChannels)};
-    H5::DataSpace dataSpace(2, dimsf);
+    const H5::DataSpace dataSpace(2, dimsf);
     flagsSet = file.createDataSet(dataPrefix + "flag", dataType, dataSpace);
   }
 
@@ -307,8 +303,7 @@ void SdhdfImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
       ++valuePtr;
     }
   }
-  flagsSet.write(flagData.data(), H5::PredType::NATIVE_UINT8, H5S_ALL, H5S_ALL,
-                 H5P_DEFAULT);
+  flagsSet.write(flagData.data(), H5::PredType::NATIVE_UINT8);
 }
 
 }  // namespace imagesets

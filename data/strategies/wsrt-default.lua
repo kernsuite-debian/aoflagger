@@ -1,42 +1,40 @@
 --[[
  This is the WSRT strategy, version 2020-07-18.
  Author: André Offringa
-]]--
+]]
 
-function execute (input)
-
+function execute(input)
   --
   -- Generic settings
   --
 
-  local base_threshold = 1.4  -- lower means more sensitive detection
+  local base_threshold = 1.4 -- lower means more sensitive detection
 
   -- Options are: phase, amplitude, real, imaginary, complex
   local representation = "amplitude"
-  local iteration_count = 3  -- how many iterations to perform?
+  local iteration_count = 3 -- how many iterations to perform?
   local threshold_factor_step = 2.0 -- How much to increase the sensitivity each iteration?
-  
+
   --
   -- End of generic settings
   --
 
   local inpPolarizations = input:get_polarizations()
-  
+
   input:clear_mask()
-  
+
   -- For collecting statistics. Note that this is done after clear_mask(),
-  -- so that the statistics ignore any flags in the input data. 
+  -- so that the statistics ignore any flags in the input data.
   local copy_of_input = input:copy()
-  
-  for ipol,polarization in ipairs(inpPolarizations) do
- 
+
+  for ipol, polarization in ipairs(inpPolarizations) do
     local data = input:convert_to_polarization(polarization)
 
     data = data:convert_to_complex(representation)
     local original_data = data:copy()
 
-    for i=1,iteration_count-1 do
-      local threshold_factor = math.pow(threshold_factor_step, iteration_count-i)
+    for i = 1, iteration_count - 1 do
+      local threshold_factor = threshold_factor_step ^ (iteration_count - i)
 
       local sumthr_level = threshold_factor * base_threshold
       aoflagger.sumthreshold(data, sumthr_level, sumthr_level, true, true)
@@ -57,30 +55,29 @@ function execute (input)
       -- the following visualize function will add the current result
       -- to the list of displayable visualizations.
       -- If the script is not running inside rfigui, the call is ignored.
-      aoflagger.visualize(data, "Fit #"..i, i-1)
+      aoflagger.visualize(data, "Fit #" .. i, i - 1)
 
       local tmp = original_data - data
       tmp:set_mask(data)
       data = tmp
 
-      aoflagger.visualize(data, "Residual #"..i, i+iteration_count)
-      aoflagger.set_progress((ipol-1)*iteration_count+i, #inpPolarizations*iteration_count )
+      aoflagger.visualize(data, "Residual #" .. i, i + iteration_count)
+      aoflagger.set_progress((ipol - 1) * iteration_count + i, #inpPolarizations * iteration_count)
     end -- end of iterations
 
     aoflagger.sumthreshold(data, base_threshold, base_threshold, true, true)
- 
+
     if input:is_complex() then
       data = data:convert_to_complex("complex")
     end
     input:set_polarization_data(polarization, data)
 
-    aoflagger.visualize(data, "Residual #"..iteration_count, 2*iteration_count)
-    
-    aoflagger.set_progress(ipol, #inpPolarizations )
+    aoflagger.visualize(data, "Residual #" .. iteration_count, 2 * iteration_count)
+
+    aoflagger.set_progress(ipol, #inpPolarizations)
   end -- end of polarization iterations
 
   aoflagger.scale_invariant_rank_operator(input, 0.2, 0.2)
   aoflagger.threshold_timestep_rms(input, 4.0)
   input:flag_nans()
 end
-

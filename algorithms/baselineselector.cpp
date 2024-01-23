@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 
 namespace algorithms {
 
@@ -58,7 +59,7 @@ void BaselineSelector::Search(
   // (e.g. 100% flagged baselines). Sometimes, there are a lot of them, causing
   // instability if this would not be done.
   for (int i = _baselines.size() - 1; i >= 0; --i) {
-    double currentValue =
+    const double currentValue =
         (double)_baselines[i].rfiCount / (double)_baselines[i].totalCount;
     if (currentValue > _absThreshold ||
         (_baselines[i].rfiCount == 0 && _baselines[i].totalCount >= 2500)) {
@@ -86,7 +87,7 @@ void BaselineSelector::Search(
       plot->SetYAxisText("Percentage RFI");
     }
 
-    size_t unmarkedBaselineCount = _baselines.size();
+    const size_t unmarkedBaselineCount = _baselines.size();
     std::vector<double> values(unmarkedBaselineCount);
 
     // Calculate the smoothed values
@@ -95,7 +96,7 @@ void BaselineSelector::Search(
     size_t valueIndex = 0;
     for (BaselineVector::const_iterator i = _baselines.begin();
          i != _baselines.end(); ++i) {
-      double smoothedVal = smoothedValue(*i);
+      const double smoothedVal = smoothedValue(*i);
       if (_makePlot) plot->PushDataPoint(i->length, 100.0 * smoothedVal);
       values[valueIndex] =
           smoothedVal - (double)i->rfiCount / (double)i->totalCount;
@@ -116,10 +117,11 @@ void BaselineSelector::Search(
 
     // unselect already marked baselines
     for (int i = markedBaselines.size() - 1; i >= 0; --i) {
-      BaselineSelector::SingleBaselineInfo baseline = markedBaselines[i];
-      double currentValue =
+      const BaselineSelector::SingleBaselineInfo baseline = markedBaselines[i];
+      const double currentValue =
           (double)baseline.rfiCount / (double)baseline.totalCount;
-      double baselineValue = smoothedValue(baseline.length) - currentValue;
+      const double baselineValue =
+          smoothedValue(baseline.length) - currentValue;
       if (baselineValue >= mean - _threshold * stddev &&
           baselineValue <= mean + _threshold * stddev &&
           currentValue < _absThreshold &&
@@ -138,10 +140,10 @@ void BaselineSelector::Search(
     if (_makePlot) plot->StartScatter("Threshold");
     double maxPlotY = 0.0;
     for (int i = unmarkedBaselineCount - 1; i >= 0; --i) {
-      double currentValue =
+      const double currentValue =
           (double)_baselines[i].rfiCount / (double)_baselines[i].totalCount;
       if (_makePlot) {
-        double plotY =
+        const double plotY =
             100.0 * (values[i] + currentValue + mean + _threshold * stddev);
         plot->PushDataPoint(_baselines[i].length, plotY);
         plot->PushDataPoint(
@@ -200,7 +202,7 @@ void BaselineSelector::ImplyStations(
 
   for (std::map<unsigned, unsigned>::const_iterator i = stations.begin();
        i != stations.end(); ++i) {
-    double ratio = (double)i->second / (double)stations.size();
+    const double ratio = (double)i->second / (double)stations.size();
     if (ratio > maxRatio) {
       badStations.insert(i->first);
     }
@@ -208,17 +210,18 @@ void BaselineSelector::ImplyStations(
 }
 
 double BaselineSelector::smoothedValue(double length) const {
-  double logLength = log(length);
+  const double logLength = log(length);
 
   double sum = 0.0;
   double weight = 0.0;
 
   for (BaselineSelector::BaselineVector::const_iterator i = _baselines.begin();
        i != _baselines.end(); ++i) {
-    double otherLogLength = log(i->length);
-    double otherValue = (double)i->rfiCount / (double)i->totalCount;
-    double x = otherLogLength - logLength;
-    double curWeight = exp(-x * x / (2.0 * _smoothingSigma * _smoothingSigma));
+    const double otherLogLength = log(i->length);
+    const double otherValue = (double)i->rfiCount / (double)i->totalCount;
+    const double x = otherLogLength - logLength;
+    const double curWeight =
+        exp(-x * x / (2.0 * _smoothingSigma * _smoothingSigma));
     sum += curWeight * otherValue;
     weight += curWeight;
   }

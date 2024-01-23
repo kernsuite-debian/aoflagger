@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <utility>
 
 #include "../structures/image2d.h"
 
@@ -44,23 +45,19 @@ class Model {
       return sqrtnl(FluxIntensity(t));
     }
   };
-  struct StablePointSource : public Source {
+  struct StablePointSource final : public Source {
     long double dec, ra, fluxIntensity, sqrtFluxIntensity;
-    virtual numl_t Dec(num_t) const final override { return dec; }
-    virtual numl_t Ra(num_t) const final override { return ra; }
-    virtual numl_t FluxIntensity(num_t) const final override {
-      return fluxIntensity;
-    }
-    virtual numl_t SqrtFluxIntensity(num_t) const final override {
-      return sqrtFluxIntensity;
-    }
+    numl_t Dec(num_t) const override { return dec; }
+    numl_t Ra(num_t) const override { return ra; }
+    numl_t FluxIntensity(num_t) const override { return fluxIntensity; }
+    numl_t SqrtFluxIntensity(num_t) const override { return sqrtFluxIntensity; }
   };
-  struct VariablePointSource : public Source {
+  struct VariablePointSource final : public Source {
     long double dec, ra, fluxIntensity;
     double peakTime, oneOverSigmaSq;
-    virtual numl_t Dec(num_t) const final override { return dec; }
-    virtual numl_t Ra(num_t) const final override { return ra; }
-    virtual numl_t FluxIntensity(num_t t) const final override {
+    numl_t Dec(num_t) const override { return dec; }
+    numl_t Ra(num_t) const override { return ra; }
+    numl_t FluxIntensity(num_t t) const override {
       numl_t mu = fmodnl(fabsnl(t - peakTime), 1.0);
       if (mu > 0.5) mu = 1.0 - mu;
       return fluxIntensity * (1.0 + expnl(mu * mu * oneOverSigmaSq)) *

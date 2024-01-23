@@ -4,6 +4,7 @@
 #include "../rfigui/controllers/rfiguicontroller.h"
 
 #include "../util/logger.h"
+#include "../util/progress/stdoutreporter.h"
 
 #include "../imagesets/msimageset.h"
 #include "../imagesets/msoptions.h"
@@ -11,6 +12,8 @@
 #include <version.h>
 
 #include <gtkmm/application.h>
+
+#include <pangomm/init.h>
 
 #include <glibmm/error.h>
 #include <glibmm/wrap.h>
@@ -123,15 +126,16 @@ static void run(int argc, char* argv[]) {
   if (interactive) {
     app = Gtk::Application::create(altArgc, argv, "",
                                    Gio::APPLICATION_HANDLES_OPEN);
-    window.reset(new RFIGuiWindow(&controller, argv[0]));
+    window = std::make_unique<RFIGuiWindow>(&controller, argv[0]);
     window->present();
   }
 
   try {
     if (!filenames.empty()) {
-      if (interactive)
+      if (interactive) {
         window->OpenPaths(filenames);
-      else {
+      } else {
+        Pango::init();
         MSOptions options;
         options.ioMode = DirectReadMode;
         options.dataColumnName = dataColumnName;
@@ -149,16 +153,19 @@ static void run(int argc, char* argv[]) {
       if (imageSet == nullptr)
         throw std::runtime_error(
             "Option -save-baseline can only be used for measurement sets.\n");
-      MaskedHeatMap& plot = controller.TFController().Plot();
-      plot.SetShowOriginalMask(plotFlags);
-      plot.SetShowXAxisDescription(true);
-      plot.SetShowYAxisDescription(true);
-      plot.SetShowZAxisDescription(true);
       for (const SavedBaseline& b : savedBaselines) {
         auto index =
             imageSet->Index(b.a1Index, b.a2Index, b.bandIndex, b.sequenceIndex);
         if (!index) throw std::runtime_error("Baseline not found!");
         controller.SetImageSetIndex(*index);
+        StdOutReporter reporter;
+        controller.LoadCurrentTFDataAsync(reporter);
+        controller.LoadCurrentTFDataFinish(true);
+        MaskedHeatMap& plot = controller.TFController().Plot();
+        plot.SetShowOriginalMask(plotFlags);
+        plot.SetShowXAxisDescription(true);
+        plot.SetShowYAxisDescription(true);
+        plot.SetShowZAxisDescription(true);
         plot.SaveByExtension(b.filename, 800, 480);
       }
     }

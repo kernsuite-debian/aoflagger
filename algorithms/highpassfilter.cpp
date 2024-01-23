@@ -23,9 +23,9 @@ HighPassFilter::~HighPassFilter() {
 void HighPassFilter::applyLowPassSimple(const Image2DPtr& image) {
   // Guassian convolution can be separated in two 1D convolution
   // because of properties of the 2D Gaussian function.
-  Image2DPtr temp =
+  const Image2DPtr temp =
       Image2D::CreateZeroImagePtr(image->Width(), image->Height());
-  size_t hKernelMid = _hWindowSize / 2;
+  const size_t hKernelMid = _hWindowSize / 2;
   for (size_t i = 0; i < _hWindowSize; ++i) {
     const num_t kernelValue = _hKernel[i];
     const size_t xStart = (i >= hKernelMid) ? 0 : (hKernelMid - i),
@@ -41,7 +41,7 @@ void HighPassFilter::applyLowPassSimple(const Image2DPtr& image) {
   }
 
   image->SetAll(0.0);
-  size_t vKernelMid = _vWindowSize / 2;
+  const size_t vKernelMid = _vWindowSize / 2;
   for (size_t i = 0; i < _vWindowSize; ++i) {
     const num_t kernelValue = _vKernel[i];
     const size_t yStart = (i >= vKernelMid) ? 0 : (vKernelMid - i),
@@ -59,9 +59,9 @@ void HighPassFilter::applyLowPassSimple(const Image2DPtr& image) {
 
 void HighPassFilter::applyLowPassSSE(const Image2DPtr& image) {
 #ifdef USE_INTRINSICS
-  Image2DPtr temp =
+  const Image2DPtr temp =
       Image2D::CreateZeroImagePtr(image->Width(), image->Height());
-  unsigned hKernelMid = _hWindowSize / 2;
+  const unsigned hKernelMid = _hWindowSize / 2;
   for (unsigned i = 0; i < _hWindowSize; ++i) {
     const num_t k = _hKernel[i];
     const __m128 k4 = _mm_set_ps(k, k, k, k);
@@ -98,7 +98,7 @@ void HighPassFilter::applyLowPassSSE(const Image2DPtr& image) {
   }
 
   image->SetAll(0.0);
-  unsigned vKernelMid = _vWindowSize / 2;
+  const unsigned vKernelMid = _vWindowSize / 2;
   for (unsigned i = 0; i < _vWindowSize; ++i) {
     const num_t k = _vKernel[i];
     const __m128 k4 = _mm_set_ps(k, k, k, k);
@@ -209,7 +209,7 @@ void HighPassFilter::setFlaggedValuesToZeroAndMakeWeightsSSE(
     while (inputPtr < end) {
       // Assign each integer to one bool in the mask
       // Convert false to 0xFFFFFFFF and true to 0
-      __m128 conditionMask = _mm_castsi128_ps(_mm_cmpeq_epi32(
+      const __m128 conditionMask = _mm_castsi128_ps(_mm_cmpeq_epi32(
           _mm_set_epi32(rowPtr[3] || !std::isfinite(inputPtr[3]),
                         rowPtr[2] || !std::isfinite(inputPtr[2]),
                         rowPtr[1] || !std::isfinite(inputPtr[1]),
@@ -257,7 +257,7 @@ void HighPassFilter::elementWiseDivideSSE(const Image2DPtr& leftHand,
     float* end = leftHandPtr + leftHand->Width();
     while (leftHandPtr < end) {
       __m128 l = _mm_load_ps(leftHandPtr), r = _mm_load_ps(rightHandPtr);
-      __m128 conditionMask = _mm_cmpeq_ps(r, zero4);
+      const __m128 conditionMask = _mm_cmpeq_ps(r, zero4);
       _mm_store_ps(leftHandPtr,
                    _mm_or_ps(_mm_and_ps(conditionMask, zero4),
                              _mm_andnot_ps(conditionMask, _mm_div_ps(l, r))));

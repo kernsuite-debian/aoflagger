@@ -248,7 +248,7 @@ void StatisticsCollection::lowerResolution(
     DoubleStatMap newMap;
     double gridStep, gridStart;
     if (maxSteps > 1) {
-      double oldGridStep =
+      const double oldGridStep =
           (map.rbegin()->first - map.begin()->first) / (map.size() - 1);
       gridStep =
           (map.rbegin()->first - map.begin()->first + oldGridStep) / maxSteps;

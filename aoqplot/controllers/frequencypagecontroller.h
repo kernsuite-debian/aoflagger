@@ -1,16 +1,20 @@
 #ifndef FREQUENCY_PAGE_CONTROLLER_H
 #define FREQUENCY_PAGE_CONTROLLER_H
 
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "aoqplotpagecontroller.h"
 
-class FrequencyPageController : public AOQPlotPageController {
+class FrequencyPageController final : public AOQPlotPageController {
  public:
   void SetPerformFT(bool performFT) { _performFT = performFT; }
 
  protected:
-  virtual void processStatistics(
-      const StatisticsCollection* statCollection,
-      const std::vector<AntennaInfo>&) override final {
+  void processStatistics(const StatisticsCollection* statCollection,
+                         const std::vector<AntennaInfo>&) override {
     _statistics.clear();
 
     const std::map<double, class DefaultStatistics>& map =
@@ -24,20 +28,22 @@ class FrequencyPageController : public AOQPlotPageController {
     }
   }
 
-  virtual const std::map<double, class DefaultStatistics>& getStatistics()
-      const override final {
+  const std::map<double, class DefaultStatistics>& getStatistics()
+      const override {
     return _statistics;
   }
 
-  virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
-                         const std::string& yAxisDesc) override final {
+  void startLine(XYPlot& plot, const std::string& name, int lineIndex,
+                 const std::string& yAxisDesc, bool second_axis) override {
+    XYPointSet* points;
     if (_performFT)
-      plot.StartLine(name, "Time (μs)", yAxisDesc, false);
+      points = &plot.StartLine(name, "Time (μs)", yAxisDesc);
     else
-      plot.StartLine(name, "Frequency (MHz)", yAxisDesc, false);
+      points = &plot.StartLine(name, "Frequency (MHz)", yAxisDesc);
+    points->SetUseSecondYAxis(second_axis);
   }
 
-  virtual void processPlot(XYPlot& plot) override final {
+  void processPlot(XYPlot& plot) override {
     if (_performFT) {
       performFt(plot);
     }

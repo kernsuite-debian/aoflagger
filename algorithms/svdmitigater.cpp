@@ -56,7 +56,7 @@ void SVDMitigater::Decompose() {
   // vertical axis.
   _m = _data.ImageHeight();
   _n = _data.ImageWidth();
-  int minmn = _m < _n ? _m : _n;
+  const int minmn = _m < _n ? _m : _n;
   char rowsOfU = 'A';   // all rows of u
   char rowsOfVT = 'A';  // all rows of VT
   doublecomplex* a = new doublecomplex[_m * _n];
@@ -114,11 +114,11 @@ void SVDMitigater::Compose() {
   if (_verbose) std::cout << "Composing..." << std::endl;
   Stopwatch watch;
   watch.Start();
-  Image2DPtr real =
+  const Image2DPtr real =
       Image2D::CreateUnsetImagePtr(_data.ImageWidth(), _data.ImageHeight());
-  Image2DPtr imaginary =
+  const Image2DPtr imaginary =
       Image2D::CreateUnsetImagePtr(_data.ImageWidth(), _data.ImageHeight());
-  int minmn = _m < _n ? _m : _n;
+  const int minmn = _m < _n ? _m : _n;
   for (int t = 0; t < _n; ++t) {
     for (int f = 0; f < _m; ++f) {
       double a_tf_r = 0.0;
@@ -127,11 +127,11 @@ void SVDMitigater::Compose() {
       // a_tf = \sum_{g=0}^{minmn} U_{gf} S_{gg} V^T_{tg}
       // Note that _rightSingularVectors=V^T, thus is already stored rowwise
       for (int g = 0; g < minmn; ++g) {
-        double u_r = _leftSingularVectors[g * _m + f].r;
-        double u_i = _leftSingularVectors[g * _m + f].i;
-        double s = _singularValues[g];
-        double v_r = _rightSingularVectors[t * _n + g].r;
-        double v_i = _rightSingularVectors[t * _n + g].i;
+        const double u_r = _leftSingularVectors[g * _m + f].r;
+        const double u_i = _leftSingularVectors[g * _m + f].i;
+        const double s = _singularValues[g];
+        const double v_r = _rightSingularVectors[t * _n + g].r;
+        const double v_i = _rightSingularVectors[t * _n + g].i;
         a_tf_r += s * (u_r * v_r - u_i * v_i);
         a_tf_i += s * (u_r * v_i + u_i * v_r);
       }
@@ -149,15 +149,15 @@ void SVDMitigater::Compose() {
 
 void SVDMitigater::CreateSingularValueGraph(const TimeFrequencyData& data,
                                             XYPlot& plot) {
-  size_t polarisationCount = data.PolarizationCount();
+  const size_t polarisationCount = data.PolarizationCount();
   plot.SetTitle("Distribution of singular values");
-  plot.SetLogarithmicYAxis(true);
+  plot.YAxis().SetLogarithmic(true);
   for (size_t i = 0; i < polarisationCount; ++i) {
-    TimeFrequencyData polarizationData(data.MakeFromPolarizationIndex(i));
+    const TimeFrequencyData polarizationData(data.MakeFromPolarizationIndex(i));
     SVDMitigater svd;
     svd.Initialize(polarizationData);
     svd.Decompose();
-    size_t minmn = svd._m < svd._n ? svd._m : svd._n;
+    const size_t minmn = svd._m < svd._n ? svd._m : svd._n;
 
     XYPointSet& pointSet = plot.StartLine(polarizationData.Description());
     pointSet.SetXDesc("Singular value index");

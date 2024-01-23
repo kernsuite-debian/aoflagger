@@ -634,7 +634,7 @@ class ViridisMap : public ColorMap {
     return (size_t)d;
   }
 
-  const static double DATA_R[256], DATA_G[256], DATA_B[256];
+  static const double DATA_R[256], DATA_G[256], DATA_B[256];
 };
 
 template <int Saturation>
@@ -732,11 +732,9 @@ class RainbowMap : public ColorMap {
       red = 1.0;
       green = -(wavelength - 645.0) / (645.0 - 580.0);
       blue = 0.0;
-    } else if (wavelength >= 645.0 && wavelength < 780.0) {
-      red = 1.0;
-      green = 0.0;
-      blue = 0.0;
     } else {
+      // (wavelength >= 645.0 && wavelength < 780.0) is red, but in other cases
+      // also use red:
       red = 1.0;
       green = 0.0;
       blue = 0.0;

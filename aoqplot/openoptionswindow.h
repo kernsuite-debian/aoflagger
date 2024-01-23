@@ -1,6 +1,9 @@
 #ifndef GUI_QUALITY__OPEN_OPTIONS_WINDOW_H
 #define GUI_QUALITY__OPEN_OPTIONS_WINDOW_H
 
+#include <string>
+#include <vector>
+
 #include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/checkbutton.h>

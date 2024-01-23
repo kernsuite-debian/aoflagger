@@ -9,6 +9,7 @@
 #include <cstring>
 #include <string>
 #include <memory>
+#include <utility>
 #include <vector>
 
 /** @brief Contains all the public types used by the AOFlagger.

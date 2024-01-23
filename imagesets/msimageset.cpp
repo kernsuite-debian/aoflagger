@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -7,7 +8,7 @@
 #include "msimageset.h"
 
 #include "../msio/directbaselinereader.h"
-#include "../msio/indirectbaselinereader.h"
+#include "../msio/reorderingbaselinereader.h"
 #include "../msio/memorybaselinereader.h"
 
 #include "../util/logger.h"
@@ -31,10 +32,19 @@ void MSImageSet::Initialize() {
 
 void MSImageSet::initReader() {
   if (_reader == nullptr) {
-    switch (_ioMode) {
-      case IndirectReadMode: {
-        IndirectBaselineReader* indirectReader =
-            new IndirectBaselineReader(_msFile);
+    BaselineIOMode selected_mode = _ioMode;
+    if (selected_mode == AutoReadMode) {
+      if (MemoryBaselineReader::IsEnoughMemoryAvailable(
+              BaselineReader::MeasurementSetIntervalDataSize(
+                  _msFile, _intervalStart, _intervalEnd)))
+        selected_mode = MemoryReadMode;
+      else
+        selected_mode = ReorderingReadMode;
+    }
+    switch (selected_mode) {
+      case ReorderingReadMode: {
+        ReorderingBaselineReader* indirectReader =
+            new ReorderingBaselineReader(_msFile);
         indirectReader->SetReadUVW(_readUVW);
         _reader = BaselineReaderPtr(indirectReader);
       } break;
@@ -45,10 +55,7 @@ void MSImageSet::initReader() {
         _reader = BaselineReaderPtr(new MemoryBaselineReader(_msFile));
         break;
       case AutoReadMode:
-        if (MemoryBaselineReader::IsEnoughMemoryAvailable(_msFile))
-          _reader = BaselineReaderPtr(new MemoryBaselineReader(_msFile));
-        else
-          _reader = BaselineReaderPtr(new DirectBaselineReader(_msFile));
+        assert(false);
         break;
     }
   }
@@ -67,7 +74,7 @@ size_t MSImageSet::EndTimeIndex(const ImageSetIndex& index) const {
 std::vector<double> MSImageSet::ObservationTimesVector(
     const ImageSetIndex& index) {
   // StartIndex(msIndex), EndIndex(msIndex)
-  unsigned sequenceId = _sequences[index.Value()].sequenceId;
+  const unsigned sequenceId = _sequences[index.Value()].sequenceId;
   const std::set<double>& obsTimesSet =
       _reader->MetaData().GetObservationTimesSet(sequenceId);
   std::vector<double> obs(obsTimesSet.begin(), obsTimesSet.end());
@@ -93,15 +100,15 @@ std::string MSImageSet::Description(const ImageSetIndex& index) const {
   const MSMetaData::Sequence& sequence = _sequences[index.Value()];
   size_t antenna1 = sequence.antenna1, antenna2 = sequence.antenna2,
          band = sequence.spw, sequenceId = sequence.sequenceId;
-  AntennaInfo info1 = GetAntennaInfo(antenna1);
-  AntennaInfo info2 = GetAntennaInfo(antenna2);
+  const AntennaInfo info1 = GetAntennaInfo(antenna1);
+  const AntennaInfo info2 = GetAntennaInfo(antenna2);
   sstream << info1.station << ' ' << info1.name << " x " << info2.station << ' '
           << info2.name;
   if (BandCount() > 1) {
     BandInfo bandInfo = GetBandInfo(band);
-    double bandStart =
+    const double bandStart =
         round(bandInfo.channels.front().frequencyHz / 100000.0) / 10.0;
-    double bandEnd =
+    const double bandEnd =
         round(bandInfo.channels.back().frequencyHz / 100000.0) / 10.0;
     sstream << ", spw " << band << " (" << bandStart << "MHz -" << bandEnd
             << "MHz)";
@@ -117,8 +124,9 @@ size_t MSImageSet::findBaselineIndex(size_t antenna1, size_t antenna2,
   size_t index = 0;
   for (std::vector<MSMetaData::Sequence>::const_iterator i = _sequences.begin();
        i != _sequences.end(); ++i) {
-    bool antennaMatch = (i->antenna1 == antenna1 && i->antenna2 == antenna2) ||
-                        (i->antenna1 == antenna2 && i->antenna2 == antenna1);
+    const bool antennaMatch =
+        (i->antenna1 == antenna1 && i->antenna2 == antenna2) ||
+        (i->antenna1 == antenna2 && i->antenna2 == antenna1);
     if (antennaMatch && i->spw == band && i->sequenceId == sequenceId) {
       return index;
     }
@@ -128,7 +136,7 @@ size_t MSImageSet::findBaselineIndex(size_t antenna1, size_t antenna2,
 }
 
 void MSImageSet::AddReadRequest(const ImageSetIndex& index) {
-  BaselineData newRequest(index);
+  const BaselineData newRequest(index);
   _baselineData.push_back(newRequest);
 }
 
@@ -149,9 +157,9 @@ void MSImageSet::PerformReadRequests(class ProgressListener& progress) {
           "ReadRequest() called, but a previous read request was not "
           "completely processed by calling GetNextRequested().");
     std::vector<UVW> uvw;
-    TimeFrequencyData data = _reader->GetNextResult(uvw);
+    const TimeFrequencyData data = _reader->GetNextResult(uvw);
     i->SetData(data);
-    TimeFrequencyMetaDataCPtr metaData = createMetaData(i->Index(), uvw);
+    const TimeFrequencyMetaDataCPtr metaData = createMetaData(i->Index(), uvw);
     i->SetMetaData(metaData);
   }
 }
@@ -168,26 +176,27 @@ std::unique_ptr<BaselineData> MSImageSet::GetNextRequested() {
 
 void MSImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
                                    std::vector<Mask2DCPtr>& flags) {
-  size_t seqIndex = index.Value();
+  const size_t seqIndex = index.Value();
   initReader();
-  size_t a1 = _sequences[seqIndex].antenna1;
-  size_t a2 = _sequences[seqIndex].antenna2;
-  size_t b = _sequences[seqIndex].spw;
-  size_t s = _sequences[seqIndex].sequenceId;
+  const size_t a1 = _sequences[seqIndex].antenna1;
+  const size_t a2 = _sequences[seqIndex].antenna2;
+  const size_t b = _sequences[seqIndex].spw;
+  const size_t s = _sequences[seqIndex].sequenceId;
 
   std::vector<Mask2DCPtr> allFlags;
-  if (flags.size() > _reader->Polarizations().size())
+  if (flags.size() > _reader->Polarizations().size()) {
     throw std::runtime_error(
         "Trying to write more polarizations to image set than available");
-  else if (flags.size() < _reader->Polarizations().size()) {
+  } else if (flags.size() < _reader->Polarizations().size()) {
     if (flags.size() == 1)
       for (size_t i = 0; i < _reader->Polarizations().size(); ++i)
         allFlags.emplace_back(flags[0]);
     else
       throw std::runtime_error(
           "Incorrect number of polarizations in write action");
-  } else
+  } else {
     allFlags = flags;
+  }
 
   _reader->AddWriteTask(allFlags, a1, a2, b, s);
 }

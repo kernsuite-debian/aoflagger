@@ -49,7 +49,6 @@ class RFIGuiMenu {
   // Plot
   sigc::signal<void> OnPlotDistPressed;
   sigc::signal<void> OnPlotLogLogDistPressed;
-  sigc::signal<void> OnPlotComplexPlanePressed;
   sigc::signal<void> OnPlotMeanSpectrumPressed;
   sigc::signal<void> OnPlotSumSpectrumPressed;
   sigc::signal<void> OnPlotPowerSpectrumPressed;
@@ -338,7 +337,7 @@ class RFIGuiMenu {
   Gtk::MenuItem _miPlotTime, _miPlotFrequency;
   Gtk::Menu _menuPlotTime, _menuPlotFrequency;
   Gtk::MenuItem _miPlotDistribution, _miPlotLogLogDistribution,
-      _miPlotComplexPlane, _miPlotMeanSpectrum;
+      _miPlotMeanSpectrum;
   Gtk::MenuItem _miPlotSumSpectrum, _miPlotPowerSpectrum,
       _miPlotFrequencyScatter, _miPlotTimeMean;
   Gtk::MenuItem _miPlotTimeScatter, _miPlotSingularValues;

@@ -5,6 +5,7 @@ class StatisticsCollection;
 class DefaultStatistics;
 
 #include <map>
+#include <set>
 #include <vector>
 
 namespace algorithms {

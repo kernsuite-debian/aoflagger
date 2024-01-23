@@ -18,8 +18,9 @@ class ImageSetIndex final {
     if (_value == 0) {
       _value = _n - 1;
       _hasWrapped = true;
-    } else
+    } else {
       --_value;
+    }
   }
 
   bool Empty() const { return _n == 0; }

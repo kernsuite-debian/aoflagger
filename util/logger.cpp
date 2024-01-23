@@ -33,8 +33,9 @@ void Logger::SetVerbosity(VerbosityLevel verbosityLevel) {
 }
 
 void Logger::outputTime(bool toStdErr) {
-  boost::posix_time::ptime t(boost::posix_time::microsec_clock::local_time());
-  std::string str = boost::posix_time::to_simple_string(t);
+  const boost::posix_time::ptime t(
+      boost::posix_time::microsec_clock::local_time());
+  const std::string str = boost::posix_time::to_simple_string(t);
   if (toStdErr)
     std::cerr << str << ' ';
   else

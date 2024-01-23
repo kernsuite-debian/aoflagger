@@ -1,16 +1,16 @@
 #include "rfiguicontroller.h"
 
-#include "../../algorithms/fringestoppingfitter.h"
 #include "../../algorithms/svdmitigater.h"
 #include "../../algorithms/testsetgenerator.h"
 
 #include "../../python/pythonstrategy.h"
 
+#include "../../imagesets/h5imageset.h"
 #include "../../imagesets/imageset.h"
+#include "../../imagesets/joinedspwset.h"
 #include "../../imagesets/msimageset.h"
 #include "../../imagesets/msoptions.h"
 #include "../../imagesets/multibandmsimageset.h"
-#include "../../imagesets/joinedspwset.h"
 
 #include "../../lua/luastrategy.h"
 #include "../../lua/scriptdata.h"
@@ -31,15 +31,18 @@
 
 #include "../rfiguiwindow.h"
 
+#include "../../external/npy.hpp"
+
 #include "imagecomparisoncontroller.h"
 
 #include <aocommon/system.h>
 
 #include <gtkmm/messagedialog.h>
 
-#include <boost/filesystem/operations.hpp>
-
 #include <algorithm>
+#include <array>
+#include <filesystem>
+#include <system_error>
 #include <thread>
 
 using algorithms::SVDMitigater;
@@ -86,10 +89,10 @@ TimeFrequencyMetaDataCPtr RFIGuiController::SelectedMetaData() const {
 
 void RFIGuiController::plotMeanSpectrum(bool weight) {
   if (IsImageLoaded()) {
-    std::string title = weight ? "Sum spectrum" : "Mean spectrum";
+    const std::string title = weight ? "Sum spectrum" : "Mean spectrum";
     XYPlot& plot = _plotManager->NewPlot2D(title);
 
-    TimeFrequencyData data = ActiveData();
+    const TimeFrequencyData data = ActiveData();
     Mask2DCPtr mask =
         Mask2D::CreateSetMaskPtr<false>(data.ImageWidth(), data.ImageHeight());
     XYPointSet& beforeSet = plot.StartLine("Without flagging");
@@ -119,8 +122,8 @@ void RFIGuiController::PlotDist() {
   if (IsImageLoaded()) {
     XYPlot& plot = _plotManager->NewPlot2D("Distribution");
 
-    TimeFrequencyData activeData = ActiveData();
-    Image2DCPtr image = activeData.GetSingleImage();
+    const TimeFrequencyData activeData = ActiveData();
+    const Image2DCPtr image = activeData.GetSingleImage();
     Mask2DPtr mask =
         Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
     XYPointSet& totalSet = plot.StartLine("Total");
@@ -140,12 +143,12 @@ void RFIGuiController::PlotDist() {
 
 void RFIGuiController::PlotLogLogDist() {
   if (IsImageLoaded()) {
-    TimeFrequencyData activeData = ActiveData();
+    const TimeFrequencyData activeData = ActiveData();
     HistogramCollection histograms(activeData.PolarizationCount());
     for (unsigned p = 0; p != activeData.PolarizationCount(); ++p) {
-      TimeFrequencyData polData(activeData.MakeFromPolarizationIndex(p));
-      Image2DCPtr image = polData.GetSingleImage();
-      Mask2DCPtr mask = Mask2D::MakePtr(*polData.GetSingleMask());
+      const TimeFrequencyData polData(activeData.MakeFromPolarizationIndex(p));
+      const Image2DCPtr image = polData.GetSingleImage();
+      const Mask2DCPtr mask = Mask2D::MakePtr(*polData.GetSingleMask());
       histograms.Add(0, 1, p, image, mask);
     }
     _rfiGuiWindow->ShowHistogram(histograms);
@@ -155,13 +158,13 @@ void RFIGuiController::PlotLogLogDist() {
 void RFIGuiController::PlotPowerSpectrum() {
   if (IsImageLoaded()) {
     XYPlot& plot = _plotManager->NewPlot2D("Power spectrum");
-    plot.SetLogarithmicYAxis(true);
+    plot.YAxis().SetLogarithmic(true);
 
-    TimeFrequencyData data = ActiveData();
+    const TimeFrequencyData data = ActiveData();
     std::array<Image2DCPtr, 2> images;
-    if (data.ComplexRepresentation() == TimeFrequencyData::ComplexParts)
+    if (data.ComplexRepresentation() == TimeFrequencyData::ComplexParts) {
       images = data.GetSingleComplexImage();
-    else {
+    } else {
       images[0] = data.GetSingleImage();
       images[1] = images[0];
     }
@@ -193,10 +196,11 @@ void RFIGuiController::PlotFrequencyScatter() {
 
 void RFIGuiController::DrawTimeMean(XYPlot& plot) {
   plot.SetTitle("Mean over time");
-  plot.SetLogarithmicYAxis(true);
+  plot.YAxis().SetLogarithmic(true);
+  plot.XAxis().SetType(AxisType::kTime);
 
-  TimeFrequencyData activeData = ActiveData();
-  Image2DCPtr image = activeData.GetSingleImage();
+  const TimeFrequencyData activeData = ActiveData();
+  const Image2DCPtr image = activeData.GetSingleImage();
   Mask2DPtr mask =
       Mask2D::CreateSetMaskPtr<false>(image->Width(), image->Height());
   XYPointSet& totalPlot = plot.StartLine("Without flagging");
@@ -286,9 +290,14 @@ void RFIGuiController::OpenMS(const std::vector<std::string>& filenames,
 
   std::unique_ptr<imagesets::ImageSet> imageSet(
       imagesets::ImageSet::Create(filenames, options));
-  imagesets::MSImageSet* msImageSet =
-      dynamic_cast<imagesets::MSImageSet*>(imageSet.get());
-  if (msImageSet != nullptr) {
+
+  if (imagesets::H5ImageSet* h5ImageSet =
+          dynamic_cast<imagesets::H5ImageSet*>(imageSet.get());
+      h5ImageSet != nullptr) {
+    h5ImageSet->SetInterval(options.intervalStart, options.intervalEnd);
+  } else if (imagesets::MSImageSet* msImageSet =
+                 dynamic_cast<imagesets::MSImageSet*>(imageSet.get());
+             msImageSet != nullptr) {
     msImageSet->SetDataColumnName(options.dataColumnName);
     msImageSet->SetInterval(options.intervalStart, options.intervalEnd);
 
@@ -313,14 +322,14 @@ void RFIGuiController::SaveBaselineFlags() {
 }
 
 void RFIGuiController::setRecentFile(const std::string& filename) {
-  std::string absFilename = boost::filesystem::absolute(filename).string();
+  std::string absFilename = std::filesystem::absolute(filename).string();
   std::vector<std::string> files = _settings.RecentFiles();
   files.emplace(files.begin(), absFilename);
   if (files.size() > 10) files.resize(10);
   for (size_t i = 1; i != files.size(); ++i) {
-    boost::system::error_code ec;
+    std::error_code ec;
     if (files[i] == absFilename ||
-        boost::filesystem::equivalent(files[i], absFilename, ec)) {
+        std::filesystem::equivalent(files[i], absFilename, ec)) {
       files.erase(files.begin() + i);
       break;
     }
@@ -336,11 +345,11 @@ std::vector<std::string> RFIGuiController::RecentFiles() const {
   for (size_t i = 0; i != files.size(); ++i) {
     if (!files[i].empty()) {
       // Don't return the current open file as a recent file
-      boost::system::error_code ec;
-      bool isOpen =
-          (HasImageSet() && (files[i] == _imageSet->Files()[0] ||
-                             boost::filesystem::equivalent(
-                                 files[i], _imageSet->Files()[0], ec)));
+      std::error_code ec;
+      const bool isOpen =
+          (HasImageSet() &&
+           (files[i] == _imageSet->Files()[0] ||
+            std::filesystem::equivalent(files[i], _imageSet->Files()[0], ec)));
       if (!isOpen) shownFiles.emplace_back(files[i]);
     }
   }
@@ -353,7 +362,7 @@ void RFIGuiController::OpenTestSet(
   size_t width = 1024, height = 512;
   TimeFrequencyMetaDataCPtr metaData;
   if (IsImageLoaded()) {
-    TimeFrequencyData activeData = ActiveData();
+    const TimeFrequencyData activeData = ActiveData();
     width = activeData.ImageWidth();
     height = activeData.ImageHeight();
     metaData = SelectedMetaData();
@@ -362,7 +371,7 @@ void RFIGuiController::OpenTestSet(
   }
   CloseImageSet();
 
-  TimeFrequencyData data =
+  const TimeFrequencyData data =
       TestSetGenerator::MakeTestSet(rfiSet, backgroundSet, width, height);
   _tfController.SetNewData(data, metaData);
   const char* name = "Simulated test set";
@@ -396,7 +405,7 @@ void RFIGuiController::ExecuteLuaStrategy(class ProgressListener& listener) {
   _processingThread = std::thread([&]() {
     try {
       _scriptTFData = OriginalData();
-      TimeFrequencyMetaDataCPtr metaData =
+      const TimeFrequencyMetaDataCPtr metaData =
           _tfController.Plot().GetFullMetaData();
 
       _scriptData.reset(new ScriptData());
@@ -451,7 +460,7 @@ void RFIGuiController::CloseImageSet() {
 void RFIGuiController::LoadCurrentTFDataAsync(ProgressListener& progress) {
   try {
     if (HasImageSet()) {
-      std::lock_guard<std::mutex> lock(_ioMutex);
+      const std::lock_guard<std::mutex> lock(_ioMutex);
       _imageSet->AddReadRequest(_imageSetIndex);
       _imageSet->PerformReadRequests(progress);
       _tempLoadedBaseline = _imageSet->GetNextRequested();
@@ -485,7 +494,7 @@ void RFIGuiController::LoadCurrentTFDataFinish(bool success) {
       // Disable forward/back buttons when only one baseline is available
       imagesets::ImageSetIndex firstIndex = _imageSet->StartIndex();
       firstIndex.Next();
-      bool multipleBaselines = !firstIndex.HasWrapped();
+      const bool multipleBaselines = !firstIndex.HasWrapped();
 
       _rfiGuiWindow->SetBaselineInfo(false, multipleBaselines, name,
                                      description);
@@ -531,7 +540,7 @@ void RFIGuiController::GetAvailablePolarizations(bool& pp, bool& pq, bool& qp,
   }
 }
 
-void RFIGuiController::SaveBaseline(const std::string& filename) {
+void RFIGuiController::SaveBaselineAsRfibl(const std::string& filename) {
   SingleBaselineFile file;
   file.data = _tfController.OriginalData();
   file.metaData = *_tfController.Plot().GetFullMetaData();
@@ -540,13 +549,21 @@ void RFIGuiController::SaveBaseline(const std::string& filename) {
   file.Write(stream);
 }
 
+void RFIGuiController::SaveBaselineAsNpy(const std::string& filename) {
+  const TimeFrequencyData& tf_data = _tfController.OriginalData();
+  std::vector<std::complex<num_t>> data = ToComplexVector(tf_data);
+  const std::array<unsigned long, 3> shape = {
+      tf_data.PolarizationCount(), tf_data.ImageHeight(), tf_data.ImageWidth()};
+  npy::SaveArrayAsNumpy(filename, false, shape.size(), shape.data(), data);
+}
+
 void RFIGuiController::NewDefaultStrategy() {
   _settings.InitializeWorkStrategy();
   _openStrategyFilename.clear();
 }
 
 void RFIGuiController::NewEmptyStrategy() {
-  std::ofstream file(_settings.GetStrategyFilename());
+  const std::ofstream file(_settings.GetStrategyFilename());
   if (!file)
     throw std::runtime_error("Error writing new strategy to work file");
   _openStrategyFilename.clear();
@@ -561,31 +578,29 @@ void RFIGuiController::NewTemplateStrategy() {
 }
 
 void RFIGuiController::OpenStrategy(const std::string& filename) {
-  boost::system::error_code ec;
-  if (boost::filesystem::equivalent(_settings.GetStrategyFilename(), filename,
-                                    ec))
+  std::error_code ec;
+  if (std::filesystem::equivalent(_settings.GetStrategyFilename(), filename,
+                                  ec))
     throw std::runtime_error("Can't open working Lua strategy");
-  boost::filesystem::copy_file(
-      filename, _settings.GetStrategyFilename(),
-      boost::filesystem::copy_option::overwrite_if_exists);
+  std::filesystem::copy_file(filename, _settings.GetStrategyFilename(),
+                             std::filesystem::copy_options::overwrite_existing);
   _openStrategyFilename = filename;
 }
 
 void RFIGuiController::SaveStrategy() {
-  boost::filesystem::copy_file(
-      _settings.GetStrategyFilename(), _openStrategyFilename,
-      boost::filesystem::copy_option::overwrite_if_exists);
+  std::filesystem::copy_file(_settings.GetStrategyFilename(),
+                             _openStrategyFilename,
+                             std::filesystem::copy_options::overwrite_existing);
 }
 
 void RFIGuiController::SaveStrategyAs(const std::string& filename) {
-  boost::filesystem::copy_file(
-      _settings.GetStrategyFilename(), filename,
-      boost::filesystem::copy_option::overwrite_if_exists);
+  std::filesystem::copy_file(_settings.GetStrategyFilename(), filename,
+                             std::filesystem::copy_options::overwrite_existing);
   _openStrategyFilename = filename;
 }
 
 std::string RFIGuiController::GetWorkStrategyText() const {
-  std::ifstream file(_settings.GetStrategyFilename());
+  const std::ifstream file(_settings.GetStrategyFilename());
   if (!file) throw std::runtime_error("Error reading work strategy from file");
   std::ostringstream text;
   text << file.rdbuf();

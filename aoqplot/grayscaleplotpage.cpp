@@ -236,17 +236,17 @@ void GrayScalePlotPage::updateImage() {
   _controller->UpdateImage();
 }
 
-PolarizationEnum GrayScalePlotPage::getSelectedPolarization() const {
+aocommon::PolarizationEnum GrayScalePlotPage::getSelectedPolarization() const {
   if (_polPPButton.get_active())
-    return Polarization::XX;
+    return aocommon::Polarization::XX;
   else if (_polPQButton.get_active())
-    return Polarization::XY;
+    return aocommon::Polarization::XY;
   else if (_polQPButton.get_active())
-    return Polarization::YX;
+    return aocommon::Polarization::YX;
   else if (_polQQButton.get_active())
-    return Polarization::YY;
+    return aocommon::Polarization::YY;
   else
-    return Polarization::StokesI;
+    return aocommon::Polarization::StokesI;
 }
 
 enum TimeFrequencyData::ComplexRepresentation
@@ -272,17 +272,20 @@ void GrayScalePlotPage::onPropertiesClicked() {
 }
 
 void GrayScalePlotPage::onSelectMinMaxRange() {
-  _controller->Plot().SetZRange(Range::MinMax);
+  _controller->Plot().SetZRange(FullRange());
   _imageWidget.Update();
 }
 
 void GrayScalePlotPage::onSelectWinsorizedRange() {
-  _controller->Plot().SetZRange(Range::Winsorized);
+  _controller->Plot().SetZRange(WinsorizedRange());
   _imageWidget.Update();
 }
 
 void GrayScalePlotPage::onSelectSpecifiedRange() {
-  _controller->Plot().SetZRange(Range::Specified);
+  RangeConfiguration range = _controller->Plot().ZRange();
+  range.minimum = RangeLimit::Extreme;
+  range.maximum = RangeLimit::Extreme;
+  _controller->Plot().SetZRange(range);
   _imageWidget.Update();
 }
 

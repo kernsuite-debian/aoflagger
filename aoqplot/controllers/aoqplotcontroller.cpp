@@ -18,6 +18,7 @@
 
 #include "../../structures/msmetadata.h"
 
+#include "../../quality/combine.h"
 #include "../../quality/histogramtablesformatter.h"
 #include "../../quality/histogramcollection.h"
 #include "../../quality/statisticscollection.h"
@@ -36,27 +37,12 @@ void AOQPlotController::close() {
 }
 
 void AOQPlotController::readMetaInfoFromMS(const string& filename) {
-  MSMetaData ms(filename);
+  const MSMetaData ms(filename);
   _polarizationCount = ms.PolarizationCount();
-  unsigned antennaCount = ms.AntennaCount();
+  const unsigned antennaCount = ms.AntennaCount();
   _antennas.clear();
   for (unsigned a = 0; a < antennaCount; ++a)
     _antennas.push_back(ms.GetAntennaInfo(a));
-}
-
-void AOQPlotController::readAndCombine(const string& filename) {
-  std::cout << "Adding " << filename << " to statistics...\n";
-  QualityTablesFormatter qualityTables(filename);
-  StatisticsCollection statCollection(_polarizationCount);
-  statCollection.Load(qualityTables);
-  _statCollection->Add(statCollection);
-
-  HistogramTablesFormatter histogramTables(filename);
-  if (histogramTables.HistogramsExist()) {
-    HistogramCollection histCollection(_polarizationCount);
-    histCollection.Load(histogramTables);
-    _histCollection->Add(histCollection);
-  }
 }
 
 void AOQPlotController::ReadStatistics(const std::vector<std::string>& files,
@@ -69,13 +55,13 @@ void AOQPlotController::ReadStatistics(const std::vector<std::string>& files,
     const std::string& firstFile = *files.begin();
     readMetaInfoFromMS(firstFile);
 
-    _statCollection.reset(new StatisticsCollection(_polarizationCount));
-    _histCollection.reset(new HistogramCollection(_polarizationCount));
+    quality::FileContents contents = quality::ReadAndCombine(files, true);
 
-    for (size_t i = 0; i != files.size(); ++i) {
-      std::cout << " (" << (i + 1) << "/" << files.size() << ") ";
-      readAndCombine(files[i]);
-    }
+    _statCollection = std::make_unique<StatisticsCollection>(
+        std::move(contents.statistics_collection));
+    _histCollection = std::make_unique<HistogramCollection>(
+        std::move(contents.histogram_collection));
+
     if (_window != nullptr)
       _window->SetShowHistograms(!_histCollection->Empty());
     if (downsampleTime) {
@@ -96,7 +82,7 @@ void AOQPlotController::ReadStatistics(const std::vector<std::string>& files,
     _statCollection->RegridTime();
 
     std::cout << "Copying statistics..." << std::endl;
-    _fullStats.reset(new StatisticsCollection(*_statCollection));
+    _fullStats = std::make_unique<StatisticsCollection>(*_statCollection);
 
     std::cout << "Integrating time statistics to one channel..." << std::endl;
     _statCollection->IntegrateTimeToOneChannel();
@@ -109,7 +95,7 @@ void AOQPlotController::ReadStatistics(const std::vector<std::string>& files,
 void AOQPlotController::Save(const AOQPlotController::PlotSavingData& data,
                              size_t width, size_t height) {
   const std::string& prefix = data.filenamePrefix;
-  QualityTablesFormatter::StatisticKind kind = data.statisticKind;
+  const QualityTablesFormatter::StatisticKind kind = data.statisticKind;
 
   std::cout << "Saving " << prefix << "-antennas.pdf...\n";
   AntennaePageController antController;

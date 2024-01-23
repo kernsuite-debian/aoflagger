@@ -36,7 +36,7 @@ void Stopwatch::Reset(bool start) {
 
 std::string Stopwatch::ToString() const {
   if (_running) {
-    boost::posix_time::time_duration current =
+    const boost::posix_time::time_duration current =
         _sum + (boost::posix_time::microsec_clock::local_time() - _startTime);
     return to_simple_string(current);
   } else {
@@ -134,7 +134,7 @@ std::string Stopwatch::ToNanoSecondsString() const {
 
 long double Stopwatch::Seconds() const {
   if (_running) {
-    boost::posix_time::time_duration current =
+    const boost::posix_time::time_duration current =
         _sum + (boost::posix_time::microsec_clock::local_time() - _startTime);
     return (long double)current.total_milliseconds() / 1000.0;
   } else {

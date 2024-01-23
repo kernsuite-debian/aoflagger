@@ -12,14 +12,14 @@
 
 class BaselinePlotPage : public GrayScalePlotPage {
  public:
-  BaselinePlotPage(class BaselinePageController* controller);
+  explicit BaselinePlotPage(class BaselinePageController* controller);
   virtual ~BaselinePlotPage();
 
  protected:
  private:
   class BaselinePageController* _controller;
 
-  void onMouseMoved(size_t x, size_t y);
+  void onMouseMoved(double x, double y);
 };
 
 #endif

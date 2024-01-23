@@ -22,10 +22,10 @@ std::unique_ptr<imagesets::BaselineData> imagesets::PngReader::Read(
 
   png_read_info(png_ptr, info_ptr);
 
-  unsigned width = png_get_image_width(png_ptr, info_ptr);
-  unsigned height = png_get_image_height(png_ptr, info_ptr);
-  unsigned color_type = png_get_color_type(png_ptr, info_ptr);
-  unsigned bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+  const unsigned width = png_get_image_width(png_ptr, info_ptr);
+  const unsigned height = png_get_image_height(png_ptr, info_ptr);
+  const unsigned color_type = png_get_color_type(png_ptr, info_ptr);
+  const unsigned bit_depth = png_get_bit_depth(png_ptr, info_ptr);
   Logger::Debug << "Png file: " << width << 'x' << height
                 << " colortype=" << color_type << ", bit_depth=" << bit_depth
                 << '\n';
@@ -43,8 +43,8 @@ std::unique_ptr<imagesets::BaselineData> imagesets::PngReader::Read(
 
   fclose(fp);
 
-  Image2DPtr image = Image2D::CreateZeroImagePtr(width, height);
-  size_t bytesPerSample = 4;
+  const Image2DPtr image = Image2D::CreateZeroImagePtr(width, height);
+  const size_t bytesPerSample = 4;
   for (size_t f = 0; f < height; ++f) {
     for (size_t t = 0; t < width; ++t) {
       int r = row_pointers[f][t * bytesPerSample],
@@ -54,8 +54,8 @@ std::unique_ptr<imagesets::BaselineData> imagesets::PngReader::Read(
     }
   }
 
-  TimeFrequencyData tfData(TimeFrequencyData::AmplitudePart,
-                           aocommon::Polarization::StokesI, image);
+  const TimeFrequencyData tfData(TimeFrequencyData::AmplitudePart,
+                                 aocommon::Polarization::StokesI, image);
   return std::unique_ptr<imagesets::BaselineData>(
       new BaselineData(tfData, TimeFrequencyMetaDataCPtr()));
 }

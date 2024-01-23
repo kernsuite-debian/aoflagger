@@ -11,8 +11,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && \
     python3 \
     python3-distutils \
     libpython3-dev \
-    libboost-date-time-dev libboost-test-dev \
-    libboost-system-dev libboost-filesystem-dev \
+    libboost-date-time-dev libboost-system-dev \
     libcfitsio-dev \
     libfftw3-dev \
     libgsl-dev \
@@ -34,7 +33,6 @@ RUN \
   cd /build && \
   cmake ../src && \
   make -j`nproc` && \
-  make install && \
-  make check -j`nproc`
+  make install
 
 RUN cd /build/python && echo "import aoflagger" | python3

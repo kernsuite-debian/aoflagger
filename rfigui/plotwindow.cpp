@@ -48,7 +48,7 @@ void PlotWindow::handleUpdate() {
   const std::vector<std::unique_ptr<XYPlot>>& plots = _plotManager.Items();
   if (!plots.empty()) {
     XYPlot& lastPlot = **plots.rbegin();
-    size_t index = plots.size() - 1;
+    const size_t index = plots.size() - 1;
     _plotWidget.SetPlot(lastPlot);
     for (Gtk::TreeNodeChildren::iterator i = _plotListStore->children().begin();
          i != _plotListStore->children().end(); ++i) {
@@ -73,19 +73,20 @@ void PlotWindow::updatePlotList() {
   _plotListStore->clear();
   for (size_t index = 0; index != plots.size(); ++index) {
     const XYPlot& plot = *plots[index];
-    Gtk::TreeModel::Row row = *_plotListStore->append();
+    const Gtk::TreeModel::Row row = *_plotListStore->append();
     row[_plotListColumns._index] = index;
-    row[_plotListColumns._name] = plot.Title();
+    row[_plotListColumns._name] = plot.GetTitle();
   }
   onSelectedPlotChange();
 }
 
 void PlotWindow::onSelectedPlotChange() {
-  Gtk::TreeModel::iterator iter = _plotListView.get_selection()->get_selected();
+  const Gtk::TreeModel::iterator iter =
+      _plotListView.get_selection()->get_selected();
   if (iter)  // If anything is selected
   {
-    Gtk::TreeModel::Row row = *iter;
-    size_t index = row[_plotListColumns._index];
+    const Gtk::TreeModel::Row row = *iter;
+    const size_t index = row[_plotListColumns._index];
     XYPlot& plot = *_plotManager.Items()[index];
     _plotWidget.SetPlot(plot);
   }
@@ -98,13 +99,13 @@ void PlotWindow::onClearPlotsPressed() {
 
 void PlotWindow::onEditPlottingPropertiesPressed() {
   delete _plotPropertiesWindow;
-  Gtk::TreeModel::iterator iter = _plotListView.get_selection()->get_selected();
+  const Gtk::TreeModel::iterator iter =
+      _plotListView.get_selection()->get_selected();
   if (iter) {
     XYPlot& plot = *_plotManager.Items()[(*iter)[_plotListColumns._index]];
     _plotPropertiesWindow = new PlotPropertiesWindow(plot, "Plot properties");
     _plotPropertiesWindow->OnChangesApplied =
         std::bind(&PlotWindow::onPlotPropertiesChanged, this);
-    ;
     _plotPropertiesWindow->show();
     _plotPropertiesWindow->raise();
   }

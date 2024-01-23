@@ -155,15 +155,15 @@ class MSMetaData {
     unsigned fieldId;
 
     bool operator<(const Sequence& rhs) const {
-      if (antenna1 < rhs.antenna1)
+      if (antenna1 < rhs.antenna1) {
         return true;
-      else if (antenna1 == rhs.antenna1) {
-        if (antenna2 < rhs.antenna2)
+      } else if (antenna1 == rhs.antenna1) {
+        if (antenna2 < rhs.antenna2) {
           return true;
-        else if (antenna2 == rhs.antenna2) {
-          if (spw < rhs.spw)
+        } else if (antenna2 == rhs.antenna2) {
+          if (spw < rhs.spw) {
             return true;
-          else if (spw == rhs.spw) {
+          } else if (spw == rhs.spw) {
             return sequenceId < rhs.sequenceId;
           }
         }

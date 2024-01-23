@@ -10,64 +10,75 @@ class XYPointSet;
 
 class System {
  public:
-  System() : _includeZeroYAxis(false) {}
+  System() : include_zero_y_axis_(false) {}
 
   ~System() { Clear(); }
 
-  bool Empty() const { return _dimensions.empty(); }
+  bool Empty() const { return y_dimension_.Empty() && y2_dimension_.Empty(); }
 
   void AddToSystem(XYPointSet& pointSet) {
-    Dimension* dimension;
-    auto iter = _dimensions.find(pointSet.YUnits());
-    if (iter == _dimensions.end()) {
-      dimension =
-          &_dimensions.emplace(pointSet.YUnits(), Dimension()).first->second;
-    } else {
-      dimension = &iter->second;
-    }
-    dimension->AdjustRanges(pointSet);
+    if (pointSet.UseSecondXAxis())
+      x2_dimension_.AdjustRanges(pointSet, true);
+    else
+      x_dimension_.AdjustRanges(pointSet, true);
+    if (pointSet.UseSecondYAxis())
+      y2_dimension_.AdjustRanges(pointSet, false);
+    else
+      y_dimension_.AdjustRanges(pointSet, false);
   }
 
-  double XRangeMin(XYPointSet& pointSet) const {
-    return _dimensions.find(pointSet.YUnits())->second.XRangeMin();
+  double XRangeMin(bool second_axis) const {
+    return second_axis ? x2_dimension_.Min() : x_dimension_.Min();
   }
-  double XRangePositiveMin(XYPointSet& pointSet) const {
-    return _dimensions.find(pointSet.YUnits())->second.XRangePositiveMin();
+  double XRangePositiveMin(bool second_axis) const {
+    return second_axis ? x2_dimension_.PositiveMin()
+                       : x_dimension_.PositiveMin();
   }
-  double XRangeMax(XYPointSet& pointSet) const {
-    return _dimensions.find(pointSet.YUnits())->second.XRangeMax();
+  double XRangeMax(bool second_axis) const {
+    return second_axis ? x2_dimension_.Max() : x_dimension_.Max();
   }
-  double XRangePositiveMax(XYPointSet& pointSet) const {
-    return _dimensions.find(pointSet.YUnits())->second.XRangePositiveMax();
+  double XRangePositiveMax(bool second_axis) const {
+    return second_axis ? x2_dimension_.PositiveMax()
+                       : x_dimension_.PositiveMax();
   }
-  double YRangeMin(XYPointSet& pointSet) const {
-    const double yMin = _dimensions.find(pointSet.YUnits())->second.YRangeMin();
-    if (yMin > 0.0 && _includeZeroYAxis)
+  double YRangeMin(bool second_axis) const {
+    const double yMin = second_axis ? y2_dimension_.Min() : y_dimension_.Min();
+    if (yMin > 0.0 && include_zero_y_axis_)
       return 0.0;
     else
       return yMin;
   }
-  double YRangePositiveMin(XYPointSet& pointSet) const {
-    return _dimensions.find(pointSet.YUnits())->second.YRangePositiveMin();
+  double YRangePositiveMin(bool second_axis) const {
+    return second_axis ? y2_dimension_.PositiveMin()
+                       : y_dimension_.PositiveMin();
   }
-  double YRangeMax(XYPointSet& pointSet) const {
-    const double yMax = _dimensions.find(pointSet.YUnits())->second.YRangeMax();
-    if (yMax < 0.0 && _includeZeroYAxis)
+  double YRangeMax(bool second_axis) const {
+    const double yMax = second_axis ? y2_dimension_.Max() : y_dimension_.Max();
+    if (yMax < 0.0 && include_zero_y_axis_)
       return 0.0;
     else
       return yMax;
   }
-  double YRangePositiveMax(XYPointSet& pointSet) const {
-    return _dimensions.find(pointSet.YUnits())->second.YRangePositiveMax();
+  double YRangePositiveMax(bool second_axis) const {
+    return second_axis ? y2_dimension_.PositiveMax()
+                       : y_dimension_.PositiveMax();
   }
-  void Clear() { _dimensions.clear(); }
+  void Clear() {
+    x_dimension_.Clear();
+    x2_dimension_.Clear();
+    y_dimension_.Clear();
+    y2_dimension_.Clear();
+  }
   void SetIncludeZeroYAxis(bool includeZeroYAxis) {
-    _includeZeroYAxis = includeZeroYAxis;
+    include_zero_y_axis_ = includeZeroYAxis;
   }
 
  private:
-  std::map<std::string, Dimension> _dimensions;
-  bool _includeZeroYAxis;
+  Dimension x_dimension_;
+  Dimension x2_dimension_;
+  Dimension y_dimension_;
+  Dimension y2_dimension_;
+  bool include_zero_y_axis_;
 };
 
 #endif

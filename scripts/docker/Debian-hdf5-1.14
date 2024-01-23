@@ -1,0 +1,36 @@
+FROM debian:experimental
+
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && \
+    apt-get install -y \
+    cmake \
+    build-essential \
+    pkg-config \
+    casacore-data casacore-dev \
+    libblas-dev liblapack-dev \
+    liblua5.3-dev \
+    python3 \
+    libpython3-dev \
+    libboost-date-time-dev libboost-system-dev \
+    libgtkmm-3.0-dev \
+    libcfitsio-dev \
+    libfftw3-dev \
+    libgsl-dev \
+    libpng-dev
+
+RUN apt-get install -y git && \
+    mkdir /software && \
+    cd /software && \
+    git clone --single-branch https://github.com/HDFGroup/hdf5.git -b hdf5-1_14_2 && \
+    mkdir hdf5/build && \
+    cd hdf5/build && \
+    cmake ../ -DHDF5_BUILD_CPP_LIB=ON && \
+    make install -j25
+
+ADD . /src
+WORKDIR /src
+
+RUN mkdir /build && cd /build && cmake ../src -DCMAKE_PREFIX_PATH=/usr/local/HDF_Group/HDF5/1.14.2/
+
+RUN cd /build && make -j`nproc --all` && make install
+
+RUN cd /build/python && echo "import aoflagger" | python3

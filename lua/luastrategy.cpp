@@ -28,7 +28,7 @@ void LuaStrategy::check(lua_State* state, int error) {
   if (error) {
     const char* msg = lua_tostring(state, -1);
     if (msg) {
-      std::string str(msg);
+      const std::string str(msg);
       lua_pop(state, 1);  // pop error
       throw std::runtime_error(str);
     } else {
@@ -74,6 +74,7 @@ void LuaStrategy::loadaoflagger() {
       {"set_masked_visibilities", Data::set_masked_visibilities},
       {"set_polarization_data", Data::set_polarization_data},
       {"set_visibilities", Data::set_visibilities},
+      {"__div", Data::div},
       {"__gc", Data::gc},
       {"__sub", Data::sub},
       {nullptr, nullptr}};
@@ -90,6 +91,7 @@ void LuaStrategy::loadaoflagger() {
       {"downsample", Functions::downsample},
       {"high_pass_filter", Functions::high_pass_filter},
       {"low_pass_filter", Functions::low_pass_filter},
+      {"norm", Functions::norm},
       {"normalize_bandpass", Functions::normalize_bandpass},
       {"normalize_subbands", Functions::normalize_subbands},
       {"print_polarization_statistics",
@@ -103,6 +105,7 @@ void LuaStrategy::loadaoflagger() {
        Functions::scale_invariant_rank_operator_masked},
       {"set_progress", Functions::set_progress},
       {"set_progress_text", Functions::set_progress_text},
+      {"sqrt", Functions::sqrt},
       {"sumthreshold", Functions::sumthreshold},
       {"sumthreshold_masked", Functions::sumthreshold_masked},
       {"threshold_channel_rms", Functions::threshold_channel_rms},

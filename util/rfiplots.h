@@ -10,6 +10,7 @@
 
 class XYPointSet;
 class MultiPlot;
+class TimeFrequencyData;
 
 class RFIPlots {
  public:
@@ -29,10 +30,10 @@ class RFIPlots {
                                 Mask2DCPtr mask,
                                 TimeFrequencyMetaDataCPtr metaData);
   static void MakeComplexPlanePlot(XYPointSet& plot,
-                                   const class TimeFrequencyData& data,
-                                   size_t xStart, size_t length, size_t y,
-                                   size_t yAvgSize, Mask2DCPtr mask,
-                                   bool realVersusImaginary, bool imaginary);
+                                   const TimeFrequencyData& data, size_t xStart,
+                                   size_t length, size_t y, size_t yAvgSize,
+                                   Mask2DCPtr mask, bool realVersusImaginary,
+                                   bool imaginary);
   static void MakeFittedComplexPlot(XYPointSet& plot,
                                     const TimeFrequencyData& data,
                                     size_t xStart, size_t length, size_t y,

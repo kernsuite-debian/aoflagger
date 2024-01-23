@@ -35,7 +35,7 @@ class StringSetting final : public SettingValue {
 
 class SettingItem {
  public:
-  SettingItem(std::unique_ptr<SettingValue> defaultValue)
+  explicit SettingItem(std::unique_ptr<SettingValue> defaultValue)
       : _defaultValue(std::move(defaultValue)) {}
   bool HasValue() const { return _value != nullptr; }
   SettingValue& Value() { return *_value; }
@@ -112,9 +112,10 @@ class Settings {
 
   void setStr(const std::string& key, const std::string& value) {
     SettingItem& item = _settings.find(key)->second;
-    if (static_cast<const StringSetting&>(item.DefaultValue()).Value() == value)
+    if (static_cast<const StringSetting&>(item.DefaultValue()).Value() ==
+        value) {
       item.MakeDefault();
-    else {
+    } else {
       if (!item.HasValue()) item.SetValue(item.DefaultValue().Create());
       static_cast<StringSetting&>(item.Value()).Value() = value;
     }

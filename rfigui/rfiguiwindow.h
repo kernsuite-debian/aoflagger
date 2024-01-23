@@ -192,7 +192,6 @@ class RFIGuiWindow : public Gtk::Window {
   void onShowStats();
   void onPlotDistPressed();
   void onPlotLogLogDistPressed();
-  void onPlotComplexPlanePressed();
   void onPlotMeanSpectrumPressed();
   void onPlotSumSpectrumPressed();
   void onPlotPowerSpectrumPressed();
@@ -245,8 +244,7 @@ class RFIGuiWindow : public Gtk::Window {
 
   std::unique_ptr<class HistogramWindow> _histogramWindow;
   std::unique_ptr<class PlotWindow> _plotWindow;
-  std::unique_ptr<Gtk::Window> _gotoWindow, _plotComplexPlaneWindow,
-      _imagePropertiesWindow;
+  std::unique_ptr<Gtk::Window> _gotoWindow, _imagePropertiesWindow;
   std::unique_ptr<class ProgressWindow> _progressWindow;
   std::unique_ptr<class RFIGuiMenu> _menu;
 

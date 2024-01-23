@@ -1,5 +1,6 @@
 import aoflagger as aof
 import numpy
+
 print("Flagging with AOFlagger version " + aof.AOFlagger.get_version_string())
 
 nch = 256
@@ -31,7 +32,11 @@ for imgindex in range(8):
 flags = strategy.run(data)
 flagvalues = flags.get_buffer()
 flagcount = sum(sum(flagvalues))
-print("Percentage flags on zero data: " + str(flagcount * 100.0 / (nch*ntimes)) + "%")
+print(
+    "Percentage flags on zero data: "
+    + str(flagcount * 100.0 / (nch * ntimes))
+    + "%"
+)
 
 # Collect statistics
 # We create some unrealistic time and frequency arrays to be able
@@ -40,7 +45,9 @@ print("Percentage flags on zero data: " + str(flagcount * 100.0 / (nch*ntimes)) 
 timeArray = numpy.linspace(0.0, ntimes, num=ntimes, endpoint=False)
 freqArray = numpy.linspace(0.0, nch, num=nch, endpoint=False)
 qs = aoflagger.make_quality_statistics(timeArray, freqArray, 4, False)
-qs.collect_statistics(data, flags, aoflagger.make_flag_mask(ntimes, nch, False), 0, 1)
+qs.collect_statistics(
+    data, flags, aoflagger.make_flag_mask(ntimes, nch, False), 0, 1
+)
 
 try:
     qs.write_statistics("test.qs")

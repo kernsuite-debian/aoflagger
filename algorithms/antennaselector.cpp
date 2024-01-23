@@ -1,5 +1,7 @@
 #include "antennaselector.h"
 
+#include <utility>
+
 #include "../quality/statisticscollection.h"
 #include "../quality/statisticsderivator.h"
 
@@ -9,7 +11,7 @@ namespace algorithms {
 
 std::vector<size_t> AntennaSelector::Run(
     const StatisticsCollection& statisticsCollection) {
-  std::map<size_t, DefaultStatistics> antStatistics =
+  const std::map<size_t, DefaultStatistics> antStatistics =
       statisticsCollection.GetAntennaStatistics();
 
   std::vector<double> stddevs;
@@ -19,7 +21,7 @@ std::vector<size_t> AntennaSelector::Run(
     stddevs.clear();
     for (const std::pair<const size_t, DefaultStatistics>& antenna :
          antStatistics) {
-      double stddev = StatisticsDerivator::GetStatisticAmplitude(
+      const double stddev = StatisticsDerivator::GetStatisticAmplitude(
           QualityTablesFormatter::StandardDeviationStatistic, antenna.second,
           p);
       stddevs.emplace_back(stddev);
@@ -27,13 +29,13 @@ std::vector<size_t> AntennaSelector::Run(
     }
     double stddevOfStddev = 0.0;
     meanStddev /= stddevs.size();
-    for (double& s : stddevs) {
+    for (const double& s : stddevs) {
       stddevOfStddev += (s - meanStddev) * (s - meanStddev);
     }
     stddevOfStddev = sqrt(stddevOfStddev / stddevs.size());
 
     size_t index = 0;
-    double limit = _threshold * stddevOfStddev;
+    const double limit = _threshold * stddevOfStddev;
     for (const std::pair<const size_t, DefaultStatistics>& antenna :
          antStatistics) {
       if (std::fabs(stddevs[index] - meanStddev) > limit ||

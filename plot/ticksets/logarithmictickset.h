@@ -7,9 +7,9 @@ class LogarithmicTickSet : public TickSet {
  public:
   LogarithmicTickSet(double min, double max, unsigned sizeRequest)
       : _min(min),
-        _minLog10(log10(min)),
+        _minLog10(std::log10(min)),
         _max(max),
-        _maxLog10(log10(max)),
+        _maxLog10(std::log10(max)),
         _sizeRequest(sizeRequest) {
     if (std::isfinite(min) && std::isfinite(max)) {
       set(sizeRequest);
@@ -40,11 +40,14 @@ class LogarithmicTickSet : public TickSet {
    * 0 to 1.
    */
   static double UnitToAxis(double unitValue, double unitMin, double unitMax) {
-    return log(unitValue / unitMin) / log(unitMax / unitMin);
+    if (unitMin == 0.0 || unitMax == unitMin)
+      return 0.5;
+    else
+      return std::log(unitValue / unitMin) / std::log(unitMax / unitMin);
   }
 
   static double AxisToUnit(double axisValue, double unitMin, double unitMax) {
-    return exp(axisValue * log(unitMax / unitMin)) * unitMin;
+    return std::exp(axisValue * std::log(unitMax / unitMin)) * unitMin;
   }
   double UnitToAxis(double unitValue) const final override {
     return UnitToAxis(unitValue, _min, _max);
@@ -63,8 +66,9 @@ class LogarithmicTickSet : public TickSet {
         out << kToSuperTable[c - '0'];
       } else if (c == '-') {
         out << "⁻";
-      } else
+      } else {
         out << c;
+      }
     }
     return out.str();
   }

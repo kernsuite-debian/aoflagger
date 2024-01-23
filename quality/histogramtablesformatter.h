@@ -2,8 +2,9 @@
 #define HISTOGRAM_TABLES_FORMATTER_H
 
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
-#include <casacore/tables/Tables/TableRecord.h>
 
+#include <cassert>
+#include <memory>
 #include <vector>
 
 class HistogramTablesFormatter {
@@ -27,14 +28,8 @@ class HistogramTablesFormatter {
   ~HistogramTablesFormatter() { Close(); }
 
   void Close() {
-    if (_countTable != nullptr) {
-      delete _countTable;
-      _countTable = nullptr;
-    }
-    if (_typeTable != nullptr) {
-      delete _typeTable;
-      _typeTable = nullptr;
-    }
+    _countTable.reset();
+    _typeTable.reset();
     closeMainTable();
   }
 
@@ -78,28 +73,9 @@ class HistogramTablesFormatter {
     return hasOneEntry(typeIndex);
   }
 
-  void InitializeEmptyTables() {
-    if (TableExists(HistogramCountTable))
-      removeEntries(HistogramCountTable);
-    else
-      createCountTable();
+  void InitializeEmptyTables();
 
-    if (TableExists(HistogramTypeTable))
-      removeEntries(HistogramTypeTable);
-    else
-      createTypeTable();
-  }
-
-  void RemoveTable(enum TableKind table) {
-    if (TableExists(table)) {
-      Close();
-      openMainTable(true);
-      if (_measurementSet->keywordSet().isDefined(TableName(table)))
-        _measurementSet->rwKeywordSet().removeField(TableName(table));
-      if (_measurementSet->isReadable(TableFilename(table)))
-        casacore::Table::deleteTable(TableFilename(table));
-    }
-  }
+  void RemoveTable(enum TableKind table);
 
   void StoreValue(unsigned typeIndex, double binStart, double binEnd,
                   double count);
@@ -133,19 +109,19 @@ class HistogramTablesFormatter {
   void operator=(const HistogramTablesFormatter&) =
       delete;  // don't allow assignment
 
-  const static std::string ColumnNameType;
-  const static std::string ColumnNameName;
-  const static std::string ColumnNamePolarization;
+  static const std::string ColumnNameType;
+  static const std::string ColumnNameName;
+  static const std::string ColumnNamePolarization;
 
-  const static std::string ColumnNameBinStart;
-  const static std::string ColumnNameBinEnd;
-  const static std::string ColumnNameCount;
+  static const std::string ColumnNameBinStart;
+  static const std::string ColumnNameBinEnd;
+  static const std::string ColumnNameCount;
 
-  casacore::Table* _measurementSet;
+  std::unique_ptr<casacore::Table> _measurementSet;
   const std::string _measurementSetName;
 
-  casacore::Table* _typeTable;
-  casacore::Table* _countTable;
+  std::unique_ptr<casacore::Table> _typeTable;
+  std::unique_ptr<casacore::Table> _countTable;
 
   bool hasOneEntry(unsigned typeIndex);
   void removeTypeEntry(enum HistogramType type, unsigned polarizationIndex);
@@ -173,22 +149,18 @@ class HistogramTablesFormatter {
   unsigned findFreeTypeIndex(casacore::Table& typeTable);
 
   void openMainTable(bool needWrite);
-  void closeMainTable() {
-    if (_measurementSet != nullptr) {
-      delete _measurementSet;
-      _measurementSet = nullptr;
-    }
-  }
+  void closeMainTable() { _measurementSet.reset(); }
 
-  void openTable(TableKind table, bool needWrite, casacore::Table** tablePtr);
+  void openTable(TableKind table, bool needWrite,
+                 std::unique_ptr<casacore::Table>& tablePtr);
   void openTypeTable(bool needWrite) {
-    openTable(HistogramTypeTable, needWrite, &_typeTable);
+    openTable(HistogramTypeTable, needWrite, _typeTable);
   }
   void openCountTable(bool needWrite) {
-    openTable(HistogramCountTable, needWrite, &_countTable);
+    openTable(HistogramCountTable, needWrite, _countTable);
   }
   casacore::Table& getTable(TableKind table, bool needWrite) {
-    casacore::Table** tablePtr = nullptr;
+    std::unique_ptr<casacore::Table>* tablePtr = nullptr;
     switch (table) {
       case HistogramTypeTable:
         tablePtr = &_typeTable;
@@ -197,7 +169,8 @@ class HistogramTablesFormatter {
         tablePtr = &_countTable;
         break;
     }
-    openTable(table, needWrite, tablePtr);
+    assert(tablePtr);
+    openTable(table, needWrite, *tablePtr);
     return **tablePtr;
   }
 };

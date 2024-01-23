@@ -5,6 +5,10 @@
 
 #include "singleimageset.h"
 
+#include <memory>
+#include <string>
+#include <vector>
+
 namespace imagesets {
 
 class RFIBaselineSet final : public SingleImageSet {

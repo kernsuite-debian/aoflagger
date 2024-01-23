@@ -4,8 +4,7 @@
 #include <iostream>
 
 #include "../structures/image2d.h"
-
-#include "surfacefitmethod.h"
+#include "../structures/timefrequencydata.h"
 
 // Needs to be included LAST
 #include "../util/f2c.h"
@@ -14,12 +13,12 @@ class XYPlot;
 
 namespace algorithms {
 
-class SVDMitigater final : public SurfaceFitMethod {
+class SVDMitigater final {
  public:
   SVDMitigater();
   ~SVDMitigater();
 
-  virtual void Initialize(const TimeFrequencyData& data) final override {
+  void Initialize(const TimeFrequencyData& data) {
     Clear();
     _data = data;
     _iteration = 0;
@@ -28,7 +27,7 @@ class SVDMitigater final : public SurfaceFitMethod {
     _iteration++;
     RemoveSingularValues(_removeCount);
   }
-  virtual void PerformFit(unsigned) final override { PerformFit(); }
+  void PerformFit(unsigned) { PerformFit(); }
 
   void RemoveSingularValues(unsigned singularValueCount) {
     if (!IsDecomposed()) Decompose();

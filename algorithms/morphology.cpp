@@ -38,7 +38,7 @@ void Morphology::SegmentByMaxLength(const Mask2D* mask,
 
 void Morphology::SegmentByLengthRatio(const Mask2D* mask,
                                       SegmentedImagePtr output) {
-  Mask2DPtr maskCopy(new Mask2D(*mask));
+  const Mask2DPtr maskCopy(new Mask2D(*mask));
 
   Mask2DPtr matrices[3];
   for (size_t i = 0; i < 3; ++i)
@@ -185,7 +185,7 @@ void Morphology::calculateOpenings(const Mask2D* mask, Mask2DPtr* values,
 
   for (size_t y = 0; y < mask->Height(); ++y) {
     for (size_t x = 0; x < mask->Width(); ++x) {
-      bool v = mask->Value(x, y);
+      const bool v = mask->Value(x, y);
       values[0]->SetValue(x, y, v && (hCounts[y][x] > vCounts[y][x]));
       values[1]->SetValue(x, y, v && false);
       // values[1]->SetValue(x, y, v && (abs(hCounts[y][x] - vCounts[y][x]) <
@@ -211,13 +211,13 @@ void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
   startPoint.y = y;
   points.push(startPoint);
   do {
-    MorphologyPoint2D p = points.top();
+    const MorphologyPoint2D p = points.top();
     points.pop();
     output->SetValue(p.x, p.y, value);
-    int z = lengthWidthValues[p.y][p.x];
+    const int z = lengthWidthValues[p.y][p.x];
     if (p.x > 0 && output->Value(p.x - 1, p.y) == 0 &&
         mask->Value(p.x - 1, p.y)) {
-      int zl = lengthWidthValues[p.y][p.x - 1];
+      const int zl = lengthWidthValues[p.y][p.x - 1];
       if ((zl > 0 && z > 0) || (zl < 0 && z < 0)) {
         MorphologyPoint2D newP;
         newP.x = p.x - 1;
@@ -227,7 +227,7 @@ void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
     }
     if (p.x < mask->Width() - 1 && output->Value(p.x + 1, p.y) == 0 &&
         mask->Value(p.x + 1, p.y)) {
-      int zr = lengthWidthValues[p.y][p.x + 1];
+      const int zr = lengthWidthValues[p.y][p.x + 1];
       if ((zr > 0 && z > 0) || (zr < 0 && z < 0)) {
         MorphologyPoint2D newP;
         newP.x = p.x + 1;
@@ -237,7 +237,7 @@ void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
     }
     if (p.y > 0 && output->Value(p.x, p.y - 1) == 0 &&
         mask->Value(p.x, p.y - 1)) {
-      int zt = lengthWidthValues[p.y - 1][p.x];
+      const int zt = lengthWidthValues[p.y - 1][p.x];
       if ((zt > 0 && z > 0) || (zt < 0 && z < 0)) {
         MorphologyPoint2D newP;
         newP.x = p.x;
@@ -247,7 +247,7 @@ void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
     }
     if (p.y < mask->Height() - 1 && output->Value(p.x, p.y + 1) == 0 &&
         mask->Value(p.x, p.y + 1)) {
-      int zb = lengthWidthValues[p.y + 1][p.x];
+      const int zb = lengthWidthValues[p.y + 1][p.x];
       if ((zb > 0 && z > 0) || (zb < 0 && z < 0)) {
         MorphologyPoint2D newP;
         newP.x = p.x;
@@ -268,7 +268,7 @@ void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
   startPoint.z = z;
   points.push(startPoint);
   do {
-    MorphologyPoint3D p = points.top();
+    const MorphologyPoint3D p = points.top();
     points.pop();
     if (mask->Value(p.x, p.y)) {
       if (output->Value(p.x, p.y) == 0) {
@@ -280,7 +280,7 @@ void Morphology::floodFill(const Mask2D* mask, SegmentedImagePtr output,
           output->SetValue(p.x, p.y, value);
       }
     }
-    Mask2DPtr matrix = matrices[p.z];
+    const Mask2DPtr matrix = matrices[p.z];
     matrix->SetValue(p.x, p.y, false);
     if ((p.z == 0 || p.z == 2) && matrices[1]->Value(p.x, p.y)) {
       MorphologyPoint3D newP;
@@ -332,32 +332,34 @@ void Morphology::Cluster(SegmentedImagePtr segmentedImage) {
       if (info1.segment != j->second.segment && !(i->second.mark) &&
           !(j->second.mark)) {
         SegmentInfo& info2 = j->second;
-        size_t hDist = info1.HorizontalDistance(info2);
-        size_t vDist = info1.VerticalDistance(info2);
+        const size_t hDist = info1.HorizontalDistance(info2);
+        const size_t vDist = info1.VerticalDistance(info2);
 
         // The MERGE criteria
         bool cluster = false;
         // int minDist = hDist > vDist ? vDist : hDist;
-        int maxDist = hDist > vDist ? hDist : vDist;
+        const int maxDist = hDist > vDist ? hDist : vDist;
         // int maxCount = info1.count > info2.count ? info1.count : info2.count;
-        int minCount = info1.count > info2.count ? info2.count : info1.count;
-        int maxWidth = info1.width > info2.width ? info1.width : info2.width;
-        int maxHeight =
+        const int minCount =
+            info1.count > info2.count ? info2.count : info1.count;
+        const int maxWidth =
+            info1.width > info2.width ? info1.width : info2.width;
+        const int maxHeight =
             info1.height > info2.height ? info1.height : info2.height;
-        int minHeight =
+        const int minHeight =
             info1.height > info2.height ? info2.height : info1.height;
         // int lDist = abs((int) info1.left - (int) info2.left);
         // int rDist = abs((int) info1.right - (int) info2.right);
         // int tDist = abs((int) info1.top - (int) info2.top);
         // int bDist = abs((int) info1.bottom - (int) info2.bottom);
-        int widthDist = abs((int)info1.width - (int)info2.width);
-        int heightDist = abs((int)info1.height - (int)info2.height);
+        const int widthDist = abs((int)info1.width - (int)info2.width);
+        const int heightDist = abs((int)info1.height - (int)info2.height);
         // double x1Mean = (double) info1.xTotal / info1.count;
         // double x2Mean = (double) info2.xTotal / info2.count;
         // double xMeanDist = fabs(x1Mean - x2Mean);
-        double y1Mean = (double)info1.yTotal / info1.count;
-        double y2Mean = (double)info2.yTotal / info2.count;
-        double yMeanDist = fabs(y1Mean - y2Mean);
+        const double y1Mean = (double)info1.yTotal / info1.count;
+        const double y2Mean = (double)info2.yTotal / info2.count;
+        const double yMeanDist = fabs(y1Mean - y2Mean);
 
         bool remove1 = false, remove2 = false;
 
@@ -391,7 +393,7 @@ void Morphology::Cluster(SegmentedImagePtr segmentedImage) {
              heightDist <= (maxHeight / 4 + 2) && maxDist < minCount * 32);
 
         if (cluster) {
-          size_t oldSegment = info2.segment;
+          const size_t oldSegment = info2.segment;
           segmentedImage->MergeSegments(info1.segment, oldSegment);
           for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
                i != segments.end(); ++i) {
@@ -411,7 +413,7 @@ std::map<size_t, Morphology::SegmentInfo> Morphology::createSegmentMap(
   std::map<size_t, SegmentInfo> segments;
   for (size_t y = 0; y < segmentedImage->Height(); ++y) {
     for (size_t x = 0; x < segmentedImage->Width(); ++x) {
-      size_t segmentValue = segmentedImage->Value(x, y);
+      const size_t segmentValue = segmentedImage->Value(x, y);
       if (segmentValue != 0) {
         if (segments.count(segmentValue) == 0) {
           SegmentInfo segment;
@@ -463,7 +465,7 @@ void Morphology::Classify(SegmentedImagePtr segmentedImage) {
 
   for (std::map<size_t, SegmentInfo>::iterator i = segments.begin();
        i != segments.end(); ++i) {
-    SegmentInfo& info = i->second;
+    const SegmentInfo& info = i->second;
     if (info.width > info.height * 10)
       segmentedImage->MergeSegments(LINE_SEGMENT, info.segment);
     else if (info.height > info.width * 10)

@@ -1,0 +1,9 @@
+#ifndef TEST_CONFIG_H
+#define TEST_CONFIG_H
+
+#include <string_view>
+
+inline constexpr std::string_view kTestMsSize{
+    "${TEST_DATA_DIR}/concatenate_frequency/L228163_SB150_uv.dppp.MS"};
+
+#endif // TEST_CONFIG_H

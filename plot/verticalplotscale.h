@@ -2,7 +2,7 @@
 #define VERTICAL_PLOT_SCALE_H
 
 #include "linkable.h"
-#include "axistype.h"
+#include "axis.h"
 
 #include <array>
 #include <string>

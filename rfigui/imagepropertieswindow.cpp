@@ -108,8 +108,8 @@ void ImagePropertiesWindow::initColorMapButtons() {
   _colorMapCombo.set_model(_colorMapStore);
   _colorMapCombo.pack_start(_colorMapColumns.name);
 
-  ColorMap::Type selectedMap = _maskedHeatMap->GetColorMap();
-  Gtk::ListStore::Children children = _colorMapStore->children();
+  const ColorMap::Type selectedMap = _maskedHeatMap->GetColorMap();
+  const Gtk::ListStore::Children children = _colorMapStore->children();
   for (auto row : children) {
     if (row[_colorMapColumns.colorMap] == selectedMap) {
       _colorMapCombo.set_active(row);
@@ -144,15 +144,15 @@ void ImagePropertiesWindow::initScaleWidgets() {
   _specifiedScaleButton.signal_clicked().connect(
       sigc::mem_fun(*this, &ImagePropertiesWindow::onScaleChanged));
 
-  switch (_maskedHeatMap->ZRange()) {
+  switch (_maskedHeatMap->ZRange().minimum) {
     default:
-    case Range::MinMax:
+    case RangeLimit::Extreme:
       _minMaxScaleButton.set_active(true);
       break;
-    case Range::Winsorized:
+    case RangeLimit::Winsorized:
       _winsorizedScaleButton.set_active(true);
       break;
-    case Range::Specified:
+    case RangeLimit::Specified:
       _specifiedScaleButton.set_active(true);
       break;
   }
@@ -287,14 +287,17 @@ void ImagePropertiesWindow::onApplyClicked() {
   maskedHeatMap.SetColorMap(
       (*_colorMapCombo.get_active())[_colorMapColumns.colorMap]);
 
-  if (_minMaxScaleButton.get_active())
-    maskedHeatMap.SetZRange(Range::MinMax);
-  else if (_winsorizedScaleButton.get_active())
-    maskedHeatMap.SetZRange(Range::Winsorized);
-  else if (_specifiedScaleButton.get_active()) {
-    maskedHeatMap.SetZRange(Range::Specified);
-    maskedHeatMap.SetMin(atof(_scaleMinEntry.get_text().c_str()));
-    maskedHeatMap.SetMax(atof(_scaleMaxEntry.get_text().c_str()));
+  if (_minMaxScaleButton.get_active()) {
+    maskedHeatMap.SetZRange(FullRange());
+  } else if (_winsorizedScaleButton.get_active()) {
+    maskedHeatMap.SetZRange(WinsorizedRange());
+  } else if (_specifiedScaleButton.get_active()) {
+    RangeConfiguration range;
+    range.minimum = RangeLimit::Specified;
+    range.maximum = RangeLimit::Specified;
+    range.specified_min = atof(_scaleMinEntry.get_text().c_str());
+    range.specified_max = atof(_scaleMaxEntry.get_text().c_str());
+    maskedHeatMap.SetZRange(range);
   }
 
   maskedHeatMap.SetLogZScale(_logScaleButton.get_active());
@@ -346,31 +349,31 @@ void ImagePropertiesWindow::onExportClicked() {
     dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     dialog.add_button("_Save", Gtk::RESPONSE_OK);
 
-    Glib::RefPtr<Gtk::FileFilter> pdfFilter = Gtk::FileFilter::create();
-    std::string pdfName = "Portable Document Format (*.pdf)";
+    const Glib::RefPtr<Gtk::FileFilter> pdfFilter = Gtk::FileFilter::create();
+    const std::string pdfName = "Portable Document Format (*.pdf)";
     pdfFilter->set_name(pdfName);
     pdfFilter->add_pattern("*.pdf");
     pdfFilter->add_mime_type("application/pdf");
     dialog.add_filter(pdfFilter);
 
-    Glib::RefPtr<Gtk::FileFilter> svgFilter = Gtk::FileFilter::create();
-    std::string svgName = "Scalable Vector Graphics (*.svg)";
+    const Glib::RefPtr<Gtk::FileFilter> svgFilter = Gtk::FileFilter::create();
+    const std::string svgName = "Scalable Vector Graphics (*.svg)";
     svgFilter->set_name(svgName);
     svgFilter->add_pattern("*.svg");
     svgFilter->add_mime_type("image/svg+xml");
     dialog.add_filter(svgFilter);
 
-    Glib::RefPtr<Gtk::FileFilter> pngFilter = Gtk::FileFilter::create();
-    std::string pngName = "Portable Network Graphics (*.png)";
+    const Glib::RefPtr<Gtk::FileFilter> pngFilter = Gtk::FileFilter::create();
+    const std::string pngName = "Portable Network Graphics (*.png)";
     pngFilter->set_name(pngName);
     pngFilter->add_pattern("*.png");
     pngFilter->add_mime_type("image/png");
     dialog.add_filter(pngFilter);
 
-    int result = dialog.run();
+    const int result = dialog.run();
 
     if (result == Gtk::RESPONSE_OK) {
-      Glib::RefPtr<const Gtk::FileFilter> filter = dialog.get_filter();
+      const Glib::RefPtr<const Gtk::FileFilter> filter = dialog.get_filter();
       if (filter->get_name() == pdfName)
         _plotWidget.SavePdf(dialog.get_filename());
       else if (filter->get_name() == svgName)
@@ -391,13 +394,14 @@ void ImagePropertiesWindow::onExportDataClicked() {
     dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     dialog.add_button("_Save", Gtk::RESPONSE_OK);
 
-    Glib::RefPtr<Gtk::FileFilter> pdfFilter = Gtk::FileFilter::create();
-    std::string pdfName = "Text format: width; height; data1; data2... (*.txt)";
+    const Glib::RefPtr<Gtk::FileFilter> pdfFilter = Gtk::FileFilter::create();
+    const std::string pdfName =
+        "Text format: width; height; data1; data2... (*.txt)";
     pdfFilter->set_name(pdfName);
     pdfFilter->add_pattern("*.txt");
     pdfFilter->add_mime_type("text/plain");
     dialog.add_filter(pdfFilter);
-    int result = dialog.run();
+    const int result = dialog.run();
 
     if (result == Gtk::RESPONSE_OK) {
       const MaskedHeatMap& maskedHeatMap =

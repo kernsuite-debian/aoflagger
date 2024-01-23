@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <deque>
 #include <limits>
+#include <memory>
 
 #include <boost/numeric/conversion/bounds.hpp>
 
@@ -18,7 +19,7 @@ void ThresholdTools::MeanAndStdDev(const Image2D* image, const Mask2D* mask,
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
       if (!mask->Value(x, y) && std::isfinite(image->Value(x, y))) {
-        num_t value = image->Value(x, y);
+        const num_t value = image->Value(x, y);
         mean += value;
         count++;
       }
@@ -31,7 +32,7 @@ void ThresholdTools::MeanAndStdDev(const Image2D* image, const Mask2D* mask,
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
       if (!mask->Value(x, y) && std::isfinite(image->Value(x, y))) {
-        num_t value = image->Value(x, y);
+        const num_t value = image->Value(x, y);
         stddev += (value - mean) * (value - mean);
         count++;
       }
@@ -42,14 +43,14 @@ void ThresholdTools::MeanAndStdDev(const Image2D* image, const Mask2D* mask,
 
 void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, num_t& mean,
                                              num_t& stddev) {
-  size_t size = image->Width() * image->Height();
+  const size_t size = image->Width() * image->Height();
   num_t* data = new num_t[size];
   image->CopyData(data);
   std::sort(data, data + size, numLessThanOperator);
-  size_t lowIndex = (size_t)floor(0.1 * size);
-  size_t highIndex = (size_t)ceil(0.9 * size) - 1;
-  num_t lowValue = data[lowIndex];
-  num_t highValue = data[highIndex];
+  const size_t lowIndex = (size_t)floor(0.1 * size);
+  const size_t highIndex = (size_t)ceil(0.9 * size) - 1;
+  const num_t lowValue = data[lowIndex];
+  const num_t highValue = data[highIndex];
   delete[] data;
 
   // Calculate mean
@@ -58,7 +59,7 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, num_t& mean,
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
       if (std::isfinite(image->Value(x, y))) {
-        num_t value = image->Value(x, y);
+        const num_t value = image->Value(x, y);
         if (value < lowValue)
           mean += lowValue;
         else if (value > highValue)
@@ -76,7 +77,7 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image, num_t& mean,
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
       if (std::isfinite(image->Value(x, y))) {
-        num_t value = image->Value(x, y);
+        const num_t value = image->Value(x, y);
         if (value < lowValue)
           stddev += (lowValue - mean) * (lowValue - mean);
         else if (value > highValue)
@@ -107,8 +108,8 @@ void ThresholdTools::TrimmedMeanAndStdDev(const std::vector<T>& input, T& mean,
   }
   std::vector<T> data(input);
   std::sort(data.begin(), data.end(), numLessThanOperator);
-  size_t lowIndex = (size_t)floor(0.25 * data.size());
-  size_t highIndex = (size_t)ceil(0.75 * data.size()) - 1;
+  const size_t lowIndex = (size_t)floor(0.25 * data.size());
+  const size_t highIndex = (size_t)ceil(0.75 * data.size()) - 1;
   T lowValue = data[lowIndex];
   T highValue = data[highIndex];
 
@@ -153,8 +154,8 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const std::vector<T>& input,
   } else {
     std::vector<T> data(input);
     std::sort(data.begin(), data.end(), numLessThanOperator);
-    size_t lowIndex = (size_t)floor(0.1 * data.size());
-    size_t highIndex = (size_t)ceil(0.9 * data.size()) - 1;
+    const size_t lowIndex = (size_t)floor(0.1 * data.size());
+    const size_t highIndex = (size_t)ceil(0.9 * data.size()) - 1;
     T lowValue = data[lowIndex];
     T highValue = data[highIndex];
 
@@ -208,27 +209,27 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image,
   size_t unflaggedCount = 0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t val = image->Value(x, y);
+      const num_t val = image->Value(x, y);
       if (!mask->Value(x, y) && std::isfinite(val)) {
         data[unflaggedCount] = image->Value(x, y);
         ++unflaggedCount;
       }
     }
   }
-  size_t lowIndex = (size_t)floor(0.1 * unflaggedCount);
+  const size_t lowIndex = (size_t)floor(0.1 * unflaggedCount);
   size_t highIndex = (size_t)ceil(0.9 * unflaggedCount);
   if (highIndex > 0) --highIndex;
   std::nth_element(data, data + lowIndex, data + unflaggedCount,
                    numLessThanOperator);
-  num_t lowValue = data[lowIndex];
+  const num_t lowValue = data[lowIndex];
   std::nth_element(data, data + highIndex, data + unflaggedCount,
                    numLessThanOperator);
-  num_t highValue = data[highIndex];
+  const num_t highValue = data[highIndex];
 
   // Calculate mean
   mean = 0.0;
   for (size_t i = 0; i < unflaggedCount; ++i) {
-    num_t value = data[i];
+    const num_t value = data[i];
     if (value < lowValue)
       mean += lowValue;
     else if (value > highValue)
@@ -240,7 +241,7 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image,
   // Calculate variance
   stddev = 0.0;
   for (size_t i = 0; i < unflaggedCount; ++i) {
-    num_t value = data[i];
+    const num_t value = data[i];
     if (value < lowValue)
       stddev += (lowValue - mean) * (lowValue - mean);
     else if (value > highValue)
@@ -259,31 +260,32 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image,
                                              const Mask2D* maskA,
                                              const Mask2D* maskB, num_t& mean,
                                              num_t& stddev) {
-  std::unique_ptr<num_t[]> data(new num_t[image->Width() * image->Height()]);
+  const std::unique_ptr<num_t[]> data(
+      new num_t[image->Width() * image->Height()]);
   size_t unflaggedCount = 0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t val = image->Value(x, y);
+      const num_t val = image->Value(x, y);
       if (!maskA->Value(x, y) && !maskB->Value(x, y) && std::isfinite(val)) {
         data[unflaggedCount] = image->Value(x, y);
         ++unflaggedCount;
       }
     }
   }
-  size_t lowIndex = (size_t)floor(0.1 * unflaggedCount);
+  const size_t lowIndex = (size_t)floor(0.1 * unflaggedCount);
   size_t highIndex = (size_t)ceil(0.9 * unflaggedCount);
   if (highIndex > 0) --highIndex;
   std::nth_element(data.get(), data.get() + lowIndex,
                    data.get() + unflaggedCount, numLessThanOperator);
-  num_t lowValue = data[lowIndex];
+  const num_t lowValue = data[lowIndex];
   std::nth_element(data.get(), data.get() + highIndex,
                    data.get() + unflaggedCount, numLessThanOperator);
-  num_t highValue = data[highIndex];
+  const num_t highValue = data[highIndex];
 
   // Calculate mean
   mean = 0.0;
   for (size_t i = 0; i < unflaggedCount; ++i) {
-    num_t value = data[i];
+    const num_t value = data[i];
     if (value < lowValue)
       mean += lowValue;
     else if (value > highValue)
@@ -295,7 +297,7 @@ void ThresholdTools::WinsorizedMeanAndStdDev(const Image2D* image,
   // Calculate variance
   stddev = 0.0;
   for (size_t i = 0; i < unflaggedCount; ++i) {
-    num_t value = data[i];
+    const num_t value = data[i];
     if (value < lowValue)
       stddev += (lowValue - mean) * (lowValue - mean);
     else if (value > highValue)
@@ -317,10 +319,10 @@ double ThresholdTools::WinsorizedRMS(
   } else {
     std::vector<std::complex<T>> data(input);
     std::sort(data.begin(), data.end(), complexLessThanOperator<T>);
-    size_t lowIndex = (size_t)floor(0.1 * data.size());
-    size_t highIndex = (size_t)ceil(0.9 * data.size()) - 1;
-    std::complex<T> lowValue = data[lowIndex];
-    std::complex<T> highValue = data[highIndex];
+    const size_t lowIndex = (size_t)floor(0.1 * data.size());
+    const size_t highIndex = (size_t)ceil(0.9 * data.size()) - 1;
+    const std::complex<T> lowValue = data[lowIndex];
+    const std::complex<T> highValue = data[highIndex];
 
     // Calculate RMS
     double rms = 0.0;
@@ -392,7 +394,7 @@ void ThresholdTools::CountMaskLengths(const Mask2D* mask, int* lengths,
     size_t x = 0;
     while (x < mask->Width()) {
       if (mask->Value(x, y)) {
-        size_t xStart = x;
+        const size_t xStart = x;
         do {
           ++x;
           ++index;
@@ -413,7 +415,7 @@ void ThresholdTools::CountMaskLengths(const Mask2D* mask, int* lengths,
     size_t y = 0;
     while (y < mask->Height()) {
       if (mask->Value(x, y)) {
-        size_t yStart = y;
+        const size_t yStart = y;
         while (y < mask->Height() && mask->Value(x, y)) {
           ++y;
         }
@@ -432,7 +434,7 @@ void ThresholdTools::CountMaskLengths(const Mask2D* mask, int* lengths,
     size_t x = 0;
     while (x < mask->Width()) {
       if (horizontal[index] != 0) {
-        int count = horizontal[index];
+        const int count = horizontal[index];
         bool dominant = false;
         for (int i = 0; i < count; ++i) {
           if (count >= vertical[index + i]) {
@@ -454,7 +456,7 @@ void ThresholdTools::CountMaskLengths(const Mask2D* mask, int* lengths,
     size_t y = 0;
     while (y < mask->Height()) {
       if (vertical[y * mask->Width() + x] != 0) {
-        int count = vertical[y * mask->Width() + x];
+        const int count = vertical[y * mask->Width() + x];
         bool dominant = false;
         for (int i = 0; i < count; ++i) {
           if (count >= horizontal[(y + i) * mask->Width() + x]) {
@@ -478,7 +480,7 @@ num_t ThresholdTools::Mode(const Image2D* image, const Mask2D* mask) {
   size_t count = 0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t value = image->Value(x, y);
+      const num_t value = image->Value(x, y);
       if (!mask->Value(x, y) && std::isfinite(value)) {
         mode += value * value;
         count++;
@@ -503,7 +505,7 @@ numl_t ThresholdTools::RMS(const Image2D* image, const Mask2D* mask) {
   size_t count = 0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t value = image->Value(x, y);
+      const num_t value = image->Value(x, y);
       if (!mask->Value(x, y) && std::isfinite(value)) {
         mode += (numl_t)value * (numl_t)value;
         count++;
@@ -518,20 +520,20 @@ num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* mask) {
   size_t unflaggedCount = 0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t val = image->Value(x, y);
+      const num_t val = image->Value(x, y);
       if (!mask->Value(x, y) && std::isfinite(val)) {
         data[unflaggedCount] = val;
         ++unflaggedCount;
       }
     }
   }
-  size_t highIndex = (size_t)floor(0.9 * unflaggedCount);
+  const size_t highIndex = (size_t)floor(0.9 * unflaggedCount);
   std::nth_element(data, data + highIndex, data + unflaggedCount);
-  num_t highValue = data[highIndex];
+  const num_t highValue = data[highIndex];
 
   num_t mode = 0.0;
   for (size_t i = 0; i < unflaggedCount; ++i) {
-    num_t value = data[i];
+    const num_t value = data[i];
     if (value > highValue)
       mode += highValue * highValue;
     else
@@ -550,25 +552,26 @@ num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* mask) {
 
 num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* maskA,
                                      const Mask2D* maskB) {
-  std::unique_ptr<num_t[]> data(new num_t[image->Width() * image->Height()]);
+  const std::unique_ptr<num_t[]> data(
+      new num_t[image->Width() * image->Height()]);
   size_t unflaggedCount = 0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t val = image->Value(x, y);
+      const num_t val = image->Value(x, y);
       if (!maskA->Value(x, y) && !maskB->Value(x, y) && std::isfinite(val)) {
         data[unflaggedCount] = val;
         ++unflaggedCount;
       }
     }
   }
-  size_t highIndex = (size_t)floor(0.9 * unflaggedCount);
+  const size_t highIndex = (size_t)floor(0.9 * unflaggedCount);
   std::nth_element(data.get(), data.get() + highIndex,
                    data.get() + unflaggedCount);
-  num_t highValue = data[highIndex];
+  const num_t highValue = data[highIndex];
 
   num_t mode = 0.0;
   for (size_t i = 0; i < unflaggedCount; ++i) {
-    num_t value = data[i];
+    const num_t value = data[i];
     if (value > highValue)
       mode += highValue * highValue;
     else
@@ -581,18 +584,18 @@ num_t ThresholdTools::WinsorizedMode(const Image2D* image, const Mask2D* maskA,
 }
 
 num_t ThresholdTools::WinsorizedMode(const Image2D* image) {
-  size_t size = image->Width() * image->Height();
+  const size_t size = image->Width() * image->Height();
   num_t* data = new num_t[size];
   image->CopyData(data);
   std::sort(data, data + size, numLessThanOperator);
-  size_t highIndex = (size_t)ceil(0.9 * size) - 1;
-  num_t highValue = data[highIndex];
+  const size_t highIndex = (size_t)ceil(0.9 * size) - 1;
+  const num_t highValue = data[highIndex];
   delete[] data;
 
   num_t mode = 0.0;
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
-      num_t value = image->Value(x, y);
+      const num_t value = image->Value(x, y);
       if (value > highValue || -value > highValue)
         mode += highValue * highValue;
       else
@@ -636,7 +639,7 @@ void ThresholdTools::FilterConnectedSample(Mask2D* mask, size_t x, size_t y,
   size_t count = 0;
 
   do {
-    ConnectedAreaCoord c = tosearch.front();
+    const ConnectedAreaCoord c = tosearch.front();
     tosearch.pop_front();
     if (mask->Value(c.x, c.y)) {
       mask->SetValue(c.x, c.y, false);
@@ -663,7 +666,7 @@ void ThresholdTools::FilterConnectedSample(Mask2D* mask, size_t x, size_t y,
 
   if (count >= minConnectedSampleArea) {
     while (changed.size() != 0) {
-      ConnectedAreaCoord c = changed.front();
+      const ConnectedAreaCoord c = changed.front();
       changed.pop_front();
       mask->SetValue(c.x, c.y, true);
     }
@@ -686,8 +689,8 @@ void ThresholdTools::UnrollPhase(Image2D* image) {
 Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor,
                                               const Image2D* input,
                                               const Mask2D* mask) {
-  size_t oldWidth = input->Width();
-  size_t newWidth = (oldWidth + factor - 1) / factor;
+  const size_t oldWidth = input->Width();
+  const size_t newWidth = (oldWidth + factor - 1) / factor;
 
   Image2DPtr newImage = Image2D::CreateUnsetImagePtr(newWidth, input->Height());
 
@@ -699,7 +702,7 @@ Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor,
       size_t count = 0;
       num_t sum = 0.0;
       for (size_t binX = 0; binX < avgSize; ++binX) {
-        size_t curX = x * factor + binX;
+        const size_t curX = x * factor + binX;
         if (!mask->Value(curX, y)) {
           sum += input->Value(curX, y);
           ++count;
@@ -708,7 +711,7 @@ Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor,
       if (count == 0) {
         sum = 0.0;
         for (size_t binX = 0; binX < avgSize; ++binX) {
-          size_t curX = x * factor + binX;
+          const size_t curX = x * factor + binX;
           sum += input->Value(curX, y);
           ++count;
         }
@@ -721,8 +724,8 @@ Image2DPtr ThresholdTools::ShrinkHorizontally(size_t factor,
 
 Image2DPtr ThresholdTools::ShrinkVertically(size_t factor, const Image2D* input,
                                             const Mask2D* mask) {
-  size_t oldHeight = input->Height();
-  size_t newHeight = (oldHeight + factor - 1) / factor;
+  const size_t oldHeight = input->Height();
+  const size_t newHeight = (oldHeight + factor - 1) / factor;
 
   Image2DPtr newImage = Image2D::CreateUnsetImagePtr(input->Width(), newHeight);
 
@@ -734,7 +737,7 @@ Image2DPtr ThresholdTools::ShrinkVertically(size_t factor, const Image2D* input,
       size_t count = 0;
       num_t sum = 0.0;
       for (size_t binY = 0; binY != avgSize; ++binY) {
-        size_t curY = y * factor + binY;
+        const size_t curY = y * factor + binY;
         if (!mask->Value(x, curY)) {
           sum += input->Value(x, curY);
           ++count;
@@ -743,7 +746,7 @@ Image2DPtr ThresholdTools::ShrinkVertically(size_t factor, const Image2D* input,
       if (count == 0) {
         sum = 0.0;
         for (size_t binY = 0; binY != avgSize; ++binY) {
-          size_t curY = y * factor + binY;
+          const size_t curY = y * factor + binY;
           sum += input->Value(x, curY);
           ++count;
         }

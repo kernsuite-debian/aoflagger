@@ -6,6 +6,7 @@
 
 #include <boost/iterator/iterator_concepts.hpp>
 
+#include <algorithm>
 #include <cmath>
 
 namespace algorithms {
@@ -16,7 +17,7 @@ void BaselineTimePlaneImager<NumType>::Image(
     NumType lowestFrequency, NumType frequencyStep, size_t channelCount,
     const std::complex<NumType>* data, Image2D& output) {
   NumType phi = atan2(vTimesLambda, uTimesLambda);
-  size_t imgSize = output.Width();
+  const size_t imgSize = output.Width();
   NumType minLambda = frequencyToWavelength(
       lowestFrequency + frequencyStep * (NumType)channelCount);
   NumType uvDist =
@@ -40,16 +41,16 @@ void BaselineTimePlaneImager<NumType>::Image(
   //    - Rotate with phi
   // 4. Add to output
 
-  size_t sampleDist =
+  const size_t sampleDist =
       2 * ((size_t)round(lowestFrequency / frequencyStep) + channelCount);
-  size_t fftSize =
+  const size_t fftSize =
       std::max((size_t)(imgSize * sampleDist / (scale * (2.0 * uvDist))),
                2 * sampleDist);
   fftw_complex* fftInp =
       (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fftSize / 2 + 1));
   double* fftOut = (double*)fftw_malloc(sizeof(double) * fftSize);
   fftw_plan plan = fftw_plan_dft_c2r_1d(fftSize, fftInp, fftOut, FFTW_ESTIMATE);
-  size_t startChannel = (lowestFrequency / frequencyStep);
+  const size_t startChannel = (lowestFrequency / frequencyStep);
   for (size_t i = 0; i != (fftSize / 2 + 1); ++i) {
     fftInp[i][0] = 0.0;
     fftInp[i][1] = 0.0;
@@ -79,7 +80,7 @@ void BaselineTimePlaneImager<NumType>::Image(
                 << ",uvOnlyDist=" << uvDist << ",sampleDist=" << sampleDist
                 << '\n';
 
-  size_t fftCentre = fftSize / 2;
+  const size_t fftCentre = fftSize / 2;
   NumType cosPhi = cos(phi), sinPhi = sin(phi);
   NumType mid = (NumType)imgSize / 2.0;
 
@@ -99,7 +100,7 @@ void BaselineTimePlaneImager<NumType>::Image(
       NumType lSeen = l + (sqrt(1 - l * l - m * m) - 1) * tanZcosChi;
       NumType yrTransformed = mSeen * transformY;
       NumType srcX = lSeen * transformX + yrTransformed;
-      size_t srcXIndex = (size_t)round(srcX) + fftCentre;
+      const size_t srcXIndex = (size_t)round(srcX) + fftCentre;
       if (srcXIndex < fftSize) {
         if (srcXIndex < fftCentre)
           *destPtr += fftOut[srcXIndex + fftCentre];
@@ -107,9 +108,6 @@ void BaselineTimePlaneImager<NumType>::Image(
           *destPtr += fftOut[srcXIndex - fftCentre];
       }
       ++destPtr;
-      // else
-      //	output.SetValue(x, y, 0.0);
-      // if(x==0 && y==0) Logger::Debug << "srcX=" << srcX << '\n';
     }
   }
 

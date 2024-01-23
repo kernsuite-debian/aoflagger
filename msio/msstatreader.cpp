@@ -12,7 +12,8 @@
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
 
-using namespace aocommon;
+using aocommon::Polarization;
+using aocommon::PolarizationEnum;
 
 MSStatReader::MSStatReader(const std::string& filename,
                            const std::string& dataColumn)
@@ -21,15 +22,15 @@ MSStatReader::MSStatReader(const std::string& filename,
 
   _nBands = ms.spectralWindow().nrow();
 
-  casacore::ScalarColumn<int> fieldIdCol(
+  const casacore::ScalarColumn<int> fieldIdCol(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::FIELD_ID));
-  casacore::ScalarColumn<double> timeCol(
+  const casacore::ScalarColumn<double> timeCol(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::TIME));
 
   int curField = -1;
   for (size_t row = 0; row != ms.nrow(); ++row) {
-    int field = fieldIdCol(row);
+    const int field = fieldIdCol(row);
     if (field != curField) {
       _sequenceStart.emplace_back(row);
       curField = field;
@@ -46,20 +47,20 @@ MSStatReader::Result MSStatReader::readSamples(
     ProgressListener& progress) {
   progress.OnStartTask("Read data & integrate baselines");
   casacore::MeasurementSet ms(_filename);
-  casacore::ScalarColumn<int> antenna1Col(
+  const casacore::ScalarColumn<int> antenna1Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA1));
-  casacore::ScalarColumn<int> antenna2Col(
+  const casacore::ScalarColumn<int> antenna2Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA2));
-  casacore::ScalarColumn<double> timeCol(
+  const casacore::ScalarColumn<double> timeCol(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::TIME));
-  casacore::ScalarColumn<int> dataDescIdCol(
+  const casacore::ScalarColumn<int> dataDescIdCol(
       ms, casacore::MeasurementSet::columnName(
               casacore::MeasurementSet::DATA_DESC_ID));
 
-  casacore::ArrayColumn<std::complex<float>> dataColumn(ms, _dataColumn);
-  casacore::ArrayColumn<bool> flagColumn(
+  const casacore::ArrayColumn<std::complex<float>> dataColumn(ms, _dataColumn);
+  const casacore::ArrayColumn<bool> flagColumn(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::FLAG));
 
   casacore::IPosition dataShape = dataColumn.shape(0);
@@ -69,7 +70,8 @@ MSStatReader::Result MSStatReader::readSamples(
   casacore::Array<std::complex<float>> dataArray(dataShape);
   casacore::Array<bool> flagArray(dataShape);
 
-  aocommon::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
+  const aocommon::MultiBandData bands(ms.spectralWindow(),
+                                      ms.dataDescription());
 
   size_t startRow = _sequenceStart[sequenceIndex],
          endRow = _sequenceStart[sequenceIndex + 1];
@@ -77,10 +79,10 @@ MSStatReader::Result MSStatReader::readSamples(
   std::vector<Statistic> statsData;
   std::vector<double> times;
   size_t dataPos = 0;
-  size_t totalProgress = (endRow - startRow) * 104 / 100;
+  const size_t totalProgress = (endRow - startRow) * 104 / 100;
   for (size_t row = startRow; row != endRow; ++row) {
     size_t antenna1 = antenna1Col(row), antenna2 = antenna2Col(row);
-    bool baselineSelected = includeAutos || (antenna1 != antenna2);
+    const bool baselineSelected = includeAutos || (antenna1 != antenna2);
 
     if (baselineSelected &&
         bands.GetBandIndex(dataDescIdCol(row)) == bandIndex) {
@@ -95,19 +97,19 @@ MSStatReader::Result MSStatReader::readSamples(
 
       if (freqDiff) {
         for (size_t i = 0; i != nTotal; ++i) {
-          bool flag1 = flagArray.cbegin()[i];
-          bool flag2 = flagArray.cbegin()[i + nPolarizations];
+          const bool flag1 = flagArray.cbegin()[i];
+          const bool flag2 = flagArray.cbegin()[i + nPolarizations];
           if ((!flag1 && !flag2) || includeFlags) {
-            std::complex<float> val =
+            const std::complex<float> val =
                 dataArray.cbegin()[i] - dataArray.cbegin()[i + nPolarizations];
             statsData[dataPos + i].Add(statType, val);
           }
         }
       } else {
         for (size_t i = 0; i != nTotal; ++i) {
-          bool flag = flagArray.cbegin()[i];
+          const bool flag = flagArray.cbegin()[i];
           if (!flag || includeFlags) {
-            std::complex<float> val = dataArray.cbegin()[i];
+            const std::complex<float> val = dataArray.cbegin()[i];
             statsData[dataPos + i].Add(statType, val);
           }
         }
@@ -131,20 +133,20 @@ MSStatReader::Result MSStatReader::readTimeDiff(
     bool includeAutos, bool includeFlags, ProgressListener& progress) {
   progress.OnStartTask("Read data & integrate baselines");
   casacore::MeasurementSet ms(_filename);
-  casacore::ScalarColumn<int> antenna1Col(
+  const casacore::ScalarColumn<int> antenna1Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA1));
-  casacore::ScalarColumn<int> antenna2Col(
+  const casacore::ScalarColumn<int> antenna2Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA2));
-  casacore::ScalarColumn<double> timeCol(
+  const casacore::ScalarColumn<double> timeCol(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::TIME));
-  casacore::ScalarColumn<int> dataDescIdCol(
+  const casacore::ScalarColumn<int> dataDescIdCol(
       ms, casacore::MeasurementSet::columnName(
               casacore::MeasurementSet::DATA_DESC_ID));
 
-  casacore::ArrayColumn<std::complex<float>> dataColumn(ms, _dataColumn);
-  casacore::ArrayColumn<bool> flagColumn(
+  const casacore::ArrayColumn<std::complex<float>> dataColumn(ms, _dataColumn);
+  const casacore::ArrayColumn<bool> flagColumn(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::FLAG));
 
   casacore::IPosition dataShape = dataColumn.shape(0);
@@ -153,7 +155,8 @@ MSStatReader::Result MSStatReader::readTimeDiff(
   casacore::Array<std::complex<float>> dataArray(dataShape);
   casacore::Array<bool> flagArray(dataShape);
 
-  aocommon::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
+  const aocommon::MultiBandData bands(ms.spectralWindow(),
+                                      ms.dataDescription());
 
   size_t startRow = _sequenceStart[sequenceIndex],
          endRow = _sequenceStart[sequenceIndex + 1];
@@ -161,17 +164,17 @@ MSStatReader::Result MSStatReader::readTimeDiff(
   std::vector<Statistic> statsData;
   std::vector<double> times;
   size_t dataPos = 0;
-  size_t totalProgress = (endRow - startRow) * 104 / 100;
+  const size_t totalProgress = (endRow - startRow) * 104 / 100;
   using Baseline = std::pair<size_t, size_t>;
   using TimeData = std::vector<std::pair<std::complex<float>, bool>>;
   std::map<Baseline, TimeData> previousTimeData, currentTimeData;
   for (size_t row = startRow; row != endRow; ++row) {
     size_t antenna1 = antenna1Col(row), antenna2 = antenna2Col(row);
-    bool baselineSelected = includeAutos || (antenna1 != antenna2);
+    const bool baselineSelected = includeAutos || (antenna1 != antenna2);
 
     if (baselineSelected &&
         bands.GetBandIndex(dataDescIdCol(row)) == bandIndex) {
-      std::pair<size_t, size_t> baseline(antenna1, antenna2);
+      const std::pair<size_t, size_t> baseline(antenna1, antenna2);
       if (timeCol(row) != time) {
         time = timeCol(row);
         times.emplace_back(time);
@@ -190,8 +193,8 @@ MSStatReader::Result MSStatReader::readTimeDiff(
       auto& curBaseline = currentTimeData[baseline];
       curBaseline.resize(nTotal);
       for (size_t i = 0; i != nTotal; ++i) {
-        bool curFlag = flagArray.cbegin()[i];
-        std::complex<float> curVal = dataArray.cbegin()[i];
+        const bool curFlag = flagArray.cbegin()[i];
+        const std::complex<float> curVal = dataArray.cbegin()[i];
         curBaseline[i].first = curVal;
         curBaseline[i].second = curFlag;
       }
@@ -199,10 +202,10 @@ MSStatReader::Result MSStatReader::readTimeDiff(
       auto prevBaselinePtr = previousTimeData.find(baseline);
       if (times.size() > 1 && prevBaselinePtr != previousTimeData.end()) {
         for (size_t i = 0; i != nTotal; ++i) {
-          bool curFlag = flagArray.cbegin()[i];
-          bool prevFlag = prevBaselinePtr->second[i].second;
+          const bool curFlag = flagArray.cbegin()[i];
+          const bool prevFlag = prevBaselinePtr->second[i].second;
           if ((!curFlag && !prevFlag) || includeFlags) {
-            std::complex<float> val =
+            const std::complex<float> val =
                 prevBaselinePtr->second[i].first - dataArray.cbegin()[i];
             statsData[dataPos + i].Add(statType, val);
           }
@@ -227,7 +230,7 @@ MSStatReader::Result MSStatReader::readTimeDiff(
 MSStatReader::Result MSStatReader::makeResult(
     BaselineIntegration::Mode statType, const Statistic* statsData,
     size_t nPolarizations, size_t nChannels, size_t nTimes) {
-  size_t nTotal = nPolarizations * nChannels;
+  const size_t nTotal = nPolarizations * nChannels;
   std::vector<Image2DPtr> images(nPolarizations);
   std::vector<Mask2DPtr> masks(nPolarizations);
   for (size_t p = 0; p != nPolarizations; ++p) {
@@ -242,7 +245,7 @@ MSStatReader::Result MSStatReader::makeResult(
           images[p]->SetValue(x, y, 0.0);
           masks[p]->SetValue(x, y, true);
         } else {
-          double val = stat.Calculate(statType);
+          const double val = stat.Calculate(statType);
           images[p]->SetValue(x, y, val);
           masks[p]->SetValue(x, y, false);
         }
@@ -318,7 +321,7 @@ void MSStatReader::StoreFlags(const std::vector<Mask2DCPtr>& flags,
       break;
     case BaselineIntegration::TimeDifference:
       for (size_t i = 0; i != flags.size(); ++i) {
-        Mask2DCPtr input = flags[i];
+        const Mask2DCPtr input = flags[i];
         Mask2DPtr mask =
             Mask2D::CreateUnsetMaskPtr(input->Width() + 1, input->Height());
         for (size_t y = 0; y != input->Height(); ++y) {
@@ -334,7 +337,7 @@ void MSStatReader::StoreFlags(const std::vector<Mask2DCPtr>& flags,
       break;
     case BaselineIntegration::FrequencyDifference:
       for (size_t i = 0; i != flags.size(); ++i) {
-        Mask2DCPtr input = flags[i];
+        const Mask2DCPtr input = flags[i];
         Mask2DPtr mask =
             Mask2D::CreateUnsetMaskPtr(input->Width(), input->Height() + 1);
         for (size_t x = 0; x != input->Width(); ++x)
@@ -359,15 +362,15 @@ void MSStatReader::storeFlags(const std::vector<Mask2DCPtr>& flags,
                               bool includeAutos) {
   casacore::MeasurementSet ms(_filename,
                               casacore::MeasurementSet::TableOption::Update);
-  casacore::ScalarColumn<int> antenna1Col(
+  const casacore::ScalarColumn<int> antenna1Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA1));
-  casacore::ScalarColumn<int> antenna2Col(
+  const casacore::ScalarColumn<int> antenna2Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA2));
-  casacore::ScalarColumn<double> timeCol(
+  const casacore::ScalarColumn<double> timeCol(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::TIME));
-  casacore::ScalarColumn<int> dataDescIdCol(
+  const casacore::ScalarColumn<int> dataDescIdCol(
       ms, casacore::MeasurementSet::columnName(
               casacore::MeasurementSet::DATA_DESC_ID));
 
@@ -381,7 +384,8 @@ void MSStatReader::storeFlags(const std::vector<Mask2DCPtr>& flags,
         "Invalid nr of masks specified in call to MSStatReader::storeFlags()");
   casacore::Array<bool> flagArray(dataShape);
 
-  aocommon::MultiBandData bands(ms.spectralWindow(), ms.dataDescription());
+  const aocommon::MultiBandData bands(ms.spectralWindow(),
+                                      ms.dataDescription());
 
   size_t startRow = _sequenceStart[sequenceIndex],
          endRow = _sequenceStart[sequenceIndex + 1];
@@ -389,11 +393,11 @@ void MSStatReader::storeFlags(const std::vector<Mask2DCPtr>& flags,
   size_t timeIndex = 0;
   for (size_t row = startRow; row != endRow; ++row) {
     size_t antenna1 = antenna1Col(row), antenna2 = antenna2Col(row);
-    bool baselineSelected = includeAutos || (antenna1 != antenna2);
+    const bool baselineSelected = includeAutos || (antenna1 != antenna2);
 
     if (baselineSelected &&
         bands.GetBandIndex(dataDescIdCol(row)) == bandIndex) {
-      std::pair<size_t, size_t> baseline(antenna1, antenna2);
+      const std::pair<size_t, size_t> baseline(antenna1, antenna2);
       if (timeCol(row) != time) {
         time = timeCol(row);
         ++timeIndex;

@@ -1,8 +1,10 @@
 #ifndef SINGLEIMAGESET_H
 #define SINGLEIMAGESET_H
 
+#include <memory>
 #include <string>
 #include <stdexcept>
+#include <vector>
 
 #include "../structures/types.h"
 

@@ -1,7 +1,9 @@
 #ifndef IMAGE_INTERFACE_H
 #define IMAGE_INTERFACE_H
 
+#include <cmath>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 class ImageInterface {
@@ -19,11 +21,11 @@ class ImageInterface {
   float Maximum() const {
     if (Empty()) return 0.0;
     const float* data = Data();
-    float value = data[0];
+    float value = std::numeric_limits<float>::min();
     for (size_t y = 0; y != _height; ++y) {
       const float* row = &data[y * _stride];
       for (size_t x = 0; x != _width; ++x) {
-        if (value < row[x]) value = row[x];
+        if (std::isfinite(row[x]) && value < row[x]) value = row[x];
       }
     }
     return value;
@@ -32,11 +34,11 @@ class ImageInterface {
   float Minimum() const {
     if (Empty()) return 0.0;
     const float* data = Data();
-    float value = data[0];
+    float value = std::numeric_limits<float>::max();
     for (size_t y = 0; y != _height; ++y) {
       const float* row = &data[y * _stride];
       for (size_t x = 0; x != _width; ++x) {
-        if (value > row[x]) value = row[x];
+        if (std::isfinite(row[x]) && value > row[x]) value = row[x];
       }
     }
     return value;

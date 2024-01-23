@@ -1,6 +1,8 @@
 #ifndef GUI_QUALITY__2DPLOTPAGE_H
 #define GUI_QUALITY__2DPLOTPAGE_H
 
+#include <memory>
+
 #include "controllers/aoqplotpagecontroller.h"
 
 #include "../quality/qualitytablesformatter.h"
@@ -15,15 +17,16 @@
 #include <gtkmm/separatortoolitem.h>
 
 #include <set>
+#include <vector>
 
 class TwoDimensionalPlotPage : public PlotSheet {
  public:
-  TwoDimensionalPlotPage(AOQPlotPageController* _controller);
+  explicit TwoDimensionalPlotPage(AOQPlotPageController* _controller);
   virtual ~TwoDimensionalPlotPage();
 
-  virtual void InitializeToolbar(Gtk::Toolbar& toolbar) override final;
+  void InitializeToolbar(Gtk::Toolbar& toolbar) override final;
 
-  std::set<QualityTablesFormatter::StatisticKind> GetSelectedKinds() const;
+  std::vector<QualityTablesFormatter::StatisticKind> GetSelectedKinds() const;
   std::set<enum AOQPlotPageController::SelectedPol> GetSelectedPolarizations()
       const;
   std::set<enum AOQPlotPageController::PhaseType> GetSelectedPhases() const;

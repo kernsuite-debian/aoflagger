@@ -13,7 +13,7 @@ void DataWindow::SetData(const XYPlot& plot) {
   for (size_t i = 0; i < plot.PointSetCount(); ++i) {
     std::stringstream str;
     str << (i + 1) << ". " << plot.GetPointSet(i).Label();
-    Gtk::TreeModel::Row row = *_comboListStore->append();
+    const Gtk::TreeModel::Row row = *_comboListStore->append();
     row[_comboColumnRecord._comboListNameColumn] = str.str();
   }
   if (selectedIndex < (int)plot.PointSetCount())
@@ -24,7 +24,7 @@ void DataWindow::SetData(const XYPlot& plot) {
 }
 
 void DataWindow::onComboChange() {
-  int active = _comboBox.get_active_row_number();
+  const int active = _comboBox.get_active_row_number();
   if (active >= 0)
     loadData(active);
   else
@@ -39,11 +39,12 @@ void DataWindow::loadData(size_t plotSetIndex) {
     const size_t valueCount = pointSet.Size();
     for (size_t i = 0; i < valueCount; ++i) {
       const double x = pointSet.GetX(i), y = pointSet.GetY(i);
-      if (pointSet.HasTickLabels()) {
-        std::string label = pointSet.TickLabels()[i];
+      if (_plot->XAxis().Type() == AxisType::kText) {
+        const std::string& label = _plot->XAxis().TickLabels()[i].second;
         _dataStream << i << '\t' << label << '\t' << y << '\n';
-      } else
+      } else {
         _dataStream << i << '\t' << x << '\t' << y << '\n';
+      }
     }
   }
   SetData(_dataStream.str());

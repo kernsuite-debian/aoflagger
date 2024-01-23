@@ -13,7 +13,7 @@ num_t TimeFrequencyStatistics::GetFlaggedRatio() {
   size_t total = 0, flagged = 0;
 
   for (size_t i = 0; i < _data.MaskCount(); ++i) {
-    Mask2DCPtr mask = _data.GetMask(i);
+    const Mask2DCPtr mask = _data.GetMask(i);
     flagged += mask->GetCount<true>();
     total += mask->Width() * mask->Height();
   }

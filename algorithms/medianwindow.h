@@ -2,6 +2,7 @@
 #define MEDIANWINDOW_H
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "../structures/samplerow.h"

@@ -17,21 +17,21 @@ int Data::clear_mask(lua_State* L) {
 int Data::convert_to_complex(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  std::string reprStr = luaL_checklstring(L, 2, nullptr);
+  const std::string reprStr = luaL_checklstring(L, 2, nullptr);
   try {
     enum TimeFrequencyData::ComplexRepresentation complexRepresentation;
     // PhasePart, AmplitudePart, RealPart, ImaginaryPart, ComplexParts
-    if (reprStr == "phase")
+    if (reprStr == "phase") {
       complexRepresentation = TimeFrequencyData::PhasePart;
-    else if (reprStr == "amplitude")
+    } else if (reprStr == "amplitude") {
       complexRepresentation = TimeFrequencyData::AmplitudePart;
-    else if (reprStr == "real")
+    } else if (reprStr == "real") {
       complexRepresentation = TimeFrequencyData::RealPart;
-    else if (reprStr == "imaginary")
+    } else if (reprStr == "imaginary") {
       complexRepresentation = TimeFrequencyData::ImaginaryPart;
-    else if (reprStr == "complex")
+    } else if (reprStr == "complex") {
       complexRepresentation = TimeFrequencyData::ComplexParts;
-    else {
+    } else {
       return luaL_error(
           L,
           "Unknown complex representation specified in convert_to_complex(): "
@@ -49,9 +49,9 @@ int Data::convert_to_complex(lua_State* L) {
 int Data::convert_to_polarization(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  std::string polStr = luaL_checklstring(L, 2, nullptr);
+  const std::string polStr = luaL_checklstring(L, 2, nullptr);
   try {
-    aocommon::PolarizationEnum polarization =
+    const aocommon::PolarizationEnum polarization =
         aocommon::Polarization::ParseString(polStr);
     Tools::NewData(L, data->TFData().Make(polarization), data->MetaData(),
                    data->GetContext());
@@ -72,8 +72,8 @@ int Data::copy(lua_State* L) {
 int Data::flag_zeros(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  Mask2DPtr mask(new Mask2D(*data->TFData().GetSingleMask()));
-  Image2DCPtr image = data->TFData().GetSingleImage();
+  const Mask2DPtr mask(new Mask2D(*data->TFData().GetSingleMask()));
+  const Image2DCPtr image = data->TFData().GetSingleImage();
   for (unsigned y = 0; y < image->Height(); ++y) {
     for (unsigned x = 0; x < image->Width(); ++x) {
       if (image->Value(x, y) == 0.0) mask->SetValue(x, y, true);
@@ -91,7 +91,7 @@ int Data::flag_nans(lua_State* L) {
     TimeFrequencyData singlePol = newData.MakeFromPolarizationIndex(p);
     Mask2DPtr mask = Mask2D::MakePtr(*singlePol.GetSingleMask());
     for (size_t i = 0; i != singlePol.ImageCount(); ++i) {
-      Image2DCPtr image = singlePol.GetImage(i);
+      const Image2DCPtr image = singlePol.GetImage(i);
       for (unsigned y = 0; y < image->Height(); ++y) {
         for (unsigned x = 0; x < image->Width(); ++x) {
           if (!std::isfinite(image->Value(x, y))) mask->SetValue(x, y, true);
@@ -251,7 +251,7 @@ int Data::get_polarizations(lua_State* L) {
       data->TFData().Polarizations();
   lua_createtable(L, pols.size(), 0);
   for (size_t i = 0; i != pols.size(); ++i) {
-    aocommon::PolarizationEnum p = pols[i];
+    const aocommon::PolarizationEnum p = pols[i];
     lua_pushstring(L, aocommon::Polarization::TypeToShortString(p).c_str());
     lua_rawseti(L, -2, i + 1);
   }
@@ -305,7 +305,7 @@ int Data::invert_mask(lua_State* L) {
 int Data::is_auto_correlation(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  bool isAuto =
+  const bool isAuto =
       data->MetaData() && data->MetaData()->HasAntenna1() &&
       data->MetaData()->HasAntenna2() &&
       data->MetaData()->Antenna1().id == data->MetaData()->Antenna2().id;
@@ -316,7 +316,7 @@ int Data::is_auto_correlation(lua_State* L) {
 int Data::is_complex(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  bool isComplex =
+  const bool isComplex =
       data->TFData().ComplexRepresentation() == TimeFrequencyData::ComplexParts;
   lua_pushboolean(L, isComplex);
   return 1;
@@ -376,7 +376,7 @@ int Data::set_masked_visibilities(lua_State* L) {
       luaL_checkudata(L, 2, "AOFlaggerData"));
   if (rhs->TFData().ImageCount() != lhs->TFData().ImageCount() ||
       rhs->TFData().PolarizationCount() != lhs->TFData().PolarizationCount()) {
-    std::string err =
+    const std::string err =
         "set_masked_visibilities() was executed with inconsistent data types: "
         "right "
         "hand side had " +
@@ -407,13 +407,13 @@ int Data::set_masked_visibilities(lua_State* L) {
 int Data::set_polarization_data(lua_State* L) {
   aoflagger_lua::Data* lhs = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  std::string polStr = luaL_checklstring(L, 2, nullptr);
+  const std::string polStr = luaL_checklstring(L, 2, nullptr);
   aoflagger_lua::Data* rhs = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 3, "AOFlaggerData"));
   try {
-    aocommon::PolarizationEnum polarization =
+    const aocommon::PolarizationEnum polarization =
         aocommon::Polarization::ParseString(polStr);
-    size_t polIndex = lhs->TFData().GetPolarizationIndex(polarization);
+    const size_t polIndex = lhs->TFData().GetPolarizationIndex(polarization);
     lhs->TFData().SetPolarizationData(polIndex, rhs->TFData());
   } catch (std::exception& e) {
     return luaL_error(
@@ -428,7 +428,7 @@ int Data::set_visibilities(lua_State* L) {
   aoflagger_lua::Data* rhs = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 2, "AOFlaggerData"));
   if (rhs->TFData().ImageCount() != lhs->TFData().ImageCount()) {
-    std::string err =
+    const std::string err =
         "set_visibilities() was executed with inconsistent data types: right "
         "hand side had " +
         std::to_string(rhs->TFData().ImageCount()) + ", destination had " +
@@ -454,6 +454,16 @@ int Data::sub(lua_State* L) {
       luaL_checkudata(L, 2, "AOFlaggerData"));
   Tools::NewData(L,
                  TimeFrequencyData::MakeFromDiff(lhs->TFData(), rhs->TFData()),
+                 lhs->MetaData(), lhs->GetContext());
+  return 1;
+}
+
+int Data::div(lua_State* L) {
+  aoflagger_lua::Data* lhs = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 1, "AOFlaggerData"));
+  aoflagger_lua::Data* rhs = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 2, "AOFlaggerData"));
+  Tools::NewData(L, ElementWiseDivide(lhs->TFData(), rhs->TFData()),
                  lhs->MetaData(), lhs->GetContext());
   return 1;
 }

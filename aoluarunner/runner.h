@@ -6,12 +6,16 @@
 #include "../imagesets/imageset.h"
 
 #include <optional>
+#include <memory>
+#include <string>
+#include <vector>
 
 struct ChunkInfo;
 
 class Runner {
  public:
-  Runner(const Options& cmdLineOptions) : _cmdLineOptions(cmdLineOptions) {}
+  explicit Runner(const Options& cmdLineOptions)
+      : _cmdLineOptions(cmdLineOptions) {}
 
   void Run();
 

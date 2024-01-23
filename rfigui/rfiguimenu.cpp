@@ -184,8 +184,6 @@ void RFIGuiMenu::makePlotMenu() {
           "Plot _distribution");
   addItem(_menuPlot, _miPlotLogLogDistribution, OnPlotLogLogDistPressed,
           "Plot _log-log dist");
-  addItem(_menuPlot, _miPlotComplexPlane, OnPlotComplexPlanePressed,
-          "Plot _complex plane");
   addItem(_menuPlot, _miPlotSingularValues, OnPlotSingularValuesPressed,
           "Plot _singular values");
 }
@@ -422,7 +420,7 @@ void RFIGuiMenu::EnableRunButtons(bool sensitive) {
 
 void RFIGuiMenu::SetRecentFiles(const std::vector<std::string>& recentFiles) {
   _miRecentFileChoices.clear();
-  size_t n = std::min(recentFiles.size(), size_t(10));
+  const size_t n = std::min(recentFiles.size(), size_t(10));
   _miRecentFileChoices.resize(n);
   for (size_t i = 0; i != n; ++i) {
     addItem(
@@ -437,7 +435,7 @@ void RFIGuiMenu::SetStrategyDefaults(
     const std::vector<std::string>& strategyDefaults) {
   _miStrategyDefaults.resize(strategyDefaults.size());
   for (size_t i = 0; i != strategyDefaults.size(); ++i) {
-    std::string label = strategyDefaults[i];
+    const std::string label = strategyDefaults[i];
     addItem(
         _menuStrategyOpenDefault, _miStrategyDefaults[i],
         [&, label]() { OnStrategyOpenDefault(label); }, label.c_str());

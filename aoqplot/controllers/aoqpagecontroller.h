@@ -3,6 +3,8 @@
 
 #include "../../structures/antennainfo.h"
 
+#include <vector>
+
 class AOQPageController {
  public:
   virtual ~AOQPageController() {}

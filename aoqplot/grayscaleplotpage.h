@@ -15,14 +15,12 @@
 
 #include "plotsheet.h"
 
-using namespace aocommon;
-
 class GrayScalePlotPage : public PlotSheet {
  public:
-  GrayScalePlotPage(class HeatMapPageController* controller);
+  explicit GrayScalePlotPage(class HeatMapPageController* controller);
   virtual ~GrayScalePlotPage();
 
-  virtual void InitializeToolbar(Gtk::Toolbar& toolbar) override final;
+  void InitializeToolbar(Gtk::Toolbar& toolbar) override final;
 
   bool NormalizeXAxis() const { return _normalizeXAxisButton.get_active(); }
   bool NormalizeYAxis() const { return _normalizeYAxisButton.get_active(); }
@@ -44,7 +42,7 @@ class GrayScalePlotPage : public PlotSheet {
   void initPhaseButtons(Gtk::Toolbar& toolbar);
   void initPlotOptions(Gtk::Toolbar& toolbar);
 
-  PolarizationEnum getSelectedPolarization() const;
+  aocommon::PolarizationEnum getSelectedPolarization() const;
   enum TimeFrequencyData::ComplexRepresentation getSelectedPhase() const;
 
   void onSelectCount() {

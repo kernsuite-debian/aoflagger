@@ -12,12 +12,24 @@
 #include "plotbase.h"
 #include "title.h"
 
-enum class Range { MinMax, Winsorized, Specified };
+enum class RangeLimit { Extreme, Winsorized, Specified };
+struct RangeConfiguration {
+  RangeLimit minimum;
+  RangeLimit maximum;
+  double specified_min = 0.0;
+  double specified_max = 1.0;
+};
+
+inline RangeConfiguration WinsorizedRange() {
+  return RangeConfiguration{RangeLimit::Winsorized, RangeLimit::Winsorized};
+}
+inline RangeConfiguration FullRange() {
+  return RangeConfiguration{RangeLimit::Winsorized, RangeLimit::Winsorized};
+}
 
 class HeatMap : public PlotBase {
  public:
   HeatMap();
-  ~HeatMap();
 
   void Clear();
 
@@ -37,11 +49,11 @@ class HeatMap : public PlotBase {
 
   bool HasImage() const { return _image != nullptr; }
 
-  void SetZRange(enum Range zRange) {
-    _zRange = zRange;
+  void SetZRange(const RangeConfiguration& range) {
+    _zRange = range;
     _isImageInvalidated = true;
   }
-  enum Range ZRange() const { return _zRange; }
+  const RangeConfiguration& ZRange() const { return _zRange; }
 
   std::array<size_t, 2> ImageXRange() const;
   std::array<size_t, 2> ImageYRange() const;
@@ -78,15 +90,15 @@ class HeatMap : public PlotBase {
   }
   AxisType XAxisType() const { return _xAxisType; }
 
-  double Max() const { return _specifiedMax; }
-  double Min() const { return _specifiedMin; }
+  double Max() const { return _zRange.specified_max; }
+  double Min() const { return _zRange.specified_min; }
 
   void SetMax(double max) {
-    _specifiedMax = max;
+    _zRange.specified_max = max;
     _isImageInvalidated = true;
   }
   void SetMin(double min) {
-    _specifiedMin = min;
+    _zRange.specified_min = min;
     _isImageInvalidated = true;
   }
 
@@ -210,13 +222,14 @@ class HeatMap : public PlotBase {
   SignalDrawImage() {
     return _signalDrawImage;
   }
+  static std::pair<float, float> DetermineRange(
+      const ImageInterface& image,
+      const RangeConfiguration& range_configuration, bool log_scale);
 
  protected:
-  void draw(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
-            size_t height) final override;
+  void Draw(const Cairo::RefPtr<Cairo::Context>& cairo) final override;
 
  private:
-  void findMinMax(const ImageInterface& image, float& min, float& max);
   void postRender(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
                   size_t height);
   void redrawWithoutChanges(const Cairo::RefPtr<Cairo::Context>& cairo,
@@ -256,14 +269,13 @@ class HeatMap : public PlotBase {
   bool _showTitle;
   AxisType _xAxisType;
   AxisType _yAxisType;
-  float _specifiedMax, _specifiedMin;
   float _derivedMax, _derivedMin;
   double _xAxisMin, _xAxisMax;
   double _yAxisMin, _yAxisMax;
   double _x2AxisMin, _x2AxisMax;
   double _y2AxisMin, _y2AxisMax;
   std::string _titleText;
-  enum Range _zRange;
+  RangeConfiguration _zRange;
   Cairo::Filter _cairoFilter;
   std::string _xAxisDescription;
   std::string _x2AxisDescription;

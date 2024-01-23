@@ -203,18 +203,21 @@ class StatisticsDerivator {
   static std::string GetUnits(QualityTablesFormatter::StatisticKind kind) {
     switch (kind) {
       case QualityTablesFormatter::MeanStatistic:
-      case QualityTablesFormatter::VarianceStatistic:
       case QualityTablesFormatter::StandardDeviationStatistic:
       case QualityTablesFormatter::DMeanStatistic:
       case QualityTablesFormatter::DVarianceStatistic:
       case QualityTablesFormatter::DStandardDeviationStatistic:
-        return "arbitrary units";
+        return "Jy";
+      case QualityTablesFormatter::VarianceStatistic:
+        return "Jy^2";
       case QualityTablesFormatter::RFIPercentageStatistic:
         return "%";
       case QualityTablesFormatter::CountStatistic:
       case QualityTablesFormatter::DCountStatistic:
       case QualityTablesFormatter::RFICountStatistic:
+        return "count";
       case QualityTablesFormatter::RFIRatioStatistic:
+        return "ratio";
       case QualityTablesFormatter::SignalToNoiseStatistic:
       default:
         return "";

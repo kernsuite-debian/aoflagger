@@ -5,6 +5,8 @@
 #include "../structures/timefrequencymetadata.h"
 
 #include <algorithm>
+#include <utility>
+#include <vector>
 
 namespace aoflagger_lua {
 class Data {
@@ -20,7 +22,7 @@ class Data {
     Context& operator=(Context&&) = default;
   };
 
-  Data(Context& context) : _context(&context), _persistent(false) {
+  explicit Data(Context& context) : _context(&context), _persistent(false) {
     context.list.emplace_back(this);
   }
 

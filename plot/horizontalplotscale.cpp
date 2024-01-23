@@ -34,24 +34,25 @@ double HorizontalPlotScale::AxisToUnit(double axisValue) const {
 void HorizontalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
   initializeMetrics(cairo);
   cairo->set_source_rgb(0.0, 0.0, 0.0);
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);
-  double tickDisplacement = _isSecondAxis ? -3.0 : 3.0;
+  const double tickDisplacement = _isSecondAxis ? -3.0 : 3.0;
   const double height = CalculateHeight(cairo);
   // Y position of x-axis line
-  double yPos = _isSecondAxis ? _fromTop + height : _widgetHeight - height;
+  const double yPos =
+      _isSecondAxis ? _fromTop + height : _widgetHeight - height;
   for (unsigned i = 0; i != _tickSet->Size(); ++i) {
     const Tick tick = _tickSet->GetTick(i);
-    double x = tick.first * Data().plotWidth + Data().fromLeft;
+    const double x = tick.first * Data().plotWidth + Data().fromLeft;
     cairo->move_to(x, yPos);
     cairo->line_to(x, yPos + tickDisplacement);
     layout->set_text(tick.second);
     const Pango::Rectangle extents = layout->get_pixel_ink_extents();
     if (_rotateUnits) {
-      double y = _isSecondAxis ? (yPos + extents.get_lbearing() - 8)
-                               : (yPos + extents.get_width() + 8);
+      const double y = _isSecondAxis ? (yPos + extents.get_lbearing() - 8)
+                                     : (yPos + extents.get_width() + 8);
       cairo->move_to(x - extents.get_descent() - extents.get_height() / 2, y);
       cairo->save();
       cairo->rotate(-M_PI * 0.5);
@@ -59,7 +60,7 @@ void HorizontalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
       cairo->restore();
     } else {
       // Room is reserved of size height between the text and the axis
-      double y =
+      const double y =
           _isSecondAxis ? yPos - extents.get_height() : yPos + tickDisplacement;
       cairo->move_to(x - extents.get_width() / 2, y);
       layout->show_in_cairo_context(cairo);
@@ -72,10 +73,10 @@ void HorizontalPlotScale::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
 
 void HorizontalPlotScale::drawDescription(
     const Cairo::RefPtr<Cairo::Context>& cairo) {
-  double yPos = _isSecondAxis ? _fromTop : _widgetHeight;
+  const double yPos = _isSecondAxis ? _fromTop : _widgetHeight;
 
   cairo->save();
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);
@@ -138,11 +139,12 @@ void HorizontalPlotScale::initializeMetrics(
 
 double HorizontalPlotScale::CalculateHeight(
     const Cairo::RefPtr<Cairo::Context>& cairo) {
-  std::unique_ptr<TickSet> lTickSet = _tickSet->Clone();
+  const std::unique_ptr<TickSet> lTickSet = _tickSet->Clone();
 
   double height;
   if (_drawWithDescription) {
-    Glib::RefPtr<Pango::Layout> descTextLayout = Pango::Layout::create(cairo);
+    const Glib::RefPtr<Pango::Layout> descTextLayout =
+        Pango::Layout::create(cairo);
     Pango::FontDescription fontDescription;
     fontDescription.set_size(_descriptionFontSize * PANGO_SCALE);
     descTextLayout->set_text(_unitsCaption);
@@ -153,7 +155,7 @@ double HorizontalPlotScale::CalculateHeight(
   }
 
   int maxTickTextHeight = 0;
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);
@@ -190,14 +192,14 @@ void HorizontalPlotScale::initializeLocalMetrics(
     }
 
     if (_tickSet->Size() != 0) {
-      Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+      const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
       Pango::FontDescription fontDescription;
       fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
       layout->set_font_description(fontDescription);
       const Tick lastTick = _tickSet->GetTick(_tickSet->Size() - 1);
       layout->set_text(lastTick.second);
       const int width = layout->get_pixel_logical_extents().get_width();
-      double approxOversize =
+      const double approxOversize =
           _widgetWidth * lastTick.first + width / 2 - _widgetWidth;
       rightMargin = std::max(10.0, approxOversize + 5.0);
     } else {
@@ -209,18 +211,21 @@ void HorizontalPlotScale::initializeLocalMetrics(
 }
 
 void HorizontalPlotScale::InitializeTicks() {
-  if (_isLogarithmic)
-    _tickSet.reset(new LogarithmicTickSet(_tickRange[0], _tickRange[1], 25));
-  else {
+  if (_isLogarithmic) {
+    _tickSet =
+        std::make_unique<LogarithmicTickSet>(_tickRange[0], _tickRange[1], 25);
+  } else {
     switch (_axisType) {
       case AxisType::kNumeric:
-        _tickSet.reset(new NumericTickSet(_tickRange[0], _tickRange[1], 25));
+        _tickSet =
+            std::make_unique<NumericTickSet>(_tickRange[0], _tickRange[1], 25);
         break;
       case AxisType::kText:
-        _tickSet.reset(new TextTickSet(_tickLabels, 100));
+        _tickSet = std::make_unique<TextTickSet>(_tickLabels, 100);
         break;
       case AxisType::kTime:
-        _tickSet.reset(new TimeTickSet(_tickRange[0], _tickRange[1], 25));
+        _tickSet =
+            std::make_unique<TimeTickSet>(_tickRange[0], _tickRange[1], 25);
         break;
     }
   }
@@ -230,7 +235,7 @@ void HorizontalPlotScale::InitializeTicks() {
 bool HorizontalPlotScale::ticksFit(const Cairo::RefPtr<Cairo::Context>& cairo) {
   cairo->set_font_size(16.0);
   double prevEndX = 0.0;
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_tickValuesFontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);

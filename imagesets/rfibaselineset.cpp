@@ -36,8 +36,9 @@ std::string RFIBaselineSet::BaselineDescription() {
             << " x " << _metaData.Antenna2().station << ' '
             << _metaData.Antenna2().name;
     return sstream.str();
-  } else
+  } else {
     return Files().front();
+  }
 }
 
 void RFIBaselineSet::Write(const std::vector<Mask2DCPtr>& masks) {

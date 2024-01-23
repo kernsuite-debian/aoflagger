@@ -69,6 +69,6 @@ This is an example for the produced 'baselines' plot:
 .. image:: images/WSRT-stddev-baselines.png
     :alt: Result of aoqplot -save command (baseline plot)
 
-As can be seen from this image, antenna index 5 (WSRT RT5) is not working, and the autocorrelations show more power (as they should). Note that ``aoqplot`` uses the quality statistics tables inside the measurement set. These are normally produced by tools like ``DPPP``, ``cotter`` or ``aartfaac2ms``; however, if a measurement set is not produced by one of those tools, it is necessary to create these tables manually. This can be done with the ``aoquality collect <obs.ms>`` command.
+As can be seen from this image, antenna index 5 (WSRT RT5) is not working, and the autocorrelations show more power (as they should). Note that ``aoqplot`` uses the quality statistics tables inside the measurement set. These are normally produced by tools like ``DP3``, ``cotter`` or ``aartfaac2ms``; however, if a measurement set is not produced by one of those tools, it is necessary to create these tables manually. This can be done with the ``aoquality collect <obs.ms>`` command.
 
-.. [1] Older versions of ``rfigui`` and ``aoqplot`` would require an X window system to be running even when running in command line mode. However, that was resolved in AOFlagger [version 2.10](changelog-2.10.0).
+.. [1] Older versions of ``rfigui`` and ``aoqplot`` would require an X window system to be running even when running in command line mode. However, that was resolved in :doc:`AOFlagger version 2.10 <changelogs/v2.10>`.
