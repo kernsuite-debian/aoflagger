@@ -1,8 +1,10 @@
 #ifndef AOQ_PLOT_PAGE_CONTROLLER
 #define AOQ_PLOT_PAGE_CONTROLLER
 
-#include <set>
 #include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "../../quality/qualitytablesformatter.h"
 
@@ -17,11 +19,11 @@ class AOQPlotPageController : public AOQPageController {
 
   void Attach(class TwoDimensionalPlotPage* page) { _page = page; }
 
-  virtual void SetStatistics(
+  void SetStatistics(
       const StatisticsCollection* statCollection,
       const std::vector<class AntennaInfo>& antennas) override final;
 
-  virtual void CloseStatistics() override final { _statCollection = nullptr; }
+  void CloseStatistics() override final { _statCollection = nullptr; }
 
   bool HasStatistics() const { return _statCollection != nullptr; }
 
@@ -47,7 +49,7 @@ class AOQPlotPageController : public AOQPageController {
       const = 0;
 
   virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
-                         const std::string& yAxisDesc) = 0;
+                         const std::string& yAxisDesc, bool second_axis) = 0;
 
   virtual void processPlot(XYPlot& plot) {}
 
@@ -63,18 +65,16 @@ class AOQPlotPageController : public AOQPageController {
   class TwoDimensionalPlotPage* _page;
 
   void updatePlotForSettings(
-      const std::set<QualityTablesFormatter::StatisticKind>& kinds,
+      const std::vector<QualityTablesFormatter::StatisticKind>& kinds,
       const std::set<SelectedPol>& pols, const std::set<PhaseType>& phases);
 
   double getValue(enum PhaseType Phase, const std::complex<long double>& val);
 
   void plotStatistic(QualityTablesFormatter::StatisticKind kind,
                      SelectedPol pol, PhaseType phase, int lineIndex,
-                     const std::string& yDesc);
+                     const std::string& yDesc, bool second_axis);
   const StatisticsCollection* _statCollection;
   XYPlot _plot;
-  std::string getYDesc(
-      const std::set<QualityTablesFormatter::StatisticKind>& kinds) const;
 };
 
 #endif

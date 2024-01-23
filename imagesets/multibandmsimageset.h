@@ -6,7 +6,9 @@
 #include "indexableset.h"
 
 #include <deque>
+#include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -133,7 +135,7 @@ class MultiBandMsImageSet final : public IndexableSet {
   void ProcessMetaData();
   std::unique_ptr<BaselineData> CombineData(const ImageSetIndex& index);
 
-  const static size_t kNotFound;
+  static const size_t kNotFound;
   std::vector<std::string> ms_names_;
 
   // TODO Other readers use a vector and call pop_front, if the vector contains

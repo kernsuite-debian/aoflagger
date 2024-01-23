@@ -18,7 +18,7 @@
 
 class HistogramPage : public PlotSheet {
  public:
-  HistogramPage(class HistogramPageController* controller);
+  explicit HistogramPage(class HistogramPageController* controller);
   ~HistogramPage();
 
   void updatePlot();

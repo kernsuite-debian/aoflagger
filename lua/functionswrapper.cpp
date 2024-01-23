@@ -57,7 +57,7 @@ int Functions::copy_to_channel(lua_State* L) {
   const aoflagger_lua::Data* source =
       reinterpret_cast<const aoflagger_lua::Data*>(
           luaL_checkudata(L, 2, "AOFlaggerData"));
-  long channel = luaL_checkinteger(L, 3);
+  const long channel = luaL_checkinteger(L, 3);
   try {
     aoflagger_lua::copy_to_channel(*destination, *source, channel);
   } catch (std::exception& e) {
@@ -72,7 +72,7 @@ int Functions::copy_to_frequency(lua_State* L) {
   const aoflagger_lua::Data* source =
       reinterpret_cast<const aoflagger_lua::Data*>(
           luaL_checkudata(L, 2, "AOFlaggerData"));
-  double frequencyMHz = luaL_checknumber(L, 3);
+  const double frequencyMHz = luaL_checknumber(L, 3);
   try {
     aoflagger_lua::copy_to_frequency(*destination, *source, frequencyMHz * 1e6);
   } catch (std::exception& e) {
@@ -90,7 +90,7 @@ int Functions::downsample(lua_State* L) {
     luaL_error(
         L, "Parameters 4 should be of boolean type in call to downsample()");
   }
-  bool masked = lua_toboolean(L, 4);
+  const bool masked = lua_toboolean(L, 4);
   try {
     if (masked)
       Tools::NewData(L, aoflagger_lua::downsample_masked(
@@ -128,6 +128,18 @@ int Functions::low_pass_filter(lua_State* L) {
   return 0;
 }
 
+int Functions::norm(lua_State* L) {
+  aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 1, "AOFlaggerData"));
+  try {
+    aoflagger_lua::Data result = aoflagger_lua::norm(*data);
+    Tools::NewData(L, std::move(result));
+  } catch (std::exception& e) {
+    luaL_error(L, e.what());
+  }
+  return 1;
+}
+
 int Functions::normalize_bandpass(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
@@ -138,7 +150,7 @@ int Functions::normalize_bandpass(lua_State* L) {
 int Functions::normalize_subbands(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  long nSubbands = luaL_checkinteger(L, 2);
+  const long nSubbands = luaL_checkinteger(L, 2);
   NormalizeBandpass::NormalizeStepwise(data->TFData(), nSubbands);
   return 0;
 }
@@ -167,7 +179,7 @@ int Functions::require_min_version(lua_State* L) {
       met = true;
   }
   if (!met) {
-    std::string err =
+    const std::string err =
         std::string(
             "Requirements on AOFlagger version not met: This "
             "is " AOFLAGGER_VERSION_STR ", required is version >= ") +
@@ -194,7 +206,7 @@ int Functions::require_max_version(lua_State* L) {
       met = true;
   }
   if (!met) {
-    std::string err =
+    const std::string err =
         std::string(
             "Requirements on AOFlagger version not met: This "
             "is " AOFLAGGER_VERSION_STR ", required is version <= ") +
@@ -227,7 +239,7 @@ int Functions::scale_invariant_rank_operator(lua_State* L) {
 }
 
 int Functions::scale_invariant_rank_operator_masked(lua_State* L) {
-  bool hasPenalty = lua_gettop(L) >= 5;
+  const bool hasPenalty = lua_gettop(L) >= 5;
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
   const aoflagger_lua::Data* missing = reinterpret_cast<aoflagger_lua::Data*>(
@@ -256,12 +268,24 @@ int Functions::set_progress(lua_State* L) {
 }
 
 int Functions::set_progress_text(lua_State* L) {
-  std::string str = luaL_checklstring(L, 1, nullptr);
+  const std::string str = luaL_checklstring(L, 1, nullptr);
   lua_pushstring(L, "AOFlagger.ScriptData");
   lua_gettable(L, LUA_REGISTRYINDEX);
   ScriptData* scriptData = reinterpret_cast<ScriptData*>(lua_touserdata(L, -1));
   if (scriptData->Progress()) scriptData->Progress()->OnStartTask(str);
   return 0;
+}
+
+int Functions::sqrt(lua_State* L) {
+  aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
+      luaL_checkudata(L, 1, "AOFlaggerData"));
+  try {
+    aoflagger_lua::Data result = aoflagger_lua::sqrt(*data);
+    Tools::NewData(L, std::move(result));
+  } catch (std::exception& e) {
+    luaL_error(L, e.what());
+  }
+  return 1;
 }
 
 int Functions::sumthreshold(lua_State* L) {
@@ -303,13 +327,13 @@ int Functions::sumthreshold_masked(lua_State* L) {
 int Functions::threshold_channel_rms(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  double threshold = luaL_checknumber(L, 2);
+  const double threshold = luaL_checknumber(L, 2);
   if (!lua_isboolean(L, 3)) {
     luaL_error(L,
                "3rd parameter should be of boolean type in call to "
                "threshold_channel_rms()");
   } else {
-    bool thresholdLowValues = lua_toboolean(L, 3);
+    const bool thresholdLowValues = lua_toboolean(L, 3);
     aoflagger_lua::threshold_channel_rms(*data, threshold, thresholdLowValues);
   }
   return 0;
@@ -318,7 +342,7 @@ int Functions::threshold_channel_rms(lua_State* L) {
 int Functions::threshold_timestep_rms(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  double threshold = luaL_checknumber(L, 2);
+  const double threshold = luaL_checknumber(L, 2);
   aoflagger_lua::threshold_timestep_rms(*data, threshold);
   return 0;
 }
@@ -326,8 +350,8 @@ int Functions::threshold_timestep_rms(lua_State* L) {
 int Functions::trim_channels(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  long start_channel = luaL_checkinteger(L, 2);
-  long end_channel = luaL_checkinteger(L, 3);
+  const long start_channel = luaL_checkinteger(L, 2);
+  const long end_channel = luaL_checkinteger(L, 3);
   try {
     aoflagger_lua::Data trimmed_data =
         aoflagger_lua::trim_channels(*data, start_channel, end_channel);
@@ -341,8 +365,8 @@ int Functions::trim_channels(lua_State* L) {
 int Functions::trim_frequencies(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  double start_frequency = luaL_checknumber(L, 2);
-  double end_frequency = luaL_checknumber(L, 3);
+  const double start_frequency = luaL_checknumber(L, 2);
+  const double end_frequency = luaL_checknumber(L, 3);
   try {
     aoflagger_lua::Data trimmed_data = aoflagger_lua::trim_frequencies(
         *data, start_frequency * 1e6, end_frequency * 1e6);
@@ -388,8 +412,8 @@ int Functions::upsample_mask(lua_State* L) {
 int Functions::visualize(lua_State* L) {
   aoflagger_lua::Data* data = reinterpret_cast<aoflagger_lua::Data*>(
       luaL_checkudata(L, 1, "AOFlaggerData"));
-  std::string label = luaL_checklstring(L, 2, nullptr);
-  long sortingIndex = luaL_checkinteger(L, 3);
+  const std::string label = luaL_checklstring(L, 2, nullptr);
+  const long sortingIndex = luaL_checkinteger(L, 3);
   lua_pushstring(L, "AOFlagger.ScriptData");
   lua_gettable(L, LUA_REGISTRYINDEX);
   ScriptData* scriptData = reinterpret_cast<ScriptData*>(lua_touserdata(L, -1));

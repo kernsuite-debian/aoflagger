@@ -10,7 +10,7 @@
 
 class BandpassFile {
  public:
-  BandpassFile(const std::string& filename) {
+  explicit BandpassFile(const std::string& filename) {
     std::ifstream file(filename);
     if (!file)
       throw std::runtime_error("Can not find bandpass file: '" + filename +
@@ -49,9 +49,9 @@ class BandpassFile {
     size_t channel;
 
     bool operator<(const BandpassIndex& rhs) const {
-      if (channel < rhs.channel)
+      if (channel < rhs.channel) {
         return true;
-      else if (channel == rhs.channel) {
+      } else if (channel == rhs.channel) {
         if (polarization < rhs.polarization)
           return true;
         else if (polarization == rhs.polarization && antenna < rhs.antenna)

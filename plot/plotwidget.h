@@ -36,6 +36,11 @@ class PlotWidget : public Gtk::DrawingArea {
     queue_draw();
   }
 
+  /**
+   * A signal that gets called when the mouse moves over the plot.
+   * The function handler should have two double parameters, which will
+   * receive the x and y positions of the mouse, in units of the plot.
+   */
   sigc::signal<void(double, double)>& OnMouseMovedEvent() {
     return _onMouseMoved;
   }

@@ -49,6 +49,7 @@ class Mask2D : public boost::intrusive_ref_counter<Mask2D> {
     return Mask2DPtr(new Mask2D(std::forward<Args>(args)...));
   }
 
+  /// Creates mask with uninitialized values.
   static Mask2D MakeUnsetMask(size_t width, size_t height) {
     return Mask2D(width, height);
   }

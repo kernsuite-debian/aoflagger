@@ -1,7 +1,6 @@
 #include "plotbase.h"
 
-PlotBase::PlotBase()
-    : _xZoomStart(0.0), _xZoomEnd(1.0), _yZoomStart(0.0), _yZoomEnd(1.0) {
+PlotBase::PlotBase() {
   _horizontalScale.SignalLinkedRedraw().connect(_signalLinkedRedraw);
 }
 
@@ -14,10 +13,10 @@ void PlotBase::ZoomFit() {
 }
 
 void PlotBase::ZoomIn() {
-  double distX = (_xZoomEnd - _xZoomStart) * 0.25;
+  const double distX = (_xZoomEnd - _xZoomStart) * 0.25;
   _xZoomStart += distX;
   _xZoomEnd -= distX;
-  double distY = (_yZoomEnd - _yZoomStart) * 0.25;
+  const double distY = (_yZoomEnd - _yZoomStart) * 0.25;
   _yZoomStart += distY;
   _yZoomEnd -= distY;
   _onZoomChanged.emit();
@@ -55,7 +54,7 @@ void PlotBase::ZoomInOn(double x, double y) {
 
 void PlotBase::ZoomOut() {
   if (!IsZoomedOut()) {
-    double distX = std::max(0.01, (_xZoomEnd - _xZoomStart) * 0.5);
+    const double distX = std::max(0.01, (_xZoomEnd - _xZoomStart) * 0.5);
     _xZoomStart -= distX;
     _xZoomEnd += distX;
     if (_xZoomStart < 0.0) {
@@ -68,7 +67,7 @@ void PlotBase::ZoomOut() {
     }
     if (_xZoomStart < 0.0) _xZoomStart = 0.0;
 
-    double distY = std::max(0.01, (_yZoomEnd - _yZoomStart) * 0.5);
+    const double distY = std::max(0.01, (_yZoomEnd - _yZoomStart) * 0.5);
     _yZoomStart -= distY;
     _yZoomEnd += distY;
     if (_yZoomStart < 0.0) {

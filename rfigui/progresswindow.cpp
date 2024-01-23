@@ -50,7 +50,7 @@ ProgressWindow::ProgressWindow()
       sigc::mem_fun(*this, &ProgressWindow::updateProgress));
 }
 
-ProgressWindow::~ProgressWindow() {}
+ProgressWindow::~ProgressWindow() = default;
 
 void ProgressWindow::updateProgress() {
   if (!_blockProgressSignal) {
@@ -62,20 +62,21 @@ void ProgressWindow::updateProgress() {
 
     std::unique_lock<std::mutex> lock(_mutex);
 
-    boost::posix_time::ptime now =
+    const boost::posix_time::ptime now =
         boost::posix_time::microsec_clock::local_time();
-    boost::posix_time::time_duration sinceLast = now - _lastUpdate;
-    boost::posix_time::time_duration updTime = boost::posix_time::millisec(100);
-    bool doUpdate = sinceLast >= updTime;
+    const boost::posix_time::time_duration sinceLast = now - _lastUpdate;
+    const boost::posix_time::time_duration updTime =
+        boost::posix_time::millisec(100);
+    const bool doUpdate = sinceLast >= updTime;
     if (doUpdate) {
       _lastUpdate = now;
-      boost::posix_time::time_duration duration = now - _startTime;
+      const boost::posix_time::time_duration duration = now - _startTime;
       std::stringstream timeStr;
       timeStr << duration;
       _timeElapsedLabel.set_text(timeStr.str());
 
-      std::string taskDesc = _taskDescription;
-      double progress = std::min(
+      const std::string taskDesc = _taskDescription;
+      const double progress = std::min(
           1.0, std::max(0.0, double(_progress) / double(_maxProgress)));
 
       _currentTaskLabel.set_text(taskDesc);
@@ -92,19 +93,20 @@ void ProgressWindow::updateProgress() {
       }
     }
 
-    bool hasException = _exceptionQueued;
+    const bool hasException = _exceptionQueued;
     if (hasException) {
       _exceptionQueued = false;
       _blockProgressSignal = true;
       if (_signalError.empty()) {
         // Default handler: show a message dialog
-        std::string errMsg = std::string("An exception was thrown of type '") +
-                             _exceptionType + ("' -- ") + _exceptionDescription;
+        const std::string errMsg =
+            std::string("An exception was thrown of type '") + _exceptionType +
+            ("' -- ") + _exceptionDescription;
         lock.unlock();
         Gtk::MessageDialog dialog(*this, errMsg, false, Gtk::MESSAGE_ERROR);
         dialog.run();
       } else {
-        std::string errDescr =
+        const std::string errDescr =
             _exceptionDescription;  // local copy to unlock mutex
         lock.unlock();
         _signalError(errDescr);

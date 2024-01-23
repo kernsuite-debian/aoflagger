@@ -10,25 +10,26 @@
    might contain strong HI in case a nearby Galaxy is observed. [Currently turned off]
  - Apart from that, settings like the thresholds and the smoothing filter strength have been tweaked to
    work well for Apertif.
-]]--
+]]
 
 -- Helper function used in the strategy
 function contains(arr, val)
-  for _,v in ipairs(arr) do
-    if v == val then return true end
+  for _, v in ipairs(arr) do
+    if v == val then
+      return true
+    end
   end
   return false
 end
 
-if(bandpass_filename == nil) then
+if bandpass_filename == nil then
   bandpass_filename = "bandpass.txt"
-  print("bandpass_filename not set, using "..bandpass_filename)
+  print("bandpass_filename not set, using " .. bandpass_filename)
 end
 
 -- Main flagging function that is called for every baseline. The input parameter represents the data for
 -- a single baseline. Any changes to the flagging of 'input' are written back to the measurement set.
-function execute (input)
-
+function execute(input)
   --
   -- Generic settings
   --
@@ -42,28 +43,28 @@ function execute (input)
   -- Options are: phase, amplitude, real, imaginary, complex
   local flag_representations = { "amplitude" }
 
-  local base_threshold = 1.2  -- lower means more sensitive detection
-  local iteration_count = 3  -- slowly increase sensitivity: how many iterations to do this?
+  local base_threshold = 1.2 -- lower means more sensitive detection
+  local iteration_count = 3 -- slowly increase sensitivity: how many iterations to do this?
   local threshold_factor_step = 2.0 -- How much to increase the sensitivity each iteration?
   local frequency_resize_factor = 175 -- Amount of "extra" smoothing in frequency direction
   local transient_threshold_factor = 1 -- decreasing this value puts more emphasis on detection of transient RFI
- 
+
   --
   -- End of generic settings
   --
 
   -- Some variables that we need later on:
-  local isAutocorrelation = ( input:get_antenna1_index() == input:get_antenna2_index() )
+  local isAutocorrelation = (input:get_antenna1_index() == input:get_antenna2_index())
   local inpPolarizations = input:polarizations()
 
-  if(isAutocorrelation) then
+  if isAutocorrelation then
     base_threshold = 8 -- Because of the high S/N of autos, less sensitive detection is required
-    iteration_count = 5  -- Auto-correlations have more dynamic range, so converge slightly slower
+    iteration_count = 5 -- Auto-correlations have more dynamic range, so converge slightly slower
     frequency_resize_factor = 50 -- Auto-correlations have more structure in frequency direction, so smooth less
     transient_threshold_factor = 0.25 -- More emphasis on transients (~less emphasis on frequency structure)
     -- XY=YX for amplitude of autos, so there's no need to flag both
-    for i,v in ipairs(flag_polarizations) do
-      if(v == 'YX') then
+    for i, v in ipairs(flag_polarizations) do
+      if v == "YX" then
         table.remove(flag_polarizations, i)
         break
       end
@@ -76,25 +77,30 @@ function execute (input)
   input:flag_zeros()
 
   local copy_of_input = input:copy()
-  
-  for ipol,polarization in ipairs(flag_polarizations) do
- 
+
+  for ipol, polarization in ipairs(flag_polarizations) do
     data = input:convert_to_polarization(polarization)
 
     local original_data
-    for _,representation in ipairs(flag_representations) do
-
+    for _, representation in ipairs(flag_representations) do
       data = data:convert_to_complex(representation)
       original_data = data:copy()
 
-      for i=1,iteration_count-1 do
-        threshold_factor = math.pow(threshold_factor_step, iteration_count-i)
+      for i = 1, iteration_count - 1 do
+        threshold_factor = threshold_factor_step ^ (iteration_count - i)
 
         sumthr_level = threshold_factor * base_threshold
-        aoflagger.sumthreshold_with_missing(data, original_data, sumthr_level, sumthr_level*transient_threshold_factor, true, true)
+        aoflagger.sumthreshold_with_missing(
+          data,
+          original_data,
+          sumthr_level,
+          sumthr_level * transient_threshold_factor,
+          true,
+          true
+        )
 
         -- Do timestep & channel flagging
-        if(not isAutocorrelation) then
+        if not isAutocorrelation then
           chdata = data:copy()
           aoflagger.threshold_timestep_rms(data, 3.5)
           aoflagger.threshold_channel_rms(chdata, 3.0 * threshold_factor, true)
@@ -112,22 +118,29 @@ function execute (input)
         -- the following visualize function will add the current result
         -- to the list of displayable visualizations.
         -- If the script is not running inside rfigui, the call is ignored.
-        aoflagger.visualize(data, "Fit #"..i, i-1)
+        aoflagger.visualize(data, "Fit #" .. i, i - 1)
 
         tmp = original_data - data
         tmp:set_mask(data)
         data = tmp
 
-        aoflagger.visualize(data, "Residual #"..i, i+iteration_count)
+        aoflagger.visualize(data, "Residual #" .. i, i + iteration_count)
         --aoflagger.set_progress((ipol-1)*iteration_count+i, #flag_polarizations*iteration_count )
       end -- end of iterations
 
-      aoflagger.sumthreshold_with_missing(data, original_data, base_threshold, base_threshold*transient_threshold_factor, true, true)
+      aoflagger.sumthreshold_with_missing(
+        data,
+        original_data,
+        base_threshold,
+        base_threshold * transient_threshold_factor,
+        true,
+        true
+      )
     end -- end of complex representation iteration
 
     data:join_mask(original_data)
 
-    if(not isAutocorrelation) then
+    if not isAutocorrelation then
       aoflagger.threshold_timestep_rms(data, 4.0)
     end
 
@@ -138,7 +151,7 @@ function execute (input)
       input:join_mask(polarization, data)
     end
 
-    aoflagger.visualize(data, "Residual #"..iteration_count, 2*iteration_count)
+    aoflagger.visualize(data, "Residual #" .. iteration_count, 2 * iteration_count)
     --aoflagger.set_progress(ipol, #flag_polarizations )
   end -- end of polarization iterations
 
@@ -156,7 +169,4 @@ function execute (input)
   -- time, frequency and baseline and write those to the MS. These can be
   -- visualized with aoqplot.
   aoflagger.collect_statistics(input, copy_of_input)
-  
 end
-
-

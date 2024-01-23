@@ -12,6 +12,7 @@
 #include "../algorithms/sinusfitter.h"
 #include "../algorithms/thresholdtools.h"
 
+#include "../plot/axis.h"
 #include "../plot/xyplot.h"
 
 using aocommon::Polarization;
@@ -39,8 +40,8 @@ void RFIPlots::Bin(Image2DCPtr image, Mask2DCPtr mask,
   for (size_t y = 0; y < image->Height(); ++y) {
     for (size_t x = 0; x < image->Width(); ++x) {
       if (!mask->Value(x, y)) {
-        long double value = image->Value(x, y);
-        size_t index = (size_t)((value * stretch - min) / binsize);
+        const long double value = image->Value(x, y);
+        const size_t index = (size_t)((value * stretch - min) / binsize);
         if (index < binCount) valuesOutput[index] += 1;
       }
     }
@@ -76,7 +77,7 @@ void RFIPlots::MakeMeanSpectrumPlot(XYPointSet& pointSet,
                                     const TimeFrequencyData& data,
                                     const Mask2DCPtr& mask,
                                     const TimeFrequencyMetaDataCPtr& metaData) {
-  bool hasBandInfo = metaData != nullptr && metaData->HasBand();
+  const bool hasBandInfo = metaData != nullptr && metaData->HasBand();
   if (hasBandInfo) {
     pointSet.SetXDesc("Frequency (MHz)");
     std::stringstream yDesc;
@@ -100,7 +101,7 @@ void RFIPlots::MakeMeanSpectrumPlot(XYPointSet& pointSet,
     long double sum = 0.0L;
     size_t count = 0;
     for (size_t i = 0; i < displayData.ImageCount(); ++i) {
-      Image2DCPtr image = displayData.GetImage(i);
+      const Image2DCPtr image = displayData.GetImage(i);
       for (size_t x = 0; x < width; ++x) {
         if (!mask->Value(x, y) && std::isnormal(image->Value(x, y))) {
           sum += image->Value(x, y);
@@ -123,7 +124,6 @@ void RFIPlots::MakeMeanSpectrumPlot(XYPointSet& pointSet,
         pointSet.PushDataPoint(y, v);
     }
   }
-  pointSet.SetYRange(min * 0.9, max / 0.9);
 }
 template void RFIPlots::MakeMeanSpectrumPlot<true>(
     XYPointSet& pointSet, const TimeFrequencyData& data, const Mask2DCPtr& mask,
@@ -135,7 +135,7 @@ template void RFIPlots::MakeMeanSpectrumPlot<false>(
 void RFIPlots::MakePowerSpectrumPlot(XYPointSet& pointSet, const Image2D& real,
                                      const Image2D& imag, const Mask2D& mask,
                                      const TimeFrequencyMetaData* metaData) {
-  bool hasBandInfo = metaData != nullptr && metaData->HasBand();
+  const bool hasBandInfo = metaData != nullptr && metaData->HasBand();
   if (hasBandInfo) {
     pointSet.SetXDesc("Frequency (MHz)");
     std::stringstream yDesc;
@@ -152,7 +152,7 @@ void RFIPlots::MakePowerSpectrumPlot(XYPointSet& pointSet, const Image2D& real,
     size_t count = 0;
     for (size_t x = 0; x < real.Width(); ++x) {
       if (!mask.Value(x, y) && std::isfinite(real.Value(x, y))) {
-        std::complex<num_t> val(real.Value(x, y), imag.Value(x, y));
+        const std::complex<num_t> val(real.Value(x, y), imag.Value(x, y));
         sum += (val * std::conj(val)).real();
         ++count;
       }
@@ -178,12 +178,11 @@ void RFIPlots::MakePowerTimePlot(XYPointSet& pointSet, Image2DCPtr image,
   bool useMeta;
   if (metaData != nullptr && metaData->HasObservationTimes()) {
     useMeta = true;
-    pointSet.SetXIsTime(true);
   } else {
     useMeta = false;
   }
 
-  size_t binSize = (size_t)ceil(image->Width() / 256.0L);
+  const size_t binSize = (size_t)ceil(image->Width() / 256.0L);
 
   unsigned index = 0;
   for (size_t x = 0; x < image->Width(); x += binSize) {
@@ -221,8 +220,8 @@ void RFIPlots::MakeComplexPlanePlot(XYPointSet& pointSet,
     pointSet.SetYDesc("real/imaginary visibility");
   }
 
-  Image2DCPtr real = data.GetRealPart();
-  Image2DCPtr imaginary = data.GetImaginaryPart();
+  const Image2DCPtr real = data.GetRealPart();
+  const Image2DCPtr imaginary = data.GetImaginaryPart();
 
   for (size_t x = xStart; x < xStart + length; ++x) {
     long double r = 0.0L, i = 0.0L;
@@ -256,8 +255,8 @@ void RFIPlots::MakeFittedComplexPlot(XYPointSet& pointSet,
     pointSet.SetXDesc("time");
     pointSet.SetYDesc("real/imaginary visibility");
   }
-  Image2DCPtr real = data.GetRealPart();
-  Image2DCPtr imaginary = data.GetImaginaryPart();
+  const Image2DCPtr real = data.GetRealPart();
+  const Image2DCPtr imaginary = data.GetImaginaryPart();
 
   std::vector<num_t> xReal(length);
   std::vector<num_t> xImag(length);
@@ -398,8 +397,8 @@ void RFIPlots::MakeTimeScatterPlot(class MultiPlot& plot,
                                    const TimeFrequencyMetaDataCPtr& metaData,
                                    unsigned startIndex) {
   for (size_t polIndex = 0; polIndex != data.PolarizationCount(); ++polIndex) {
-    PolarizationEnum pol = data.GetPolarization(polIndex);
-    TimeFrequencyData polTF = data.Make(pol);
+    const PolarizationEnum pol = data.GetPolarization(polIndex);
+    const TimeFrequencyData polTF = data.Make(pol);
     MakeTimeScatterPlot(plot, startIndex + polIndex, polTF.GetSingleImage(),
                         polTF.GetSingleMask(), metaData);
     if (data.PolarizationCount() == 1)
@@ -414,8 +413,8 @@ void RFIPlots::MakeFrequencyScatterPlot(
     class MultiPlot& plot, const TimeFrequencyData& data,
     const TimeFrequencyMetaDataCPtr& metaData, unsigned startIndex) {
   for (size_t polIndex = 0; polIndex != data.PolarizationCount(); ++polIndex) {
-    PolarizationEnum pol = data.GetPolarization(polIndex);
-    TimeFrequencyData polTF = data.Make(pol);
+    const PolarizationEnum pol = data.GetPolarization(polIndex);
+    const TimeFrequencyData polTF = data.Make(pol);
     MakeFrequencyScatterPlot(plot, startIndex + polIndex,
                              polTF.GetSingleImage(), polTF.GetSingleMask(),
                              metaData);

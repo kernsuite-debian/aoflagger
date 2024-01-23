@@ -53,15 +53,16 @@ class ImageComparisonController {
    */
   TimeFrequencyData AltMaskData() const {
     if (_visualizedImage == 0) {
-      if (_dataList.size() > 1)
+      if (_dataList.size() > 1) {
         return _dataList.back().data;
-      else {
+      } else {
         TimeFrequencyData empty = _dataList.back().data;
         empty.SetNoMask();
         return empty;
       }
-    } else
+    } else {
       return _dataList[_visualizedImage].data;
+    }
   }
 
   size_t AddVisualization(const std::string& label,
@@ -150,12 +151,13 @@ class ImageComparisonController {
     if (orActive && altActive) {
       data.SetMask(_dataList[0].data);
       data.JoinMask(_dataList[altMaskIndex].data);
-    } else if (orActive)
+    } else if (orActive) {
       data.SetMask(_dataList[0].data);
-    else if (altActive)
+    } else if (altActive) {
       data.SetMask(_dataList[altMaskIndex].data);
-    else
+    } else {
       data.SetMasksToValue<false>();
+    }
   }
   MaskedHeatMap _plot;
   bool _showPP, _showPQ, _showQP, _showQQ;

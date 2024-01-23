@@ -97,19 +97,19 @@ TimeFrequencyData SimulateDialog::Make() const {
   for (const aocommon::PolarizationEnum pol : polarizations) {
     if (isComplex) {
       if (addNoise) {
-        Image2DPtr real = Image2D::MakePtr(
+        const Image2DPtr real = Image2D::MakePtr(
             TestSetGenerator::MakeNoise(width, height, noiseLevel));
-        Image2DPtr imag = Image2D::MakePtr(
+        const Image2DPtr imag = Image2D::MakePtr(
             TestSetGenerator::MakeNoise(width, height, noiseLevel));
         data = TimeFrequencyData::MakeFromPolarizationCombination(
             data, TimeFrequencyData(pol, real, imag));
       } else {
-        Image2DPtr zero = Image2D::CreateZeroImagePtr(width, height);
+        const Image2DPtr zero = Image2D::CreateZeroImagePtr(width, height);
         data = TimeFrequencyData::MakeFromPolarizationCombination(
             data, TimeFrequencyData(pol, zero, zero));
       }
     } else {
-      Image2DPtr amp =
+      const Image2DPtr amp =
           Image2D::MakePtr(TestSetGenerator::MakeRayleighData(width, height));
       data = TimeFrequencyData::MakeFromPolarizationCombination(
           data, TimeFrequencyData(TimeFrequencyData::AmplitudePart, pol, amp));

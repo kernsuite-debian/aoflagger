@@ -9,12 +9,12 @@ stages:
     - apt-get update -qq
     - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq
        casacore-data casacore-tools casacore-dev
-       clang-format-12
        cmake
        g++
        git
        libblas-dev liblapack-dev
-       libboost-filesystem-dev libboost-system-dev libboost-date-time-dev
+       libboost-date-time-dev
+       libboost-system-dev
        libboost-test-dev
        libcfitsio-dev
        libfftw3-dev
@@ -30,35 +30,48 @@ stages:
        python3-dev
        python3-numpy
        python3-pip
-    # The formatter needs a binary named 'clang-format', not 'clang-format-12'.
-    - ln -sf clang-format-12 /usr/bin/clang-format
-    - pip3 install cmake-format pytest
+    - pip3 install pytest
 
-aoflagger:
+ubuntu20-build:
   stage: build
   image: ubuntu:20.04
   extends: .dependencies
   script:
-    - scripts/run-format.sh
     - mkdir build
     - cd build
     - cmake ../
     - make -j`nproc`
     - make -j`nproc` install
-    - make -j`nproc` check
     - cd python
     - echo "import aoflagger"|python3
 
-test:
+format-ubuntu22:
+  stage: test
+  image: ubuntu:22.04
+  needs: []
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    - apt-get update -qq
+    - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq
+       clang-format-14 python3-pip wget unzip
+    - pip3 install black cmake-format
+    - wget https://github.com/JohnnyMorganz/StyLua/releases/download/v0.15.2/stylua-linux-x86_64.zip
+    - unzip -d /usr/local/bin stylua-linux-x86_64.zip
+  script:
+    - ./scripts/run-format.sh
+
+ubuntu20-tests:
   stage: test
   image: ubuntu:20.04
   extends: .dependencies
   script:
     - mkdir build
     - cd build
-    - cmake -DENABLE_INTEGRATION_TESTS=ON -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" ../
-    - make -j`nproc` all runtests install
-    - ctest
+    - cmake -DENABLE_TESTS=ON -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" ../
+    # Do not install AOFlagger in this job. The tests should still run.
+    - make -j`nproc` all runtests
+    - ctest --output-on-failure
   artifacts:
     paths:
       - build/*.xml
@@ -69,19 +82,19 @@ test:
 # release. This version should be updated every 6 months to the then current
 # release. Even when the latest release is an LTS release the update is useful
 # since it tests whether the software builds with ninja.
-test-ubuntu-latest:
+ubuntu22-tests:
   stage: test
-  image: ubuntu:21.10
+  image: ubuntu:22.04
   before_script:
     - !reference [.dependencies, before_script]
     - export DEBIAN_FRONTEND=noninteractive && apt-get install -y -qq ninja-build
   script:
     - mkdir build
     - cd build
-    - cmake -DENABLE_INTEGRATION_TESTS=ON -GNinja ../
+    - cmake -DENABLE_TESTS=ON -GNinja ../
     - ninja all runtests install
     - ninja check
-    - ctest
+    - ctest --output-on-failure
     - cd python
     - echo "import aoflagger"|python3
   artifacts:

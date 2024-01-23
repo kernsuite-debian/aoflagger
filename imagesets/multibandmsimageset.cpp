@@ -2,8 +2,8 @@
 #include "multibandmsimageset.h"
 
 #include "../msio/directbaselinereader.h"
-#include "../msio/indirectbaselinereader.h"
 #include "../msio/memorybaselinereader.h"
+#include "../msio/reorderingbaselinereader.h"
 #include "../util/logger.h"
 #include "../util/progress/dummyprogresslistener.h"
 #include "../util/progress/subtasklistener.h"
@@ -13,6 +13,7 @@
 #include <aocommon/parallelfor.h>
 
 #include <limits>
+#include <numeric>
 #include <utility>
 
 namespace imagesets {
@@ -26,8 +27,8 @@ static std::unique_ptr<BaselineReader> CreateReader(const std::string& ms_name,
     case BaselineIOMode::DirectReadMode:
       return std::make_unique<DirectBaselineReader>(ms_name);
 
-    case BaselineIOMode::IndirectReadMode:
-      return std::make_unique<IndirectBaselineReader>(ms_name);
+    case BaselineIOMode::ReorderingReadMode:
+      return std::make_unique<ReorderingBaselineReader>(ms_name);
 
     case BaselineIOMode::AutoReadMode:
     case BaselineIOMode::MemoryReadMode:
@@ -46,9 +47,9 @@ MultiBandMsImageSet::MultiBandMsImageSet(
   // MSImageSet::initReader.
   if (io_mode == BaselineIOMode::AutoReadMode &&
       !MemoryBaselineReader::IsEnoughMemoryAvailable(
-          ms_names.size() *
-          BaselineReader::MeasurementSetDataSize(ms_names[0])))
-    io_mode = BaselineIOMode::DirectReadMode;
+          ms_names.size() * BaselineReader::MeasurementSetIntervalDataSize(
+                                ms_names[0], start_time_step, end_time_step)))
+    io_mode = BaselineIOMode::ReorderingReadMode;
 
   for (const std::string& ms_name : ms_names_) {
     readers_.emplace_back(CreateReader(ms_name, io_mode));
@@ -74,7 +75,7 @@ static std::vector<BaselineReader*> GetWriters(
 void MultiBandMsImageSet::WriteToMs(size_t n_threads) {
   assert(n_threads != 0 && n_threads <= readers_.size() &&
          "Caller should provide a valid number of execution threads.");
-  Stopwatch watch(true);
+  const Stopwatch watch(true);
 
   const std::vector<BaselineReader*> writers = GetWriters(readers_);
   aocommon::ParallelFor<size_t> executor(n_threads);
@@ -152,26 +153,28 @@ template <class Type, class Functor>
 static void ValidateEqual(const Type& lhs,
                           std::vector<const MSMetaData*>::const_iterator first,
                           std::vector<const MSMetaData*>::const_iterator last,
-                          Functor&& functor) {
+                          Functor&& functor, const std::string& description) {
   if (!std::all_of(first, last, [&](const MSMetaData* element) {
         return lhs == functor(element);
       })) {
-    throw std::runtime_error("The loaded measurement sets are not compatible");
+    throw std::runtime_error(
+        "The loaded measurement sets are not compatible in this dimension: " +
+        description);
   }
 }
 
 template <class Functor>
 static auto ExtractField(const std::vector<const MSMetaData*>& meta_data,
-                         Functor&& functor) {
+                         Functor&& functor, const std::string& description) {
   assert(!meta_data.empty());
   auto result = functor(meta_data[0]);
   ValidateEqual(result, meta_data.begin() + 1, meta_data.end(),
-                std::forward<Functor>(functor));
+                std::forward<Functor>(functor), description);
   return result;
 }
 
 void MultiBandMsImageSet::ReadData(size_t n_threads) {
-  Stopwatch watch(true);
+  const Stopwatch watch(true);
   aocommon::ParallelFor<size_t> executor(n_threads);
   executor.Run(0, readers_.size(), [&](size_t i) {
     readers_[i]->PrepareReadWrite(BaselineReader::dummy_progress_);
@@ -193,20 +196,148 @@ static std::vector<const MSMetaData*> GetInitializedMetaData(
   return result;
 }
 
+namespace {
+// These two helper functions below are based on
+// https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
+
+// They are used in MultiBandMsImageSet::ProcessMetaData() to sort multiple
+// vectors simulatenously by frequency. There is a nicer ranges based solution,
+// supported from C++23 onwards, see the comment where the functions are used.
+// The functions here can be removed when moving to to ranges based solution
+
+/**
+ * Returns an indexing vector that sorts vector \p input according to comparator
+ * \p compare
+ */
+template <typename T, typename Compare>
+std::vector<std::size_t> MakeSortingPermutation(const std::vector<T>& input,
+                                                const Compare& compare) {
+  std::vector<std::size_t> permutation(input.size());
+  std::iota(permutation.begin(), permutation.end(), 0);
+  std::sort(permutation.begin(), permutation.end(),
+            [&](std::size_t i, std::size_t j) {
+              return compare(input[i], input[j]);
+            });
+  return permutation;
+}
+
+/**
+ * Permute the vector \p input using indexing vector \p permutation.
+ */
+template <typename T>
+void ApplyPermutation(std::vector<T>& input,
+                      const std::vector<std::size_t>& permutation) {
+  std::vector<bool> done(input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    if (done[i]) {
+      continue;
+    }
+    done[i] = true;
+    std::size_t prev_j = i;
+    std::size_t j = permutation[i];
+    while (i != j) {
+      std::swap(input[prev_j], input[j]);
+      done[j] = true;
+      prev_j = j;
+      j = permutation[j];
+    }
+  }
+}
+
+/**
+ * Find the order in which the channels in the spws are sorted.
+ *
+ * Returns std::optional<bool>(true) when all spws are in ascending frequency
+ * order, std::optiona<bool>(false) when in descending frequency order.
+ * std::optional<bool>() when in mixed order
+ */
+std::optional<bool> IsInAscendingFrequencyOrder(
+    const std::vector<const MSMetaData*>& meta_data) {
+  std::optional<bool> frequency_is_ascending;
+  for (const MSMetaData* ms_meta_data : meta_data) {
+    // Only check the first band, assuming the rest is in the same order
+    const std::vector<ChannelInfo>& channels =
+        ms_meta_data->GetBandInfo(0).channels;
+    // If there is only one channel, there is no ordering
+    if (channels.size() == 1) continue;
+    // Determine the ordering of this ms from the order of the first twp
+    // channels
+    bool ms_frequency_is_ascending =
+        channels[0].frequencyHz < channels[1].frequencyHz;
+    if (frequency_is_ascending.has_value()) {
+      // If an ordering has already been established, the current ms should be
+      // conformal
+      if (*frequency_is_ascending != ms_frequency_is_ascending) {
+        return std::optional<bool>();
+      }
+    } else {
+      // There was no ordering established, the current ms determines the
+      // ordering
+      frequency_is_ascending = ms_frequency_is_ascending;
+    }
+  }
+  // No ordering has been established (all ms have a single channel)
+  // Set the ordering arbitrarily to ascending
+  if (!frequency_is_ascending.has_value()) frequency_is_ascending = true;
+
+  return frequency_is_ascending;
+}
+
+}  // anonymous namespace
+
 void MultiBandMsImageSet::ProcessMetaData() {
-  const std::vector<const MSMetaData*> meta_data =
+  std::vector<const MSMetaData*> meta_data =
       GetInitializedMetaData(readers_.begin(), readers_.end());
 
+  // The ms's should be combined in frequency order
+  // Either ascending or descending depending on the order of the channels in
+  // the ms
+  std::optional<bool> frequency_is_ascending =
+      IsInAscendingFrequencyOrder(meta_data);
+  if (!frequency_is_ascending.has_value()) {
+    throw std::runtime_error(
+        "Trying to concatenate MeasurementSets that have not the same "
+        "ordering in frequency.");
+  }
+
+  // In C++23 multiple vectors can be sorted simultaneously using ranges:
+  //
+  //   std::ranges::sort(std::views::zip(ms_names_, readers_, meta_data),
+  //   [frequency_is_ascending](auto&& a, auto&& b) {
+  //     return (std::get<2>(a)->GetBandInfo(0).channels[0].frequencyHz <
+  //             std::get<2>(b)->GetBandInfo(0).channels[0].frequencyHz) !=
+  //             !(*frequency_is_ascending);
+  //   });
+  //
+  // Without ranges support, the helper functions MakeSortingPermutation and
+  // ApplyPermutation are needed
+
+  // Get the permutation to sort the ms's in ascending/descending frequency
+  // order The != operator is equivalent to a xor operation, toggling the
+  // comparison
+  std::vector<size_t> permutation = MakeSortingPermutation(
+      meta_data,
+      [frequency_is_ascending](const MSMetaData* a, const MSMetaData* b) {
+        return (a->GetBandInfo(0).channels[0].frequencyHz <
+                b->GetBandInfo(0).channels[0].frequencyHz) !=
+               !(*frequency_is_ascending);
+      });
+
+  // Apply the permutation to ms_names_ and its derivatives
+  ApplyPermutation(ms_names_, permutation);
+  ApplyPermutation(readers_, permutation);
+  ApplyPermutation(meta_data, permutation);
+
   // These fields are only validated.
-  ExtractField(meta_data, GetBaselines);
-  ExtractField(meta_data, GetObservationTimes);
+  ExtractField(meta_data, GetBaselines, "baselines");
+  ExtractField(meta_data, GetObservationTimes, "timesteps");
 
   // These fields are validated and cached.
-  antennae_ = ExtractField(meta_data, GetAntennae);
-  fields_ = ExtractField(meta_data, GetFields);
-  sequences_ = ExtractField(meta_data, GetSequences);
-  observation_times_per_sequence_ =
-      ExtractField(meta_data, GetObservationTimesPerSequence);
+  antennae_ = ExtractField(meta_data, GetAntennae, "antennas");
+  fields_ = ExtractField(meta_data, GetFields, "fields");
+  sequences_ = ExtractField(meta_data, GetSequences, "sequences");
+  observation_times_per_sequence_ = ExtractField(
+      meta_data, GetObservationTimesPerSequence, "timesteps per sequence");
   std::tie(band_, channels_per_band_) = CombineBands(meta_data);
 }
 
@@ -276,8 +407,9 @@ static std::unique_ptr<BaselineData> GetData(
     BaselineReader& reader, const MSMetaData::Sequence& sequence,
     const imagesets::ImageSetIndex& index) {
   std::vector<UVW> uvw;
-  TimeFrequencyData data = reader.GetNextResult(uvw);
-  TimeFrequencyMetaDataCPtr meta_data = GetMetaData(reader, sequence, uvw);
+  const TimeFrequencyData data = reader.GetNextResult(uvw);
+  const TimeFrequencyMetaDataCPtr meta_data =
+      GetMetaData(reader, sequence, uvw);
   return std::make_unique<imagesets::BaselineData>(std::move(data),
                                                    std::move(meta_data), index);
 }

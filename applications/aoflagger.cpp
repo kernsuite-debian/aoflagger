@@ -44,73 +44,64 @@ int main(int argc, char** argv) {
            "created with the RFI gui\n"
            "and executes it on one or several observations.\n\n"
            "Usage: "
-        << argv[0]
-        << " [options] <obs1> [<obs2> [..]]\n"
-           "  -v will produce verbose output\n"
-           "  -j overrides the number of threads specified in the strategy\n"
-           "     (default: one thread for each CPU core)\n"
-           "  -strategy <strategy>\n"
-           "     specifies a customized strategy\n"
-           "  -direct-read\n"
-           "     Will perform the slowest IO but will always work.\n"
-           "  -indirect-read\n"
-           "     Will reorder the measurement set before starting, which is "
-           "normally faster but requires\n"
-           "     free disk space to reorder the data to.\n"
-           "  -memory-read\n"
-           "     Will read the entire measurement set in memory. This is the "
-           "fastest, but requires much\n"
-           "     memory.\n"
-           "  -auto-read-mode\n"
-           "     Will select either memory or direct mode based on available "
-           "memory (default).\n"
-           "  -skip-flagged\n"
-           "     Will skip an ms if it has already been processed by AOFlagger "
-           "according to its HISTORY\n"
-           "     table.\n"
-           "  -uvw\n"
-           "     Reads uvw values (some exotic strategies require these)\n"
-           "  -column <name>\n"
-           "     Specify column to flag\n"
-           "  -interval <start> <end>\n"
-           "     Only process the specified timesteps. Indices are zero "
-           "indexed, and\n"
-           "     the end is exclusive, such that -interval 10 20 selects 10, "
-           "11, ... 19.\n"
-           "  -chunk-size <ntimes>\n"
-           "     This will split the set into intervals with the given maximum "
-           "size, and flag each\n"
-           "     interval independently. This lowers the amount of memory "
-           "required. The flagger\n"
-           "     has slightly less information per interval, but for a size of "
-           "1000 timesteps there is\n"
-           "     no noticable difference. With a size of 100 the difference is "
-           "mostly not problematic\n"
-           "     either. In some cases, splitting the data increases accuracy, "
-           "in particular when the\n"
-           "     statistics in the set change significantly over time (e.g. "
-           "rising Galaxy).\n"
-           "  -bands <list>\n"
-           "     Comma separated list of (zero-indexed) band ids to process\n"
-           "  -fields <list>\n"
-           "     Comma separated list of (zero-indexed) field ids to process\n"
-           "  -baselines < all / cross / auto >\n"
-           "     Run the strategy on the given baseline types. The default is "
-           "to run the strategy on\n"
-           "     all cross-correlation baselines. This parameter has no effect "
-           "for single-dish observations.\n"
-           "  -combine-spws\n"
-           "     Join all SPWs together in frequency direction before "
-           "flagging\n"
-           "  -preamble <statement>\n"
-           "     Runs the specified Lua statement before starting to flag. "
-           "This is typically used to\n"
-           "     define a variable, e.g. -preamble \"bandpassfile = "
-           "mybandpass.txt\".\n"
-           "\n"
-           "This tool supports the Casacore measurement set, the SDFITS and "
-           "Filterbank formats and some more. See\n"
-           "the documentation for support of other file types.\n";
+        << argv[0] << " [options] <obs1> [<obs2> [..]]"
+        << R"(
+  -v will produce verbose output
+  -j overrides the number of threads specified in the strategy
+     (default: one thread for each CPU core)
+  -strategy <strategy>
+     Specifies a customized strategy.
+  -direct-read
+     Will perform the slowest IO but will always work.
+  -indirect-read
+     Will reorder the measurement set before starting, which is normally faster
+     but requires free disk space to reorder the data to.
+  -memory-read
+     Will read the entire measurement set in memory. This is the fastest, but
+     requires much memory.
+  -auto-read-mode
+     Will select either memory or direct mode based on available memory
+     (default).
+  -skip-flagged
+     Will skip an ms if it has already been processed by AOFlagger according to
+     its HISTORY table.
+  -uvw
+     Reads uvw values (some exotic strategies require these).
+  -column <name>
+     Specify column to flag.
+  -interval <start> <end>
+     Only process the specified timesteps. Indices are zero indexed, and the
+     end is exclusive, such that -interval 10 20 selects 10, 11, ... 19.
+  -chunk-size <ntimes>
+     This will split the set into intervals with the given maximum size, and
+     flag each interval independently. This lowers the amount of memory
+     required. The flagger has slightly less information per interval, but for
+     a size of 1000 timesteps there is no noticable difference. With a size of
+     100 the difference is mostly not problematic either. In some cases,
+     splitting the data increases accuracy, in particular when the statistics
+     in the set change significantly over time (e.g.  rising Galaxy).
+  -bands <list>
+     Comma separated list of (zero-indexed) band ids to process.
+  -fields <list>
+     Comma separated list of (zero-indexed) field ids to process.
+  -baselines < all / cross / auto >
+     Run the strategy on the given baseline types. The default is to run
+     the strategy on all cross-correlation baselines. This parameter has no
+     effect for single-dish observations.
+  -combine-spws
+     Join all SPWs together in frequency direction before flagging.
+  -preamble <statement>
+     Runs the specified Lua statement before starting to flag. This is
+     typically used to define a variable, e.g.
+     -preamble "bandpassfile = mybandpass.txt".
+  -concatenate-frequency
+     Reads all obs arguments and processes them as one measurement set. Every
+     obs argument contains one band the same measurement; meaning the other
+     metadata of the measurement sets is identical.
+
+This tool supports the Casacore measurement set, the SDFITS and Filterbank
+formats and some more. See the documentation for support of other file types.
+)";
 
     checkRelease();
 
@@ -137,8 +128,11 @@ int main(int argc, char** argv) {
       return 0;
     } else if (flag == "direct-read") {
       options.readMode = DirectReadMode;
-    } else if (flag == "indirect-read") {
-      options.readMode = IndirectReadMode;
+    } else if (flag == "reorder" || flag == "indirect-read") {
+      options.readMode = ReorderingReadMode;
+      if (flag == "indirect-read")
+        Logger::Warn << "WARNING: Parameter '-indirect-read' is deprecated, "
+                        "use '-reorder' instead.\n";
     } else if (flag == "memory-read") {
       options.readMode = MemoryReadMode;
     } else if (flag == "auto-read-mode") {
@@ -175,14 +169,14 @@ int main(int argc, char** argv) {
       options.chunkSize = atoi(argv[parameterIndex]);
     } else if (flag == "baselines") {
       ++parameterIndex;
-      std::string bTypes = argv[parameterIndex];
-      if (bTypes == "all")
+      const std::string bTypes = argv[parameterIndex];
+      if (bTypes == "all") {
         options.baselineSelection = BaselineSelection::All;
-      else if (bTypes == "cross")
+      } else if (bTypes == "cross") {
         options.baselineSelection = BaselineSelection::CrossCorrelations;
-      else if (bTypes == "auto")
+      } else if (bTypes == "auto") {
         options.baselineSelection = BaselineSelection::AutoCorrelations;
-      else {
+      } else {
         Logger::Error << "Incorrect usage; baselines parameter should be set "
                          "to 'all', 'cross' or 'auto'.\n";
         return RETURN_CMDLINE_ERROR;
@@ -202,7 +196,7 @@ int main(int argc, char** argv) {
 
     checkRelease();
 
-    Stopwatch watch(true);
+    const Stopwatch watch(true);
 
     std::stringstream commandLineStr;
     commandLineStr << argv[0];
@@ -214,7 +208,7 @@ int main(int argc, char** argv) {
     for (int i = parameterIndex; i < argc; ++i)
       options.filenames.emplace_back(argv[i]);
 
-    std::filesystem::path strategyPath = options.strategyFilename;
+    const std::filesystem::path strategyPath = options.strategyFilename;
     if (boost::to_lower_copy(strategyPath.extension().string()) == ".rfis") {
       Logger::Error << "An old .rfis file was specified. AOFlagger version 3 "
                        "supports only Lua scripts and can\n"

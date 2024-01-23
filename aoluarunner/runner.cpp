@@ -10,6 +10,7 @@
 
 #include "../structures/msmetadata.h"
 
+#include "../imagesets/h5imageset.h"
 #include "../imagesets/joinedspwset.h"
 #include "../imagesets/msimageset.h"
 #include "../imagesets/msoptions.h"
@@ -24,7 +25,10 @@
 #include <algorithm>
 #include <fstream>
 
-using namespace imagesets;
+using imagesets::H5ImageSet;
+using imagesets::ImageSet;
+using imagesets::JoinedSPWSet;
+using imagesets::MSImageSet;
 
 // The order of initialization:
 // 1. If Lua strategy given, load Lua strategy
@@ -67,8 +71,8 @@ void Runner::loadStrategy(
   if (!options.strategyFilename.empty())
     executeFilename = options.strategyFilename;
   if (executeFilename.empty() && imageSet) {
-    std::string telescopeName = imageSet->TelescopeName();
-    TelescopeFile::TelescopeId telescopeId =
+    const std::string telescopeName = imageSet->TelescopeName();
+    const TelescopeFile::TelescopeId telescopeId =
         TelescopeFile::TelescopeIdFromName(telescopeName);
     if (telescopeId == TelescopeFile::GENERIC_TELESCOPE) {
       Logger::Warn
@@ -89,7 +93,7 @@ void Runner::loadStrategy(
                    << "using the rfigui and specify it with the '-strategy "
                       "...' parameter.\n\n";
     }
-    executeFilename = TelescopeFile::FindStrategy("", telescopeId);
+    executeFilename = TelescopeFile::FindStrategy(telescopeId);
     if (executeFilename.empty()) {
       throw std::runtime_error("Could not find a strategy for telescope " +
                                TelescopeFile::TelescopeName(telescopeId) +
@@ -136,7 +140,7 @@ static std::vector<std::string> FilterProcessedFiles(
 void Runner::run(const Options& options) {
   Logger::SetVerbosity(options.logVerbosity.value_or(Logger::NormalVerbosity));
 
-  size_t threadCount = options.CalculateThreadCount();
+  const size_t threadCount = options.CalculateThreadCount();
   Logger::Debug << "Number of threads: " << options.threadCount << "\n";
 
   const std::vector<std::string>& ms_files =
@@ -162,9 +166,11 @@ std::unique_ptr<ImageSet> Runner::initializeImageSet(const Options& options,
 
   std::unique_ptr<ImageSet> imageSet(ImageSet::Create(
       std::vector<std::string>{fileOptions.filename}, msOptions));
-  bool isMS = dynamic_cast<MSImageSet*>(imageSet.get()) != nullptr;
-  if (isMS) {
-    MSImageSet* msImageSet = static_cast<MSImageSet*>(imageSet.get());
+  if (H5ImageSet* h5ImageSet = dynamic_cast<H5ImageSet*>(imageSet.get());
+      h5ImageSet) {
+    h5ImageSet->SetInterval(fileOptions.intervalStart, fileOptions.intervalEnd);
+  } else if (MSImageSet* msImageSet = dynamic_cast<MSImageSet*>(imageSet.get());
+             msImageSet) {
     if (options.dataColumn.empty())
       msImageSet->SetDataColumnName("DATA");
     else
@@ -197,11 +203,12 @@ std::unique_ptr<ImageSet> Runner::initializeImageSet(const Options& options,
         fileOptions.nIntervals = 1;
       }
     }
-    if (fileOptions.nIntervals == 1)
+    if (fileOptions.nIntervals == 1) {
       msImageSet->SetInterval(fileOptions.intervalStart,
                               fileOptions.intervalEnd);
-    else {
-      size_t nTimes = fileOptions.resolvedIntEnd - fileOptions.resolvedIntStart;
+    } else {
+      const size_t nTimes =
+          fileOptions.resolvedIntEnd - fileOptions.resolvedIntStart;
       size_t start = fileOptions.resolvedIntStart + fileOptions.intervalIndex *
                                                         nTimes /
                                                         fileOptions.nIntervals;
@@ -382,11 +389,9 @@ void Runner::writeHistory(const Options& options, const std::string& filename) {
   Logger::Debug << "Adding strategy to history table of MS...\n";
   try {
     std::string strategyFilename;
-    if (options.strategyFilename.empty())
-      /// TODO
-      ;
-    else
+    if (!options.strategyFilename.empty()) {
       strategyFilename = options.strategyFilename;
+    }
     // std::ifstream strategyFile(strategyFilename);
     // std::string content((std::istreambuf_iterator<char>(strategyFile)),
     // (std::istreambuf_iterator<char>()) );

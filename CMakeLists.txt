@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 
 project(AOFlagger)
 
@@ -49,6 +49,15 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
+# Python needs to be found before pybind11 to avoid finding different versions
+# of python
+find_package(
+  Python
+  COMPONENTS Interpreter Development
+  REQUIRED)
+message(STATUS "Using python version ${Python_VERSION}")
+include_directories(SYSTEM ${Python_INCLUDE_DIRS})
+
 list(APPEND ExternalSubmoduleDirectories aocommon pybind11)
 foreach(ExternalSubmodule IN LISTS ExternalSubmoduleDirectories)
   if(NOT EXISTS ${CMAKE_SOURCE_DIR}/external/${ExternalSubmodule})
@@ -96,14 +105,9 @@ endif(GSL_INCLUDE_DIR)
 find_package(Threads REQUIRED)
 
 find_package(PNG REQUIRED)
-find_package(PythonLibs 3 REQUIRED)
-find_package(PythonInterp REQUIRED)
-message(STATUS "Using python version ${PYTHON_VERSION_STRING}")
-include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 
 # boost::alignment requires Boost 1.56
-find_package(Boost 1.56.0 REQUIRED COMPONENTS date_time filesystem system
-                                              unit_test_framework)
+find_package(Boost 1.56.0 REQUIRED COMPONENTS date_time system)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 find_library(FFTW3_LIB fftw3 REQUIRED HINTS ENV FFTW3_LIB)
@@ -137,9 +141,19 @@ endif("${isSystemDir}" STREQUAL "-1")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
-set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Wall -Wvla -Wzero-as-null-pointer-constant -DNDEBUG -O3"
-)
+add_compile_options(
+  -DNDEBUG
+  -O3
+  -Wall
+  -Wvla
+  -Wzero-as-null-pointer-constant
+  -Wnon-virtual-dtor
+  -Wduplicated-branches
+  -Wundef
+  -Wvla
+  -Wpointer-arith
+  -Wextra
+  -Wno-unused-parameter)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   # GCC 8.x requires linking with stdc++fs for the filesystem library
   # https://gcc.gnu.org/onlinedocs/gcc-9.1.0/libstdc++/manual/manual/status.html#status.iso.2017
@@ -224,7 +238,6 @@ set(PLOT_FILES
 set(GUI_FILES
     rfigui/controllers/imagecomparisoncontroller.cpp
     rfigui/controllers/rfiguicontroller.cpp
-    rfigui/complexplaneplotwindow.cpp
     rfigui/gotowindow.cpp
     rfigui/imagepropertieswindow.cpp
     rfigui/opendialog.cpp
@@ -262,10 +275,10 @@ set(MSIO_FILES
     msio/baselinereader.cpp
     msio/directbaselinereader.cpp
     msio/fitsfile.cpp
-    msio/indirectbaselinereader.cpp
     msio/memorybaselinereader.cpp
     msio/msstatreader.cpp
     msio/pngfile.cpp
+    msio/reorderingbaselinereader.cpp
     msio/rspreader.cpp
     msio/singlebaselinefile.cpp
     msio/spatialtimeloader.cpp)
@@ -280,19 +293,22 @@ set(STRUCTURES_FILES
     structures/timefrequencydata.cpp)
 
 set(QUALITY_FILES
-    quality/collector.cpp quality/histogramcollection.cpp
-    quality/histogramtablesformatter.cpp quality/qualitytablesformatter.cpp
-    quality/rayleighfitter.cpp quality/statisticscollection.cpp)
+    quality/collector.cpp
+    quality/combine.cpp
+    quality/histogramcollection.cpp
+    quality/histogramtablesformatter.cpp
+    quality/operations.cpp
+    quality/qualitytablesformatter.cpp
+    quality/rayleighfitter.cpp
+    quality/statisticscollection.cpp)
 
 set(ALGORITHMS_FILES
     algorithms/antennaselector.cpp
     algorithms/baselineselector.cpp
     algorithms/baselinetimeplaneimager.cpp
     algorithms/combinatorialthresholder.cpp
-    algorithms/fringestoppingfitter.cpp
     algorithms/fringetestcreater.cpp
     algorithms/highpassfilter.cpp
-    algorithms/localfitmethod.cpp
     algorithms/morphology.cpp
     algorithms/sinusfitter.cpp
     algorithms/siroperator.cpp
@@ -311,6 +327,7 @@ set(IMAGESETS_FILES
     imagesets/bhfitsimageset.cpp
     imagesets/filterbankset.cpp
     imagesets/fitsimageset.cpp
+    imagesets/h5imageset.cpp
     imagesets/imageset.cpp
     imagesets/indexableset.cpp
     imagesets/msimageset.cpp
@@ -333,7 +350,7 @@ set(ALL_LIBRARIES
     ${CASACORE_LIBRARIES}
     ${FFTW3_LIB}
     ${CFITSIO_LIBRARY}
-    ${PYTHON_LIBRARIES}
+    ${Python_LIBRARIES}
     ${PNG_LIBRARIES}
     ${LUA_LIBRARIES}
     ${Boost_LIBRARIES}
@@ -376,8 +393,33 @@ set(ALL_NON_GUI_FILES
 add_library(aoflagger-lib SHARED ${ALL_NON_GUI_FILES})
 set_target_properties(aoflagger-lib PROPERTIES SOVERSION 0)
 set_target_properties(aoflagger-lib PROPERTIES OUTPUT_NAME aoflagger)
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+  # By default, CMAKE_LIBRARY_OUTPUT_DIRECTORY is not defined. -> Store
+  # libaoflagger.so in lib/ and add the strategies in lib/aoflagger/strategies,
+  # so libaoflagger can find them. Using the current directory is not possible,
+  # since it already contains the 'aoflagger' binary, which has the same name as
+  # the 'aoflagger' directory.
+  file(MAKE_DIRECTORY lib/aoflagger)
+  file(COPY data/strategies DESTINATION lib/aoflagger)
+  set_target_properties(aoflagger-lib PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
+else()
+  # When CMAKE_LIBRARY_OUTPUT_DIRECTORY is set, ensure that libaoflagger.so can
+  # find the strategy files by adding them to that directory. (When building a
+  # python binary wheel, this copy is not necessary even though setup.py uses
+  # CMAKE_LIBRARY_OUTPUT_DIRECTORY: setup.py copies the original strategy files
+  # into the wheel.)
+  file(MAKE_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/aoflagger)
+  file(COPY data/strategies
+       DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/aoflagger)
+endif()
 target_link_libraries(aoflagger-lib ${ALL_LIBRARIES})
-install(TARGETS aoflagger-lib DESTINATION lib)
+# When building a docker image for an application that uses AOFlagger, like DP3,
+# the 'core_library' component allows installing only the core library using:
+# cmake --install <build directory> --component core_library
+install(
+  TARGETS aoflagger-lib
+  DESTINATION lib
+  COMPONENT core_library)
 
 add_executable(aoquality applications/aoquality.cpp)
 target_link_libraries(aoquality aoflagger-lib ${ALL_LIBRARIES})
@@ -414,61 +456,15 @@ set_source_files_properties(
   algorithms/sumthreshold.cpp algorithms/sumthresholdmissing.cpp
   PROPERTIES COMPILE_FLAGS "-ffast-math -funroll-loops")
 
-add_executable(
-  runtests EXCLUDE_FROM_ALL
-  test/runtests.cpp
-  test/experiments/defaultstrategyspeedtest.cpp
-  test/experiments/highpassfilterexperiment.cpp
-  test/experiments/tthroughput.cpp
-  test/lua/defaultstrategytest.cpp
-  test/lua/flagnanstest.cpp
-  test/lua/tmetadata.cpp
-  test/lua/tscript.cpp
-  test/lua/optionsfunctiontest.cpp
-  test/lua/telescopefiletest.cpp
-  test/interface/interfacetest.cpp
-  test/quality/qualitytablesformattertest.cpp
-  test/quality/statisticscollectiontest.cpp
-  test/quality/statisticsderivatortest.cpp
-  test/algorithms/convolutionstest.cpp
-  test/algorithms/dilationtest.cpp
-  test/algorithms/highpassfiltertest.cpp
-  test/algorithms/medianwindow.cpp
-  test/algorithms/noisestatisticstest.cpp
-  test/algorithms/siroperatortest.cpp
-  test/algorithms/sumthresholdmissingtest.cpp
-  test/algorithms/sumthresholdtest.cpp
-  test/algorithms/testtools.cpp
-  test/algorithms/thresholdtoolstest.cpp
-  test/algorithms/tthresholdconfig.cpp
-  test/structures/image2dtest.cpp
-  test/structures/tantennainfo.cpp
-  test/structures/tearthposition.cpp
-  test/structures/tfieldinfo.cpp
-  test/structures/timefrequencydatatest.cpp
-  test/structures/tmask2d.cpp
-  test/structures/tversionstring.cpp
-  test/util/numberparsertest.cpp)
-target_link_libraries(runtests aoflagger-lib ${ALL_LIBRARIES})
-
-add_test(
-  runtests
-  runtests
-  -f
-  JUNIT
-  -k
-  runtests.xml
-  --catch_system_error=yes)
-add_custom_target(
-  check
-  COMMAND runtests
-  DEPENDS runtests)
-
-install(FILES interface/aoflagger.h DESTINATION include)
+install(
+  FILES interface/aoflagger.h
+  DESTINATION include
+  COMPONENT core_library)
 install(DIRECTORY data/icons data/applications DESTINATION share)
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data/strategies
   DESTINATION share/aoflagger
+  COMPONENT core_library
   FILES_MATCHING
   PATTERN *.lua)
 
@@ -479,9 +475,11 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/cmake/config/aoflagger-config-version.cmake.in"
   "${PROJECT_BINARY_DIR}/CMakeFiles/aoflagger-config-version.cmake" @ONLY)
 
-install(FILES "${PROJECT_BINARY_DIR}/CMakeFiles/aoflagger-config.cmake"
-              "${PROJECT_BINARY_DIR}/CMakeFiles/aoflagger-config-version.cmake"
-        DESTINATION share/aoflagger/cmake)
+install(
+  FILES "${PROJECT_BINARY_DIR}/CMakeFiles/aoflagger-config.cmake"
+        "${PROJECT_BINARY_DIR}/CMakeFiles/aoflagger-config-version.cmake"
+  DESTINATION share/aoflagger/cmake
+  COMPONENT core_library)
 
 add_subdirectory(python)
 
@@ -524,9 +522,81 @@ add_custom_target(
   VERBATIM)
 
 # TODO(RAP-368) Make a proper integration test target.
-option(ENABLE_INTEGRATION_TESTS
-       "Enable the integration tests, this requires downloading test data" OFF)
-if(ENABLE_INTEGRATION_TESTS)
+option(ENABLE_TESTS
+       "Enable the integration tests. This requires downloading test data." OFF)
+if(ENABLE_TESTS)
+
+  find_package(Boost 1.56.0 REQUIRED COMPONENTS unit_test_framework)
+  add_executable(
+    runtests
+    test/runtests.cpp
+    test/experiments/defaultstrategyspeedtest.cpp
+    test/experiments/highpassfilterexperiment.cpp
+    test/experiments/tthroughput.cpp
+    test/lua/defaultstrategytest.cpp
+    test/lua/flagnanstest.cpp
+    test/lua/tmetadata.cpp
+    test/lua/tscript.cpp
+    test/lua/optionsfunctiontest.cpp
+    test/lua/telescopefiletest.cpp
+    test/interface/interfacetest.cpp
+    test/quality/qualitytablesformattertest.cpp
+    test/quality/statisticscollectiontest.cpp
+    test/quality/statisticsderivatortest.cpp
+    test/algorithms/convolutionstest.cpp
+    test/algorithms/dilationtest.cpp
+    test/algorithms/highpassfiltertest.cpp
+    test/algorithms/medianwindow.cpp
+    test/algorithms/noisestatisticstest.cpp
+    test/algorithms/siroperatortest.cpp
+    test/algorithms/sumthresholdmissingtest.cpp
+    test/algorithms/sumthresholdtest.cpp
+    test/algorithms/testtools.cpp
+    test/algorithms/thresholdtoolstest.cpp
+    test/algorithms/tthresholdconfig.cpp
+    test/msio/tbaselinereader.cpp
+    test/structures/timage2d.cpp
+    test/structures/tantennainfo.cpp
+    test/structures/tearthposition.cpp
+    test/structures/tfieldinfo.cpp
+    test/structures/ttimefrequencydata.cpp
+    test/structures/ttimefrequencydataoperations.cpp
+    test/structures/tmask2d.cpp
+    test/structures/tversionstring.cpp
+    test/util/numberparsertest.cpp)
+  target_link_libraries(runtests aoflagger-lib ${ALL_LIBRARIES}
+                        Boost::unit_test_framework)
+  target_include_directories(runtests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  add_dependencies(runtests concatenate_frequency_integration_test_ms)
+
+  add_test(
+    runtests
+    runtests
+    -f
+    JUNIT
+    -k
+    runtests.xml
+    --catch_system_error=yes)
+  add_custom_target(
+    check
+    COMMAND runtests
+    DEPENDS runtests)
+
+  set(TEST_DATA_DIR "${CMAKE_BINARY_DIR}/test_data")
+  configure_file(${CMAKE_SOURCE_DIR}/test/config.h.in
+                 ${CMAKE_BINARY_DIR}/test/config.h)
+
+  # Test data for both unit and integration tests.
+  ExternalProject_Add(
+    concatenate_frequency_integration_test_ms
+    EXCLUDE_FROM_ALL URL
+    https://support.astron.nl/software/ci_data/aoflagger/L228163_SB150_SB151_uv.dppp.MS.tar.gz
+    URL_HASH
+      SHA256=1693ae6a56e22b41439246bca30edd1d32119391ac932ade45d0b748ba476e99
+    SOURCE_DIR "${TEST_DATA_DIR}/concatenate_frequency"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND "")
 
   # Set-up cmake configuration for pytest.
   set(INTEGRATION_DIR test/integration)
@@ -539,19 +609,10 @@ if(ENABLE_INTEGRATION_TESTS)
 
   ExternalProject_Add(
     base_integration_test_ms
-    URL https://www.astron.nl/citt/ci_data/aoflagger/3C196_spw5_sub1-WSRT.MS.tar.gz
+    URL https://support.astron.nl/software/ci_data/aoflagger/3C196_spw5_sub1-WSRT.MS.tar.gz
     URL_HASH
       SHA256=e516c936058ba19166f5f192d2c68e83df9ca74987422eea9c158b0905ec2f85
-    SOURCE_DIR ${CMAKE_BINARY_DIR}/test_data/base/3C196_spw5_sub1-WSRT.MS
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND "")
-  ExternalProject_Add(
-    concatenate_frequency_integration_test_ms
-    URL https://www.astron.nl/citt/ci_data/aoflagger/L228163_SB150_SB151_uv.dppp.MS.tar.gz
-    URL_HASH
-      SHA256=1693ae6a56e22b41439246bca30edd1d32119391ac932ade45d0b748ba476e99
-    SOURCE_DIR ${CMAKE_BINARY_DIR}/test_data/concatenate_frequency
+    SOURCE_DIR "${TEST_DATA_DIR}/base/3C196_spw5_sub1-WSRT.MS"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND "")
@@ -564,8 +625,7 @@ if(ENABLE_INTEGRATION_TESTS)
     message(
       FATAL_ERROR
         "Could not run pytest.\n"
-        "Please install pytest or disable testing using -DENABLE_INTEGRATION_TESTS=Off"
-    )
+        "Please install pytest or disable testing using -DENABLE_TESTS=Off")
   endif()
 
   function(add_pytest)
@@ -576,9 +636,15 @@ if(ENABLE_INTEGRATION_TESTS)
         COMMAND python3 -m pytest -v --junitxml=${CMAKE_BINARY_DIR}/${TEST}.xml
                 "${CMAKE_SOURCE_DIR}/${INTEGRATION_DIR}/${TEST}.py"
         WORKING_DIRECTORY "${BINARY_INTEGRATION_DIR}")
+      set_tests_properties(
+        "${NAME}"
+        PROPERTIES DEPENDS concatenate_frequency_integration_test_ms DEPENDS
+                   aoflagger ENVIRONMENT
+                   PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH})
+
     endforeach()
   endfunction()
 
-  add_pytest(tBase tConcatenateFrequency)
+  add_pytest(tBase tConcatenateFrequency tPythonInterface)
 
 endif()

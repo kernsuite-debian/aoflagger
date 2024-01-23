@@ -4,6 +4,9 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "imageset.h"
 
@@ -58,8 +61,8 @@ class FitsImageSet final : public ImageSet {
                             std::vector<Image2DCPtr>) override {
     throw std::runtime_error("Not implemented");
   }
-  std::string TelescopeName() final override;
-  bool HasCrossCorrelations() const final override { return false; }
+  std::string TelescopeName() override;
+  bool HasCrossCorrelations() const override { return false; }
   const std::vector<std::pair<size_t, size_t>>& Baselines() const {
     return _baselines;
   }

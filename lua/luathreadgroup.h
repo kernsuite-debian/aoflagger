@@ -7,7 +7,7 @@
 
 class LuaThreadGroup {
  public:
-  LuaThreadGroup(size_t nThreads) : _strategies(nThreads) {}
+  explicit LuaThreadGroup(size_t nThreads) : _strategies(nThreads) {}
 
   void LoadFile(const char* filename) {
     for (LuaStrategy& s : _strategies) {

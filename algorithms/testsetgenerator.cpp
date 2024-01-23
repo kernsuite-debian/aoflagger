@@ -2,6 +2,10 @@
 
 #include <cmath>
 #include <vector>
+#include <utility>
+
+#include "combinatorialthresholder.h"
+#include "highpassfilter.h"
 
 #include "../structures/image2d.h"
 #include "../msio/pngfile.h"
@@ -13,9 +17,6 @@
 #include "../imaging/defaultmodels.h"
 #include "../imaging/model.h"
 #include "../imaging/observatorium.h"
-
-#include "combinatorialthresholder.h"
-#include "localfitmethod.h"
 
 namespace algorithms {
 
@@ -31,9 +32,9 @@ void TestSetGenerator::AddSpectralLine(Image2D& data, Mask2D& rfi,
   for (size_t t = tStart; t != tEnd; ++t) {
     // x will run from -1 to 1
     const double x = (double)((t - tStart) * 2) / tDuration - 1.0;
-    double factor = shapeLevel(shape, x);
+    const double factor = shapeLevel(shape, x);
     for (size_t ch = startChannel; ch < startChannel + nChannels; ++ch) {
-      double value = lineStrength * factor;
+      const double value = lineStrength * factor;
       data.AddValue(t, ch, value);
       if (value != 0.0) rfi.SetValue(t, ch, true);
     }
@@ -59,9 +60,9 @@ void TestSetGenerator::AddBroadbandLine(Image2D& data, Mask2D& rfi,
                                         double lineStrength, size_t startTime,
                                         size_t duration, double frequencyRatio,
                                         double frequencyOffsetRatio) {
-  size_t frequencyCount = data.Height();
-  unsigned fStart = (size_t)(frequencyOffsetRatio * frequencyCount);
-  unsigned fEnd =
+  const size_t frequencyCount = data.Height();
+  const unsigned fStart = (size_t)(frequencyOffsetRatio * frequencyCount);
+  const unsigned fEnd =
       (size_t)((frequencyOffsetRatio + frequencyRatio) * frequencyCount);
   AddBroadbandLinePos(data, rfi, lineStrength, startTime, duration, fStart,
                       fEnd, UniformShape);
@@ -77,7 +78,7 @@ void TestSetGenerator::AddBroadbandLinePos(Image2D& data, Mask2D& rfi,
   for (size_t f = frequencyStart; f < frequencyEnd; ++f) {
     // x will run from -1 to 1
     const double x = (double)((f - frequencyStart) * 2) / s - 1.0;
-    double factor = shapeLevel(shape, x);
+    const double factor = shapeLevel(shape, x);
     for (size_t t = startTime; t < startTime + duration; ++t) {
       data.AddValue(t, f, lineStrength * factor);
       if (lineStrength > 0.0) rfi.SetValue(t, f, true);
@@ -93,10 +94,10 @@ void TestSetGenerator::AddSlewedBroadbandLinePos(
   for (size_t f = frequencyStart; f < frequencyEnd; ++f) {
     // x will run from -1 to 1
     const double x = (double)((f - frequencyStart) * 2) / s - 1.0;
-    double factor = shapeLevel(shape, x);
-    double slew = slewrate * (double)f;
-    size_t slewInt = (size_t)slew;
-    double slewRest = slew - slewInt;
+    const double factor = shapeLevel(shape, x);
+    const double slew = slewrate * (double)f;
+    const size_t slewInt = (size_t)slew;
+    const double slewRest = slew - slewInt;
 
     data.AddValue(startTime + slewInt, f,
                   lineStrength * factor * (1.0 - slewRest));
@@ -217,9 +218,9 @@ TimeFrequencyData TestSetGenerator::MakeTestSet(RFITestSet rfiSet,
                                          images[3], images[4], images[5],
                                          images[6], images[7]);
   } else {
-    Image2DPtr real =
+    const Image2DPtr real =
         Image2D::MakePtr(TestSetGenerator::MakeNoise(width, height, 1.0));
-    Image2DPtr imag =
+    const Image2DPtr imag =
         Image2D::MakePtr(TestSetGenerator::MakeNoise(width, height, 1.0));
     data = TimeFrequencyData(aocommon::Polarization::StokesI, real, imag);
   }
@@ -246,10 +247,10 @@ void TestSetGenerator::MakeBackground(BackgroundTestSet testSet,
         source = SourceSet::FaintVariableDistortion;
         break;
     }
-    size_t channelCount = data.ImageHeight();
+    const size_t channelCount = data.ImageHeight();
     double bandwidth;
     bandwidth = (double)channelCount / 16.0 * 2500000.0;
-    std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> pair =
+    const std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> pair =
         DefaultModels::LoadSet(DefaultModels::NCPSet, source, 0.0, channelCount,
                                bandwidth);
     data = pair.first;
@@ -261,7 +262,8 @@ void TestSetGenerator::MakeBackground(BackgroundTestSet testSet,
            ++imageIndex) {
         const bool isImaginary = imageIndex == 1;
         if (isImaginary) {
-          Image2DPtr image = Image2D::MakePtr(*polData.GetImage(imageIndex));
+          const Image2DPtr image =
+              Image2D::MakePtr(*polData.GetImage(imageIndex));
           const size_t width = image->Width();
           const size_t height = image->Height();
           switch (testSet) {
@@ -326,11 +328,11 @@ void TestSetGenerator::MakeTestSet(RFITestSet testSet,
                                    TimeFrequencyData& data) {
   for (size_t polIndex = 0; polIndex != data.PolarizationCount(); ++polIndex) {
     TimeFrequencyData polData = data.MakeFromPolarizationIndex(polIndex);
-    Mask2DPtr rfi(Mask2D::MakePtr(*polData.GetSingleMask()));
+    const Mask2DPtr rfi(Mask2D::MakePtr(*polData.GetSingleMask()));
     for (size_t imageIndex = 0; imageIndex != polData.ImageCount();
          ++imageIndex) {
       const bool isImaginary = imageIndex == 1;
-      Image2DPtr image = Image2D::MakePtr(*polData.GetImage(imageIndex));
+      const Image2DPtr image = Image2D::MakePtr(*polData.GetImage(imageIndex));
       const size_t width = image->Width();
       const size_t height = image->Height();
       if (polIndex == 2 && isImaginary &&
@@ -419,10 +421,10 @@ void TestSetGenerator::AddIntermittentSpectralLinesToTestSet(Image2D& image,
 void TestSetGenerator::AddBroadbandToTestSet(Image2D& image, Mask2D& rfi,
                                              double length, double strength,
                                              enum BroadbandShape shape) {
-  size_t frequencyCount = image.Height();
-  unsigned step = image.Width() / 11;
-  unsigned fStart = (unsigned)((0.5 - length / 2.0) * frequencyCount);
-  unsigned fEnd = (unsigned)((0.5 + length / 2.0) * frequencyCount);
+  const size_t frequencyCount = image.Height();
+  const unsigned step = image.Width() / 11;
+  const unsigned fStart = (unsigned)((0.5 - length / 2.0) * frequencyCount);
+  const unsigned fEnd = (unsigned)((0.5 + length / 2.0) * frequencyCount);
   AddBroadbandLinePos(image, rfi, 3.0 * strength, step * 1, 3, fStart, fEnd,
                       shape);
   AddBroadbandLinePos(image, rfi, 2.5 * strength, step * 2, 3, fStart, fEnd,
@@ -451,10 +453,10 @@ void TestSetGenerator::AddSlewedBroadbandToTestSet(Image2D& image, Mask2D& rfi,
                                                    double strength,
                                                    double slewrate,
                                                    enum BroadbandShape shape) {
-  size_t frequencyCount = image.Height();
-  unsigned step = image.Width() / 11;
-  unsigned fStart = (unsigned)((0.5 - length / 2.0) * frequencyCount);
-  unsigned fEnd = (unsigned)((0.5 + length / 2.0) * frequencyCount);
+  const size_t frequencyCount = image.Height();
+  const unsigned step = image.Width() / 11;
+  const unsigned fStart = (unsigned)((0.5 - length / 2.0) * frequencyCount);
+  const unsigned fEnd = (unsigned)((0.5 + length / 2.0) * frequencyCount);
   AddSlewedBroadbandLinePos(image, rfi, 3.0 * strength, slewrate, step * 1, 3,
                             fStart, fEnd, shape);
   AddSlewedBroadbandLinePos(image, rfi, 2.5 * strength, slewrate, step * 2, 3,
@@ -482,7 +484,7 @@ void TestSetGenerator::AddVarBroadbandToTestSet(Image2D& image, Mask2D& rfi) {
   // The "randomness" should be reproducable randomness, so calling
   // the random number generator to generate the numbers is not a good
   // idea.
-  unsigned step = image.Width() / 11;
+  const unsigned step = image.Width() / 11;
   AddBroadbandLine(image, rfi, 3.0, step * 1, 3, 0.937071, 0.0185952);
   AddBroadbandLine(image, rfi, 2.5, step * 2, 3, 0.638442, 0.327689);
   AddBroadbandLine(image, rfi, 2.0, step * 3, 3, 0.859308, 0.0211675);
@@ -511,30 +513,21 @@ void TestSetGenerator::SetModelData(Image2D& image, unsigned sources,
     if (sources >= 3) model.AddSource(1.0, 0.0, 1.0);
   }
   WSRTObservatorium wsrt(size_t(0), size_t(1), height);
-  std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> data =
+  const std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> data =
       model.SimulateObservation(width, wsrt, 0.05, 0.05, 0, 1);
   image = *data.first.GetRealPart();
 }
 
 void TestSetGenerator::SubtractBackground(Image2D& image) {
-  Mask2DPtr zero =
+  const Mask2DPtr zero =
       Mask2D::CreateSetMaskPtr<false>(image.Width(), image.Height());
-  LocalFitMethod fittedImage;
-  fittedImage.SetToWeightedAverage(20, 40, 7.5, 15.0);
-  Image2DPtr imagePtr = Image2D::MakePtr(image);
-  TimeFrequencyData data(TimeFrequencyData::AmplitudePart,
-                         aocommon::Polarization::StokesI, imagePtr);
-  data.SetGlobalMask(zero);
-  fittedImage.Initialize(data);
-  for (unsigned i = 0; i < fittedImage.TaskCount(); ++i)
-    fittedImage.PerformFit(i);
-  image =
-      Image2D::MakeFromDiff(image, *fittedImage.Background().GetSingleImage());
-  for (unsigned y = 0; y < image.Height(); ++y) {
-    for (unsigned x = 0; x < image.Width(); ++x) {
-      image.AddValue(x, y, 1.0);
-    }
-  }
+  HighPassFilter filter;
+  filter.SetHKernelSigmaSq(7.5 * 7.5);
+  filter.SetVKernelSigmaSq(15.0 * 15.0);
+  filter.SetHWindowSize(20);
+  filter.SetVWindowSize(40);
+  const Image2DPtr imagePtr = Image2D::MakePtr(image);
+  image = *filter.ApplyHighPass(imagePtr, zero);
 }
 
 Image2D TestSetGenerator::sampleRFIDistribution(unsigned width, unsigned height,

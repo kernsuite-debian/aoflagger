@@ -124,7 +124,7 @@ Mask2DPtr Mask2D::CreatePtrFromRows(const Mask2D& source, size_t offset,
 }
 
 Mask2D Mask2D::ShrinkHorizontally(int factor) const {
-  size_t newWidth = (_width + factor - 1) / factor;
+  const size_t newWidth = (_width + factor - 1) / factor;
 
   Mask2D newMask(newWidth, _height);
 
@@ -135,7 +135,7 @@ Mask2D Mask2D::ShrinkHorizontally(int factor) const {
     for (size_t y = 0; y < _height; ++y) {
       bool value = false;
       for (size_t binX = 0; binX < binSize; ++binX) {
-        size_t curX = x * factor + binX;
+        const size_t curX = x * factor + binX;
         value = value | Value(curX, y);
       }
       newMask.SetValue(x, y, value);
@@ -145,7 +145,7 @@ Mask2D Mask2D::ShrinkHorizontally(int factor) const {
 }
 
 Mask2D Mask2D::ShrinkHorizontallyForAveraging(int factor) const {
-  size_t newWidth = (_width + factor - 1) / factor;
+  const size_t newWidth = (_width + factor - 1) / factor;
 
   Mask2D newMask(newWidth, _height);
 
@@ -156,7 +156,7 @@ Mask2D Mask2D::ShrinkHorizontallyForAveraging(int factor) const {
     for (size_t y = 0; y < _height; ++y) {
       bool value = true;
       for (size_t binX = 0; binX < binSize; ++binX) {
-        size_t curX = x * factor + binX;
+        const size_t curX = x * factor + binX;
         value = value & Value(curX, y);
       }
       newMask.SetValue(x, y, value);
@@ -166,7 +166,7 @@ Mask2D Mask2D::ShrinkHorizontallyForAveraging(int factor) const {
 }
 
 Mask2D Mask2D::ShrinkVertically(int factor) const {
-  size_t newHeight = (_height + factor - 1) / factor;
+  const size_t newHeight = (_height + factor - 1) / factor;
 
   Mask2D newMask(_width, newHeight);
 
@@ -177,7 +177,7 @@ Mask2D Mask2D::ShrinkVertically(int factor) const {
     for (size_t x = 0; x < _width; ++x) {
       bool value = false;
       for (size_t binY = 0; binY < binSize; ++binY) {
-        size_t curY = y * factor + binY;
+        const size_t curY = y * factor + binY;
         value = value | Value(x, curY);
       }
       newMask.SetValue(x, y, value);
@@ -187,7 +187,7 @@ Mask2D Mask2D::ShrinkVertically(int factor) const {
 }
 
 Mask2D Mask2D::ShrinkVerticallyForAveraging(int factor) const {
-  size_t newHeight = (_height + factor - 1) / factor;
+  const size_t newHeight = (_height + factor - 1) / factor;
 
   Mask2D newMask(_width, newHeight);
 
@@ -198,7 +198,7 @@ Mask2D Mask2D::ShrinkVerticallyForAveraging(int factor) const {
     for (size_t x = 0; x != _width; ++x) {
       bool value = true;
       for (size_t binY = 0; binY != binSize; ++binY) {
-        size_t curY = y * factor + binY;
+        const size_t curY = y * factor + binY;
         value = value & Value(x, curY);
       }
       newMask.SetValue(x, y, value);
@@ -214,7 +214,7 @@ void Mask2D::EnlargeHorizontallyAndSet(const Mask2D& smallMask, int factor) {
 
     for (size_t y = 0; y < _height; ++y) {
       for (size_t binX = 0; binX < binSize; ++binX) {
-        size_t curX = x * factor + binX;
+        const size_t curX = x * factor + binX;
         SetValue(curX, y, smallMask.Value(x, y));
       }
     }
@@ -228,7 +228,7 @@ void Mask2D::EnlargeVerticallyAndSet(const Mask2D& smallMask, int factor) {
 
     for (size_t x = 0; x < _width; ++x) {
       for (size_t binY = 0; binY < binSize; ++binY) {
-        size_t curY = y * factor + binY;
+        const size_t curY = y * factor + binY;
         SetValue(x, curY, smallMask.Value(x, y));
       }
     }

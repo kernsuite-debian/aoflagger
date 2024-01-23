@@ -14,7 +14,7 @@ BaselineMatrixLoader::BaselineMatrixLoader(MSMetaData& msMetaData)
       _msMetaData(msMetaData),
       _timeIndexCount(0),
       _metaData() {
-  casacore::Table rawTable(_msMetaData.Path());
+  const casacore::Table rawTable(_msMetaData.Path());
   casacore::Block<casacore::String> names(4);
   names[0] = "DATA_DESC_ID";
   names[1] = "TIME";
@@ -57,9 +57,9 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex) {
     throw std::runtime_error("Time index not found");
   }
 
-  casacore::Table table = _tableIter->table();
-  casacore::ScalarColumn<int> antenna1Column(table, "ANTENNA1");
-  casacore::ScalarColumn<int> antenna2Column(table, "ANTENNA2");
+  const casacore::Table table = _tableIter->table();
+  const casacore::ScalarColumn<int> antenna1Column(table, "ANTENNA1");
+  const casacore::ScalarColumn<int> antenna2Column(table, "ANTENNA2");
 
   // Find highest antenna index
   int nrAntenna = 0;
@@ -73,9 +73,9 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex) {
 
   _metaData.reset(new SpatialMatrixMetaData(nrAntenna));
 
-  casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
-  casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
-  casacore::ArrayColumn<double> uvwColumn(table, "UVW");
+  const casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
+  const casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
+  const casacore::ArrayColumn<double> uvwColumn(table, "UVW");
 
   Image2DPtr xxRImage = Image2D::CreateZeroImagePtr(nrAntenna, nrAntenna),
              xxIImage = Image2D::CreateZeroImagePtr(nrAntenna, nrAntenna),
@@ -109,13 +109,13 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex) {
       ++i;
       const casacore::Complex& yy = *i;
       ++i;
-      bool xxF = *fI;
+      const bool xxF = *fI;
       ++fI;
-      bool xyF = *fI;
+      const bool xyF = *fI;
       ++fI;
-      bool yxF = *fI;
+      const bool yxF = *fI;
       ++fI;
-      bool yyF = *fI;
+      const bool yyF = *fI;
       ++fI;
       if (std::isfinite(xxr) && std::isfinite(xxi) && !xxF) {
         xxr += xx.real();
@@ -184,8 +184,8 @@ TimeFrequencyData BaselineMatrixLoader::LoadSummed(size_t timeIndex) {
       _metaData->SetUVW(a2, a1, uvw);
     }
   }
-  casacore::ScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
-  BandInfo band = _msMetaData.GetBandInfo(bandColumn(0));
+  const casacore::ScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
+  const BandInfo band = _msMetaData.GetBandInfo(bandColumn(0));
   _metaData->SetFrequency(band.CenterFrequencyHz());
 
   TimeFrequencyData data =
@@ -214,9 +214,9 @@ void BaselineMatrixLoader::LoadPerChannel(
     throw std::runtime_error("Time index not found");
   }
 
-  casacore::Table table = _tableIter->table();
-  casacore::ROScalarColumn<int> antenna1Column(table, "ANTENNA1");
-  casacore::ROScalarColumn<int> antenna2Column(table, "ANTENNA2");
+  const casacore::Table table = _tableIter->table();
+  const casacore::ROScalarColumn<int> antenna1Column(table, "ANTENNA1");
+  const casacore::ROScalarColumn<int> antenna2Column(table, "ANTENNA2");
 
   // Find highest antenna index
   int nrAntenna = 0;
@@ -230,9 +230,9 @@ void BaselineMatrixLoader::LoadPerChannel(
 
   _metaData.reset(new SpatialMatrixMetaData(nrAntenna));
 
-  casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
-  casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
-  casacore::ArrayColumn<double> uvwColumn(table, "UVW");
+  const casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
+  const casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
+  const casacore::ArrayColumn<double> uvwColumn(table, "UVW");
 
   std::vector<Image2DPtr> xxRImage(_frequencyCount), xxIImage(_frequencyCount),
       xyRImage(_frequencyCount), xyIImage(_frequencyCount),
@@ -331,8 +331,8 @@ void BaselineMatrixLoader::LoadPerChannel(
       _metaData->SetUVW(a2, a1, uvw);
     }
   }
-  casacore::ScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
-  BandInfo band = _msMetaData.GetBandInfo(bandColumn(0));
+  const casacore::ScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
+  const BandInfo band = _msMetaData.GetBandInfo(bandColumn(0));
   _metaData->SetFrequency(band.CenterFrequencyHz());
 
   data.clear();

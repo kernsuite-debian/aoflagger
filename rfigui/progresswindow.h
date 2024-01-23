@@ -17,7 +17,7 @@
 
 class ProgressWindow : public Gtk::Window, public ProgressListener {
  public:
-  explicit ProgressWindow();
+  ProgressWindow();
   ~ProgressWindow();
 
   virtual void OnStartTask(const std::string& description) final override;

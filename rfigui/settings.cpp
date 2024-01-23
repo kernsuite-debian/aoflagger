@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "../lua/default-strategy.h"
+#include "../util/logger.h"
 
 Settings::Settings() {
   initStrArray("recent-files", std::vector<std::string>(10));
@@ -25,15 +26,21 @@ std::string Settings::GetStrategyFilename() const {
 std::string Settings::GetConfigDir() {
   std::filesystem::path configPath =
       std::filesystem::path(Glib::get_user_config_dir()) / "aoflagger";
-  if (!std::filesystem::is_directory(configPath))
-    std::filesystem::create_directory(configPath);
+  if (!std::filesystem::is_directory(configPath)) {
+    // We don't want to crash if the dir can't be created; we will just report
+    // an error to the cmd line
+    try {
+      std::filesystem::create_directories(configPath);
+    } catch (std::exception& exception) {
+      Logger::Error << "Failed to create config directory: " << exception.what()
+                    << '\n';
+    }
+  }
   return configPath.string();
 }
 
 void Settings::InitializeWorkStrategy() {
   std::string filename = GetStrategyFilename();
-  // if(!std::filesystem::exists(filename))
-  //{
   std::ofstream str(filename);
   str.write(reinterpret_cast<const char*>(data_strategies_generic_default_lua),
             data_strategies_generic_default_lua_len);
@@ -41,7 +48,6 @@ void Settings::InitializeWorkStrategy() {
     throw std::runtime_error(
         "Failed to write working file for Lua strategy: " + filename +
         ", size " + std::to_string(data_strategies_generic_default_lua_len));
-  //}
 }
 
 void Settings::Load() {

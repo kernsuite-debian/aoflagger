@@ -7,9 +7,12 @@
 #include "../structures/msmetadata.h"
 #include "../util/logger.h"
 
-#include <vector>
 #include <list>
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace imagesets {
 
@@ -42,7 +45,7 @@ class CoaddedImageSet final : public IndexableSet {
       newSet->_msImageSets.emplace_back(
           std::unique_ptr<MSImageSet>(new MSImageSet(*imageSet)));
     }
-    return std::move(newSet);
+    return newSet;
   }
   size_t Size() const override { return _msImageSets[0]->Size(); }
   std::string Description(const ImageSetIndex& index) const override;

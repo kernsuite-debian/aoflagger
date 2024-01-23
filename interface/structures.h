@@ -8,6 +8,7 @@
 #include "../quality/histogramcollection.h"
 #include "../quality/statisticscollection.h"
 
+#include <memory>
 #include <vector>
 
 namespace aoflagger {

@@ -7,7 +7,7 @@
 
 class Process {
  public:
-  Process(const std::string& cmdLine) {
+  explicit Process(const std::string& cmdLine) {
     _pid = vfork();
     switch (_pid) {
       case -1:  // Error

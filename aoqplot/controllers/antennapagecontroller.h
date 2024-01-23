@@ -1,17 +1,21 @@
 #ifndef ANTENNAE_PAGE_CONTROLLER_H
 #define ANTENNAE_PAGE_CONTROLLER_H
 
+#include "aoqplotpagecontroller.h"
+
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "../../quality/statisticscollection.h"
 
 #include "../../structures/msmetadata.h"
 
-#include "aoqplotpagecontroller.h"
-
-class AntennaePageController : public AOQPlotPageController {
+class AntennaePageController final : public AOQPlotPageController {
  protected:
-  virtual void processStatistics(
-      const StatisticsCollection* statCollection,
-      const std::vector<AntennaInfo>& antennas) override final {
+  void processStatistics(const StatisticsCollection* statCollection,
+                         const std::vector<AntennaInfo>& antennas) override {
     _antennas = antennas;
     const BaselineStatisticsMap& map = statCollection->BaselineStatistics();
 
@@ -27,22 +31,22 @@ class AntennaePageController : public AOQPlotPageController {
     }
   }
 
-  virtual const std::map<double, class DefaultStatistics>& getStatistics()
-      const override final {
+  const std::map<double, class DefaultStatistics>& getStatistics()
+      const override {
     return _statistics;
   }
 
-  virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
-                         const std::string& yAxisDesc) override final {
-    XYPointSet& pointSet = plot.StartLine(name, "Antenna index", yAxisDesc,
-                                          false, XYPointSet::DrawColumns);
+  void startLine(XYPlot& plot, const std::string& name, int lineIndex,
+                 const std::string& yAxisDesc, bool second_axis) override {
+    XYPointSet& points = plot.StartLine(name, "Antenna index", yAxisDesc,
+                                        XYPointSet::DrawColumns);
+    points.SetUseSecondYAxis(second_axis);
 
-    std::vector<std::string> labels;
-    for (std::vector<AntennaInfo>::const_iterator i = _antennas.begin();
-         i != _antennas.end(); ++i)
-      labels.push_back(i->name);
-    pointSet.SetTickLabels(labels);
-    pointSet.SetRotateUnits(true);
+    std::vector<std::pair<double, std::string>> labels;
+    for (size_t i = 0; i != _antennas.size(); ++i)
+      labels.emplace_back(static_cast<double>(i), _antennas[i].name);
+    plot.XAxis().SetTickLabels(std::move(labels));
+    plot.XAxis().SetRotateUnits(true);
   }
 
   void addStatistic(unsigned antIndex, const DefaultStatistics& stats) {

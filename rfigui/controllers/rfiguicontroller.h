@@ -170,7 +170,8 @@ class RFIGuiController {
 
   void GetAvailablePolarizations(bool& pp, bool& pq, bool& qp, bool& qq) const;
 
-  void SaveBaseline(const std::string& filename);
+  void SaveBaselineAsRfibl(const std::string& filename);
+  void SaveBaselineAsNpy(const std::string& filename);
 
   void NewDefaultStrategy();
   void NewEmptyStrategy();

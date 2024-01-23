@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <exception>
+#include <initializer_list>
 #include <memory>
 
 typedef boost::intrusive_ptr<class Image2D> Image2DPtr;
@@ -26,10 +27,15 @@ void swap(Image2D&& left, Image2D& right);
  * can be read from and written to a @c .fits file and written to a @c .png
  * file. A new Image2D can be constructed with e.g. the MakeFromFits(),
  * MakeUnsetImage() or MakeFromDiff() static methods.
+ *
+ * Internally, the data is stored such that the x-axis is moving the fastest,
+ * so "y-major".
  */
 class Image2D : public boost::intrusive_ref_counter<Image2D> {
  public:
   Image2D() noexcept;
+
+  Image2D(size_t width, size_t height, std::initializer_list<num_t> values);
 
   Image2D(const Image2D& source);
 
@@ -45,6 +51,13 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
     // the more efficient make_shared() when Image2DPtr is a shared_ptr, but
     // also works when Image2DPtr is a boost::intrusive_ptr.
     return Image2DPtr(new Image2D(std::forward<Args>(args)...));
+  }
+
+  static Image2DPtr MakePtr(size_t width, size_t height,
+                            std::initializer_list<num_t> values) {
+    // The above function using forwarding reference does not automatically
+    // capture std::initializer_list, hence an explicit overload.
+    return Image2DPtr(new Image2D(width, height, values));
   }
 
   /**
@@ -67,6 +80,12 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
     return image;
   }
 
+  /**
+   * Construct an image with initialized values.
+   * @param widthCapacity Minimum capacity to which the image can be
+   * horizontally resized without reallocation; see also
+   * @ref ResizeWithoutReallocation().
+   */
   static Image2D MakeSetImage(size_t width, size_t height, num_t initialValue,
                               size_t widthCapacity) {
     Image2D image(width, height, widthCapacity);
@@ -354,9 +373,9 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
   void SubtractAsRHS(const Image2DCPtr& lhs);
 
   /**
-   * Flips the image round the diagonal, i.e., x becomes y and y becomes x.
+   * Flips the image w.r.t. the diagonal, i.e., x becomes y and y becomes x.
    */
-  Image2D CreateXYFlipped() const {
+  Image2D GetTransposed() const {
     Image2D image(_height, _width);
     for (unsigned y = 0; y < _height; ++y) {
       for (unsigned x = 0; x < _width; ++x)
@@ -365,7 +384,7 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
     return image;
   }
 
-  void SwapXY() { *this = CreateXYFlipped(); }
+  void Transpose() { *this = GetTransposed(); }
 
   /**
    * Resample the image horizontally by decreasing the width
@@ -445,7 +464,7 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
   /**
    * This value specifies the intrinsic width of one row. It is
    * normally the first number that is >= Width() and divisable by
-   * four. When using the ValuePtr(unsigned, unsigned) method,
+   * 8. When using the ValuePtr(unsigned, unsigned) method,
    * this value can be used to step over one row.
    *
    * @see ValuePtr(unsigned, unsigned)
@@ -478,6 +497,16 @@ class Image2D : public boost::intrusive_ref_counter<Image2D> {
   Image2D(size_t width, size_t height, size_t widthCapacity);
 
   void allocate();
+
+  /**
+   * Calculate the space taken up by one row of data. This is rounded
+   * upwards to make SSE/AVX operations faster. See the image factory
+   * functions (like @ref MakeSetImage() ) for an explanation of
+   * @c width_capacity.
+   */
+  static size_t CalculateStride(size_t width_capacity) {
+    return width_capacity == 0 ? 0 : (((width_capacity - 1) / 8) + 1) * 8;
+  }
 
   size_t _width, _height;
   size_t _stride;

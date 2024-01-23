@@ -1,6 +1,9 @@
 #ifndef HISTOGRAM_PAGE_CONTROLLER_H
 #define HISTOGRAM_PAGE_CONTROLLER_H
 
+#include <memory>
+#include <string>
+
 #include "aoqplotpagecontroller.h"
 
 #include "../../plot/xyplot.h"
@@ -12,8 +15,7 @@ class HistogramPageController : public AOQPageController {
 
   void Attach(class HistogramPage* page) { _page = page; }
 
-  virtual void SetHistograms(
-      const HistogramCollection* histograms) override final;
+  void SetHistograms(const HistogramCollection* histograms) override final;
 
   void SetHistograms(const std::string& filename) {
     _statFilename = filename;
@@ -21,7 +23,7 @@ class HistogramPageController : public AOQPageController {
     updatePlot();
   }
 
-  virtual void CloseStatistics() override final;
+  void CloseStatistics() override final;
 
   bool HasStatistics() const { return _histograms != nullptr; }
 

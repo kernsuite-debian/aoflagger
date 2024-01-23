@@ -28,7 +28,7 @@ class IndexableSet : public ImageSet {
                                              size_t sequenceId) const = 0;
   virtual FieldInfo GetFieldInfo(unsigned fieldIndex) const = 0;
 
-  virtual std::string TelescopeName() override;
+  std::string TelescopeName() override;
 
   /**
    * Finds the longest or shortest baseline in the same band/sequence as the

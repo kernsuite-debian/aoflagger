@@ -1,6 +1,8 @@
 #ifndef SIROPERATOR_H
 #define SIROPERATOR_H
 
+#include <memory>
+
 #include "../structures/mask2d.h"
 #include "../structures/types.h"
 #include "../structures/xyswappedmask2d.h"

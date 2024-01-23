@@ -7,6 +7,8 @@
 
 #include "../../algorithms/testsetgenerator.h"
 
+#include <aocommon/polarization.h>
+
 using aocommon::Polarization;
 using aocommon::PolarizationEnum;
 

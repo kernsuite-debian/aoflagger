@@ -47,8 +47,9 @@ class NumberParser {
     } else if (isPositiveSymbol(*str)) {
       isNegative = false;
       ++str;
-    } else
+    } else {
       isNegative = false;
+    }
 
     // Read everything before decimal point
     if (!isDigit(*str))
@@ -111,8 +112,9 @@ class NumberParser {
     } else if (isPositiveSymbol(*str)) {
       isNegative = false;
       ++str;
-    } else
+    } else {
       isNegative = false;
+    }
 
     // Read digits
     if (!isDigit(*str))
@@ -132,9 +134,10 @@ class NumberParser {
         return -val;
       else
         return val;
-    } else
+    } else {
       throw NumberParsingException(
           "The integer contains invalid characters after its digits");
+    }
   }
 
   static double intPow10(int par) {

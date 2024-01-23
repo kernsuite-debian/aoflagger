@@ -56,7 +56,7 @@ void Legend::Draw(const Cairo::RefPtr<Cairo::Context>& cairo,
     cairo->show_text(label);
     auto color = pointSet.GetColor();
     cairo->set_source_rgba(color.r, color.g, color.b, color.a);
-    switch (pointSet.DrawingStyle()) {
+    switch (pointSet.GetDrawingStyle()) {
       case XYPointSet::DrawColumns:
         cairo->rectangle(symbolLeft + 0.1 * _sizeOfM, curY - _textAdvance * 0.9,
                          0.9 * _sizeOfM, 0.9 * _sizeOfM);

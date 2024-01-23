@@ -36,9 +36,9 @@ QualityStatistics& QualityStatistics::operator=(
     if (sourceQS._data != nullptr)
       _data.reset(new QualityStatisticsData(sourceQS._data->_implementation));
   } else {
-    if (sourceQS._data != nullptr)
+    if (sourceQS._data != nullptr) {
       _data->_implementation = sourceQS._data->_implementation;
-    else {
+    } else {
       _data.reset();
     }
   }

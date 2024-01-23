@@ -10,11 +10,11 @@
 
 class TimeFrequencyWidget : public Gtk::VBox {
  public:
-  TimeFrequencyWidget(MaskedHeatMap& plot) : _heatMap() {
+  explicit TimeFrequencyWidget(MaskedHeatMap& plot) : _heatMap() {
     _heatMap.SetPlot(plot);
     _timePlotWidget.SetPlot(_timePlot);
     _timePlotWidget.set_size_request(200, 60);
-    _timePlot.SetShowXAxis(false);
+    _timePlot.XAxis().SetShow(false);
     pack_start(_timePlotWidget, Gtk::PACK_EXPAND_WIDGET);
     EnableTimePlot();
 

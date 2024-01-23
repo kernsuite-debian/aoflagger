@@ -9,7 +9,7 @@ void CombinatorialThresholder::HorizontalVarThreshold(const Image2D* input,
                                                       Mask2D* mask,
                                                       size_t length,
                                                       num_t threshold) {
-  size_t width = input->Width() - length + 1;
+  const size_t width = input->Width() - length + 1;
   for (size_t y = 0; y < input->Height(); ++y) {
     for (size_t x = 0; x < width; ++x) {
       bool flag = true;
@@ -30,7 +30,7 @@ void CombinatorialThresholder::HorizontalVarThreshold(const Image2D* input,
 void CombinatorialThresholder::VerticalVarThreshold(const Image2D* input,
                                                     Mask2D* mask, size_t length,
                                                     num_t threshold) {
-  size_t height = input->Height() - length + 1;
+  const size_t height = input->Height() - length + 1;
   for (size_t y = 0; y < height; ++y) {
     for (size_t x = 0; x < input->Width(); ++x) {
       bool flag = true;

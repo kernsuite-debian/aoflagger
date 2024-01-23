@@ -92,13 +92,13 @@ size_t ImageSet::ImageCount() const { return _data->images.size(); }
 size_t ImageSet::HorizontalStride() const { return _data->images[0]->Stride(); }
 
 void ImageSet::Set(float newValue) {
-  for (Image2DPtr& image : _data->images) {
+  for (const Image2DPtr& image : _data->images) {
     image->SetAll(newValue);
   }
 }
 
 void ImageSet::ResizeWithoutReallocation(size_t newWidth) const {
-  for (Image2DPtr& image : _data->images) {
+  for (const Image2DPtr& image : _data->images) {
     image->ResizeWithoutReallocation(newWidth);
   }
 }

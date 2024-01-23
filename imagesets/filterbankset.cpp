@@ -73,8 +73,8 @@ FilterBankSet::FilterBankSet(const std::string& location)
   _headerEnd = file.tellg();
   if (_sampleCount == 0) {
     file.seekg(0, std::ios::end);
-    std::streampos endPos = file.tellg();
-    size_t dataSize = endPos - _headerEnd;
+    const std::streampos endPos = file.tellg();
+    const size_t dataSize = endPos - _headerEnd;
     _sampleCount = (dataSize * 8) / _channelCount / _bitCount;
   }
   Logger::Debug << "tsamp=" << _timeOfSample << ", tstart=" << _timeStart
@@ -86,8 +86,9 @@ FilterBankSet::FilterBankSet(const std::string& location)
 
   _timeStart = Date::MJDToAipsMJD(_timeStart);
 
-  double sizeOfImage = double(_channelCount) * _sampleCount * _bitCount / 8.0;
-  double memSize = aocommon::system::TotalMemory();
+  const double sizeOfImage =
+      double(_channelCount) * _sampleCount * _bitCount / 8.0;
+  const double memSize = aocommon::system::TotalMemory();
   _intervalCount = ceil(sizeOfImage / (memSize / 16.0));
   if (_intervalCount < 1) _intervalCount = 1;
   if (_intervalCount * 8 > _sampleCount) _intervalCount = _sampleCount / 8;
@@ -117,9 +118,9 @@ std::unique_ptr<BaselineData> FilterBankSet::GetNextRequested() {
   file.seekg(_headerEnd +
              std::streampos(startIndex * sizeof(float) * _channelCount));
 
-  Image2DPtr image =
+  const Image2DPtr image =
       Image2D::CreateUnsetImagePtr(endIndex - startIndex, _channelCount);
-  Mask2DPtr mask =
+  const Mask2DPtr mask =
       Mask2D::CreateUnsetMaskPtr(endIndex - startIndex, _channelCount);
   std::vector<float> buffer(_channelCount);
   for (size_t x = 0; x != endIndex - startIndex; ++x) {
@@ -133,7 +134,7 @@ std::unique_ptr<BaselineData> FilterBankSet::GetNextRequested() {
   TimeFrequencyData tfData(TimeFrequencyData::AmplitudePart,
                            aocommon::Polarization::StokesI, image);
   tfData.SetGlobalMask(mask);
-  TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
+  const TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
   AntennaInfo antenna;
   antenna.diameter = 0;
   antenna.id = 0;
@@ -184,7 +185,7 @@ void FilterBankSet::AddWriteFlagsTask(const ImageSetIndex& index,
 
   std::vector<float> buffer(_channelCount);
   for (size_t x = 0; x != endIndex - startIndex; ++x) {
-    std::streampos pos = file.tellg();
+    const std::streampos pos = file.tellg();
     file.read(reinterpret_cast<char*>(&buffer[0]),
               _channelCount * sizeof(float));
     for (size_t y = 0; y != _channelCount; ++y) {

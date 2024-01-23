@@ -27,7 +27,7 @@ bool numLessThanOperator(const float& a, const float& b) {
 
 void WinsorizedMeanAndStdDev(const ImageInterface& image, float& mean,
                              float& stddev) {
-  size_t size = image.Width() * image.Height();
+  const size_t size = image.Width() * image.Height();
   std::unique_ptr<float[]> data(new float[size]);
   const float* imageData = image.Data();
   for (size_t y = 0; y != image.Height(); ++y) {
@@ -114,8 +114,6 @@ HeatMap::HeatMap()
       _showTitle(true),
       _xAxisType(AxisType::kNumeric),
       _yAxisType(AxisType::kNumeric),
-      _specifiedMax(1.0),
-      _specifiedMin(0.0),
       _derivedMax(1.0),
       _derivedMin(0.0),
       _xAxisMin(1.0),
@@ -126,12 +124,10 @@ HeatMap::HeatMap()
       _x2AxisMax(10.0),
       _y2AxisMin(1.0),
       _y2AxisMax(10.0),
-      _zRange(Range::Winsorized),
+      _zRange(WinsorizedRange()),
       _cairoFilter(Cairo::FILTER_NEAREST) {
   OnZoomChanged().connect([&]() { _isImageInvalidated = true; });
 }
-
-HeatMap::~HeatMap() { Clear(); }
 
 void HeatMap::Clear() {
   _image.reset();
@@ -150,21 +146,21 @@ void HeatMap::redrawWithoutChanges(const Cairo::RefPtr<Cairo::Context>& cairo,
   const int destWidth = int(std::ceil(_horizontalScale.PlotWidth()));
   const int destHeight =
       height - int(std::floor(_topBorderSize + _bottomBorderSize));
-  if (_isInitialized && destWidth > 0 && destHeight > 0) {
+  if (_isInitialized && destWidth > 0 && destHeight > 0 && _imageSurface) {
     const int sourceWidth = _imageSurface->get_width();
     const int sourceHeight = _imageSurface->get_height();
     double clx1, cly1, clx2, cly2;
     cairo->get_clip_extents(clx1, cly1, clx2, cly2);
-    bool outsideBox = clx2 < _leftBorderSize || cly2 < _topBorderSize ||
-                      clx1 > std::round(_leftBorderSize) + destWidth ||
-                      cly1 > std::round(_topBorderSize) + destHeight;
+    const bool outsideBox = clx2 < _leftBorderSize || cly2 < _topBorderSize ||
+                            clx1 > std::round(_leftBorderSize) + destWidth ||
+                            cly1 > std::round(_topBorderSize) + destHeight;
     if (!outsideBox) {
       cairo->save();
       cairo->translate((int)std::round(_leftBorderSize),
                        (int)std::round(_topBorderSize));
       cairo->scale((double)destWidth / (double)sourceWidth,
                    (double)destHeight / (double)sourceHeight);
-      Cairo::RefPtr<Cairo::SurfacePattern> pattern =
+      const Cairo::RefPtr<Cairo::SurfacePattern> pattern =
           Cairo::SurfacePattern::create(_imageSurface);
       pattern->set_filter(_cairoFilter);
       cairo->set_source(pattern);
@@ -197,22 +193,21 @@ void HeatMap::redrawWithoutChanges(const Cairo::RefPtr<Cairo::Context>& cairo,
   }
 }
 
-void HeatMap::draw(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
-                   size_t height) {
+void HeatMap::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
   if (HasImage()) {
-    drawAll(cairo, width, height);
+    drawAll(cairo, Width(), Height());
   } else {
-    redrawWithoutChanges(cairo, width, height);
+    redrawWithoutChanges(cairo, Width(), Height());
   }
 }
 
 void HeatMap::SavePdf(const std::string& filename, size_t width,
                       size_t height) {
-  Cairo::RefPtr<Cairo::PdfSurface> surface =
+  const Cairo::RefPtr<Cairo::PdfSurface> surface =
       Cairo::PdfSurface::create(filename, width, height);
-  Cairo::RefPtr<Cairo::Context> cairo = Cairo::Context::create(surface);
+  const Cairo::RefPtr<Cairo::Context> cairo = Cairo::Context::create(surface);
   if (HasImage()) {
-    Draw(cairo, width, height);
+    PlotBase::Draw(cairo, width, height);
   }
   cairo->show_page();
   // We finish the surface. This might be required, because some of the
@@ -222,11 +217,11 @@ void HeatMap::SavePdf(const std::string& filename, size_t width,
 
 void HeatMap::SaveSvg(const std::string& filename, size_t width,
                       size_t height) {
-  Cairo::RefPtr<Cairo::SvgSurface> surface =
+  const Cairo::RefPtr<Cairo::SvgSurface> surface =
       Cairo::SvgSurface::create(filename, width, height);
-  Cairo::RefPtr<Cairo::Context> cairo = Cairo::Context::create(surface);
+  const Cairo::RefPtr<Cairo::Context> cairo = Cairo::Context::create(surface);
   if (HasImage()) {
-    Draw(cairo, width, height);
+    PlotBase::Draw(cairo, width, height);
   }
   cairo->show_page();
   surface->finish();
@@ -234,11 +229,11 @@ void HeatMap::SaveSvg(const std::string& filename, size_t width,
 
 void HeatMap::SavePng(const std::string& filename, size_t width,
                       size_t height) {
-  Cairo::RefPtr<Cairo::ImageSurface> surface =
+  const Cairo::RefPtr<Cairo::ImageSurface> surface =
       Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, width, height);
-  Cairo::RefPtr<Cairo::Context> cairo = Cairo::Context::create(surface);
+  const Cairo::RefPtr<Cairo::Context> cairo = Cairo::Context::create(surface);
   if (HasImage()) {
-    Draw(cairo, width, height);
+    PlotBase::Draw(cairo, width, height);
   }
   surface->write_to_png(filename);
 }
@@ -272,7 +267,8 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
       surfaceYRange[1] /= yFactor;
     }
 
-    findMinMax(*image, _derivedMin, _derivedMax);
+    std::tie(_derivedMin, _derivedMax) =
+        DetermineRange(*image, _zRange, _logZScale);
 
     const size_t surfaceWidth = surfaceXRange[1] - surfaceXRange[0];
     const size_t surfaceHeight = surfaceYRange[1] - surfaceYRange[0];
@@ -288,27 +284,29 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
       else
         _topBorderSize = 10.0;
     }
-
+    double temporary_right_border_size = 0.0;
     // The scale dimensions are depending on each other. However, since the
     // height of the horizontal scale is practically not dependent on other
     // dimensions, it is assumed to be constant:
     if (_showXAxis) {
       _topAxisHeight = 0.0;
       _bottomBorderSize = _horizontalScale.CalculateHeight(cairo);
-      _rightBorderSize = _horizontalScale.RightMargin();
+      temporary_right_border_size = _horizontalScale.RightMargin();
     } else {
       _bottomBorderSize = 0.0;
-      _rightBorderSize = 0.0;
+      temporary_right_border_size = 0.0;
     }
     if (_showX2Axis) {
-      _rightBorderSize = std::max(_rightBorderSize, _horiScale2.RightMargin());
+      temporary_right_border_size =
+          std::max(temporary_right_border_size, _horiScale2.RightMargin());
       _topAxisHeight += _horiScale2.CalculateHeight(cairo);
     }
 
     if (_showYAxis) {
+      const double plot_height =
+          height - _topBorderSize - _bottomBorderSize - _topAxisHeight;
       _verticalScale.SetPlotDimensions(
-          width - _rightBorderSize + 5.0,
-          height - _topBorderSize - _bottomBorderSize - _topAxisHeight,
+          width - temporary_right_border_size + 5.0, plot_height,
           _topBorderSize, false);
       _leftBorderSize = _verticalScale.GetWidth(cairo);
     } else {
@@ -316,7 +314,7 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
     }
     if (_showY2Axis) {
       _vertScale2.SetPlotDimensions(
-          width - _rightBorderSize + 5.0,
+          width - temporary_right_border_size + 5.0,
           height - _topBorderSize - _bottomBorderSize - _topAxisHeight,
           _topBorderSize, true);
     }
@@ -341,7 +339,7 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
           width - colorScaleWidth,
           height - _topBorderSize - _bottomBorderSize - _topAxisHeight,
           _topBorderSize + topAxis2Size, true);
-      _rightBorderSize += _vertScale2.GetWidth(cairo);
+      temporary_right_border_size += _vertScale2.GetWidth(cairo);
     }
 
     _horizontalScale.SetPlotDimensions(width - colorScaleWidth, height,
@@ -364,7 +362,7 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
       if (_showColorScale) {
         _colorScale.Clear();
         for (size_t x = 0; x < 256; ++x) {
-          double colorVal = (2.0 / 256.0) * x - 1.0;
+          const double colorVal = (2.0 / 256.0) * x - 1.0;
           double imageVal;
           if (_logZScale)
             imageVal = exp10(
@@ -384,13 +382,13 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
 
       _imageSurface->flush();
       unsigned char* data = _imageSurface->get_data();
-      size_t rowStride = _imageSurface->get_stride();
+      const size_t rowStride = _imageSurface->get_stride();
       const float* imageData = image->Data();
       for (size_t y = surfaceYRange[0]; y != surfaceYRange[1]; ++y) {
         guint8* rowpointer = data + rowStride * (surfaceYRange[1] - y - 1);
         const float* imageRow = &imageData[y * image->Stride()];
         for (size_t x = surfaceXRange[0]; x != surfaceXRange[1]; ++x) {
-          int xa = (x - surfaceXRange[0]) * 4;
+          const int xa = (x - surfaceXRange[0]) * 4;
           float val = imageRow[x];
           if (val > _derivedMax)
             val = _derivedMax;
@@ -403,8 +401,9 @@ void HeatMap::drawAll(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
             else
               val = (std::log10(val) - minLog10) * 2.0 / (maxLog10 - minLog10) -
                     1.0;
-          } else
+          } else {
             val = (val - _derivedMin) * 2.0 / (_derivedMax - _derivedMin) - 1.0;
+          }
           if (val < -1.0)
             val = -1.0;
           else if (val > 1.0)
@@ -458,6 +457,8 @@ void HeatMap::initializeComponents() {
     if (_logXScale) {
       // TODO fix zoom pixel offsets
       _horizontalScale.SetTickRange(_xAxisMin, _xAxisMax);
+    } else if (_image->Width() == 0) {
+      _horizontalScale.SetTickRange(_xAxisMin, _xAxisMax);
     } else {
       const double left = _xAxisMin + double(-0.5 + pixelXRange[0]) /
                                           _image->Width() * xAxisRange;
@@ -474,6 +475,8 @@ void HeatMap::initializeComponents() {
     const std::array<size_t, 2> pixelYRange = ImageYRange();
     if (_logYScale) {
       // TODO fix pixel offsets
+      _verticalScale.SetTickRange(_yAxisMin, _yAxisMax);
+    } else if (_image->Height() == 0) {
       _verticalScale.SetTickRange(_yAxisMin, _yAxisMax);
     } else {
       const double bottom = _yAxisMin + double(-0.5 + pixelYRange[0]) /
@@ -522,39 +525,59 @@ void HeatMap::postRender(const Cairo::RefPtr<Cairo::Context>& cairo,
   }
 }
 
-void HeatMap::findMinMax(const ImageInterface& image, float& min, float& max) {
-  switch (_zRange) {
-    case Range::MinMax:
-      max = image.Maximum();
-      min = image.Minimum();
+std::pair<float, float> HeatMap::DetermineRange(
+    const ImageInterface& image, const RangeConfiguration& range_configuration,
+    bool log_scale) {
+  float winsorized_mean = 0.0;
+  float winsorized_stddev = 0.0;
+  if (range_configuration.minimum == RangeLimit::Winsorized ||
+      range_configuration.maximum == RangeLimit::Winsorized) {
+    WinsorizedMeanAndStdDev(image, winsorized_mean, winsorized_stddev);
+  }
+
+  std::pair<float, float> result;
+
+  switch (range_configuration.minimum) {
+    case RangeLimit::Extreme:
+      result.first = image.Minimum();
       break;
-    case Range::Winsorized: {
-      float mean, stddev;
-      WinsorizedMeanAndStdDev(image, mean, stddev);
-      const double imageMax = image.Maximum();
-      const double imageMin = image.Minimum();
-      max = mean + stddev * 3.0;
-      min = mean - stddev * 3.0;
-      if (imageMin > min) min = imageMin;
-      if (imageMax < max) max = imageMax;
+    case RangeLimit::Winsorized: {
+      const double image_min = image.Minimum();
+      result.first =
+          std::max(image_min, winsorized_mean - winsorized_stddev * 3.0);
     } break;
-    case Range::Specified:
-      min = _specifiedMin;
-      max = _specifiedMax;
+    case RangeLimit::Specified:
+      result.first = range_configuration.specified_min;
       break;
   }
-  if (min == max) {
-    min -= 1.0;
-    max += 1.0;
+
+  switch (range_configuration.maximum) {
+    case RangeLimit::Extreme:
+      result.second = image.Maximum();
+      break;
+    case RangeLimit::Winsorized: {
+      const double image_max = image.Maximum();
+      result.second =
+          std::min(image_max, winsorized_mean + winsorized_stddev * 3.0);
+    } break;
+    case RangeLimit::Specified:
+      result.second = range_configuration.specified_max;
+      break;
   }
-  if (_logZScale && min <= 0.0) {
-    if (max <= 0.0) {
-      max = 1.0;
+
+  if (result.first == result.second) {
+    result.first -= 1.0;
+    result.second += 1.0;
+  }
+  if (log_scale) {
+    if (result.second <= 0.0) {
+      result.second = 1.0;
     }
-    min = max / 10000.0;
+    if (result.first <= 0.0) {
+      result.first = result.second / 10000.0;
+    }
   }
-  _specifiedMax = max;
-  _specifiedMin = min;
+  return result;
 }
 
 HeatMap::Rectangle HeatMap::getPlotArea(size_t width, size_t height) const {
@@ -571,14 +594,14 @@ void HeatMap::downsampleImageBuffer(size_t newWidth, size_t newHeight) {
   const size_t oldWidth = _imageSurface->get_width();
   const size_t oldHeight = _imageSurface->get_height();
 
-  Cairo::RefPtr<Cairo::ImageSurface> newImageSurface =
+  const Cairo::RefPtr<Cairo::ImageSurface> newImageSurface =
       Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, newWidth, newHeight);
 
   unsigned char* newData = newImageSurface->get_data();
-  size_t rowStrideOfNew = newImageSurface->get_stride();
+  const size_t rowStrideOfNew = newImageSurface->get_stride();
 
   unsigned char* oldData = _imageSurface->get_data();
-  size_t rowStrideOfOld = _imageSurface->get_stride();
+  const size_t rowStrideOfOld = _imageSurface->get_stride();
 
   for (size_t y = 0; y < newHeight; ++y) {
     guint8* rowpointerToNew = newData + rowStrideOfNew * y;
@@ -625,7 +648,7 @@ void HeatMap::downsampleImageBuffer(size_t newWidth, size_t newHeight) {
 std::array<size_t, 2> HeatMap::ImageXRange() const {
   size_t startX = size_t(std::round(XZoomStart() * _image->Width()));
   size_t endX = size_t(std::round(XZoomEnd() * _image->Width()));
-  if (startX >= endX) {
+  if (startX >= endX && _image->Width() > 0) {
     endX = startX + 1;
     if (endX >= _image->Width()) {
       startX -= endX - _image->Width();
@@ -638,7 +661,7 @@ std::array<size_t, 2> HeatMap::ImageXRange() const {
 std::array<size_t, 2> HeatMap::ImageYRange() const {
   size_t startY = size_t(std::round(YZoomStart() * _image->Height()));
   size_t endY = size_t(std::round(YZoomEnd() * _image->Height()));
-  if (startY >= endY) {
+  if (startY >= endY && _image->Height() > 0) {
     endY = startY + 1;
     if (endY >= _image->Height()) {
       startY -= endY - _image->Height();

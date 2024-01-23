@@ -41,7 +41,7 @@ class DataWindow : public Gtk::Window {
   void SetData(const XYPlot& plot);
 
  private:
-  DataWindow(const DataWindow& dataWindow) {}
+  DataWindow(const DataWindow& dataWindow) = delete;
 
   void onComboChange();
   void loadData(size_t plotSetIndex);

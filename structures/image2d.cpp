@@ -29,9 +29,7 @@ Image2D::Image2D() noexcept
       _dataConsecutive(nullptr) {}
 
 Image2D::Image2D(size_t width, size_t height, size_t widthCapacity)
-    : _width(width),
-      _height(height),
-      _stride(widthCapacity == 0 ? 0 : (((widthCapacity - 1) / 8) + 1) * 8) {
+    : _width(width), _height(height), _stride(CalculateStride(widthCapacity)) {
   allocate();
 }
 
@@ -69,8 +67,23 @@ void Image2D::allocate() {
   }
 }
 
+Image2D::Image2D(size_t width, size_t height,
+                 std::initializer_list<num_t> values)
+    : _width(width), _height(height), _stride(CalculateStride(width)) {
+  assert(width * height == values.size());
+  allocate();
+  std::initializer_list<num_t>::iterator i = values.begin();
+  for (size_t y = 0; y != height; ++y) {
+    std::copy_n(i, width, _dataPtr[y]);
+    i += width;
+  }
+}
+
 Image2D::Image2D(const Image2D& source)
-    : _width(source._width), _height(source._height), _stride(source._stride) {
+    : boost::intrusive_ref_counter<Image2D>(*this),
+      _width(source._width),
+      _height(source._height),
+      _stride(source._stride) {
   allocate();
   std::copy(source._dataConsecutive,
             source._dataConsecutive + _stride * _height, _dataConsecutive);
@@ -273,12 +286,12 @@ bool Image2D::ContainsOnlyZeros() const {
 
 num_t Image2D::GetMaxMinNormalizationFactor() const {
   num_t max = GetMaximum(), min = GetMinimum();
-  num_t range = (-min) > max ? (-min) : max;
+  const num_t range = (-min) > max ? (-min) : max;
   return 1.0 / range;
 }
 
 num_t Image2D::GetStdDev() const {
-  num_t mean = GetAverage();
+  const num_t mean = GetAverage();
   size_t count = 0;
   num_t total = 0.0;
   for (size_t y = 0; y < _height; ++y) {
@@ -291,7 +304,7 @@ num_t Image2D::GetStdDev() const {
 }
 
 num_t Image2D::GetMode() const {
-  size_t size = _width * _height;
+  const size_t size = _width * _height;
 
   num_t mode = 0.0;
   for (size_t y = 0; y < _height; ++y) {
@@ -309,7 +322,7 @@ num_t Image2D::GetRMS(size_t xOffset, size_t yOffset, size_t width,
   num_t total = 0.0;
   for (size_t y = yOffset; y < height + yOffset; ++y) {
     for (size_t x = xOffset; x < width + xOffset; ++x) {
-      num_t v = Value(x, y);
+      const num_t v = Value(x, y);
       total += v * v;
       count++;
     }
@@ -318,7 +331,7 @@ num_t Image2D::GetRMS(size_t xOffset, size_t yOffset, size_t width,
 }
 
 void Image2D::NormalizeVariance() {
-  num_t variance = GetStdDev();
+  const num_t variance = GetStdDev();
   for (size_t y = 0; y < _height; ++y) {
     for (size_t x = 0; x < _width; ++x) {
       _dataPtr[y][x] /= variance;
@@ -330,7 +343,7 @@ void Image2D::SaveToFitsFile(const std::string& filename) const {
   FitsFile file(filename);
   file.Create();
   file.AppendImageHUD(FitsFile::Double64ImageType, _width, _height);
-  long bufferSize = (long)_width * (long)_height;
+  const long bufferSize = (long)_width * (long)_height;
   double* buffer = new double[bufferSize];
   size_t i = 0;
   for (size_t y = 0; y < _height; ++y) {
@@ -370,7 +383,7 @@ num_t Image2D::GetTresholdForCountAbove(size_t count) const {
     }
   }
   std::sort(sorted, sorted + size);
-  num_t v = sorted[size - count - 1];
+  const num_t v = sorted[size - count - 1];
   delete[] sorted;
   return v;
 }
@@ -424,7 +437,7 @@ void Image2D::SubtractAsRHS(const Image2DCPtr& lhs) {
 }
 
 Image2D Image2D::ShrinkHorizontally(size_t factor) const {
-  size_t newWidth = (_width + factor - 1) / factor;
+  const size_t newWidth = (_width + factor - 1) / factor;
 
   Image2D newImage(newWidth, _height);
 
@@ -435,7 +448,7 @@ Image2D Image2D::ShrinkHorizontally(size_t factor) const {
     for (size_t y = 0; y < _height; ++y) {
       num_t sum = 0.0;
       for (size_t binX = 0; binX < binSize; ++binX) {
-        size_t curX = x * factor + binX;
+        const size_t curX = x * factor + binX;
         sum += Value(curX, y);
       }
       newImage.SetValue(x, y, sum / (num_t)binSize);
@@ -445,7 +458,7 @@ Image2D Image2D::ShrinkHorizontally(size_t factor) const {
 }
 
 Image2D Image2D::ShrinkVertically(size_t factor) const {
-  size_t newHeight = (_height + factor - 1) / factor;
+  const size_t newHeight = (_height + factor - 1) / factor;
 
   Image2D newImage(_width, newHeight);
 
@@ -456,7 +469,7 @@ Image2D Image2D::ShrinkVertically(size_t factor) const {
     for (size_t x = 0; x < _width; ++x) {
       num_t sum = 0.0;
       for (size_t binY = 0; binY < binSize; ++binY) {
-        size_t curY = y * factor + binY;
+        const size_t curY = y * factor + binY;
         sum += Value(x, curY);
       }
       newImage.SetValue(x, y, sum / (num_t)binSize);
@@ -469,7 +482,7 @@ Image2D Image2D::EnlargeHorizontally(size_t factor, size_t newWidth) const {
   Image2D newImage(newWidth, _height);
 
   for (size_t x = 0; x < newWidth; ++x) {
-    size_t xOld = x / factor;
+    const size_t xOld = x / factor;
 
     for (size_t y = 0; y < _height; ++y) {
       newImage.SetValue(x, y, Value(xOld, y));
@@ -483,7 +496,7 @@ Image2D Image2D::EnlargeVertically(size_t factor, size_t newHeight) const {
 
   for (size_t x = 0; x < _width; ++x) {
     for (size_t y = 0; y < newHeight; ++y) {
-      size_t yOld = y / factor;
+      const size_t yOld = y / factor;
       newImage.SetValue(x, y, Value(x, yOld));
     }
   }

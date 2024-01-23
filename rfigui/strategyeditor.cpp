@@ -43,14 +43,14 @@ bool isAlphaNumeric(int c) {
 
 void StrategyEditor::parseWord(ParseInfo& p, Gtk::TextBuffer::iterator start,
                                Gtk::TextBuffer::iterator end) {
-  std::string word(start, end);
-  bool isKeyword = word == "and" || word == "break" || word == "do" ||
-                   word == "else" || word == "elseif" || word == "end" ||
-                   word == "false" || word == "for" || word == "function" ||
-                   word == "if" || word == "in" || word == "local" ||
-                   word == "nil" || word == "not" || word == "or" ||
-                   word == "repeat" || word == "return" || word == "then" ||
-                   word == "true" || word == "until" || word == "while";
+  const std::string word(start, end);
+  const bool isKeyword =
+      word == "and" || word == "break" || word == "do" || word == "else" ||
+      word == "elseif" || word == "end" || word == "false" || word == "for" ||
+      word == "function" || word == "if" || word == "in" || word == "local" ||
+      word == "nil" || word == "not" || word == "or" || word == "repeat" ||
+      word == "return" || word == "then" || word == "true" || word == "until" ||
+      word == "while";
   if (isKeyword) {
     _text.get_buffer()->apply_tag(_tagKeyword, start, end);
     if (word == "function") p.state = ParseInfo::FunctionStart;
@@ -63,7 +63,7 @@ void StrategyEditor::parseWord(ParseInfo& p, Gtk::TextBuffer::iterator start,
 }
 
 void StrategyEditor::updateHighlighting() {
-  Glib::RefPtr<Gtk::TextBuffer> buffer = _text.get_buffer();
+  const Glib::RefPtr<Gtk::TextBuffer> buffer = _text.get_buffer();
   auto iter = buffer->begin();
   buffer->remove_all_tags(iter, buffer->end());
   enum {
@@ -73,9 +73,7 @@ void StrategyEditor::updateHighlighting() {
     AfterMinus,
     LongCommentStart,
     InLongComment,
-    LongCommentEnd1,
-    LongCommentEnd2,
-    LongCommentEnd3,
+    LongCommentEnd,
     InDQuote,
     InQuote
   } mode = Clear;
@@ -84,7 +82,7 @@ void StrategyEditor::updateHighlighting() {
   size_t lineNr = 1;
   Gtk::TextBuffer::iterator lineStart;
   while (iter != buffer->end()) {
-    int c = *iter;
+    const int c = *iter;
     if (c == '\n') {
       if (lineNr == _highlightLine) {
         _text.get_buffer()->apply_tag(_tagHighlight, lineStart, iter);
@@ -126,8 +124,9 @@ void StrategyEditor::updateHighlighting() {
           _text.get_buffer()->apply_tag(_tagComment, wordStart, iter);
           mode = Clear;
           p.state = ParseInfo::Clear;
-        } else if (c == '[')
+        } else if (c == '[') {
           mode = LongCommentStart;
+        }
         break;
       case LongCommentStart:
         if (c == '[')
@@ -136,15 +135,9 @@ void StrategyEditor::updateHighlighting() {
           mode = InComment;
         break;
       case InLongComment:
-        if (c == '-') mode = LongCommentEnd1;
+        if (c == ']') mode = LongCommentEnd;
         break;
-      case LongCommentEnd1:
-        if (c == '-') mode = LongCommentEnd2;
-        break;
-      case LongCommentEnd2:
-        if (c == ']') mode = LongCommentEnd3;
-        break;
-      case LongCommentEnd3:
+      case LongCommentEnd:
         if (c == ']') {
           mode = Clear;
           Gtk::TextBuffer::iterator next = iter;
@@ -176,7 +169,7 @@ void StrategyEditor::updateHighlighting() {
 }
 
 void StrategyEditor::SetText(const std::string& text) {
-  Glib::RefPtr<Gtk::TextBuffer> buffer = _text.get_buffer();
+  const Glib::RefPtr<Gtk::TextBuffer> buffer = _text.get_buffer();
   buffer->set_text(text);
 }
 

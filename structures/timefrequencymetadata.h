@@ -92,7 +92,7 @@ class TimeFrequencyMetaData {
     _observationTimes.reset(new std::vector<double>(std::move(times)));
   }
   bool HasObservationTimes() const {
-    return static_cast<bool>(_observationTimes);
+    return static_cast<bool>(_observationTimes) && !_observationTimes->empty();
   }
 
   unsigned SequenceId() const { return _sequenceId; }

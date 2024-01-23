@@ -3,16 +3,12 @@
 
 #include "pyfunctions.h"
 
-#include <aocommon/polarization.h>
-
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 
 #include <iostream>
 
 namespace py = pybind11;
-
-using namespace aocommon;
 
 PYBIND11_MODULE(aoflagger, m) {
   m.doc() = "AOFlagger module for detection of radio-frequency interference";

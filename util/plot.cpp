@@ -40,7 +40,7 @@ void Plot::Close() {
   if (_open) {
     CloseCurFd();
     char tmpPlotFile[] = "/tmp/plot.plt-XXXXXX";
-    int fd = mkstemp(tmpPlotFile);
+    const int fd = mkstemp(tmpPlotFile);
     if (fd == -1) {
       std::cerr << "mkstemp returned -1" << std::endl;
       throw;

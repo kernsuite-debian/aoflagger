@@ -14,7 +14,7 @@ class PlotBase {
             size_t height) {
     _width = width;
     _height = height;
-    draw(cairo, width, height);
+    Draw(cairo);
   }
 
   void LinkHorizontally(PlotBase& other) {
@@ -71,6 +71,9 @@ class PlotBase {
   virtual void SavePng(const std::string& filename, size_t width,
                        size_t height) = 0;
 
+  size_t Width() const { return _width; }
+  size_t Height() const { return _height; }
+
  protected:
   struct Rectangle {
     double x, y;
@@ -85,8 +88,7 @@ class PlotBase {
   VerticalPlotScale _vertScale2;
 
  protected:
-  virtual void draw(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
-                    size_t height) = 0;
+  virtual void Draw(const Cairo::RefPtr<Cairo::Context>& cairo) = 0;
 
  private:
   std::shared_ptr<std::vector<PlotBase*>> _verticallyLinked;
@@ -94,13 +96,13 @@ class PlotBase {
   sigc::signal<void> _onZoomChanged;
 
   /**
-   * Values between 0.0 and 1.0 indication the zoom.
+   * Values between 0.0 and 1.0 indicating the zoom.
    * @{
    */
-  double _xZoomStart, _xZoomEnd;
-  double _yZoomStart, _yZoomEnd;
-  size_t _width, _height;
+  double _xZoomStart = 0.0, _xZoomEnd = 1.0;
+  double _yZoomStart = 0.0, _yZoomEnd = 1.0;
   /** @} */
+  size_t _width = 0, _height = 0;
 };
 
 #endif  // PLOT_PLOTBASE_H

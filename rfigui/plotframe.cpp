@@ -4,7 +4,7 @@
 
 #include "plotframe.h"
 
-using namespace aocommon;
+using aocommon::Polarization;
 
 PlotFrame::PlotFrame()
     : _plotData(nullptr),
@@ -53,15 +53,15 @@ void PlotFrame::plot() {
 
 void PlotFrame::plotTimeGraph(const TimeFrequencyData& data,
                               const std::string& label,
-                              PolarizationEnum polarisation) {
+                              aocommon::PolarizationEnum polarisation) {
   plotTimeGraph(data.Make(polarisation), label);
 }
 
 void PlotFrame::plotTimeGraph(const TimeFrequencyData& data,
                               const std::string& label) {
   _plotData->StartLine(label);
-  Image2DCPtr image = data.GetSingleImage();
-  Mask2DCPtr mask = data.GetSingleMask();
+  const Image2DCPtr image = data.GetSingleImage();
+  const Mask2DCPtr mask = data.GetSingleMask();
 
   for (size_t x = 0; x < image->Width(); ++x) {
     size_t count = 0;

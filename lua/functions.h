@@ -39,6 +39,8 @@ void low_pass_filter(Data& data, size_t kernelWidth, size_t kernelHeight,
                      double horizontalSigmaSquared,
                      double verticalSigmaSquared);
 
+Data norm(const Data& data);
+
 // TODO this function should collect the statistics and print
 // them later on (and be renamed).
 void print_polarization_statistics(const Data& data);
@@ -52,6 +54,8 @@ void scale_invariant_rank_operator_masked(Data& data, const Data& missing,
                                           double level_horizontal,
                                           double level_vertical,
                                           double penalty);
+
+Data sqrt(const Data& data);
 
 void sumthreshold(Data& data, double hThresholdFactor, double vThresholdFactor,
                   bool horizontal, bool vertical);

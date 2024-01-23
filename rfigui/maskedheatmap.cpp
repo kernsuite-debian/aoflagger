@@ -17,7 +17,6 @@ MaskedHeatMap::MaskedHeatMap()
       _manualYAxisDescription(false),
       _manualZAxisDescription(false) {
   _highlightConfig->InitializeLengthsSingleSample();
-  SetXAxisType(AxisType::kTime);
   SetCairoFilter(Cairo::FILTER_NEAREST);
   SignalDrawImage().connect(
       [&](const Cairo::RefPtr<Cairo::ImageSurface>& surface) {
@@ -47,8 +46,9 @@ Mask2DCPtr MaskedHeatMap::GetActiveMask() const {
       Mask2DPtr mask = Mask2D::MakePtr(*_originalMask);
       mask->Join(*_alternativeMask);
       return mask;
-    } else
+    } else {
       return _originalMask;
+    }
   } else {
     if (altActive)
       return _alternativeMask;
@@ -92,7 +92,7 @@ void MaskedHeatMap::SetMetaData(const TimeFrequencyMetaDataCPtr& metaData) {
       SetXAxisDescription("Time (UTC, hh:mm:ss)");
     }
 
-    if (_metaData->HasBand()) {
+    if (_metaData->HasBand() && !_metaData->Band().channels.empty()) {
       SetYAxisMin(_metaData->Band().channels.front().frequencyHz * 1e-6);
       SetYAxisMax(_metaData->Band().channels.back().frequencyHz * 1e-6);
       SetYAxisDescription("Frequency (MHz)");

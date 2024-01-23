@@ -25,8 +25,8 @@ py::array_t<double> GetImageBuffer(const aoflagger::ImageSet* imageSet,
 
   buf = result.request();
   char* resultData = (char*)buf.ptr;
-  int stride0 = buf.strides[0];
-  int stride1 = buf.strides[1];
+  const int stride0 = buf.strides[0];
+  const int stride1 = buf.strides[1];
   for (size_t y = 0; y != imageSet->Height(); ++y) {
     const float* rowOut = values + y * imageSet->HorizontalStride();
     char* rowIn = resultData + y * stride0;
@@ -51,8 +51,8 @@ void SetImageBuffer(aoflagger::ImageSet* imageSet, size_t imageIndex,
         "ImageSet.set_image_buffer(): dimensions of provided array doesn't "
         "match with image set");
   const py::buffer_info buf = values.request();
-  int stride0 = buf.strides[0];
-  int stride1 = buf.strides[1];
+  const int stride0 = buf.strides[0];
+  const int stride1 = buf.strides[1];
   const char* data = static_cast<const char*>(buf.ptr);
   if (!data)
     throw std::runtime_error(
@@ -79,8 +79,8 @@ py::array_t<bool> GetBuffer(const aoflagger::FlagMask* flagMask) {
   py::array_t<bool> result(buf);
   buf = result.request();
   char* resultData = static_cast<char*>(buf.ptr);
-  int stride0 = buf.strides[0];
-  int stride1 = buf.strides[1];
+  const int stride0 = buf.strides[0];
+  const int stride1 = buf.strides[1];
   for (size_t y = 0; y != flagMask->Height(); ++y) {
     const bool* rowOut = values + y * flagMask->HorizontalStride();
     char* rowIn = resultData + y * stride0;
@@ -107,13 +107,13 @@ void SetBuffer(aoflagger::FlagMask* flagMask, pybind11::array_t<bool>& values) {
     throw std::runtime_error(
         "Data needs to be provided that is interpretable as a bool array");
   bool* buffer = flagMask->Buffer();
-  int stride0 = buf.strides[0];
-  int stride1 = buf.strides[1];
+  const int stride0 = buf.strides[0];
+  const int stride1 = buf.strides[1];
   for (size_t y = 0; y != flagMask->Height(); ++y) {
     const char* rowIn = data + y * stride0;
     bool* rowOut = buffer + y * flagMask->HorizontalStride();
     for (size_t x = 0; x != flagMask->Width(); ++x) {
-      rowOut[x] = *reinterpret_cast<const double*>(rowIn + x * stride1);
+      rowOut[x] = *reinterpret_cast<const bool*>(rowIn + x * stride1);
     }
   }
 }
@@ -158,7 +158,7 @@ py::object FindStrategyFile1(aoflagger::AOFlagger* flagger,
 py::object FindStrategyFile2(aoflagger::AOFlagger* flagger,
                              enum aoflagger::TelescopeId telescopeId,
                              const char* scenario) {
-  std::string path =
+  const std::string path =
       flagger->FindStrategyFile(telescopeId, std::string(scenario));
   if (path.empty())
     throw std::runtime_error(
@@ -191,8 +191,8 @@ py::object MakeQualityStatistics1(aoflagger::AOFlagger* flagger,
     throw std::runtime_error(
         "AOFlagger.make_quality_statistics(): Invalid dimensions specified for "
         "scanTimes array; one dimensional array required");
-  size_t nScans = scanTimes.shape(0);
-  py::buffer_info tbuf = scanTimes.request();
+  const size_t nScans = scanTimes.shape(0);
+  const py::buffer_info tbuf = scanTimes.request();
   const double* scanTimesArr = reinterpret_cast<const double*>(tbuf.ptr);
   if (!scanTimesArr)
     throw std::runtime_error(
@@ -203,8 +203,8 @@ py::object MakeQualityStatistics1(aoflagger::AOFlagger* flagger,
     throw std::runtime_error(
         "AOFlagger.make_quality_statistics(): Invalid dimensions specified for "
         "channelFrequencies array; one dimensional array required");
-  size_t nChannels = channelFrequencies.shape(0);
-  py::buffer_info fbuf = scanTimes.request();
+  const size_t nChannels = channelFrequencies.shape(0);
+  const py::buffer_info fbuf = scanTimes.request();
   const double* channelFrequenciesArr =
       reinterpret_cast<const double*>(fbuf.ptr);
   if (!channelFrequenciesArr)

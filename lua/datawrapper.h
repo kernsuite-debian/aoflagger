@@ -7,6 +7,8 @@ extern "C" {
 #include <lauxlib.h>
 }
 
+#include <algorithm>
+
 class Data {
  public:
   static int clear_mask(lua_State* L);
@@ -37,6 +39,7 @@ class Data {
   static int set_visibilities(lua_State* L);
   static int set_polarization_data(lua_State* L);
   static int gc(lua_State* L);
+  static int div(lua_State* L);
   static int sub(lua_State* L);
 
  private:

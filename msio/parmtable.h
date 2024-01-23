@@ -39,7 +39,7 @@ class ParmTable {
     }
   };
 
-  ParmTable(const std::string& path) : _path(path) { readNames(); }
+  explicit ParmTable(const std::string& path) : _path(path) { readNames(); }
 
   std::set<std::string> GetAntennas() const {
     std::set<std::string> antennas;

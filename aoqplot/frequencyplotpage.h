@@ -10,12 +10,12 @@
 
 class FrequencyPlotPage : public TwoDimensionalPlotPage {
  public:
-  FrequencyPlotPage(FrequencyPageController* controller)
+  explicit FrequencyPlotPage(FrequencyPageController* controller)
       : TwoDimensionalPlotPage(controller),
         _controller(controller),
         _ftButton("FT") {}
 
-  virtual void addCustomPlotButtons(Gtk::Toolbar& container) override final {
+  void addCustomPlotButtons(Gtk::Toolbar& container) override final {
     _ftButton.signal_clicked().connect(
         sigc::mem_fun(*this, &FrequencyPlotPage::onFTButtonClicked));
     container.append(_ftButton);

@@ -1,8 +1,10 @@
 #ifndef FILTERBANKSET_H
 #define FILTERBANKSET_H
 
-#include <string>
 #include <deque>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "imageset.h"
 
@@ -16,10 +18,10 @@ class FilterBankSet final : public ImageSet {
 
   ~FilterBankSet() {}
 
-  virtual std::unique_ptr<ImageSet> Clone() override {
+  std::unique_ptr<ImageSet> Clone() override {
     std::unique_ptr<FilterBankSet> set(new FilterBankSet(*this));
     set->_requests.clear();
-    return std::move(set);
+    return set;
   }
 
   size_t Size() const override { return _intervalCount; }
@@ -28,28 +30,28 @@ class FilterBankSet final : public ImageSet {
 
   std::string Description(const ImageSetIndex& index) const override;
 
-  virtual std::vector<std::string> Files() const override {
+  std::vector<std::string> Files() const override {
     return std::vector<std::string>{_location};
   }
 
-  virtual std::string TelescopeName() override;
+  std::string TelescopeName() override;
 
-  virtual void AddReadRequest(const ImageSetIndex& index) override;
+  void AddReadRequest(const ImageSetIndex& index) override;
 
-  virtual void PerformReadRequests(class ProgressListener& progress) override;
+  void PerformReadRequests(class ProgressListener& progress) override;
 
-  virtual std::unique_ptr<BaselineData> GetNextRequested() override;
+  std::unique_ptr<BaselineData> GetNextRequested() override;
 
-  virtual void AddWriteFlagsTask(const ImageSetIndex& index,
-                                 std::vector<Mask2DCPtr>& flags) override;
+  void AddWriteFlagsTask(const ImageSetIndex& index,
+                         std::vector<Mask2DCPtr>& flags) override;
 
-  virtual void Initialize() override;
+  void Initialize() override;
 
-  virtual void PerformWriteDataTask(
-      const ImageSetIndex& index, std::vector<Image2DCPtr> realImages,
-      std::vector<Image2DCPtr> imaginaryImages) override;
+  void PerformWriteDataTask(const ImageSetIndex& index,
+                            std::vector<Image2DCPtr> realImages,
+                            std::vector<Image2DCPtr> imaginaryImages) override;
 
-  virtual bool HasCrossCorrelations() const override { return false; }
+  bool HasCrossCorrelations() const override { return false; }
 
   double CentreFrequency() const {
     return (_fch1 + (_foff * _channelCount * 0.5)) * 1e6;

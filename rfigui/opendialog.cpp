@@ -234,7 +234,8 @@ void OpenDialog::onUnselectFile() {
 }
 
 void OpenDialog::onFileListSelectionChanged() {
-  bool hasSelection = _fileList.get_selection()->count_selected_rows() != 0;
+  const bool hasSelection =
+      _fileList.get_selection()->count_selected_rows() != 0;
   _unselectButton.set_sensitive(hasSelection);
 }
 
@@ -245,7 +246,7 @@ MSOptions OpenDialog::GetOptions() const {
       options.ioMode = DirectReadMode;
       break;
     case 1:
-      options.ioMode = IndirectReadMode;
+      options.ioMode = ReorderingReadMode;
       break;
     case 2:
       options.ioMode = MemoryReadMode;
@@ -260,7 +261,7 @@ MSOptions OpenDialog::GetOptions() const {
 
   if (_intervalCB.get_active()) {
     options.intervalStart = atoi(_intervalStartEntry.get_text().c_str());
-    std::string endStr = _intervalEndEntry.get_text();
+    const std::string endStr = _intervalEndEntry.get_text();
     if (!endStr.empty() && endStr != "...")
       options.intervalEnd = atoi(_intervalEndEntry.get_text().c_str());
   }

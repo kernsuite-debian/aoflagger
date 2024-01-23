@@ -6,8 +6,6 @@
 
 #define FILE_FORMAT_VERSION 1
 
-using namespace aocommon;
-
 void SingleBaselineFile::Read(std::istream& stream,
                               ProgressListener& progress) {
   if (!stream) throw std::runtime_error("Could not open file");
@@ -16,11 +14,11 @@ void SingleBaselineFile::Read(std::istream& stream,
   magic[8] = 0;
   if (std::string(magic) != "RFIBL")
     throw std::runtime_error("This is not an AOFlagger single baseline file");
-  unsigned fileformat = Serializable::UnserializeUInt32(stream);
+  const unsigned fileformat = Serializable::UnserializeUInt32(stream);
   if (fileformat != FILE_FORMAT_VERSION)
     throw std::runtime_error(
         "This AOFlagger single baseline file has an unknown file format");
-  std::string versionStr = Serializable::UnserializeString(stream);
+  const std::string versionStr = Serializable::UnserializeString(stream);
   Serializable::UnserializeUInt32(stream);  // maj
   Serializable::UnserializeUInt32(stream);  // min
   Serializable::UnserializeUInt32(stream);  // submin
@@ -49,8 +47,8 @@ void SingleBaselineFile::Write(std::ostream& stream) {
 TimeFrequencyData SingleBaselineFile::UnserializeTFData(
     std::istream& stream, ProgressListener& progress) {
   TimeFrequencyData data;
-  size_t polCount = Serializable::UnserializeUInt32(stream);
-  size_t complCode = Serializable::UnserializeUInt32(stream);
+  const size_t polCount = Serializable::UnserializeUInt32(stream);
+  const size_t complCode = Serializable::UnserializeUInt32(stream);
   enum TimeFrequencyData::ComplexRepresentation repr;
   switch (complCode) {
     default:
@@ -72,11 +70,12 @@ TimeFrequencyData SingleBaselineFile::UnserializeTFData(
   }
   for (size_t i = 0; i != polCount; ++i) {
     TimeFrequencyData polData;
-    size_t polCode = Serializable::UnserializeUInt32(stream);
-    PolarizationEnum pol = Polarization::AipsIndexToEnum(polCode);
-    uint32_t imageFlagBitset = Serializable::UnserializeUInt32(stream);
-    size_t imageCount = imageFlagBitset & 0x03;
-    size_t maskCount = (imageFlagBitset & 0x04) ? 1 : 0;
+    const size_t polCode = Serializable::UnserializeUInt32(stream);
+    const aocommon::PolarizationEnum pol =
+        aocommon::Polarization::AipsIndexToEnum(polCode);
+    const uint32_t imageFlagBitset = Serializable::UnserializeUInt32(stream);
+    const size_t imageCount = imageFlagBitset & 0x03;
+    const size_t maskCount = (imageFlagBitset & 0x04) ? 1 : 0;
     if (imageCount == 2) {
       Image2D first = UnserializeImage(stream, progress, i * 2, polCount * 2),
               second =
@@ -101,11 +100,11 @@ TimeFrequencyData SingleBaselineFile::UnserializeTFData(
 TimeFrequencyMetaData SingleBaselineFile::UnserializeMetaData(
     std::istream& stream) {
   TimeFrequencyMetaData metaData;
-  size_t featureSet = Serializable::UnserializeUInt64(stream);
-  bool hasAntenna1 = featureSet & 0x01;
-  bool hasAntenna2 = featureSet & 0x02;
-  bool hasBand = featureSet & 0x04;
-  bool hasObsTimes = featureSet & 0x10;
+  const size_t featureSet = Serializable::UnserializeUInt64(stream);
+  const bool hasAntenna1 = featureSet & 0x01;
+  const bool hasAntenna2 = featureSet & 0x02;
+  const bool hasBand = featureSet & 0x04;
+  const bool hasObsTimes = featureSet & 0x10;
   if (hasAntenna1) {
     AntennaInfo ant;
     ant.Unserialize(stream);
@@ -183,10 +182,11 @@ void SingleBaselineFile::Serialize(std::ostream& stream,
   }
   Serializable::SerializeToUInt32(stream, complCode);
   for (size_t i = 0; i != data.PolarizationCount(); ++i) {
-    PolarizationEnum p = data.GetPolarization(i);
-    Serializable::SerializeToUInt32(stream, Polarization::EnumToAipsIndex(p));
+    const aocommon::PolarizationEnum p = data.GetPolarization(i);
+    Serializable::SerializeToUInt32(stream,
+                                    aocommon::Polarization::EnumToAipsIndex(p));
     unsigned int imageFlagBitset = 0;
-    TimeFrequencyData polData = data.MakeFromPolarizationIndex(i);
+    const TimeFrequencyData polData = data.MakeFromPolarizationIndex(i);
     if (polData.ImageCount() == 2) imageFlagBitset = imageFlagBitset | 0x02;
     if (polData.ImageCount() == 1) imageFlagBitset = imageFlagBitset | 0x01;
     if (polData.MaskCount() == 1) imageFlagBitset = imageFlagBitset | 0x04;
@@ -234,7 +234,7 @@ void SingleBaselineFile::Serialize(std::ostream& stream, const Mask2D& mask) {
   Serializable::SerializeToUInt64(stream, mask.Height());
   for (size_t y = 0; y != mask.Height(); ++y) {
     for (size_t x = 0; x != mask.Width(); ++x) {
-      char val = mask.Value(x, y) ? 1 : 0;
+      const char val = mask.Value(x, y) ? 1 : 0;
       stream.write(&val, 1);
     }
   }

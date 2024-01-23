@@ -10,7 +10,7 @@
 
 SpatialTimeLoader::SpatialTimeLoader(MSMetaData& msMetaData)
     : _msMetaData(msMetaData) {
-  casacore::Table rawTable(_msMetaData.Path());
+  const casacore::Table rawTable(_msMetaData.Path());
   casacore::Block<casacore::String> names(4);
   names[0] = "DATA_DESC_ID";
   names[1] = "TIME";
@@ -36,13 +36,13 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex,
                                           bool fringeStop) {
   const unsigned baselineCount = _antennaCount * (_antennaCount - 1) / 2;
 
-  casacore::Table table = _tableIter->table();
-  casacore::ScalarColumn<int> antenna1Column(table, "ANTENNA1");
-  casacore::ScalarColumn<int> antenna2Column(table, "ANTENNA2");
-  casacore::ScalarColumn<double> timeColumn(table, "TIME");
-  casacore::ArrayColumn<double> uvwColumn(table, "UVW");
-  casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
-  casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
+  const casacore::Table table = _tableIter->table();
+  const casacore::ScalarColumn<int> antenna1Column(table, "ANTENNA1");
+  const casacore::ScalarColumn<int> antenna2Column(table, "ANTENNA2");
+  const casacore::ScalarColumn<double> timeColumn(table, "TIME");
+  const casacore::ArrayColumn<double> uvwColumn(table, "UVW");
+  const casacore::ArrayColumn<bool> flagColumn(table, "FLAG");
+  const casacore::ArrayColumn<casacore::Complex> dataColumn(table, "DATA");
 
   std::vector<Image2DPtr> realImages(_polarizationCount),
       imagImages(_polarizationCount);
@@ -55,7 +55,8 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex,
     masks[p] = Mask2D::CreateUnsetMaskPtr(_timestepsCount, baselineCount);
   }
 
-  ChannelInfo channelInfo = _msMetaData.GetBandInfo(0).channels[channelIndex];
+  const ChannelInfo channelInfo =
+      _msMetaData.GetBandInfo(0).channels[channelIndex];
 
   unsigned timeIndex = 0;
   double lastTime = timeColumn(0);
@@ -80,7 +81,7 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex,
       const double wRotation =
           -channelInfo.MetersToLambda(*uvwIter) * M_PI * 2.0;
 
-      unsigned baselineIndex =
+      const unsigned baselineIndex =
           baselineCount - (_antennaCount - a1) * (_antennaCount - a1 - 1) / 2 +
           a2 - a1 - 1;
 
@@ -93,7 +94,7 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex,
             double realValue = i->real();
             double imagValue = i->imag();
             if (fringeStop) {
-              double newRealValue =
+              const double newRealValue =
                   realValue * cosn(wRotation) - imagValue * sinn(wRotation);
               imagValue =
                   realValue * sinn(wRotation) + imagValue * cosn(wRotation);
@@ -114,7 +115,7 @@ TimeFrequencyData SpatialTimeLoader::Load(unsigned channelIndex,
       }
     }
   }
-  casacore::ROScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
+  const casacore::ROScalarColumn<int> bandColumn(table, "DATA_DESC_ID");
   const BandInfo band = _msMetaData.GetBandInfo(bandColumn(0));
 
   TimeFrequencyData data;

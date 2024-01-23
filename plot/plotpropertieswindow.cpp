@@ -58,7 +58,7 @@ PlotPropertiesWindow::PlotPropertiesWindow(XYPlot& plot,
   initOptionsWidgets();
   initAxesDescriptionWidgets();
 
-  _titleEntry.set_text(_plot.Title());
+  _titleEntry.set_text(_plot.GetTitle());
   _topVBox.pack_start(_titleEntry);
 
   _framesHBox.pack_start(_framesRightVBox);
@@ -80,7 +80,7 @@ PlotPropertiesWindow::PlotPropertiesWindow(XYPlot& plot,
 
   _topVBox.pack_start(_framesHBox);
 
-  _showAxes.set_active(_plot.ShowXAxis() || _plot.ShowYAxis());
+  _showAxes.set_active(_plot.XAxis().Show() || _plot.YAxis().Show());
   _topVBox.pack_start(_showAxes);
 
   _showAxisDescriptionsButton.set_active(_plot.ShowAxisDescriptions());
@@ -112,15 +112,15 @@ void PlotPropertiesWindow::initVRangeWidgets() {
   _specifiedVRangeButton.signal_clicked().connect(
       sigc::mem_fun(*this, &PlotPropertiesWindow::onVRangeChanged));
 
-  switch (_plot.VRangeDetermination()) {
+  switch (_plot.YAxis().GetRangeDetermination()) {
     default:
-    case XYPlot::MinMaxRange:
+    case RangeDetermination::MinMaxRange:
       _minMaxVRangeButton.set_active(true);
       break;
-    case XYPlot::WinsorizedRange:
+    case RangeDetermination::WinsorizedRange:
       _winsorizedVRangeButton.set_active(true);
       break;
-    case XYPlot::SpecifiedRange:
+    case RangeDetermination::SpecifiedRange:
       _specifiedVRangeButton.set_active(true);
       break;
   }
@@ -140,11 +140,11 @@ void PlotPropertiesWindow::initVRangeWidgets() {
 void PlotPropertiesWindow::initHRangeWidgets() {
   _hRangeFrame.add(_hRangeBox);
 
-  Gtk::RadioButton::Group group;
+  const Gtk::RadioButton::Group group;
 
   _hRangeBox.pack_start(_automaticHRangeButton);
-  _automaticHRangeButton.set_active(_plot.HRangeDetermination() !=
-                                    XYPlot::SpecifiedRange);
+  _automaticHRangeButton.set_active(_plot.XAxis().GetRangeDetermination() !=
+                                    RangeDetermination::SpecifiedRange);
   _automaticHRangeButton.signal_clicked().connect(
       sigc::mem_fun(*this, &PlotPropertiesWindow::onHRangeChanged));
 
@@ -165,7 +165,7 @@ void PlotPropertiesWindow::initOptionsWidgets() {
   Gtk::RadioButton::Group group;
 
   _xOptionsBox.pack_start(_xLogScaleButton);
-  _xLogScaleButton.set_active(_plot.LogarithmicXAxis());
+  _xLogScaleButton.set_active(_plot.XAxis().Logarithmic());
   _xOptionsFrame.add(_xOptionsBox);
   _framesRightVBox.pack_start(_xOptionsFrame);
 
@@ -178,7 +178,7 @@ void PlotPropertiesWindow::initOptionsWidgets() {
   _yOptionsBox.pack_start(_yZeroSymmetricButton);
   _yZeroSymmetricButton.set_group(group);
 
-  if (_plot.LogarithmicYAxis())
+  if (_plot.YAxis().Logarithmic())
     _yLogScaleButton.set_active(true);
   else
     _yNormalOptionsButton.set_active(true);
@@ -200,7 +200,7 @@ void PlotPropertiesWindow::initAxesDescriptionWidgets() {
 }
 
 void PlotPropertiesWindow::updateHMinMaxEntries() {
-  auto range = _plot.RangeX();
+  auto range = _plot.RangeX(false);
   std::stringstream minStr;
   minStr << range.first;
   _hRangeMinEntry.set_text(minStr.str());
@@ -211,7 +211,7 @@ void PlotPropertiesWindow::updateHMinMaxEntries() {
 }
 
 void PlotPropertiesWindow::updateVMinMaxEntries() {
-  auto range = _plot.RangeY();
+  auto range = _plot.RangeY(false);
   std::stringstream minStr;
   minStr << range.first;
   _vRangeMinEntry.set_text(minStr.str());
@@ -224,45 +224,45 @@ void PlotPropertiesWindow::updateVMinMaxEntries() {
 void PlotPropertiesWindow::onApplyClicked() {
   _plot.SetTitle(_titleEntry.get_text());
 
-  if (_minMaxVRangeButton.get_active())
-    _plot.SetVRangeDetermination(XYPlot::MinMaxRange);
-  else if (_winsorizedVRangeButton.get_active())
-    _plot.SetVRangeDetermination(XYPlot::WinsorizedRange);
-  else if (_specifiedVRangeButton.get_active()) {
-    _plot.SetVRangeDetermination(XYPlot::SpecifiedRange);
-    _plot.SetMinY(atof(_vRangeMinEntry.get_text().c_str()));
-    _plot.SetMaxY(atof(_vRangeMaxEntry.get_text().c_str()));
+  if (_minMaxVRangeButton.get_active()) {
+    _plot.YAxis().SetRangeDetermination(RangeDetermination::MinMaxRange);
+  } else if (_winsorizedVRangeButton.get_active()) {
+    _plot.YAxis().SetRangeDetermination(RangeDetermination::WinsorizedRange);
+  } else if (_specifiedVRangeButton.get_active()) {
+    _plot.YAxis().SetRangeDetermination(RangeDetermination::SpecifiedRange);
+    _plot.YAxis().SetMin(atof(_vRangeMinEntry.get_text().c_str()));
+    _plot.YAxis().SetMax(atof(_vRangeMaxEntry.get_text().c_str()));
   }
 
-  if (_automaticHRangeButton.get_active())
-    _plot.SetHRangeDetermination(XYPlot::MinMaxRange);
-  else {
-    _plot.SetHRangeDetermination(XYPlot::SpecifiedRange);
-    _plot.SetMinX(atof(_hRangeMinEntry.get_text().c_str()));
-    _plot.SetMaxX(atof(_hRangeMaxEntry.get_text().c_str()));
+  if (_automaticHRangeButton.get_active()) {
+    _plot.XAxis().SetRangeDetermination(RangeDetermination::MinMaxRange);
+  } else {
+    _plot.XAxis().SetRangeDetermination(RangeDetermination::SpecifiedRange);
+    _plot.XAxis().SetMin(atof(_hRangeMinEntry.get_text().c_str()));
+    _plot.XAxis().SetMax(atof(_hRangeMaxEntry.get_text().c_str()));
   }
 
-  _plot.SetLogarithmicXAxis(_xLogScaleButton.get_active());
+  _plot.XAxis().SetLogarithmic(_xLogScaleButton.get_active());
 
   if (_yNormalOptionsButton.get_active())
-    _plot.SetLogarithmicYAxis(false);
+    _plot.YAxis().SetLogarithmic(false);
   else if (_yLogScaleButton.get_active())
-    _plot.SetLogarithmicYAxis(true);
+    _plot.YAxis().SetLogarithmic(true);
 
   if (_hAxisDescriptionButton.get_active())
-    _plot.SetCustomHorizontalAxisDescription(
+    _plot.XAxis().SetCustomDescription(
         _hAxisDescriptionEntry.get_text().c_str());
   else
-    _plot.SetAutomaticHorizontalAxisDescription();
+    _plot.XAxis().SetAutomaticDescription();
 
   if (_vAxisDescriptionButton.get_active())
-    _plot.SetCustomVerticalAxisDescription(
+    _plot.YAxis().SetCustomDescription(
         _vAxisDescriptionEntry.get_text().c_str());
   else
-    _plot.SetAutomaticVerticalAxisDescription();
+    _plot.YAxis().SetAutomaticDescription();
 
-  _plot.SetShowXAxis(_showAxes.get_active());
-  _plot.SetShowYAxis(_showAxes.get_active());
+  _plot.XAxis().SetShow(_showAxes.get_active());
+  _plot.YAxis().SetShow(_showAxes.get_active());
   _plot.SetShowAxisDescriptions(_showAxisDescriptionsButton.get_active());
 
   if (OnChangesApplied) OnChangesApplied();
@@ -282,36 +282,36 @@ void PlotPropertiesWindow::onExportClicked() {
   dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
   dialog.add_button("_Save", Gtk::RESPONSE_OK);
 
-  Glib::RefPtr<Gtk::FileFilter> pdfFilter = Gtk::FileFilter::create();
-  std::string pdfName = "Portable Document Format (*.pdf)";
+  const Glib::RefPtr<Gtk::FileFilter> pdfFilter = Gtk::FileFilter::create();
+  const std::string pdfName = "Portable Document Format (*.pdf)";
   pdfFilter->set_name(pdfName);
   pdfFilter->add_pattern("*.pdf");
   pdfFilter->add_mime_type("application/pdf");
   dialog.add_filter(pdfFilter);
 
-  Glib::RefPtr<Gtk::FileFilter> svgFilter = Gtk::FileFilter::create();
-  std::string svgName = "Scalable Vector Graphics (*.svg)";
+  const Glib::RefPtr<Gtk::FileFilter> svgFilter = Gtk::FileFilter::create();
+  const std::string svgName = "Scalable Vector Graphics (*.svg)";
   svgFilter->set_name(svgName);
   svgFilter->add_pattern("*.svg");
   svgFilter->add_mime_type("image/svg+xml");
   dialog.add_filter(svgFilter);
 
-  Glib::RefPtr<Gtk::FileFilter> pngFilter = Gtk::FileFilter::create();
-  std::string pngName = "Portable Network Graphics (*.png)";
+  const Glib::RefPtr<Gtk::FileFilter> pngFilter = Gtk::FileFilter::create();
+  const std::string pngName = "Portable Network Graphics (*.png)";
   pngFilter->set_name(pngName);
   pngFilter->add_pattern("*.png");
   pngFilter->add_mime_type("image/png");
   dialog.add_filter(pngFilter);
 
-  int result = dialog.run();
+  const int result = dialog.run();
 
   if (result == Gtk::RESPONSE_OK) {
     const Glib::RefPtr<Gtk::FileFilter> filter = dialog.get_filter();
     if (filter->get_name() == pdfName)
-      _plot.SavePdf(dialog.get_filename());
+      _plot.SavePdf(dialog.get_filename(), _plot.Width(), _plot.Height());
     else if (filter->get_name() == svgName)
-      _plot.SaveSvg(dialog.get_filename());
+      _plot.SaveSvg(dialog.get_filename(), _plot.Width(), _plot.Height());
     else
-      _plot.SavePng(dialog.get_filename());
+      _plot.SavePng(dialog.get_filename(), _plot.Width(), _plot.Height());
   }
 }

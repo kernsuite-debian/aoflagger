@@ -1,9 +1,12 @@
 #ifndef MSIMAGESET_H
 #define MSIMAGESET_H
 
+#include <limits>
+#include <memory>
 #include <set>
 #include <string>
 #include <stdexcept>
+#include <vector>
 
 #include "../structures/antennainfo.h"
 #include "../structures/timefrequencydata.h"
@@ -147,7 +150,7 @@ class MSImageSet final : public IndexableSet {
         _readUVW(false),
         _ioMode(AutoReadMode) {}
   void initReader();
-  const static size_t not_found = std::numeric_limits<size_t>::max();
+  static const size_t not_found = std::numeric_limits<size_t>::max();
   size_t findBaselineIndex(size_t antenna1, size_t antenna2, size_t band,
                            size_t sequenceId) const;
 

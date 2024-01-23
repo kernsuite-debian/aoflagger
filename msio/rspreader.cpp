@@ -33,24 +33,24 @@ RSPReader::ReadChannelBeamlet(unsigned long timestepStart,
                         timestepEnd * (unsigned long)256, beamletCount,
                         beamletIndex);
 
-  TimeFrequencyData allX = data.first.Make(aocommon::Polarization::XX);
-  TimeFrequencyData allY = data.first.Make(aocommon::Polarization::YY);
-  Image2DCPtr xr = allX.GetRealPart();
-  Image2DCPtr xi = allX.GetImaginaryPart();
-  Image2DCPtr yr = allY.GetRealPart();
-  Image2DCPtr yi = allY.GetImaginaryPart();
-  Mask2DCPtr mask = data.first.GetSingleMask();
+  const TimeFrequencyData allX = data.first.Make(aocommon::Polarization::XX);
+  const TimeFrequencyData allY = data.first.Make(aocommon::Polarization::YY);
+  const Image2DCPtr xr = allX.GetRealPart();
+  const Image2DCPtr xi = allX.GetImaginaryPart();
+  const Image2DCPtr yr = allY.GetRealPart();
+  const Image2DCPtr yi = allY.GetImaginaryPart();
+  const Mask2DCPtr mask = data.first.GetSingleMask();
 
   Image2DPtr outXR = Image2D::CreateUnsetImagePtr(width, 256),
              outXI = Image2D::CreateUnsetImagePtr(width, 256),
              outYR = Image2D::CreateUnsetImagePtr(width, 256),
              outYI = Image2D::CreateUnsetImagePtr(width, 256);
-  Mask2DPtr outMask = Mask2D::CreateUnsetMaskPtr(width, 256);
+  const Mask2DPtr outMask = Mask2D::CreateUnsetMaskPtr(width, 256);
 
   std::vector<double> observationTimes;
   for (unsigned long timestep = 0; timestep < timestepEnd - timestepStart;
        ++timestep) {
-    unsigned long timestepIndex = timestep * 256;
+    const unsigned long timestepIndex = timestep * 256;
     SampleRow realX = SampleRow::MakeFromRow(xr.get(), timestepIndex, 256, 0),
               imaginaryX =
                   SampleRow::MakeFromRow(xi.get(), timestepIndex, 256, 0),
@@ -102,19 +102,19 @@ RSPReader::ReadSingleBeamlet(unsigned long timestepStart,
       ReadAllBeamlets(timestepStart, timestepEnd, beamletCount);
 
   const unsigned width = timestepEnd - timestepStart;
-  Image2DPtr realX = Image2D::CreateZeroImagePtr(width, 1);
-  Image2DPtr imaginaryX = Image2D::CreateZeroImagePtr(width, 1);
-  Image2DPtr realY = Image2D::CreateZeroImagePtr(width, 1);
-  Image2DPtr imaginaryY = Image2D::CreateZeroImagePtr(width, 1);
-  Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(width, 1);
+  const Image2DPtr realX = Image2D::CreateZeroImagePtr(width, 1);
+  const Image2DPtr imaginaryX = Image2D::CreateZeroImagePtr(width, 1);
+  const Image2DPtr realY = Image2D::CreateZeroImagePtr(width, 1);
+  const Image2DPtr imaginaryY = Image2D::CreateZeroImagePtr(width, 1);
+  const Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(width, 1);
 
-  TimeFrequencyData allX = data.first.Make(aocommon::Polarization::XX);
-  TimeFrequencyData allY = data.first.Make(aocommon::Polarization::YY);
-  Image2DCPtr xr = allX.GetRealPart();
-  Image2DCPtr xi = allX.GetImaginaryPart();
-  Image2DCPtr yr = allY.GetRealPart();
-  Image2DCPtr yi = allY.GetImaginaryPart();
-  Mask2DCPtr maskWithBeamlets = data.first.GetSingleMask();
+  const TimeFrequencyData allX = data.first.Make(aocommon::Polarization::XX);
+  const TimeFrequencyData allY = data.first.Make(aocommon::Polarization::YY);
+  const Image2DCPtr xr = allX.GetRealPart();
+  const Image2DCPtr xi = allX.GetImaginaryPart();
+  const Image2DCPtr yr = allY.GetRealPart();
+  const Image2DCPtr yi = allY.GetImaginaryPart();
+  const Mask2DCPtr maskWithBeamlets = data.first.GetSingleMask();
 
   for (unsigned x = 0; x < width; ++x) {
     realX->SetValue(x, 0, xr->Value(x, beamletIndex));
@@ -137,7 +137,7 @@ unsigned long RSPReader::TimeStepCount(size_t beamletCount) const {
   std::ifstream stream(_rawFile.c_str(),
                        std::ios_base::binary | std::ios_base::in);
   stream.seekg(0, std::ios_base::end);
-  unsigned long fileSize = stream.tellg();
+  const unsigned long fileSize = stream.tellg();
 
   stream.seekg(0, std::ios_base::beg);
   RCPApplicationHeader firstHeader;
@@ -160,18 +160,20 @@ std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr>
 RSPReader::ReadAllBeamlets(unsigned long timestepStart,
                            unsigned long timestepEnd, unsigned beamletCount) {
   const unsigned width = timestepEnd - timestepStart;
-  Image2DPtr realX = Image2D::CreateZeroImagePtr(width, beamletCount);
-  Image2DPtr imaginaryX = Image2D::CreateZeroImagePtr(width, beamletCount);
-  Image2DPtr realY = Image2D::CreateZeroImagePtr(width, beamletCount);
-  Image2DPtr imaginaryY = Image2D::CreateZeroImagePtr(width, beamletCount);
-  Mask2DPtr mask = Mask2D::CreateSetMaskPtr<true>(width, beamletCount);
+  const Image2DPtr realX = Image2D::CreateZeroImagePtr(width, beamletCount);
+  const Image2DPtr imaginaryX =
+      Image2D::CreateZeroImagePtr(width, beamletCount);
+  const Image2DPtr realY = Image2D::CreateZeroImagePtr(width, beamletCount);
+  const Image2DPtr imaginaryY =
+      Image2D::CreateZeroImagePtr(width, beamletCount);
+  const Mask2DPtr mask = Mask2D::CreateSetMaskPtr<true>(width, beamletCount);
 
   std::ifstream file(_rawFile.c_str(),
                      std::ios_base::binary | std::ios_base::in);
   size_t frame = 0;
   std::set<short> stations;
 
-  TimeFrequencyMetaDataPtr metaData =
+  const TimeFrequencyMetaDataPtr metaData =
       TimeFrequencyMetaDataPtr(new TimeFrequencyMetaData());
   BandInfo band;
   for (size_t i = 0; i < beamletCount; ++i) {
@@ -257,8 +259,8 @@ RSPReader::ReadAllBeamlets(unsigned long timestepStart,
 }
 
 void RSPReader::ReadForStatistics(unsigned beamletCount) {
-  long unsigned timesteps = TimeStepCount(beamletCount);
-  long unsigned stepSize = 1024;
+  const long unsigned timesteps = TimeStepCount(beamletCount);
+  const long unsigned stepSize = 1024;
   std::vector<BeamletStatistics> statistics(beamletCount),
       timeStartStatistics(beamletCount);
 
@@ -276,7 +278,7 @@ void RSPReader::ReadForStatistics(unsigned beamletCount) {
     // Read the data
     unsigned long end = timestepIndex + stepSize;
     if (end > timesteps) end = timesteps;
-    std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> dataPair =
+    const std::pair<TimeFrequencyData, TimeFrequencyMetaDataPtr> dataPair =
         ReadAllBeamlets(timestepIndex, end, beamletCount);
     const TimeFrequencyData& data = dataPair.first;
     if (startTime == -1.0) {
@@ -287,7 +289,7 @@ void RSPReader::ReadForStatistics(unsigned beamletCount) {
     // Count the statistics
     for (unsigned imageIndex = 0; imageIndex < data.ImageCount();
          ++imageIndex) {
-      Image2DCPtr image = data.GetImage(imageIndex);
+      const Image2DCPtr image = data.GetImage(imageIndex);
       for (unsigned y = 0; y < image->Height(); ++y) {
         for (unsigned x = 0; x < image->Width(); ++x) {
           int value = (int)image->Value(x, y);

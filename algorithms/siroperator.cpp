@@ -24,7 +24,7 @@ void SIROperator::operateHorizontallyMissing(MaskLikeA& mask,
     }
 
     if (nAvailable != 0) {
-      unsigned wSize = nAvailable + 1;
+      const unsigned wSize = nAvailable + 1;
       w[0] = 0.0;
       unsigned currentMinIndex = 0;
       minIndices[0] = 0;
@@ -74,10 +74,10 @@ void SIROperator::operateHorizontallyMissing(MaskLikeA& mask,
                                              num_t eta, num_t penalty) {
   const size_t width = mask.Width();
   const size_t maxWSize = width + 1;
-  std::unique_ptr<num_t[]> values(new num_t[width]);
-  std::unique_ptr<num_t[]> w(new num_t[maxWSize]);
-  std::unique_ptr<size_t[]> minIndices(new size_t[maxWSize]);
-  std::unique_ptr<size_t[]> maxIndices(new size_t[maxWSize]);
+  const std::unique_ptr<num_t[]> values(new num_t[width]);
+  const std::unique_ptr<num_t[]> w(new num_t[maxWSize]);
+  const std::unique_ptr<size_t[]> minIndices(new size_t[maxWSize]);
+  const std::unique_ptr<size_t[]> maxIndices(new size_t[maxWSize]);
 
   const num_t penaltyValue = (eta - 1.0) * penalty;
   for (size_t row = 0; row < mask.Height(); ++row) {

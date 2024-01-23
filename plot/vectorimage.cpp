@@ -2,9 +2,9 @@
 
 std::unique_ptr<VectorImage> ShrinkHorizontally(const ImageInterface& source,
                                                 size_t shrinkFactor) {
-  if (source.Width() == 0)
+  if (source.Width() == 0) {
     return std::unique_ptr<VectorImage>(new VectorImage());
-  else {
+  } else {
     const size_t newWidth = (source.Width() + shrinkFactor - 1) / shrinkFactor;
     const size_t height = source.Height();
 
@@ -21,7 +21,7 @@ std::unique_ptr<VectorImage> ShrinkHorizontally(const ImageInterface& source,
         float sum = 0.0;
         const float* sourceRow = &sourceData[y * source.Stride()];
         for (size_t binX = 0; binX < binSize; ++binX) {
-          size_t curX = x * shrinkFactor + binX;
+          const size_t curX = x * shrinkFactor + binX;
           sum += sourceRow[curX];
         }
         newImage.emplace_back(sum / float(binSize));
@@ -49,7 +49,7 @@ std::unique_ptr<VectorImage> ShrinkVertically(const ImageInterface& source,
     for (size_t x = 0; x != source.Width(); ++x) {
       float sum = 0.0;
       for (size_t binY = 0; binY < binSize; ++binY) {
-        size_t curY = y * shrinkFactor + binY;
+        const size_t curY = y * shrinkFactor + binY;
         const float* sourceRow = &sourceData[curY * source.Stride()];
         sum += sourceRow[x];
       }

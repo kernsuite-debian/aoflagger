@@ -12,7 +12,7 @@ BaselinePageController::constructImage(
     const unsigned polarizationCount = _statCollection->PolarizationCount();
     std::vector<std::pair<unsigned, unsigned>> baselines =
         _statCollection->BaselineStatistics().BaselineList();
-    StatisticsDerivator derivator(*_statCollection);
+    const StatisticsDerivator derivator(*_statCollection);
 
     const unsigned antennaCount =
         _statCollection->BaselineStatistics().AntennaCount();

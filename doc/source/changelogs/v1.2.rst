@@ -36,5 +36,5 @@ v1.2
 * Fixed various rare segmentation faults
 * A lot of bug fixes and feature enhancements related to filtering
 * A lot of doc fixes
-* Fixed some bugs that caused NDPPP not to work
+* Fixed some bugs that caused DP3 not to work
 * Some Mac fixes by Ger van Diepen

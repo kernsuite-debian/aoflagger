@@ -50,29 +50,29 @@ TwoDimensionalPlotPage::~TwoDimensionalPlotPage() {}
 
 void TwoDimensionalPlotPage::updatePlotConfig() {
   _controller->Plot().SetIncludeZeroYAxis(_zeroAxisButton.get_active());
-  _controller->Plot().SetLogarithmicYAxis(_logarithmicButton.get_active());
+  _controller->Plot().YAxis().SetLogarithmic(_logarithmicButton.get_active());
   _plotWidget.Update();
 }
 
-std::set<QualityTablesFormatter::StatisticKind>
+std::vector<QualityTablesFormatter::StatisticKind>
 TwoDimensionalPlotPage::GetSelectedKinds() const {
-  std::set<QualityTablesFormatter::StatisticKind> kinds;
+  std::vector<QualityTablesFormatter::StatisticKind> kinds;
   if (_countButton.get_active())
-    kinds.insert(QualityTablesFormatter::CountStatistic);
+    kinds.emplace_back(QualityTablesFormatter::CountStatistic);
   if (_meanButton.get_active())
-    kinds.insert(QualityTablesFormatter::MeanStatistic);
+    kinds.emplace_back(QualityTablesFormatter::MeanStatistic);
   if (_stdDevButton.get_active())
-    kinds.insert(QualityTablesFormatter::StandardDeviationStatistic);
+    kinds.emplace_back(QualityTablesFormatter::StandardDeviationStatistic);
   if (_varianceButton.get_active())
-    kinds.insert(QualityTablesFormatter::VarianceStatistic);
+    kinds.emplace_back(QualityTablesFormatter::VarianceStatistic);
   if (_dCountButton.get_active())
-    kinds.insert(QualityTablesFormatter::DCountStatistic);
+    kinds.emplace_back(QualityTablesFormatter::DCountStatistic);
   if (_dMeanButton.get_active())
-    kinds.insert(QualityTablesFormatter::DMeanStatistic);
+    kinds.emplace_back(QualityTablesFormatter::DMeanStatistic);
   if (_dStdDevButton.get_active())
-    kinds.insert(QualityTablesFormatter::DStandardDeviationStatistic);
+    kinds.emplace_back(QualityTablesFormatter::DStandardDeviationStatistic);
   if (_rfiPercentageButton.get_active())
-    kinds.insert(QualityTablesFormatter::RFIPercentageStatistic);
+    kinds.emplace_back(QualityTablesFormatter::RFIPercentageStatistic);
   return kinds;
 }
 

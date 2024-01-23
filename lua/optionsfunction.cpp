@@ -10,7 +10,7 @@ extern "C" {
 std::map<std::string, Options> OptionsFunction::GetOptions(
     lua_State* state, const Options& cmdLineOptions) {
   lua_getglobal(state, "options");
-  int error = lua_pcall(state, 0, 1, 0);
+  const int error = lua_pcall(state, 0, 1, 0);
   std::map<std::string, Options> optionMap;
   if (error) {
     lua_pop(state, 1);  // pop error
@@ -40,7 +40,8 @@ std::map<std::string, Options> OptionsFunction::GetOptions(
         throw std::runtime_error(
             std::string("Invalid type of element '") + key +
             "' return by function options(): should be an option table");
-      Options option = fillOptions(state, cmdLineOptions, std::string(key));
+      const Options option =
+          fillOptions(state, cmdLineOptions, std::string(key));
       optionMap.emplace(key, option);
 
       // remove 'value'; keeps 'key' for next iteration
@@ -129,14 +130,14 @@ Options OptionsFunction::fillOptions(lua_State* state,
       throw std::runtime_error("options(): Key in option table for run name '" +
                                runName + "' was not convertable to a string");
     const char* key = lua_tostring(state, -2);
-    std::string keyStr(key);
+    const std::string keyStr(key);
 
     if (keyStr == "bands") {
       std::vector<size_t> list = uintListOption(state, keyStr, runName);
       options.bands = std::set<size_t>(list.begin(), list.end());
     } else if (keyStr == "baseline-integration") {
       options.baselineIntegration.enable = true;
-      std::string val = strOption(state, keyStr, runName);
+      const std::string val = strOption(state, keyStr, runName);
       if (val == "count")
         options.baselineIntegration.mode = BaselineIntegration::Count;
       else if (val == "average")
@@ -152,7 +153,7 @@ Options OptionsFunction::fillOptions(lua_State* state,
             "options(): Invalid setting '" + val +
             "' for option 'baseline-integration' returned");
     } else if (keyStr == "baselines") {
-      std::string val = strOption(state, keyStr, runName);
+      const std::string val = strOption(state, keyStr, runName);
       if (val == "all")
         options.baselineSelection = BaselineSelection::All;
       else if (val == "cross")
@@ -178,15 +179,15 @@ Options OptionsFunction::fillOptions(lua_State* state,
     } else if (keyStr == "files") {
       options.filenames = stringListOption(state, keyStr, runName);
     } else if (keyStr == "min‑aoflagger-version") {
-      std::string minVersion = strOption(state, keyStr, runName);
-      size_t dot = minVersion.find('.');
+      const std::string minVersion = strOption(state, keyStr, runName);
+      const size_t dot = minVersion.find('.');
       if (dot == minVersion.npos)
         throw std::runtime_error(
             "options(): Invalid version specified in option "
             "min-aoflagger-version: should be of the form major.minor");
       int major = std::atoi(minVersion.substr(0, dot).c_str()),
           minor = std::atoi(minVersion.substr(dot + 1).c_str());
-      bool tooOld =
+      const bool tooOld =
           (AOFLAGGER_VERSION_MAJOR < major) ||
           (AOFLAGGER_VERSION_MAJOR == major && AOFLAGGER_VERSION_MINOR < minor);
       if (tooOld)
@@ -197,11 +198,11 @@ Options OptionsFunction::fillOptions(lua_State* state,
       if (boolOption(state, keyStr, runName))
         options.logVerbosity = Logger::QuietVerbosity;
     } else if (keyStr == "read-mode") {
-      std::string readMode = strOption(state, keyStr, runName);
+      const std::string readMode = strOption(state, keyStr, runName);
       if (readMode == "direct")
         options.readMode = DirectReadMode;
       else if (readMode == "indirect")
-        options.readMode = IndirectReadMode;
+        options.readMode = ReorderingReadMode;
       else if (readMode == "memory")
         options.readMode = MemoryReadMode;
       else if (readMode == "auto")

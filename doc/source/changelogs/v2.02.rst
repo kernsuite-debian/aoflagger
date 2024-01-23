@@ -16,7 +16,7 @@ List of changes
 * The software is no longer depending on the log4cpp library (this used to be required for the LOFAR infrastructure).
 * Faster high-pass filtering algorithm using SSE instructions, which has replaced the sliding window algorithm in the default algorithm (3 x faster filtering, 10% benefit in full strategy).
 * New reading mode that reads a full set in memory. It is 25% faster compared to indirect when every thing fits in memory (on a 1gb set: Direct: 2m53, Indirect: 1m55, Memory: 1m27). This is now the default reading mode when enough memory is available.
-* New public API. This API exposes a few simple & documented interface classes in a single header, that can be used to integrate the flagger and/or quality collector in an observatory's pipeline. It is used by the Cotter MWA preprocessing pipeline and will hopefully be used by LOFAR's preprocessing pipeline (NDPPP) some time in the future. Latest API docs can be found here: :doc:`../cpp_interface`
+* New public API. This API exposes a few simple & documented interface classes in a single header, that can be used to integrate the flagger and/or quality collector in an observatory's pipeline. It is used by the Cotter MWA preprocessing pipeline and will hopefully be used by LOFAR's preprocessing pipeline (DP3) some time in the future. Latest API docs can be found here: :doc:`../cpp_interface`
 * New feature: action that can preliminary calibrate the passband (used in default MWA strategy)
 * Bug fix: conversion from XX,YY to Stokes U did not work when no XY,YX polarization were available, as well as some other uncommon conversions.
 * Bug fix: allow inverted vertical axes in plots, as well as some other plotting fixes.

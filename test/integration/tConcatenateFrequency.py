@@ -40,12 +40,14 @@ def test(read_mode):
         assert_taql(f"select from {MS}/HISTORY")
 
     # Run Aoflagger and validate output.
+    # The MSs are passed in reversed order to check that aoflagger sorts
+    # them along frequency before concatenating
     if read_mode != "":
         check_call(
-            [config.aoflagger, "-concatenate-frequency", read_mode] + MSs
+            [config.aoflagger, "-concatenate-frequency", read_mode] + MSs[::-1]
         )
     else:
-        check_call([config.aoflagger, "-concatenate-frequency"] + MSs)
+        check_call([config.aoflagger, "-concatenate-frequency"] + MSs[::-1])
 
     for MS in MSs:
         check_call([config.aoquality, "collect", MS])

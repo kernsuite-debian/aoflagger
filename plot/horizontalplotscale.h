@@ -1,7 +1,7 @@
 #ifndef HORIZONTAL_PLOT_SCALE_H
 #define HORIZONTAL_PLOT_SCALE_H
 
-#include "axistype.h"
+#include "axis.h"
 #include "linkable.h"
 
 #include <gtkmm/drawingarea.h>
@@ -43,7 +43,7 @@ class HorizontalPlotScale
   double PlotWidth() const { return Data().plotWidth; }
   void Draw(const Cairo::RefPtr<Cairo::Context>& cairo);
   void SetAxisType(AxisType axisType) { _axisType = axisType; }
-  void SetTickLabels(const std::vector<std::string> labels) {
+  void SetTickLabels(const std::vector<std::pair<double, std::string>> labels) {
     _tickLabels = std::move(labels);
   }
   void SetTickRange(double min, double max) {
@@ -98,7 +98,7 @@ class HorizontalPlotScale
   std::unique_ptr<class TickSet> _tickSet;
   AxisType _axisType;
   std::array<double, 2> _tickRange;
-  std::vector<std::string> _tickLabels;
+  std::vector<std::pair<double, std::string>> _tickLabels;
   bool _isLogarithmic;
   bool _rotateUnits;
 

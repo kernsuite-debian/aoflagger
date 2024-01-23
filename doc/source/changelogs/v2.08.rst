@@ -10,7 +10,7 @@ This version has no major new features, but some small enhancements and quite a 
 New features
 ^^^^^^^^^^^^
 
-* Functionality in the interface to set a custom error handler and progress reporter (this also fixes exceptions ocurring whilst running within NDPPP).
+* Functionality in the interface to set a custom error handler and progress reporter (this also fixes exceptions ocurring whilst running within DP3).
 * New aoqplot interface
 * Adding a 'keep window open' checkbutton to the Goto window, requested by F. de Gasperin.
 * Make the default size of the goto window somewhat larger.

@@ -16,6 +16,7 @@ class Functions {
   static int downsample(lua_State* L);
   static int high_pass_filter(lua_State* L);
   static int low_pass_filter(lua_State* L);
+  static int norm(lua_State* L);
   static int normalize_bandpass(lua_State* L);
   static int normalize_subbands(lua_State* L);
   static int print_polarization_statistics(lua_State* L);
@@ -26,6 +27,7 @@ class Functions {
   static int scale_invariant_rank_operator_masked(lua_State* L);
   static int set_progress(lua_State* L);
   static int set_progress_text(lua_State* L);
+  static int sqrt(lua_State* L);
   static int sumthreshold(lua_State* L);
   static int sumthreshold_masked(lua_State* L);
   static int threshold_channel_rms(lua_State* L);

@@ -15,7 +15,7 @@ class NumericTickSet final : public TickSet {
   }
 
   std::unique_ptr<TickSet> Clone() const override {
-    return std::unique_ptr<TickSet>(new NumericTickSet(*this));
+    return std::make_unique<NumericTickSet>(*this);
   }
 
   size_t Size() const override { return _ticks.size(); }
@@ -23,7 +23,10 @@ class NumericTickSet final : public TickSet {
   Tick GetTick(size_t i) const override {
     std::stringstream tickStr;
     tickStr << _ticks[i];
-    return Tick((_ticks[i] - _min) / (_max - _min), tickStr.str());
+    if (_max - _min == 0.0)
+      return Tick(0.5, tickStr.str());
+    else
+      return Tick((_ticks[i] - _min) / (_max - _min), tickStr.str());
   }
 
   void Reset() override {
@@ -36,21 +39,24 @@ class NumericTickSet final : public TickSet {
     set(maxSize);
   }
   double UnitToAxis(double unitValue) const override {
-    return (unitValue - _min) / (_max - _min);
+    return (_min == _max) ? 0.0 : (unitValue - _min) / (_max - _min);
   }
   double AxisToUnit(double axisValue) const override {
     return axisValue * (_max - _min) + _min;
   }
 
  private:
+  friend std::unique_ptr<NumericTickSet> std::make_unique<NumericTickSet>(
+      const NumericTickSet&);
+
   void set(size_t sizeRequest) {
     if (std::isfinite(_min) && std::isfinite(_max)) {
-      if (_max == _min)
+      if (_max == _min) {
         _ticks.push_back(_min);
-      else {
+      } else {
         if (sizeRequest == 0) return;
         double tickWidth =
-            roundUpToNiceNumber(fabs(_max - _min) / (double)sizeRequest);
+            roundUpToNiceNumber(std::fabs(_max - _min) / (double)sizeRequest);
         if (tickWidth == 0.0) tickWidth = 1.0;
         if (_min < _max) {
           double pos = roundUpToNiceNumber(_min, tickWidth);
@@ -64,7 +70,7 @@ class NumericTickSet final : public TickSet {
         } else {
           double pos = -roundUpToNiceNumber(-_min, tickWidth);
           while (pos >= _max) {
-            if (fabs(pos) < tickWidth / 100.0)
+            if (std::fabs(pos) < tickWidth / 100.0)
               _ticks.push_back(0.0);
             else
               _ticks.push_back(pos);
@@ -80,9 +86,9 @@ class NumericTickSet final : public TickSet {
     if (!std::isfinite(number)) return number;
     double roundedNumber = 1.0;
     if (number <= 0.0) {
-      if (number == 0.0)
+      if (number == 0.0) {
         return 0.0;
-      else {
+      } else {
         roundedNumber = -1.0;
         number *= -1.0;
       }

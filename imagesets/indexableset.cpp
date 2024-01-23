@@ -11,7 +11,7 @@ bool IndexableSet::FindExtremeBaseline(imagesets::ImageSet* imageSet,
       dynamic_cast<imagesets::IndexableSet*>(imageSet);
   if (iSet != nullptr) {
     double extremeSq = longest ? 0.0 : std::numeric_limits<double>::max();
-    size_t antCount = iSet->AntennaCount();
+    const size_t antCount = iSet->AntennaCount();
     std::vector<AntennaInfo> antennas(antCount);
     for (size_t a = 0; a != antCount; a++)
       antennas[a] = iSet->GetAntennaInfo(a);
@@ -23,10 +23,10 @@ bool IndexableSet::FindExtremeBaseline(imagesets::ImageSet* imageSet,
     while (!loopIndex.HasWrapped()) {
       if (sequenceId == iSet->GetSequenceId(loopIndex) &&
           band == iSet->GetBand(loopIndex)) {
-        size_t a1 = iSet->GetAntenna1(loopIndex);
-        size_t a2 = iSet->GetAntenna2(loopIndex);
+        const size_t a1 = iSet->GetAntenna1(loopIndex);
+        const size_t a2 = iSet->GetAntenna2(loopIndex);
         const AntennaInfo &ant1 = antennas[a1], &ant2 = antennas[a2];
-        double distSq = ant1.position.DistanceSquared(ant2.position);
+        const double distSq = ant1.position.DistanceSquared(ant2.position);
         if (longest) {
           if (distSq > extremeSq) {
             extremeSq = distSq;
@@ -56,7 +56,7 @@ bool IndexableSet::FindMedianBaseline(imagesets::ImageSet* imageSet,
   if (iSet == nullptr) {
     return false;
   } else {
-    size_t antCount = iSet->AntennaCount();
+    const size_t antCount = iSet->AntennaCount();
     std::vector<AntennaInfo> antennas(antCount);
     for (size_t a = 0; a != antCount; a++)
       antennas[a] = iSet->GetAntennaInfo(a);
@@ -68,18 +68,18 @@ bool IndexableSet::FindMedianBaseline(imagesets::ImageSet* imageSet,
     while (!loopIndex.HasWrapped()) {
       if (sequenceId == iSet->GetSequenceId(loopIndex) &&
           band == iSet->GetBand(loopIndex)) {
-        size_t a1 = iSet->GetAntenna1(loopIndex);
-        size_t a2 = iSet->GetAntenna2(loopIndex);
+        const size_t a1 = iSet->GetAntenna1(loopIndex);
+        const size_t a2 = iSet->GetAntenna2(loopIndex);
         const AntennaInfo &ant1 = antennas[a1], &ant2 = antennas[a2];
         distances.emplace_back(ant1.position.DistanceSquared(ant2.position),
                                loopIndex);
       }
       loopIndex.Next();
     }
-    size_t n = distances.size();
-    if (n == 0)
+    const size_t n = distances.size();
+    if (n == 0) {
       return false;
-    else {
+    } else {
       std::nth_element(
           distances.begin(), distances.begin() + n / 2, distances.end(),
           [](const std::pair<double, imagesets::ImageSetIndex>& l,

@@ -41,7 +41,7 @@ void WriteThread::SaveFlags(const TimeFrequencyData& data,
     for (size_t i = 0; i < data.MaskCount(); ++i) {
       masks.emplace_back(data.GetMask(i));
     }
-  BufferItem newItem(masks, imageSetIndex);
+  const BufferItem newItem(masks, imageSetIndex);
   pushInWriteBuffer(newItem);
 }
 
@@ -68,7 +68,7 @@ void WriteThread::FlushThread::operator()(imagesets::ImageSet* imageSet) {
 
     std::stack<BufferItem> bufferCopy;
     while (!_parent->_writeBuffer.empty()) {
-      BufferItem item = _parent->_writeBuffer.top();
+      const BufferItem item = _parent->_writeBuffer.top();
       _parent->_writeBuffer.pop();
       bufferCopy.push(item);
     }

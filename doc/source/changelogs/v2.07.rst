@@ -36,7 +36,7 @@ Changes from 2.6 to 2.7
 * Feature: Collect time-frequency information in aoquality collect.
 * Feature: New colour map, 'fire', going via black to red to yellow to white.
 * Feature: Specify data column during collecting.
-* Bugfix: Solving compilation issue when building with shared libraries (-DBUILD_SHARED_LIBS=ON) instead of a static library, to make it possible to link AOFlagger with new NDPPP.
+* Bugfix: Solving compilation issue when building with shared libraries (-DBUILD_SHARED_LIBS=ON) instead of a static library, to make it possible to link AOFlagger with new DP3.
 * Bugfix: Adding newer FindCasacore.cmake from LOFAR repository, which supports casacore 2.
 * Bugfix: Crash when pressing background or difference button when no image is loaded.
 * Bugfix: Fixed all deprecated usage of GTKMM. Everything can now be compiled with '-DGTKMM_DISABLE_DEPRECATED' set (#52).

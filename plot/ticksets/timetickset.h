@@ -43,9 +43,9 @@ class TimeTickSet final : public TickSet {
 
  private:
   void set(size_t sizeRequest) {
-    if (_max == _min)
+    if (_max == _min) {
       _ticks.push_back(_min);
-    else {
+    } else {
       if (sizeRequest == 0) return;
       double tickWidth =
           calculateTickWidth((_max - _min) / (double)sizeRequest);
@@ -64,29 +64,25 @@ class TimeTickSet final : public TickSet {
 
     // number is in units of seconds
 
-    // In days?
-    if (lowerLimit >= 60.0 * 60.0 * 24.0) {
+    if (lowerLimit >= 60.0 * 60.0 * 24.0) {  // In days?
       double width = 60.0 * 60.0 * 24.0;
       while (width < lowerLimit) width *= 2.0;
       return width;
-    }
-    // in hours?
-    else if (lowerLimit > 60.0 * 30.0) {
-      if (lowerLimit <= 60.0 * 60.0)
+    } else if (lowerLimit > 60.0 * 30.0) {  // in hours?
+      if (lowerLimit <= 60.0 * 60.0) {
         return 60.0 * 60.0;  // hours
-      else if (lowerLimit <= 60.0 * 60.0 * 2.0)
+      } else if (lowerLimit <= 60.0 * 60.0 * 2.0) {
         return 60.0 * 60.0 * 2.0;  // two hours
-      else if (lowerLimit <= 60.0 * 60.0 * 3.0)
+      } else if (lowerLimit <= 60.0 * 60.0 * 3.0) {
         return 60.0 * 60.0 * 3.0;  // three hours
-      else if (lowerLimit <= 60.0 * 60.0 * 4.0)
+      } else if (lowerLimit <= 60.0 * 60.0 * 4.0) {
         return 60.0 * 60.0 * 4.0;  // four hours
-      else if (lowerLimit <= 60.0 * 60.0 * 6.0)
+      } else if (lowerLimit <= 60.0 * 60.0 * 6.0) {
         return 60.0 * 60.0 * 6.0;  // six hours
-      else
+      } else {
         return 60.0 * 60.0 * 12.0;  // twelve hours
-    }
-    // in minutes?
-    else if (lowerLimit > 30.0) {
+      }
+    } else if (lowerLimit > 30.0) {  // in minutes?
       if (lowerLimit <= 60.0)
         return 60.0;  // in minutes
       else if (lowerLimit <= 60.0 * 2.0)
@@ -98,10 +94,8 @@ class TimeTickSet final : public TickSet {
       else if (lowerLimit <= 60.0 * 15.0)
         return 60.0 * 15.0;  // quarter hours
       else
-        return 60.0 * 30.0;  // half hours
-    }
-    // in seconds?
-    else if (lowerLimit > 0.5) {
+        return 60.0 * 30.0;         // half hours
+    } else if (lowerLimit > 0.5) {  // in seconds?
       if (lowerLimit <= 1.0)
         return 1.0;  // in seconds
       else if (lowerLimit <= 2.0)
@@ -114,10 +108,9 @@ class TimeTickSet final : public TickSet {
         return 15.0;  // quarter minute
       else
         return 30.0;  // half a minute
-    } else if (lowerLimit == 0.0)
+    } else if (lowerLimit == 0.0) {
       return 0.0;
-    // in 10th of seconds or lower?
-    else {
+    } else {  // in 10th of seconds or lower?
       double factor = 1.0;
       while (lowerLimit <= 0.1 && std::isfinite(lowerLimit)) {
         factor *= 0.1;

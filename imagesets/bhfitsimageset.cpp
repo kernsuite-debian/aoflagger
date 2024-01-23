@@ -69,7 +69,7 @@ void BHFitsImageSet::Initialize() {
     termKey << keyIndex;
     std::string antRangeStr, termRangeStr;
     if (_file->GetKeywordValue(antKey.str(), antRangeStr)) {
-      std::pair<int, int> range = getRangeFromString(antRangeStr);
+      const std::pair<int, int> range = getRangeFromString(antRangeStr);
       TimeRange timeRange;
       // As commented by Marcin below, the ranges in the fits headers are given
       // like 'start - end', where the indices start counting at 1, and the end
@@ -87,7 +87,7 @@ void BHFitsImageSet::Initialize() {
       searchOn = true;
     }
     if (_file->GetKeywordValue(termKey.str(), termRangeStr)) {
-      std::pair<int, int> range = getRangeFromString(termRangeStr);
+      const std::pair<int, int> range = getRangeFromString(termRangeStr);
       TimeRange timeRange;
       // (see earlier comment by Marcin Sokolowski)
       timeRange.start = range.first - 1;
@@ -115,7 +115,7 @@ void BHFitsImageSet::Initialize() {
 }
 
 BaselineData BHFitsImageSet::loadData(const ImageSetIndex& index) {
-  TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
+  const TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
   TimeFrequencyData data;
   loadImageData(data, metaData, index);
   return BaselineData(data, metaData, index);
@@ -129,7 +129,7 @@ void BHFitsImageSet::loadImageData(TimeFrequencyData& data,
 
   int rangeStart = _timeRanges[index.Value()].start,
       rangeEnd = _timeRanges[index.Value()].end;
-  Image2DPtr image =
+  const Image2DPtr image =
       Image2D::CreateZeroImagePtr(rangeEnd - rangeStart, _height);
 
   std::vector<num_t>::const_iterator bufferPtr =
@@ -148,7 +148,8 @@ void BHFitsImageSet::loadImageData(TimeFrequencyData& data,
     flagFile.Open(FitsFile::ReadOnlyMode);
     flagFile.ReadCurrentImageData(0, &buffer[0], _width * _height);
     bufferPtr = buffer.begin() + _height * rangeStart;
-    Mask2DPtr mask = Mask2D::CreateUnsetMaskPtr(rangeEnd - rangeStart, _height);
+    const Mask2DPtr mask =
+        Mask2D::CreateUnsetMaskPtr(rangeEnd - rangeStart, _height);
     for (int x = rangeStart; x != rangeEnd; ++x) {
       for (int y = 0; y != _height; ++y) {
         bool flag = false;
@@ -199,7 +200,7 @@ void BHFitsImageSet::loadImageData(TimeFrequencyData& data,
 std::pair<int, int> BHFitsImageSet::getRangeFromString(
     const std::string& rangeStr) {
   std::pair<int, int> value;
-  size_t partA = rangeStr.find(' ');
+  const size_t partA = rangeStr.find(' ');
   value.first = atoi(rangeStr.substr(0, partA).c_str());
   size_t partB = rangeStr.find('-');
   if (rangeStr[partB + 1] == ' ') ++partB;
@@ -221,7 +222,7 @@ void BHFitsImageSet::AddWriteFlagsTask(const ImageSetIndex& index,
   if (flags.size() != 1)
     throw std::runtime_error(
         "BHFitsImageSet::AddWriteFlagsTask() called with multiple flags");
-  std::string flagFilename = flagFilePath();
+  const std::string flagFilename = flagFilePath();
   Logger::Debug << "Writing to " << flagFilename << '\n';
   FitsFile flagFile(flagFilename);
   bool newFile = true;

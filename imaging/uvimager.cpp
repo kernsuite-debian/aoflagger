@@ -57,8 +57,8 @@ void UVImager::Empty() {
 }
 
 void UVImager::Image(MSMetaData& msMetaData, unsigned band) {
-  unsigned frequencyCount = msMetaData.FrequencyCount(band);
-  IntegerDomain frequencies(0, frequencyCount);
+  const unsigned frequencyCount = msMetaData.FrequencyCount(band);
+  const IntegerDomain frequencies(0, frequencyCount);
   _msMetaData = &msMetaData;
   _band = _msMetaData->GetBandInfo(band);
 
@@ -86,7 +86,7 @@ void UVImager::Image(const IntegerDomain& frequencies) {
   for (unsigned i = 0; i < _fieldCount; ++i)
     _fields[i] = _msMetaData->GetFieldInfo(i);
 
-  unsigned parts = (frequencies.ValueCount() - 1) / 48 + 1;
+  const unsigned parts = (frequencies.ValueCount() - 1) / 48 + 1;
   for (unsigned i = 0; i < parts; ++i) {
     std::cout << "Imaging " << i << "/" << parts << ":"
               << frequencies.Split(parts, i).ValueCount() << " frequencies..."
@@ -134,40 +134,40 @@ void UVImager::Image(const IntegerDomain& frequencies,
             << " frequencies..." << std::flush;
   Stopwatch stopwatch(true);
 
-  casacore::MeasurementSet ms(_msMetaData->Path());
-  casacore::ScalarColumn<int> antenna1Col(
+  const casacore::MeasurementSet ms(_msMetaData->Path());
+  const casacore::ScalarColumn<int> antenna1Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA1));
-  casacore::ScalarColumn<int> antenna2Col(
+  const casacore::ScalarColumn<int> antenna2Col(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::ANTENNA2));
-  casacore::ScalarColumn<int> fieldIdCol(
+  const casacore::ScalarColumn<int> fieldIdCol(
       ms,
       casacore::MeasurementSet::columnName(casacore::MeasurementSet::FIELD_ID));
-  casacore::ScalarColumn<int> dataDescIdCol(
+  const casacore::ScalarColumn<int> dataDescIdCol(
       ms, casacore::MeasurementSet::columnName(
               casacore::MeasurementSet::DATA_DESC_ID));
-  casacore::ScalarColumn<double> timeCol(
+  const casacore::ScalarColumn<double> timeCol(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::TIME));
-  casacore::ScalarColumn<double> scanNumberCol(
+  const casacore::ScalarColumn<double> scanNumberCol(
       ms, casacore::MeasurementSet::columnName(
               casacore::MeasurementSet::SCAN_NUMBER));
-  casacore::ArrayColumn<casacore::Complex> correctedDataCol(
+  const casacore::ArrayColumn<casacore::Complex> correctedDataCol(
       ms, casacore::MeasurementSet::columnName(
               casacore::MeasurementSet::CORRECTED_DATA));
-  casacore::ArrayColumn<bool> flagCol(
+  const casacore::ArrayColumn<bool> flagCol(
       ms, casacore::MeasurementSet::columnName(casacore::MeasurementSet::FLAG));
 
-  size_t rows = ms.nrow();
+  const size_t rows = ms.nrow();
   for (unsigned row = 0; row != rows; ++row) {
-    unsigned a1 = antenna1Col(row);
-    unsigned a2 = antenna2Col(row);
+    const unsigned a1 = antenna1Col(row);
+    const unsigned a2 = antenna2Col(row);
     if (antenna1Domain.IsIn(a1) && antenna2Domain.IsIn(a2)) {
-      unsigned scan = scanNumberCol(row);
-      unsigned index1 = antenna1Domain.Index(a1);
-      unsigned index2 = antenna1Domain.Index(a2);
-      int field = fieldIdCol(row);
-      double time = timeCol(row);
+      const unsigned scan = scanNumberCol(row);
+      const unsigned index1 = antenna1Domain.Index(a1);
+      const unsigned index2 = antenna1Domain.Index(a2);
+      const int field = fieldIdCol(row);
+      const double time = timeCol(row);
       casacore::Array<casacore::Complex> dataArr = correctedDataCol(row);
       casacore::Array<bool> flagArr = flagCol(row);
       casacore::Array<casacore::Complex>::const_iterator cdI = dataArr.begin();
@@ -185,11 +185,11 @@ void UVImager::Image(const IntegerDomain& frequencies,
       for (unsigned f = 0; f < frequencies.ValueCount(); ++f) {
         SingleFrequencySingleBaselineData& curData =
             data[f][index1][index2][scan];
-        casacore::Complex xxData = *cdI;
+        const casacore::Complex xxData = *cdI;
         ++cdI;
         ++cdI;
         ++cdI;
-        casacore::Complex yyData = *cdI;
+        const casacore::Complex yyData = *cdI;
         ++cdI;
         curData.data = xxData + yyData;
         bool flagging = *fI;
@@ -244,8 +244,8 @@ void UVImager::Image(const IntegerDomain& frequencies,
 void UVImager::Image(unsigned frequencyIndex, AntennaInfo& antenna1,
                      AntennaInfo& antenna2,
                      SingleFrequencySingleBaselineData* data) {
-  num_t frequency = _band.channels[frequencyIndex].frequencyHz;
-  num_t speedOfLight = 299792458.0L;
+  const num_t frequency = _band.channels[frequencyIndex].frequencyHz;
+  const num_t speedOfLight = 299792458.0L;
   AntennaCache cache;
   cache.wavelength = speedOfLight / frequency;
 
@@ -284,13 +284,13 @@ void UVImager::Image(const class TimeFrequencyData& data,
                      class SpatialMatrixMetaData* metaData) {
   if (!_uvReal.Empty()) Empty();
   Image2DCPtr real = data.GetRealPart(), imaginary = data.GetImaginaryPart();
-  Mask2DCPtr flags = data.GetSingleMask();
+  const Mask2DCPtr flags = data.GetSingleMask();
 
   for (unsigned a2 = 0; a2 < data.ImageHeight(); ++a2) {
     for (unsigned a1 = a2 + 1; a1 < data.ImageWidth(); ++a1) {
       num_t vr = real->Value(a1, a2), vi = imaginary->Value(a1, a2);
       if (std::isfinite(vr) && std::isfinite(vi)) {
-        UVW uvw = metaData->UVW(a1, a2);
+        const UVW uvw = metaData->UVW(a1, a2);
         SetUVValue(uvw.u, uvw.v, vr, vi, 1.0);
         SetUVValue(-uvw.u, -uvw.v, vr, -vi, 1.0);
       }
@@ -304,7 +304,7 @@ void UVImager::Image(const TimeFrequencyData& data,
   if (!_uvReal.Empty()) Empty();
 
   Image2DCPtr real = data.GetRealPart(), imaginary = data.GetImaginaryPart();
-  Mask2DCPtr flags = data.GetSingleMask();
+  const Mask2DCPtr flags = data.GetSingleMask();
 
   for (unsigned i = 0; i < data.ImageWidth(); ++i) {
     switch (_imageKind) {
@@ -334,11 +334,11 @@ void UVImager::Image(const TimeFrequencyData& data,
 }
 
 void UVImager::ApplyWeightsToUV() {
-  double normFactor =
+  const double normFactor =
       _uvWeights.Sum() / ((num_t)_uvReal.Height() * _uvReal.Width());
   for (size_t y = 0; y < _uvReal.Height(); ++y) {
     for (size_t x = 0; x < _uvReal.Width(); ++x) {
-      num_t weight = _uvWeights.Value(x, y);
+      const num_t weight = _uvWeights.Value(x, y);
       if (weight != 0.0) {
         _uvReal.SetValue(x, y, _uvReal.Value(x, y) * normFactor / weight);
         _uvImaginary.SetValue(x, y,
@@ -353,8 +353,8 @@ void UVImager::ApplyWeightsToUV() {
 
 void UVImager::SetUVValue(num_t u, num_t v, num_t r, num_t i, num_t weight) {
   // Nearest neighbour interpolation
-  long uPos = (long)floorn(u * _uvScaling * _xRes + 0.5) + (_xRes / 2);
-  long vPos = (long)floorn(v * _uvScaling * _yRes + 0.5) + (_yRes / 2);
+  const long uPos = (long)floorn(u * _uvScaling * _xRes + 0.5) + (_xRes / 2);
+  const long vPos = (long)floorn(v * _uvScaling * _yRes + 0.5) + (_yRes / 2);
   if (uPos >= 0 && uPos < (long)_xRes && vPos >= 0 && vPos < (long)_yRes) {
     _uvReal.AddValue(uPos, vPos, r);
     _uvImaginary.AddValue(uPos, vPos, i);
@@ -389,10 +389,12 @@ void UVImager::SetUVValue(num_t u, num_t v, num_t r, num_t i, num_t weight) {
 void UVImager::SetUVFTValue(num_t u, num_t v, num_t r, num_t i, num_t weight) {
   for (size_t iy = 0; iy < _yResFT; ++iy) {
     for (size_t ix = 0; ix < _xResFT; ++ix) {
-      num_t x = ((num_t)ix - (_xResFT / 2)) / _uvScaling * _uvFTReal.Width();
-      num_t y = ((num_t)iy - (_yResFT / 2)) / _uvScaling * _uvFTReal.Height();
+      const num_t x =
+          ((num_t)ix - (_xResFT / 2)) / _uvScaling * _uvFTReal.Width();
+      const num_t y =
+          ((num_t)iy - (_yResFT / 2)) / _uvScaling * _uvFTReal.Height();
       // Calculate F(x,y) += f(u, v) e ^ {i 2 pi (x u + y v) }
-      num_t fftRotation = (u * x + v * y) * -2.0L * M_PIn;
+      const num_t fftRotation = (u * x + v * y) * -2.0L * M_PIn;
       num_t fftCos = cosn(fftRotation), fftSin = sinn(fftRotation);
       _uvFTReal.AddValue(ix, iy, (fftCos * r - fftSin * i) * weight);
       _uvFTImaginary.AddValue(ix, iy, (fftSin * r + fftCos * i) * weight);
@@ -411,7 +413,7 @@ void UVImager::PerformFFT() {
 void UVImager::GetUVPosition(num_t& u, num_t& v, size_t timeIndex,
                              size_t frequencyIndex,
                              TimeFrequencyMetaDataCPtr metaData) {
-  num_t frequency = metaData->Band().channels[frequencyIndex].frequencyHz;
+  const num_t frequency = metaData->Band().channels[frequencyIndex].frequencyHz;
   u = metaData->UVW()[timeIndex].u * frequency / SpeedOfLight();
   v = metaData->UVW()[timeIndex].v * frequency / SpeedOfLight();
 }
@@ -419,12 +421,12 @@ void UVImager::GetUVPosition(num_t& u, num_t& v, size_t timeIndex,
 void UVImager::GetUVPosition(num_t& u, num_t& v,
                              const SingleFrequencySingleBaselineData& data,
                              const AntennaCache& cache) {
-  unsigned field = data.field;
-  num_t pointingLattitude = _fields[field].delayDirectionRA;
-  num_t pointingLongitude = _fields[field].delayDirectionDec;
+  const unsigned field = data.field;
+  const num_t pointingLattitude = _fields[field].delayDirectionRA;
+  const num_t pointingLongitude = _fields[field].delayDirectionDec;
 
   // calcTimer.Start();
-  num_t earthLattitudeAngle =
+  const num_t earthLattitudeAngle =
       Date::JDToHourOfDay(Date::AipsMJDToJD(data.time)) * M_PIn / 12.0L;
 
   // long double pointingLongitude = _fields[field].delayDirectionDec; //not
@@ -432,16 +434,17 @@ void UVImager::GetUVPosition(num_t& u, num_t& v,
 
   // Rotate baseline plane towards source, first rotate around z axis, then
   // around x axis
-  num_t raRotation = earthLattitudeAngle - pointingLattitude + M_PIn * 0.5L;
+  const num_t raRotation =
+      earthLattitudeAngle - pointingLattitude + M_PIn * 0.5L;
   num_t tmpCos = cosn(raRotation);
   num_t tmpSin = sinn(raRotation);
 
-  num_t dxProjected = tmpCos * cache.dx - tmpSin * cache.dy;
-  num_t tmpdy = tmpSin * cache.dx + tmpCos * cache.dy;
+  const num_t dxProjected = tmpCos * cache.dx - tmpSin * cache.dy;
+  const num_t tmpdy = tmpSin * cache.dx + tmpCos * cache.dy;
 
   tmpCos = cosn(-pointingLongitude);
   tmpSin = sinn(-pointingLongitude);
-  num_t dyProjected = tmpCos * tmpdy - tmpSin * cache.dz;
+  const num_t dyProjected = tmpCos * tmpdy - tmpSin * cache.dz;
   // long double dzProjected = tmpSin*tmpdy + tmpCos*dzAnt; // we don't need it
 
   // Now, the newly projected positive z axis of the baseline points to the
@@ -451,9 +454,9 @@ void UVImager::GetUVPosition(num_t& u, num_t& v,
       sqrtn(dxProjected * dxProjected + dyProjected * dyProjected);
 
   num_t baselineAngle;
-  if (baselineLength == 0.0L)
+  if (baselineLength == 0.0L) {
     baselineAngle = 0.0L;
-  else {
+  } else {
     baselineLength /= cache.wavelength;
     if (dxProjected > 0.0L)
       baselineAngle = atann(dyProjected / dxProjected);

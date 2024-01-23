@@ -8,7 +8,7 @@ TimeFrequencyPlotPage::TimeFrequencyPlotPage(TFPageController* controller)
       sigc::mem_fun(*this, &TimeFrequencyPlotPage::onMouseMoved));
 }
 
-void TimeFrequencyPlotPage::onMouseMoved(size_t x, size_t y) {
+void TimeFrequencyPlotPage::onMouseMoved(double x, double y) {
   std::stringstream text;
 
   const QualityTablesFormatter::StatisticKind kind = getSelectedStatisticKind();
@@ -16,7 +16,11 @@ void TimeFrequencyPlotPage::onMouseMoved(size_t x, size_t y) {
 
   const MaskedHeatMap& map =
       static_cast<MaskedHeatMap&>(grayScaleWidget().Plot());
-  text << kindName << " = " << map.GetImage2D()->Value(x, y) << " (" << x
-       << ", " << y << ")";
+  size_t image_x;
+  size_t image_y;
+  if (map.UnitToImage(x, y, image_x, image_y)) {
+    text << kindName << " = " << map.GetImage2D()->Value(image_x, image_y)
+         << " (" << image_x << ", " << image_y << ")";
+  }
   _signalStatusChange(text.str());
 }

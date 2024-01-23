@@ -5,10 +5,10 @@
 
 class TimeFrequencyPlotPage : public GrayScalePlotPage {
  public:
-  TimeFrequencyPlotPage(class TFPageController* controller);
+  explicit TimeFrequencyPlotPage(class TFPageController* controller);
 
  private:
-  void onMouseMoved(size_t x, size_t y);
+  void onMouseMoved(double x, double y);
 };
 
 #endif

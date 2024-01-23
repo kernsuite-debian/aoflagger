@@ -124,11 +124,11 @@ class StatisticsCollection : public Serializable {
     addBaseline(collection);
   }
 
-  void GetGlobalTimeStatistics(DefaultStatistics& statistics) {
+  void GetGlobalTimeStatistics(DefaultStatistics& statistics) const {
     statistics = getGlobalStatistics(_timeStatistics);
   }
 
-  void GetGlobalFrequencyStatistics(DefaultStatistics& statistics) {
+  void GetGlobalFrequencyStatistics(DefaultStatistics& statistics) const {
     statistics = getGlobalStatistics(_frequencyStatistics);
   }
 
@@ -141,7 +141,8 @@ class StatisticsCollection : public Serializable {
   }
 
   void GetFrequencyRangeStatistics(DefaultStatistics& statistics,
-                                   double startFrequency, double endFrequency) {
+                                   double startFrequency,
+                                   double endFrequency) const {
     statistics = getFrequencyRangeStatistics(startFrequency, endFrequency);
   }
 

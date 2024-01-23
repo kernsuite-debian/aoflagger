@@ -1,11 +1,14 @@
 #ifndef MSIO_QUALITY_DATA_H
 #define MSIO_QUALITY_DATA_H
 
+#include <memory>
+
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
-#include <casacore/tables/Tables/TableRecord.h>
 
 #define QUALITY_TABLES_VERSION 1
 #define QUALITY_TABLES_VERSION_STR "1"
+
+class StatisticalValue;
 
 class QualityTablesFormatter {
  public:
@@ -132,45 +135,16 @@ class QualityTablesFormatter {
   }
 
   bool IsStatisticAvailable(enum StatisticDimension dimension,
-                            enum StatisticKind kind) {
-    QualityTable table = DimensionToTable(dimension);
-    if (!TableExists(KindNameTable) || !TableExists(table)) return false;
-    unsigned kindIndex;
-    if (!QueryKindIndex(kind, kindIndex)) return false;
-    return hasOneEntry(table, kindIndex);
-  }
+                            enum StatisticKind kind);
 
   void InitializeEmptyStatistic(enum StatisticDimension dimension,
                                 enum StatisticKind kind,
-                                unsigned polarizationCount) {
-    if (!TableExists(KindNameTable)) createKindNameTable();
-
-    QualityTable table = DimensionToTable(dimension);
-    if (!TableExists(table))
-      InitializeEmptyTable(table, polarizationCount);
-    else {
-      removeStatisticFromStatTable(table, kind);
-    }
-  }
+                                unsigned polarizationCount);
 
   void InitializeEmptyTable(enum QualityTable table,
-                            unsigned polarizationCount) {
-    if (TableExists(table))
-      removeEntries(table);
-    else
-      createTable(table, polarizationCount);
-  }
+                            unsigned polarizationCount);
 
-  void RemoveTable(enum QualityTable table) {
-    if (TableExists(table)) {
-      Close();
-      openMainTable(true);
-      if (_measurementSet->keywordSet().isDefined(TableToName(table)))
-        _measurementSet->rwKeywordSet().removeField(TableToName(table));
-      if (_measurementSet->isReadable(TableToFilename(table)))
-        casacore::Table::deleteTable(TableToFilename(table));
-    }
-  }
+  void RemoveTable(enum QualityTable table);
 
   void RemoveAllQualityTables() {
     RemoveTable(BaselineTimeStatisticTable);
@@ -187,15 +161,12 @@ class QualityTablesFormatter {
   unsigned StoreKindName(const std::string& name);
 
   void StoreTimeValue(double time, double frequency,
-                      const class StatisticalValue& value);
-  void StoreFrequencyValue(double frequency,
-                           const class StatisticalValue& value);
+                      const StatisticalValue& value);
+  void StoreFrequencyValue(double frequency, const StatisticalValue& value);
   void StoreBaselineValue(unsigned antenna1, unsigned antenna2,
-                          double frequency,
-                          const class StatisticalValue& value);
+                          double frequency, const StatisticalValue& value);
   void StoreBaselineTimeValue(unsigned antenna1, unsigned antenna2, double time,
-                              double frequency,
-                              const class StatisticalValue& value);
+                              double frequency, const StatisticalValue& value);
 
   unsigned QueryKindIndex(enum StatisticKind kind);
   bool QueryKindIndex(enum StatisticKind kind, unsigned& destKindIndex);
@@ -212,19 +183,16 @@ class QualityTablesFormatter {
 
   void QueryTimeStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<TimePosition, class StatisticalValue>>& entries);
+      std::vector<std::pair<TimePosition, StatisticalValue>>& entries);
   void QueryFrequencyStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<FrequencyPosition, class StatisticalValue>>&
-          entries);
+      std::vector<std::pair<FrequencyPosition, StatisticalValue>>& entries);
   void QueryBaselineStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<BaselinePosition, class StatisticalValue>>&
-          entries);
+      std::vector<std::pair<BaselinePosition, StatisticalValue>>& entries);
   void QueryBaselineTimeStatistic(
       unsigned kindIndex,
-      std::vector<std::pair<BaselineTimePosition, class StatisticalValue>>&
-          entries);
+      std::vector<std::pair<BaselineTimePosition, StatisticalValue>>& entries);
 
   unsigned GetPolarizationCount();
 
@@ -234,17 +202,17 @@ class QualityTablesFormatter {
   void operator=(const QualityTablesFormatter&) =
       delete;  // don't allow assignment
 
-  const static std::string _kindToNameTable[];
-  const static std::string _tableToNameTable[];
-  const static enum QualityTable _dimensionToTableTable[];
+  static const std::string _kindToNameTable[];
+  static const std::string _tableToNameTable[];
+  static const QualityTable _dimensionToTableTable[];
 
-  const static std::string ColumnNameAntenna1;
-  const static std::string ColumnNameAntenna2;
-  const static std::string ColumnNameFrequency;
-  const static std::string ColumnNameKind;
-  const static std::string ColumnNameName;
-  const static std::string ColumnNameTime;
-  const static std::string ColumnNameValue;
+  static const std::string ColumnNameAntenna1;
+  static const std::string ColumnNameAntenna2;
+  static const std::string ColumnNameFrequency;
+  static const std::string ColumnNameKind;
+  static const std::string ColumnNameName;
+  static const std::string ColumnNameTime;
+  static const std::string ColumnNameValue;
 
   std::unique_ptr<casacore::Table> _measurementSet;
   const std::string _measurementSetName;

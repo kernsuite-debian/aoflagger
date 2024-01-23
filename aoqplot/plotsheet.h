@@ -6,6 +6,7 @@
 #include <gtkmm/box.h>
 #include <gtkmm/toolbar.h>
 
+#include <string>
 #include <vector>
 
 class PlotSheet : public Gtk::HBox {
@@ -14,7 +15,7 @@ class PlotSheet : public Gtk::HBox {
     return _signalStatusChange;
   }
 
-  virtual void InitializeToolbar(Gtk::Toolbar& toolbar){};
+  virtual void InitializeToolbar(Gtk::Toolbar& toolbar) {}
 
  protected:
   sigc::signal<void, const std::string&> _signalStatusChange;

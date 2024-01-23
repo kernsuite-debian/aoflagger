@@ -25,6 +25,6 @@ or
    script_structure
    script_example
    Option list <strategy_options>
-   functions
-   class_data
+   lua_functions
+   lua_class_data
    from_rfis_to_lua

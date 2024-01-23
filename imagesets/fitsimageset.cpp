@@ -59,13 +59,13 @@ void FitsImageSet::Initialize() {
       if (_file->GetCurrentHDUType() != FitsFile::ImageHDUType)
         throw FitsIOException("Primary table is not a grouped image");
       std::vector<long double> parameters(_file->GetParameterCount());
-      int baselineIndex = _file->GetGroupParameterIndex("BASELINE");
-      size_t groupCount = _file->GetGroupCount();
+      const int baselineIndex = _file->GetGroupParameterIndex("BASELINE");
+      const size_t groupCount = _file->GetGroupCount();
       std::set<std::pair<size_t, size_t>> baselineSet;
       for (size_t g = 0; g < groupCount; ++g) {
         _file->ReadGroupParameters(g, parameters.data());
-        int a1 = (((int)parameters[baselineIndex]) & 255) - 1;
-        int a2 = (((int)parameters[baselineIndex] >> 8) & 255) - 1;
+        const int a1 = (((int)parameters[baselineIndex]) & 255) - 1;
+        const int a2 = (((int)parameters[baselineIndex] >> 8) & 255) - 1;
         baselineSet.insert(std::pair<size_t, size_t>(a1, a2));
       }
       Logger::Debug << "Baselines in file: " << baselineSet.size() << '\n';
@@ -85,9 +85,9 @@ void FitsImageSet::Initialize() {
       // find number of bands
       _file->MoveToHDU(2);
       int ifColumn = 0;
-      bool hasIF = _file->HasTableColumn("IF", ifColumn);
+      const bool hasIF = _file->HasTableColumn("IF", ifColumn);
       if (!hasIF) ifColumn = _file->GetTableColumnIndex("IFNUM");
-      int rowCount = _file->GetRowCount();
+      const int rowCount = _file->GetRowCount();
       std::set<int> ifSet;
       for (int i = 1; i <= rowCount; ++i) {
         double thisIndex;
@@ -99,7 +99,7 @@ void FitsImageSet::Initialize() {
         throw std::runtime_error("Could not find any IF's in this set");
       _bandIndexToNumber.clear();
       Logger::Debug << _bandCount << " IF's in set: [" << *ifSet.begin();
-      for (int i : ifSet) {
+      for (const int i : ifSet) {
         _bandInfos.emplace(i, BandInfo());
         if (_bandIndexToNumber.size() > 0) Logger::Debug << ", " << i;
         _bandIndexToNumber.push_back(i);
@@ -112,13 +112,13 @@ void FitsImageSet::Initialize() {
       AntennaInfo antenna;
       antenna.id = 0;
       antenna.name = "";
-      size_t height = _file->GetCurrentImageSize(2);
+      const size_t height = _file->GetCurrentImageSize(2);
       _antennaInfos.emplace_back(antenna);
       _bandCount = 1;
       _bandInfos.emplace(0, BandInfo());
       _bandInfos[0].channels.resize(height);
-      double freq0 = _file->GetDoubleKeywordValue("CRVAL2");
-      double freqDelta = _file->GetDoubleKeywordValue("CDELT2");
+      const double freq0 = _file->GetDoubleKeywordValue("CRVAL2");
+      const double freqDelta = _file->GetDoubleKeywordValue("CDELT2");
       _sourceName = _file->GetKeywordValue("SOURCE");
       for (size_t i = 0; i != _bandInfos[0].channels.size(); ++i) {
         _bandInfos[0].channels[i].frequencyHz = freq0 + i * freqDelta;
@@ -130,12 +130,12 @@ void FitsImageSet::Initialize() {
 }
 
 BaselineData FitsImageSet::loadData(const ImageSetIndex& index) {
-  size_t baselineIndex = index.Value() / _bandCount;
-  size_t bandIndex = index.Value() % _bandCount;
+  const size_t baselineIndex = index.Value() / _bandCount;
+  const size_t bandIndex = index.Value() % _bandCount;
   _frequencyOffset = 0.0;
 
   _file->MoveToHDU(1);
-  TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
+  const TimeFrequencyMetaDataPtr metaData(new TimeFrequencyMetaData());
   TimeFrequencyData data;
   switch (_fitsType) {
     case UVFitsType:
@@ -169,7 +169,7 @@ BaselineData FitsImageSet::loadData(const ImageSetIndex& index) {
   if (_fitsType == UVFitsType) {
     _currentBaselineIndex = baselineIndex;
     _currentBandIndex = bandIndex;
-    int bandNumber = _bandIndexToNumber[bandIndex];
+    const int bandNumber = _bandIndexToNumber[bandIndex];
     metaData->SetBand(_bandInfos[bandNumber]);
     metaData->SetAntenna1(
         _antennaInfos[_baselines[_currentBaselineIndex].first]);
@@ -202,9 +202,9 @@ TimeFrequencyData FitsImageSet::ReadPrimaryGroupTable(
   std::vector<UVW> uvws;
 
   std::vector<long double> parameters(_file->GetParameterCount());
-  int baseline = (_baselines[baselineIndex].first + 1) +
-                 ((_baselines[baselineIndex].second + 1) << 8);
-  int baselineColumn = _file->GetGroupParameterIndex("BASELINE");
+  const int baseline = (_baselines[baselineIndex].first + 1) +
+                       ((_baselines[baselineIndex].second + 1) << 8);
+  const int baselineColumn = _file->GetGroupParameterIndex("BASELINE");
   size_t complexCount = _file->GetCurrentImageSize(2),
          stokesStep = complexCount, stokesCount = _file->GetCurrentImageSize(3),
          frequencyStep = stokesCount * complexCount,
@@ -213,8 +213,8 @@ TimeFrequencyData FitsImageSet::ReadPrimaryGroupTable(
   std::vector<std::vector<long double>> valuesR(frequencyCount);
   std::vector<std::vector<long double>> valuesI(frequencyCount);
   std::vector<long double> data(_file->GetImageSize());
-  size_t groupCount = _file->GetGroupCount();
-  bool hasDate2 = _file->HasGroupParameter("DATE", 2);
+  const size_t groupCount = _file->GetGroupCount();
+  const bool hasDate2 = _file->HasGroupParameter("DATE", 2);
   int date2Index = 0, date1Index = _file->GetGroupParameterIndex("DATE");
   if (hasDate2) {
     date2Index = _file->GetGroupParameterIndex("DATE", 2);
@@ -247,10 +247,10 @@ TimeFrequencyData FitsImageSet::ReadPrimaryGroupTable(
 
       _file->ReadGroupData(g, &data[0]);
       for (size_t f = 0; f < frequencyCount; ++f) {
-        size_t index =
+        const size_t index =
             stokes * stokesStep + frequencyStep * f + bandStep * band;
-        long double r = data[index];
-        long double i = data[index + 1];
+        const long double r = data[index];
+        const long double i = data[index + 1];
         valuesR[f].push_back(r);
         valuesI[f].push_back(i);
       }
@@ -288,7 +288,7 @@ void FitsImageSet::ReadPrimarySingleTable(TimeFrequencyData& data,
 void FitsImageSet::ReadTable(TimeFrequencyData& data,
                              TimeFrequencyMetaData& metaData,
                              size_t bandIndex) {
-  std::string extName = _file->GetKeywordValue("EXTNAME");
+  const std::string extName = _file->GetKeywordValue("EXTNAME");
   if (extName == "AIPS AN")
     ReadAntennaTable(metaData);
   else if (extName == "AIPS FQ")
@@ -374,21 +374,21 @@ void FitsImageSet::ReadCalibrationTable() {
 void FitsImageSet::ReadDynSpectrum(TimeFrequencyData& data,
                                    TimeFrequencyMetaData& metaData) {
   _file->MoveToHDU(1);
-  size_t width = _file->GetCurrentImageSize(1);
-  size_t height = _file->GetCurrentImageSize(2);
-  size_t npol = _file->GetCurrentImageSize(3);
+  const size_t width = _file->GetCurrentImageSize(1);
+  const size_t height = _file->GetCurrentImageSize(2);
+  const size_t npol = _file->GetCurrentImageSize(3);
   Logger::Debug << "Reading fits file with dynspectrum, " << width << " x "
                 << height << " x " << npol << "\n";
   if (npol != 4)
     throw std::runtime_error(
         "Expected four polarizations in dynamic spectrum fits file");
-  size_t n = width * height * npol;
+  const size_t n = width * height * npol;
   std::vector<num_t> buffer(n);
   _file->ReadCurrentImageData(0, buffer.data(), n);
   Image2DPtr imgs[4];
   for (size_t i = 0; i != 4; ++i)
     imgs[i] = Image2D::CreateUnsetImagePtr(width, height);
-  Mask2DPtr flags = Mask2D::CreateSetMask<false>(width, height);
+  const Mask2DPtr flags = Mask2D::CreateSetMask<false>(width, height);
   std::vector<num_t>::const_iterator bufferIter = buffer.begin();
   for (size_t j = 0; j != npol; ++j) {
     for (size_t y = 0; y != height; ++y) {
@@ -413,7 +413,7 @@ void FitsImageSet::ReadDynSpectrum(TimeFrequencyData& data,
   metaData.SetAntenna1(_antennaInfos[0]);
   metaData.SetAntenna2(_antennaInfos[0]);
   std::vector<double> times(width);
-  double timeDelta = _file->GetDoubleKeywordValue("CDELT1");
+  const double timeDelta = _file->GetDoubleKeywordValue("CDELT1");
   for (size_t i = 0; i != width; ++i) times[i] = timeDelta * i;
   metaData.SetObservationTimes(times);
 }
@@ -431,16 +431,17 @@ void FitsImageSet::ReadSingleDishTable(TimeFrequencyData& data,
             freqResColumn = _file->GetTableColumnIndex("FREQRES"),
             freqBandwidthColumn = _file->GetTableColumnIndex("BANDWID");
   int timeColumn;
-  bool hasTime = _file->HasTableColumn("TIME", timeColumn);  // optional
+  const bool hasTime = _file->HasTableColumn("TIME", timeColumn);  // optional
   int flagColumn;
-  bool hasFlags = _file->HasTableColumn("FLAGGED", flagColumn);  // optional
+  const bool hasFlags =
+      _file->HasTableColumn("FLAGGED", flagColumn);  // optional
   int ifColumn;
-  bool hasIF = _file->HasTableColumn("IF", ifColumn);
+  const bool hasIF = _file->HasTableColumn("IF", ifColumn);
   if (!hasIF) ifColumn = _file->GetTableColumnIndex("IFNUM");
   std::vector<long> axisDims = _file->GetColumnDimensions(dataColumn);
   int freqCount = 0, polarizationCount = 0, raCount = 0, decCount = 0;
   for (size_t i = 0; i != axisDims.size(); ++i) {
-    std::string name = _file->GetTableDimensionName(i);
+    const std::string name = _file->GetTableDimensionName(i);
     if (name == "FREQ")
       freqCount = axisDims[i];
     else if (name == "STOKES")
@@ -599,7 +600,7 @@ void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr>& flags,
   const int dataColumn = _file->GetTableColumnIndex("DATA"),
             flagColumn = _file->GetTableColumnIndex("FLAGGED");
   int ifColumn = 0;
-  bool hasIF = _file->HasTableColumn("IF", ifColumn);
+  const bool hasIF = _file->HasTableColumn("IF", ifColumn);
   if (!hasIF) ifColumn = _file->GetTableColumnIndex("IFNUM");
   const int freqCount = _file->GetColumnDimensionSize(dataColumn, 0),
             polarizationCount = _file->GetColumnDimensionSize(dataColumn, 1);
@@ -607,7 +608,7 @@ void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr>& flags,
   const int totalSize = _file->GetTableColumnArraySize(dataColumn);
   const int rowCount = _file->GetRowCount();
   std::vector<double> cellData(totalSize);
-  std::unique_ptr<bool[]> flagData(new bool[totalSize]);
+  const std::unique_ptr<bool[]> flagData(new bool[totalSize]);
   std::vector<Mask2DCPtr> storedFlags = flags;
   if (flags.size() == 1) {
     while (storedFlags.size() < (unsigned)polarizationCount)
@@ -629,7 +630,7 @@ void FitsImageSet::saveSingleDishFlags(const std::vector<Mask2DCPtr>& flags,
           "Frequency count in given mask does not match with the file");
   }
   size_t timeIndex = 0;
-  int specifiedIFNumber = _bandIndexToNumber[ifIndex];
+  const int specifiedIFNumber = _bandIndexToNumber[ifIndex];
   for (int row = 1; row <= rowCount; ++row) {
     long double ifNumber;
     _file->ReadTableCell(row, ifColumn, &ifNumber, 1);
@@ -666,10 +667,10 @@ void FitsImageSet::saveDynSpectrumFlags(const std::vector<Mask2DCPtr>& flags) {
   _file->Open(FitsFile::ReadWriteMode);
   _file->MoveToHDU(1);
 
-  size_t width = _file->GetCurrentImageSize(1);
-  size_t height = _file->GetCurrentImageSize(2);
-  size_t npol = _file->GetCurrentImageSize(3);
-  size_t n = width * height * npol;
+  const size_t width = _file->GetCurrentImageSize(1);
+  const size_t height = _file->GetCurrentImageSize(2);
+  const size_t npol = _file->GetCurrentImageSize(3);
+  const size_t n = width * height * npol;
   std::vector<num_t> buffer(n);
   _file->ReadCurrentImageData(0, buffer.data(), buffer.size());
 
@@ -692,12 +693,12 @@ std::string FitsImageSet::Description(const ImageSetIndex& index) const {
   if (IsDynSpectrumType()) {
     return SourceName();
   } else {
-    size_t baselineIndex = index.Value() / _bandCount;
-    size_t bandIndex = index.Value() % _bandCount;
-    int a1 = Baselines()[baselineIndex].first;
-    int a2 = Baselines()[baselineIndex].second;
-    AntennaInfo info1 = GetAntennaInfo(a1);
-    AntennaInfo info2 = GetAntennaInfo(a2);
+    const size_t baselineIndex = index.Value() / _bandCount;
+    const size_t bandIndex = index.Value() % _bandCount;
+    const int a1 = Baselines()[baselineIndex].first;
+    const int a2 = Baselines()[baselineIndex].second;
+    const AntennaInfo info1 = GetAntennaInfo(a1);
+    const AntennaInfo info2 = GetAntennaInfo(a2);
     std::stringstream s;
     s << "Correlation " << info1.name << " x " << info2.name << ", band "
       << bandIndex;
@@ -713,7 +714,7 @@ std::string FitsImageSet::TelescopeName() {
   if (_fitsType == SDFitsType) {
     for (int hduIndex = 2; hduIndex <= _file->GetHDUCount(); hduIndex++) {
       _file->MoveToHDU(hduIndex);
-      std::string extName = _file->GetKeywordValue("EXTNAME");
+      const std::string extName = _file->GetKeywordValue("EXTNAME");
       if (extName == "SINGLE DISH") return _file->GetKeywordValue("TELESCOP");
     }
     return "";

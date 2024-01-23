@@ -21,7 +21,7 @@ v2.01
 * Bug fix: Open button now has key accelerator.
 * Bug fix: AOFlagger did not compile on gcc 4.7 (reported by J. Swinbank).
 * Bug fix: Toolbar in the Rfigui will now always show both text and icons
-* Bug fix: Interface changed to allow NDPPP to read the raw data, NDPPP's problems fixed that concerned quality collecting.
+* Bug fix: Interface changed to allow DP3 to read the raw data, DP3's problems fixed that concerned quality collecting.
 * Performance enhancement: Improved speed of horizontal sumthreshold algorithm with SSE instructions, leading to about 10% improved speed on overal strategy.
 * Bug fix: fixed bug in previously mentioned new SumThreshold algorithm causing crashes (reported by J. Swinbank), also adding test case to validate result.
 * Performance enhancement: Improved performance of reading meta data of measurement sets.

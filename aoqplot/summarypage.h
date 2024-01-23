@@ -1,6 +1,10 @@
 #ifndef GUI_QUALITY__SUMMARYPAGE_H
 #define GUI_QUALITY__SUMMARYPAGE_H
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <gtkmm/box.h>
 #include <gtkmm/textbuffer.h>
 #include <gtkmm/textview.h>
@@ -124,7 +128,8 @@ class SummaryPageController : public AOQPageController {
 
 class SummaryPage : public PlotSheet {
  public:
-  SummaryPage(SummaryPageController* controller) : _controller(controller) {
+  explicit SummaryPage(SummaryPageController* controller)
+      : _controller(controller) {
     add(_textView);
     _textView.show();
 

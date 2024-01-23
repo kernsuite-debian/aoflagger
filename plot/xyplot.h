@@ -12,12 +12,49 @@
 #include "title.h"
 #include "xypointset.h"
 
-class XYPlot : public PlotBase {
- public:
-  enum RangeDetermination { MinMaxRange, WinsorizedRange, SpecifiedRange };
+enum class RangeDetermination { MinMaxRange, WinsorizedRange, SpecifiedRange };
 
+class XYPlotAxis : public Axis {
+ public:
+  bool Show() const { return show_; }
+  void SetShow(bool show) { show_ = show; }
+
+  void SetMax(double max) {
+    range_determination_ = RangeDetermination::SpecifiedRange;
+    specified_max_ = max;
+  }
+  double SpecifiedMax() const { return specified_max_; }
+  void SetMin(double min) {
+    range_determination_ = RangeDetermination::SpecifiedRange;
+    specified_min_ = min;
+  }
+  double SpecifiedMin() const { return specified_min_; }
+  std::string SpecifiedDescription() const { return specified_description_; }
+  void SetCustomDescription(const std::string& description) {
+    specified_description_ = description;
+  }
+  void SetAutomaticDescription() { specified_description_ = std::string(); }
+  void SetLogarithmic(bool logarithmic) { logarithmic_ = logarithmic; }
+  bool Logarithmic() const { return logarithmic_; }
+  void SetRangeDetermination(RangeDetermination range) {
+    range_determination_ = range;
+  }
+  RangeDetermination GetRangeDetermination() const {
+    return range_determination_;
+  }
+
+ private:
+  bool logarithmic_ = false;
+  bool show_ = true;
+  double specified_min_ = 0.0;
+  double specified_max_ = 0.0;
+  RangeDetermination range_determination_ = RangeDetermination::MinMaxRange;
+  std::string specified_description_;
+};
+
+class XYPlot final : public PlotBase {
+ public:
   XYPlot();
-  ~XYPlot();
 
   void Clear();
 
@@ -34,14 +71,14 @@ class XYPlot : public PlotBase {
 
   XYPointSet& StartLine(
       const std::string& label, const std::string& xDesc = "x",
-      const std::string& yDesc = "y", bool xIsTime = false,
+      const std::string& yDesc = "y",
       enum XYPointSet::DrawingStyle drawingStyle = XYPointSet::DrawLines);
   XYPointSet& StartLine(const std::string& label,
                         enum XYPointSet::DrawingStyle drawingStyle) {
-    return StartLine(label, "x", "y", false, drawingStyle);
+    return StartLine(label, "x", "y", drawingStyle);
   }
   XYPointSet& StartLine() {
-    return StartLine("", "x", "y", false, XYPointSet::DrawLines);
+    return StartLine("", "x", "y", XYPointSet::DrawLines);
   }
   void PushDataPoint(double x, double y) {
     if (_pointSets.size() > 0)
@@ -56,115 +93,96 @@ class XYPlot : public PlotBase {
   const XYPointSet& GetPointSet(size_t index) const {
     return *_pointSets[index];
   }
-  void SetLogarithmicXAxis(bool logarithmicXAxis) {
-    _logarithmicXAxis = logarithmicXAxis;
-  }
-  bool LogarithmicXAxis() const { return _logarithmicXAxis; }
   void SetIncludeZeroYAxis(bool includeZeroAxis) {
     _system.SetIncludeZeroYAxis(includeZeroAxis);
-    if (includeZeroAxis) _logarithmicYAxis = false;
-  }
-  void SetLogarithmicYAxis(bool logarithmicYAxis) {
-    _logarithmicYAxis = logarithmicYAxis;
-    if (_logarithmicYAxis) _system.SetIncludeZeroYAxis(false);
-  }
-  bool LogarithmicYAxis() const { return _logarithmicYAxis; }
-  void SetHRangeDetermination(enum RangeDetermination range) {
-    _hRangeDetermination = range;
-  }
-  enum RangeDetermination HRangeDetermination() const {
-    return _hRangeDetermination;
-  }
-  void SetVRangeDetermination(enum RangeDetermination range) {
-    _vRangeDetermination = range;
-  }
-  enum RangeDetermination VRangeDetermination() const {
-    return _vRangeDetermination;
-  }
-  void SetMaxX(double maxX) {
-    _hRangeDetermination = SpecifiedRange;
-    _specifiedMaxX = maxX;
+    if (includeZeroAxis) y_axis_.SetLogarithmic(false);
   }
 
-  std::pair<double, double> RangeX() const;
-  std::pair<double, double> RangePositiveX() const;
-  std::pair<double, double> RangeY() const;
-  std::pair<double, double> RangePositiveY() const;
+  std::pair<double, double> RangeX(bool second_axis) const;
+  std::pair<double, double> RangePositiveX(bool second_axis) const;
+  std::pair<double, double> RangeY(bool second_axis) const;
+  std::pair<double, double> RangePositiveY(bool second_axis) const;
 
-  void SetMinX(double minX) {
-    _hRangeDetermination = SpecifiedRange;
-    _specifiedMinX = minX;
-  }
-  void SetMaxY(double maxY) {
-    _vRangeDetermination = SpecifiedRange;
-    _specifiedMaxY = maxY;
-  }
-  void SetMinY(double minY) {
-    _vRangeDetermination = SpecifiedRange;
-    _specifiedMinY = minY;
-  }
-  void SetShowXAxis(bool showAxis) { _showXAxis = showAxis; }
-  void SetShowYAxis(bool showYAxis) { _showYAxis = showYAxis; }
-  bool ShowXAxis() const { return _showXAxis; }
-  bool ShowYAxis() const { return _showYAxis; }
   void SetShowAxisDescriptions(bool showAxisDescriptions) {
     _showAxisDescriptions = showAxisDescriptions;
   }
   bool ShowAxisDescriptions() const { return _showAxisDescriptions; }
   void SetTitle(const std::string& title) { _title.SetText(title); }
-  void SetCustomHorizontalAxisDescription(const std::string& description) {
-    _customHAxisDescription = description;
-  }
-  void SetCustomVerticalAxisDescription(const std::string& description) {
-    _customVAxisDescription = description;
-  }
-  void SetAutomaticHorizontalAxisDescription() {
-    _customHAxisDescription = std::string();
-  }
-  void SetAutomaticVerticalAxisDescription() {
-    _customVAxisDescription = std::string();
-  }
   void SavePdf(const std::string& filename, size_t width,
-               size_t height) final override;
+               size_t height) override;
   void SaveSvg(const std::string& filename, size_t width,
-               size_t height) final override;
+               size_t height) override;
   void SavePng(const std::string& filename, size_t width,
-               size_t height) final override;
-  void SavePdf(const std::string& filename) {
-    SavePdf(filename, _width, _height);
-  }
-  void SaveSvg(const std::string& filename) {
-    SaveSvg(filename, _width, _height);
-  }
-  void SavePng(const std::string& filename) {
-    SavePng(filename, _width, _height);
-  }
+               size_t height) override;
 
-  const std::string& Title() const { return _title.Text(); }
+  const std::string& GetTitle() const { return _title.Text(); }
+
+  XYPlotAxis& XAxis() { return x_axis_; }
+  const XYPlotAxis& XAxis() const { return x_axis_; }
+
+  XYPlotAxis& YAxis() { return y_axis_; }
+  const XYPlotAxis& YAxis() const { return y_axis_; }
+
+  XYPlotAxis& X2Axis() { return x2_axis_; }
+  const XYPlotAxis& X2Axis() const { return x2_axis_; }
+
+  XYPlotAxis& Y2Axis() { return y2_axis_; }
+  const XYPlotAxis& Y2Axis() const { return y2_axis_; }
 
  protected:
-  void draw(const Cairo::RefPtr<Cairo::Context>& cairo, size_t width,
-            size_t height) final override;
+  void Draw(const Cairo::RefPtr<Cairo::Context>& cairo) override;
 
  private:
-  void render(const Cairo::RefPtr<Cairo::Context>& cr);
-  void render(const Cairo::RefPtr<Cairo::Context>& cr, XYPointSet& pointSet);
+  void InitializeComponents(const Cairo::RefPtr<Cairo::Context>& cr);
+  void InitializeYAxis(bool second_axis, double horizontal_scale_height);
+  void DrawFrame(const Cairo::RefPtr<Cairo::Context>& cr);
+  void DrawPointSet(const Cairo::RefPtr<Cairo::Context>& cr,
+                    XYPointSet& pointSet);
+
+  static std::pair<double, double> CheckRange(
+      const std::pair<double, double>& range) {
+    if (!std::isfinite(range.first) || !std::isfinite(range.second)) {
+      return {-1.0, 1.0};
+    } else if (range.first == range.second) {
+      return {range.first - 1.0, range.second + 1.0};
+    } else {
+      return range;
+    }
+  }
+
   // TODO
   Rectangle getPlotArea(size_t width, size_t height) const override {
     return Rectangle();
   }
 
-  Legend _legend;
+  const XYPointSet* GetFirstXAxisSet(bool second_axis) const {
+    for (const std::unique_ptr<XYPointSet>& set : _pointSets) {
+      if (set->UseSecondXAxis() == second_axis) {
+        return set.get();
+      }
+    }
+    return nullptr;
+  }
+
+  const XYPointSet* GetFirstYAxisSet(bool second_axis) const {
+    for (const std::unique_ptr<XYPointSet>& set : _pointSets) {
+      if (set->UseSecondYAxis() == second_axis) {
+        return set.get();
+      }
+    }
+    return nullptr;
+  }
+
+  double _topMargin = 0;
+  bool _showAxisDescriptions = true;
   std::vector<std::unique_ptr<XYPointSet>> _pointSets;
-  int _width, _height;
-  double _topMargin;
+  XYPlotAxis x_axis_;
+  XYPlotAxis x2_axis_;
+  XYPlotAxis y_axis_;
+  XYPlotAxis y2_axis_;
+  Legend _legend;
   System _system;
-  bool _logarithmicXAxis, _logarithmicYAxis, _showXAxis, _showYAxis,
-      _showAxisDescriptions;
-  double _specifiedMinX, _specifiedMaxX, _specifiedMinY, _specifiedMaxY;
-  enum RangeDetermination _hRangeDetermination, _vRangeDetermination;
-  class Title _title;
-  std::string _customHAxisDescription, _customVAxisDescription;
+  Title _title;
 };
 
 #endif

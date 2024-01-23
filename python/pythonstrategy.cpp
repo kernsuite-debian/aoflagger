@@ -5,7 +5,7 @@
 
 #include "../python/pyfunctions.h"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eval.h>
@@ -16,7 +16,7 @@ PythonStrategy::PythonStrategy() : _code() {
   std::ifstream file("strategy.py");
   if (file.good()) {
     file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
+    const size_t size = file.tellg();
     std::vector<char> data(size + 1, 0);
     file.seekg(0, std::ios::beg);
     file.read(data.data(), size);
@@ -26,8 +26,8 @@ PythonStrategy::PythonStrategy() : _code() {
   Py_Initialize();
 
   // The following statement add the curr path to the Python search path
-  boost::filesystem::path workingDir =
-      boost::filesystem::current_path().normalize();
+  const std::filesystem::path workingDir =
+      std::filesystem::canonical(std::filesystem::current_path());
   PyObject* sysPath = PySys_GetObject(const_cast<char*>("path"));
   PyList_Insert(sysPath, 0, PyUnicode_FromString(workingDir.string().c_str()));
 }

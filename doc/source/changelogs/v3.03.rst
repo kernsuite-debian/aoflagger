@@ -1,0 +1,44 @@
+v3.03
+=====
+
+========== ================== 
+2023-03-20 André Offringa <of...nga@gmail.com>
+========== ================== 
+
+Version 3.3 is mostly a bugfix release that fixes various little issues. The full list of changes is given below.
+
+.. default-domain:: lua
+
+New features
+^^^^^^^^^^^^
+
+Generic improvements
+--------------------
+
+* Add features to implement local Lua RMS thresholding (tested in `this paper <https://arxiv.org/abs/2302.05523>`_):
+
+  - :meth:`Data.__div` (division operator in Lua) 
+  - :meth:`aoflagger.norm()`
+  - :meth:`aoflagger.sqrt()`
+  
+* Rfigui now has an option to save data to a numpy array.
+* Support LOFAR beam-formed h5 files.
+* Use the :ref:`reordering reading mode <reading modes>` by default when the data does not fit in memory. 
+
+Bug fixes  & refactoring
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Fix for crash when using ``aoqplot -save`` due to uninitialized pango.
+* Fix crashes with empty quality statistics tables found by Tammo Jan.
+* Fix compability issues with newest pylibs.
+* Fix various plotting imperfections.
+* Fix an exception when a recent file does not exist.
+* Fix a cast error in the Python FlagMask.SetBuffer() method that caused it to misbehave.
+* Improved a few warnings.
+* Replace deprecated ``math.pow`` by ``^`` in Lua scripts.
+* Fixes for Mac compilation.
+* Format Python files using black.
+* Format Lua scripts with StyLua.
+* Add documentation for ``aoquality combine`` operation.
+* Memory estimate for the reader was improved.
+

@@ -143,6 +143,19 @@ class BaselineReader {
 
   static uint64_t MeasurementSetDataSize(const std::string& filename);
 
+  /**
+   * Returns an estimate of the size of the measurement set.
+   *
+   * This estimate can be used to see whether the memory reader can be used.
+   *
+   * The \a start and \a end are an optional, this allows using
+   * \ref Options::startTimestep and \ref Options::endTimestep in this function
+   * call.
+   */
+  static uint64_t MeasurementSetIntervalDataSize(const string& filename,
+                                                 std::optional<size_t> start,
+                                                 std::optional<size_t> end);
+
   void SetInterval(std::optional<size_t> start, std::optional<size_t> end) {
     _intervalStart = start;
     _intervalEnd = end;

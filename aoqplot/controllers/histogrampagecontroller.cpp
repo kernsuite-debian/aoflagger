@@ -23,7 +23,7 @@ void HistogramPageController::readFromFile() {
   CloseStatistics();
   HistogramTablesFormatter histogramTables(_statFilename);
   if (histogramTables.HistogramsExist()) {
-    MSMetaData set(_statFilename);
+    const MSMetaData set(_statFilename);
 
     const unsigned polarizationCount = set.PolarizationCount();
 
@@ -161,7 +161,7 @@ void HistogramPageController::plotPolarization(
     if (_drawSlope2) {
       plotSlope(totalHistogram, "Fitted slope", true);
     }
-    std::string str = SlopeText(totalHistogram);
+    const std::string str = SlopeText(totalHistogram);
     _page->SetSlopeFrame(str);
   }
 
@@ -173,7 +173,7 @@ void HistogramPageController::plotPolarization(
     if (_fit || _subtractFit) {
       plotFit(rfiHistogram, "Fit to RFI");
     }
-    std::string str = SlopeText(rfiHistogram);
+    const std::string str = SlopeText(rfiHistogram);
     _page->SetSlopeFrame(str);
     if (_drawSlope) {
       plotSlope(rfiHistogram, "Fitted slope", false);
@@ -254,13 +254,13 @@ void HistogramPageController::addRayleighToPlot(const LogHistogram& histogram,
 void HistogramPageController::addRayleighDifferenceToPlot(
     const LogHistogram& histogram, double sigma, double n) {
   const double sigmaP2 = sigma * sigma;
-  double minCount = histogram.MinPosNormalizedCount();
+  const double minCount = histogram.MinPosNormalizedCount();
   for (LogHistogram::iterator i = histogram.begin(); i != histogram.end();
        ++i) {
     const double x = i.value();
 
     const double c = n * x / (sigmaP2)*exp(-x * x / (2 * sigmaP2));
-    double diff = fabs(i.normalizedCount() - c);
+    const double diff = fabs(i.normalizedCount() - c);
     if (diff >= minCount) {
       const double logx = log10(x);
       const double logc = log10(diff);

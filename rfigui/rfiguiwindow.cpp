@@ -5,8 +5,7 @@
 #include <gtkmm/icontheme.h>
 #include <gtkmm/messagedialog.h>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 #include "../msio/baselinematrixloader.h"
 
@@ -30,7 +29,6 @@
 #include "controllers/imagecomparisoncontroller.h"
 #include "controllers/rfiguicontroller.h"
 
-#include "complexplaneplotwindow.h"
 #include "gotowindow.h"
 #include "histogramwindow.h"
 #include "imagepropertieswindow.h"
@@ -65,19 +63,19 @@ RFIGuiWindow::RFIGuiWindow(RFIGuiController* controller,
       _menu() {
   _controller->AttachWindow(this);
 
-  Glib::RefPtr<Gtk::IconTheme> iconTheme = Gtk::IconTheme::get_default();
+  const Glib::RefPtr<Gtk::IconTheme> iconTheme = Gtk::IconTheme::get_default();
 
-  boost::filesystem::path argv0Root =
-      boost::filesystem::path(argv0).remove_leaf();
-  if (!boost::filesystem::equivalent(
-          argv0Root / "..", boost::filesystem::path(AOFLAGGER_INSTALL_PATH))) {
-    boost::filesystem::path iconPathC =
-        boost::filesystem::path(AOFLAGGER_INSTALL_PATH) / "share/icons";
+  const std::filesystem::path argv0Root =
+      std::filesystem::path(argv0).remove_filename();
+  if (!std::filesystem::equivalent(
+          argv0Root / "..", std::filesystem::path(AOFLAGGER_INSTALL_PATH))) {
+    const std::filesystem::path iconPathC =
+        std::filesystem::path(AOFLAGGER_INSTALL_PATH) / "share/icons";
     iconTheme->prepend_search_path(iconPathC.string());
   }
-  boost::filesystem::path iconPathA = argv0Root / "../share/icons";
+  const std::filesystem::path iconPathA = argv0Root / "../share/icons";
   iconTheme->prepend_search_path(iconPathA.string());
-  boost::filesystem::path iconPathB = argv0Root / "../data/icons";
+  const std::filesystem::path iconPathB = argv0Root / "../data/icons";
   iconTheme->prepend_search_path(iconPathB.string());
 
   // Now that the icon search path is correct, the menu can be created
@@ -127,8 +125,6 @@ RFIGuiWindow::RFIGuiWindow(RFIGuiController* controller,
   // Plot
   _menu->OnPlotDistPressed.connect([&]() { onPlotDistPressed(); });
   _menu->OnPlotLogLogDistPressed.connect([&]() { onPlotLogLogDistPressed(); });
-  _menu->OnPlotComplexPlanePressed.connect(
-      [&]() { onPlotComplexPlanePressed(); });
   _menu->OnPlotMeanSpectrumPressed.connect(
       [&]() { onPlotMeanSpectrumPressed(); });
   _menu->OnPlotSumSpectrumPressed.connect(
@@ -230,9 +226,11 @@ RFIGuiWindow::RFIGuiWindow(RFIGuiController* controller,
       sigc::mem_fun(*this, &RFIGuiWindow::onTFScroll));
   _timeFrequencyWidget.GetHeatMapWidget().Plot().OnZoomChanged().connect(
       sigc::mem_fun(*this, &RFIGuiWindow::onTFZoomChanged));
-  _timeFrequencyWidget.GetMaskedHeatMap().SetShowXAxisDescription(false);
-  _timeFrequencyWidget.GetMaskedHeatMap().SetShowYAxisDescription(false);
-  _timeFrequencyWidget.GetMaskedHeatMap().SetShowZAxisDescription(false);
+  MaskedHeatMap& map = _timeFrequencyWidget.GetMaskedHeatMap();
+  map.SetShowXAxisDescription(false);
+  map.SetXAxisType(AxisType::kTime);
+  map.SetShowYAxisDescription(false);
+  map.SetShowZAxisDescription(false);
 
   _strategyEditor.SetText(_controller->GetWorkStrategyText());
   _strategyEditor.ResetChangedStatus();
@@ -278,12 +276,12 @@ bool RFIGuiWindow::askToSaveChanges() {
     dialog.add_button("Don't save", Gtk::RESPONSE_CLOSE);
     dialog.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
     dialog.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_YES);
-    int result = dialog.run();
-    if (result == Gtk::RESPONSE_CANCEL)
+    const int result = dialog.run();
+    if (result == Gtk::RESPONSE_CANCEL) {
       return false;
-    else if (result == Gtk::RESPONSE_CLOSE)
+    } else if (result == Gtk::RESPONSE_CLOSE) {
       return true;
-    else {
+    } else {
       onStrategySave();
       // In case the strategy had no name yet, the onStrategySave() call will
       // show a file dialog where the user might press cancel. In that case,
@@ -298,7 +296,7 @@ bool RFIGuiWindow::askToSaveChanges() {
 void RFIGuiWindow::onOpen() {
   OpenDialog openDialog(*this);
 
-  int result = openDialog.run();
+  const int result = openDialog.run();
 
   if (result == Gtk::RESPONSE_OK) {
     OpenMS(openDialog.Selection(), openDialog.GetOptions());
@@ -310,20 +308,23 @@ void RFIGuiWindow::onOpenRecent(size_t index) {
 }
 
 void RFIGuiWindow::updateRecentFiles() {
-  std::vector<std::string> files = _controller->RecentFiles();
+  const std::vector<std::string> files = _controller->RecentFiles();
   std::vector<std::string> leafs;
   leafs.reserve(files.size());
-  for (std::string& f : files) {
-    leafs.emplace_back(
-        boost::filesystem::path(f).remove_trailing_separator().leaf().string());
+  for (const std::string& f : files) {
+    std::error_code err_code;
+    std::filesystem::path path =
+        std::filesystem::canonical(std::filesystem::path(f), err_code);
+    if (!err_code) leafs.emplace_back(path.filename().string());
   }
   _menu->SetRecentFiles(leafs);
 }
 
 void RFIGuiWindow::updateOpenStrategyMenu() {
-  std::vector<TelescopeFile::TelescopeId> telescopeIds = TelescopeFile::List();
+  const std::vector<TelescopeFile::TelescopeId> telescopeIds =
+      TelescopeFile::List();
   std::vector<std::string> strategies;
-  for (TelescopeFile::TelescopeId id : telescopeIds) {
+  for (const TelescopeFile::TelescopeId id : telescopeIds) {
     strategies.emplace_back(TelescopeFile::TelescopeName(id));
   }
   _menu->SetStrategyDefaults(strategies);
@@ -338,17 +339,26 @@ void RFIGuiWindow::onExportBaseline() {
   dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
   dialog.add_button("_Save", Gtk::RESPONSE_ACCEPT);
 
-  auto filter_text = Gtk::FileFilter::create();
-  filter_text->set_name("Baseline files (*.rfibl)");
-  filter_text->add_mime_type("application/rfibl");
-  filter_text->add_pattern("*.rfibl");
-  dialog.add_filter(filter_text);
-  dialog.set_do_overwrite_confirmation(true);
+  auto filter_rfibl = Gtk::FileFilter::create();
+  filter_rfibl->set_name("Baseline files (*.rfibl)");
+  filter_rfibl->add_mime_type("application/rfibl");
+  filter_rfibl->add_pattern("*.rfibl");
+  dialog.add_filter(filter_rfibl);
 
-  int result = dialog.run();
+  auto filter_npy = Gtk::FileFilter::create();
+  filter_npy->set_name("Numpy array (*.npy)");
+  filter_npy->add_mime_type("application/npy");
+  filter_npy->add_pattern("*.npy");
+  dialog.add_filter(filter_npy);
+
+  dialog.set_do_overwrite_confirmation(true);
+  const int result = dialog.run();
 
   if (result == Gtk::RESPONSE_ACCEPT) {
-    _controller->SaveBaseline(dialog.get_filename());
+    if (dialog.get_filter() == filter_rfibl)
+      _controller->SaveBaselineAsRfibl(dialog.get_filename());
+    else
+      _controller->SaveBaselineAsNpy(dialog.get_filename());
   }
 }
 
@@ -357,7 +367,7 @@ void RFIGuiWindow::OpenPaths(const std::vector<std::string>& paths) {
     OpenDialog openDialog(*this);
     openDialog.SetSelection(paths);
     openDialog.ActivateOptionsTab();
-    int result = openDialog.run();
+    const int result = openDialog.run();
 
     if (result == Gtk::RESPONSE_OK) {
       OpenMS(openDialog.Selection(), openDialog.GetOptions());
@@ -487,12 +497,13 @@ void RFIGuiWindow::onViewStrategy() {
 }
 
 void RFIGuiWindow::onViewTimePlot() {
-  bool viewTime = _menu->ViewTimePlot();
+  const bool viewTime = _menu->ViewTimePlot();
   if (viewTime) {
     _timeFrequencyWidget.EnableTimePlot();
     _controller->DrawTimeMean(_timeFrequencyWidget.TimePlot());
-  } else
+  } else {
     _timeFrequencyWidget.DisableTimePlot();
+  }
 }
 
 void RFIGuiWindow::onExecuteLuaStrategy() {
@@ -517,9 +528,9 @@ void RFIGuiWindow::onExecuteStrategyFinished(bool successfull) {
 
 void RFIGuiWindow::onExecuteStrategyError(const std::string& error) {
   _menu->ActivateStrategyMode();
-  size_t colon = error.find(':');
+  const size_t colon = error.find(':');
   if (colon != error.npos) {
-    size_t lineNr = std::atoi(error.substr(colon + 1).c_str());
+    const size_t lineNr = std::atoi(error.substr(colon + 1).c_str());
     _strategyEditor.HighlightLine(lineNr);
   }
   Gtk::MessageDialog dialog(*this, error, false, Gtk::MESSAGE_ERROR);
@@ -547,7 +558,7 @@ void RFIGuiWindow::onClearAltFlagsPressed() {
 
 void RFIGuiWindow::onVisualizedToOriginalPressed() {
   if (HasImage()) {
-    TimeFrequencyData data(_controller->TFController().GetActiveData());
+    const TimeFrequencyData data(_controller->TFController().GetActiveData());
     _controller->TFController().SetNewData(
         std::move(data),
         _timeFrequencyWidget.GetMaskedHeatMap().GetSelectedMetaData());
@@ -557,7 +568,7 @@ void RFIGuiWindow::onVisualizedToOriginalPressed() {
 void RFIGuiWindow::onAddStaticFringe() {
   try {
     if (HasImage()) {
-      TimeFrequencyMetaDataCPtr metaData = SelectedMetaData();
+      const TimeFrequencyMetaDataCPtr metaData = SelectedMetaData();
       TimeFrequencyData data(GetActiveData());
       FringeTestCreater::AddStaticFringe(data, metaData, 1.0L);
       _controller->TFController().SetNewData(data, metaData);
@@ -571,7 +582,7 @@ void RFIGuiWindow::onAddStaticFringe() {
 void RFIGuiWindow::onAdd1SigmaFringe() {
   try {
     if (HasImage()) {
-      TimeFrequencyMetaDataCPtr metaData = SelectedMetaData();
+      const TimeFrequencyMetaDataCPtr metaData = SelectedMetaData();
       num_t mean, stddev;
       TimeFrequencyData data(GetActiveData());
       ThresholdTools::MeanAndStdDev(data.GetRealPart().get(),
@@ -588,7 +599,7 @@ void RFIGuiWindow::onAdd1SigmaFringe() {
 
 void RFIGuiWindow::onSetToOne() {
   try {
-    TimeFrequencyData data(GetActiveData());
+    const TimeFrequencyData data(GetActiveData());
     std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
     Image2DPtr real = Image2D::MakePtr(*images[0]),
                imaginary = Image2D::MakePtr(*images[1]);
@@ -606,7 +617,7 @@ void RFIGuiWindow::onSetToOne() {
 
 void RFIGuiWindow::onSetToI() {
   try {
-    TimeFrequencyData data(GetActiveData());
+    const TimeFrequencyData data(GetActiveData());
     std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
     Image2DPtr real = Image2D::MakePtr(*images[0]),
                imaginary = Image2D::MakePtr(*images[0]);
@@ -624,7 +635,7 @@ void RFIGuiWindow::onSetToI() {
 
 void RFIGuiWindow::onSetToOnePlusI() {
   try {
-    TimeFrequencyData data(GetActiveData());
+    const TimeFrequencyData data(GetActiveData());
     std::array<Image2DCPtr, 2> images = data.GetSingleComplexImage();
     Image2DPtr real = Image2D::MakePtr(*images[0]),
                imaginary = Image2D::MakePtr(*images[0]);
@@ -658,13 +669,13 @@ void RFIGuiWindow::onAddCorrelatorFault() {
   box->show_all_children();
   if (dialog.run() == Gtk::RESPONSE_OK) {
     TimeFrequencyData data(GetActiveData());
-    double startRatio = std::atof(startTime.get_text().c_str());
-    double endRatio = std::atof(endTime.get_text().c_str());
+    const double startRatio = std::atof(startTime.get_text().c_str());
+    const double endRatio = std::atof(endTime.get_text().c_str());
     const size_t startIndex = data.ImageWidth() * startRatio;
     const size_t endIndex = data.ImageWidth() * endRatio;
     for (size_t i = 0; i != data.ImageCount(); ++i) {
       Image2DPtr image(new Image2D(*data.GetImage(i)));
-      num_t addValue = 10.0 * image->GetStdDev();
+      const num_t addValue = 10.0 * image->GetStdDev();
       for (size_t y = 0; y != image->Height(); ++y) {
         for (size_t x = startIndex; x != endIndex; ++x)
           image->AddValue(x, y, addValue);
@@ -716,7 +727,7 @@ void RFIGuiWindow::onAddNaNs() {
 
 void RFIGuiWindow::onShowStats() {
   if (_timeFrequencyWidget.HasImage()) {
-    TimeFrequencyData activeData = GetActiveData();
+    const TimeFrequencyData activeData = GetActiveData();
     TimeFrequencyStatistics statistics(activeData);
     std::stringstream s;
     s << "Percentage flagged: "
@@ -731,7 +742,7 @@ void RFIGuiWindow::onShowStats() {
       intersect = Mask2D::MakePtr(*original);
       intersect->Intersect(*alternative);
 
-      unsigned intCount = intersect->GetCount<true>();
+      const unsigned intCount = intersect->GetCount<true>();
       if (intCount != 0) {
         if (*original != *alternative) {
           s << "Overlap between original and alternative: "
@@ -747,8 +758,8 @@ void RFIGuiWindow::onShowStats() {
       }
     }
 
-    Image2DCPtr powerImg = activeData.GetSingleImage();
-    Mask2DCPtr mask = activeData.GetSingleMask();
+    const Image2DCPtr powerImg = activeData.GetSingleImage();
+    const Mask2DCPtr mask = activeData.GetSingleMask();
     double power = 0.0;
     for (unsigned y = 0; y < powerImg->Height(); ++y) {
       for (unsigned x = 0; x < powerImg->Width(); ++x) {
@@ -766,14 +777,6 @@ void RFIGuiWindow::onShowStats() {
 void RFIGuiWindow::onPlotDistPressed() { _controller->PlotDist(); }
 
 void RFIGuiWindow::onPlotLogLogDistPressed() { _controller->PlotLogLogDist(); }
-
-void RFIGuiWindow::onPlotComplexPlanePressed() {
-  if (HasImage()) {
-    _plotComplexPlaneWindow.reset(
-        new ComplexPlanePlotWindow(*this, _controller->PlotManager()));
-    _plotComplexPlaneWindow->show();
-  }
-}
 
 void RFIGuiWindow::onPlotPowerSpectrumPressed() {
   _controller->PlotPowerSpectrum();
@@ -903,7 +906,7 @@ void RFIGuiWindow::onReloadPressed() {
 void RFIGuiWindow::onLoadExtremeBaseline(bool longest) {
   if (_controller->HasImageSet()) {
     imagesets::ImageSetIndex index = _controller->GetImageSetIndex();
-    bool available = imagesets::IndexableSet::FindExtremeBaseline(
+    const bool available = imagesets::IndexableSet::FindExtremeBaseline(
         &_controller->GetImageSet(), index, longest);
     if (available) {
       _controller->SetImageSetIndex(index);
@@ -915,7 +918,7 @@ void RFIGuiWindow::onLoadExtremeBaseline(bool longest) {
 void RFIGuiWindow::onLoadMedianBaseline() {
   if (_controller->HasImageSet()) {
     imagesets::ImageSetIndex index = _controller->GetImageSetIndex();
-    bool available = imagesets::IndexableSet::FindMedianBaseline(
+    const bool available = imagesets::IndexableSet::FindMedianBaseline(
         &_controller->GetImageSet(), index);
     if (available) {
       _controller->SetImageSetIndex(index);
@@ -926,15 +929,15 @@ void RFIGuiWindow::onLoadMedianBaseline() {
 
 void RFIGuiWindow::onTFWidgetMouseMoved(double x, double y) {
   const MaskedHeatMap& heatMap = _timeFrequencyWidget.GetMaskedHeatMap();
-  Image2DCPtr image = heatMap.GetImage2D();
+  const Image2DCPtr image = heatMap.GetImage2D();
   size_t imageX;
   size_t imageY;
   if (heatMap.UnitToImage(x, y, imageX, imageY)) {
-    num_t v = image->Value(imageX, imageY);
+    const num_t v = image->Value(imageX, imageY);
     _statusbar.pop();
     std::stringstream s;
     s << "x=" << imageX << ",y=" << imageY << ",value=" << v;
-    TimeFrequencyMetaDataCPtr metaData =
+    const TimeFrequencyMetaDataCPtr metaData =
         _timeFrequencyWidget.GetMaskedHeatMap().GetFullMetaData();
     if (metaData != nullptr) {
       if (metaData->HasObservationTimes() && metaData->HasBand()) {
@@ -944,7 +947,7 @@ void RFIGuiWindow::onTFWidgetMouseMoved(double x, double y) {
       }
 
       if (metaData->HasUVW()) {
-        UVW uvw = metaData->UVW()[imageX];
+        const UVW uvw = metaData->UVW()[imageX];
         s << ", uvw=" << uvw.u << "," << uvw.v << "," << uvw.w;
       }
       s << ')';
@@ -962,7 +965,7 @@ void RFIGuiWindow::onMultiplyData() {
 }
 
 void RFIGuiWindow::onSegment() {
-  SegmentedImagePtr segmentedImage = SegmentedImage::CreateUnsetPtr(
+  const SegmentedImagePtr segmentedImage = SegmentedImage::CreateUnsetPtr(
       GetOriginalData().ImageWidth(), GetOriginalData().ImageHeight());
   Morphology morphology;
   morphology.SegmentByLengthRatio(GetActiveData().GetSingleMask().get(),
@@ -972,7 +975,7 @@ void RFIGuiWindow::onSegment() {
 }
 
 void RFIGuiWindow::onCluster() {
-  SegmentedImagePtr segmentedImage =
+  const SegmentedImagePtr segmentedImage =
       _timeFrequencyWidget.GetMaskedHeatMap().GetSegmentedImage();
   if (segmentedImage) {
     Morphology morphology;
@@ -983,7 +986,7 @@ void RFIGuiWindow::onCluster() {
 }
 
 void RFIGuiWindow::onClassify() {
-  SegmentedImagePtr segmentedImage =
+  const SegmentedImagePtr segmentedImage =
       _timeFrequencyWidget.GetMaskedHeatMap().GetSegmentedImage();
   if (segmentedImage) {
     Morphology morphology;
@@ -994,7 +997,7 @@ void RFIGuiWindow::onClassify() {
 }
 
 void RFIGuiWindow::onRemoveSmallSegments() {
-  SegmentedImagePtr segmentedImage =
+  const SegmentedImagePtr segmentedImage =
       _timeFrequencyWidget.GetMaskedHeatMap().GetSegmentedImage();
   if (segmentedImage) {
     Morphology morphology;
@@ -1018,7 +1021,7 @@ void RFIGuiWindow::onUnrollPhaseButtonPressed() {
   if (HasImage()) {
     TimeFrequencyData data = GetActiveData().Make(TimeFrequencyData::PhasePart);
     for (unsigned i = 0; i < data.ImageCount(); ++i) {
-      Image2DPtr image = Image2D::MakePtr(*data.GetImage(i));
+      const Image2DPtr image = Image2D::MakePtr(*data.GetImage(i));
       ThresholdTools::UnrollPhase(image.get());
       data.SetImage(i, image);
     }
@@ -1059,7 +1062,7 @@ void RFIGuiWindow::onRecallData() {
 
 void RFIGuiWindow::onSubtractDataFromMem() {
   if (HasImage()) {
-    TimeFrequencyData diffData = TimeFrequencyData::MakeFromDiff(
+    const TimeFrequencyData diffData = TimeFrequencyData::MakeFromDiff(
         _storedData, _controller->TFController().GetActiveData());
     _controller->TFController().SetNewData(diffData, _storedMetaData);
     _timeFrequencyWidget.Update();
@@ -1114,9 +1117,9 @@ void RFIGuiWindow::onZoomOut() {
 void RFIGuiWindow::onZoomSelect() {
   MaskedHeatMap& heatMap = _timeFrequencyWidget.GetMaskedHeatMap();
   if (!heatMap.HasImage()) return;
-  Image2DCPtr image = heatMap.GetImage2D();
-  size_t nTimes = image->Width();
-  size_t nChannels = image->Height();
+  const Image2DCPtr image = heatMap.GetImage2D();
+  const size_t nTimes = image->Width();
+  const size_t nChannels = image->Height();
   std::unique_ptr<NumInputDialog> dialog(
       new NumInputDialog("Select zoom region", "Start timestep: ", 0.0));
   if (dialog->run() != Gtk::RESPONSE_OK) return;
@@ -1141,8 +1144,8 @@ void RFIGuiWindow::onZoomSelect() {
 }
 
 void RFIGuiWindow::onTFZoomChanged() {
-  bool s = !_timeFrequencyWidget.GetMaskedHeatMap().IsZoomedOut();
-  bool i = _timeFrequencyWidget.GetMaskedHeatMap().HasImage();
+  const bool s = !_timeFrequencyWidget.GetMaskedHeatMap().IsZoomedOut();
+  const bool i = _timeFrequencyWidget.GetMaskedHeatMap().HasImage();
   _menu->SetZoomToFitSensitive(s && i);
   _menu->SetZoomOutSensitive(s && i);
   _menu->SetZoomInSensitive(i);
@@ -1191,21 +1194,22 @@ void RFIGuiWindow::SetBaselineInfo(bool isEmpty, bool hasMultipleBaselines,
 }
 
 void RFIGuiWindow::onSelectImage() {
-  size_t index = getActiveTFVisualization();
+  const size_t index = getActiveTFVisualization();
   _controller->TFController().SetVisualization(index);
   _timeFrequencyWidget.Update();
 }
 
 void RFIGuiWindow::updateTFVisualizationMenu() {
   Gtk::Menu& menu = _menu->VisualizationMenu();
-  std::vector<Gtk::Widget*> children = menu.get_children();
+  const std::vector<Gtk::Widget*> children = menu.get_children();
   for (Gtk::Widget* child : children) menu.remove(*child);
 
   _tfVisualizationMenuItems.clear();
   Gtk::RadioButtonGroup group;
   for (size_t i = 0; i != _controller->TFController().VisualizationCount();
        ++i) {
-    std::string label = _controller->TFController().GetVisualizationLabel(i);
+    const std::string label =
+        _controller->TFController().GetVisualizationLabel(i);
     _tfVisualizationMenuItems.emplace_back(std::unique_ptr<Gtk::RadioMenuItem>(
         new Gtk::RadioMenuItem(group, label)));
     Gtk::RadioMenuItem& item = *_tfVisualizationMenuItems.back();
@@ -1275,7 +1279,7 @@ void RFIGuiWindow::onStrategyOpen() {
     dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     dialog.add_button("_Open", Gtk::RESPONSE_OK);
 
-    int result = dialog.run();
+    const int result = dialog.run();
 
     if (result == Gtk::RESPONSE_OK) {
       _controller->OpenStrategy(dialog.get_filename());
@@ -1288,12 +1292,13 @@ void RFIGuiWindow::onStrategyOpen() {
 
 void RFIGuiWindow::onStrategyOpenDefault(const std::string& name) {
   if (askToSaveChanges()) {
-    TelescopeFile::TelescopeId id = TelescopeFile::TelescopeIdFromName(name);
-    std::string filename = TelescopeFile::FindStrategy("", id);
-    if (filename.empty())
+    const TelescopeFile::TelescopeId id =
+        TelescopeFile::TelescopeIdFromName(name);
+    const std::string filename = TelescopeFile::FindStrategy(id);
+    if (filename.empty()) {
       showError("Could not find default strategy file for telescope '" + name +
                 "' -- aoflagger is probably not installed properly");
-    else {
+    } else {
       _controller->OpenStrategy(filename);
       _strategyEditor.SetText(_controller->GetWorkStrategyText());
       _strategyEditor.ResetChangedStatus();
@@ -1307,8 +1312,9 @@ void RFIGuiWindow::onStrategySave() {
     _controller->SetWorkStrategyText(_strategyEditor.GetText());
     _controller->SaveStrategy();
     _strategyEditor.ResetChangedStatus();
-  } else
+  } else {
     onStrategySaveAs();
+  }
 }
 
 void RFIGuiWindow::onStrategySaveAs() {
@@ -1326,7 +1332,7 @@ void RFIGuiWindow::onStrategySaveAs() {
   if (_controller->HasOpenStrategy())
     dialog.set_current_name(_controller->StrategyFilename());
 
-  int result = dialog.run();
+  const int result = dialog.run();
 
   if (result == Gtk::RESPONSE_ACCEPT) {
     _controller->SetWorkStrategyText(_strategyEditor.GetText());
@@ -1350,7 +1356,7 @@ void RFIGuiWindow::handleAveraging(bool spectrally) {
       if (factor > 1) {
         TimeFrequencyData data =
             _controller->TFController().GetActiveDataFullSize();
-        TimeFrequencyMetaDataPtr meta(new TimeFrequencyMetaData(
+        const TimeFrequencyMetaDataPtr meta(new TimeFrequencyMetaData(
             *_timeFrequencyWidget.GetMaskedHeatMap().GetFullMetaData()));
         if (spectrally)
           algorithms::downsample_masked(data, meta.get(), 1, factor);

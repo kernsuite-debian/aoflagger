@@ -64,8 +64,8 @@ class TimeFrequencyData {
   }
 
   TimeFrequencyData(ComplexRepresentation complexRepresentation,
-                    aocommon::PolarizationEnum* polarizations,
-                    size_t polarizationCount, Image2DCPtr* images)
+                    const aocommon::PolarizationEnum* polarizations,
+                    size_t polarizationCount, const Image2DCPtr* images)
       : _complexRepresentation(complexRepresentation) {
     _data.reserve(polarizationCount);
     if (complexRepresentation == ComplexParts) {
@@ -78,8 +78,8 @@ class TimeFrequencyData {
   }
 
   TimeFrequencyData(const aocommon::PolarizationEnum* polarizations,
-                    size_t polarizationCount, Image2DCPtr* realImages,
-                    Image2DCPtr* imaginaryImages)
+                    size_t polarizationCount, const Image2DCPtr* realImages,
+                    const Image2DCPtr* imaginaryImages)
       : _complexRepresentation(ComplexParts) {
     _data.reserve(polarizationCount);
     for (size_t p = 0; p != polarizationCount; p++)
@@ -87,8 +87,8 @@ class TimeFrequencyData {
   }
 
   TimeFrequencyData(const aocommon::PolarizationEnum* polarizations,
-                    size_t polarizationCount, Image2DPtr* realImages,
-                    Image2DPtr* imaginaryImages)
+                    size_t polarizationCount, const Image2DPtr* realImages,
+                    const Image2DPtr* imaginaryImages)
       : _complexRepresentation(ComplexParts) {
     _data.reserve(polarizationCount);
     for (size_t p = 0; p != polarizationCount; p++)
@@ -313,8 +313,7 @@ class TimeFrequencyData {
             throw std::runtime_error(
                 "Polarization not available or not implemented");
         }
-      } else  // _complexRepresentation != ComplexParts
-      {
+      } else {  // _complexRepresentation != ComplexParts
         // TODO should be done on only real or imaginary
         switch (polarization) {
           case aocommon::Polarization::StokesI:
@@ -388,10 +387,11 @@ class TimeFrequencyData {
                   "polarizations");
           }
         }
-      } else
+      } else {
         throw std::runtime_error(
             "Trying to convert the polarization in time frequency data in an "
             "invalid way");
+      }
     }
     newData.SetGlobalMask(GetMask(polarization));
     return newData;
@@ -713,9 +713,9 @@ class TimeFrequencyData {
       case ComplexParts:
         break;
     }
-    if (_data.empty())
+    if (_data.empty()) {
       s << "empty";
-    else {
+    } else {
       s << "("
         << aocommon::Polarization::TypeToFullString(_data[0]._polarization);
       for (size_t i = 1; i != _data.size(); ++i)
@@ -745,13 +745,13 @@ class TimeFrequencyData {
   }
 
   void SetPolarizationData(size_t polarizationIndex, TimeFrequencyData&& data) {
-    if (data.PolarizationCount() != 1)
+    if (data.PolarizationCount() != 1) {
       throw std::runtime_error(
           "Trying to set multiple polarizations by single polarization index");
-    else if (data.ComplexRepresentation() != ComplexRepresentation())
+    } else if (data.ComplexRepresentation() != ComplexRepresentation()) {
       throw std::runtime_error(
           "Trying to combine TFData's with different complex representations");
-    else {
+    } else {
       _data[polarizationIndex] = std::move(data._data[0]);
       data._data.clear();
     }
@@ -835,22 +835,24 @@ class TimeFrequencyData {
         return getSinglePhaseFromTwoPolPhase(0, 1);
       else
         return getFirstSum(0, 1);
-    } else  // if(_data.size() == 1)
+    } else {  // if(_data.size() == 1)
       return _data[0]._images[0];
+    }
   }
 
   void CopyFlaggingTo(TimeFrequencyData* data) const {
-    if (MaskCount() == 0)
+    if (MaskCount() == 0) {
       data->SetNoMask();
-    else if (MaskCount() == 1)
+    } else if (MaskCount() == 1) {
       data->SetGlobalMask(GetMask(0));
-    else {
+    } else {
       if (_data.size() == data->_data.size()) {
         for (size_t i = 0; i != _data.size(); ++i)
           data->_data[i]._flagging = _data[i]._flagging;
-      } else
+      } else {
         throw std::runtime_error(
             "Trying to copy flagging from incompatible time frequency data");
+      }
     }
   }
 
@@ -960,5 +962,18 @@ class TimeFrequencyData {
 
   std::vector<PolarizedTimeFrequencyData> _data;
 };
+
+/**
+ * Concatenates the data inside the time-frequency data into a single vector.
+ * The returned vector will be ordered in polarization (major), frequency and
+ * then time.
+ */
+std::vector<std::complex<num_t>> ToComplexVector(
+    const TimeFrequencyData& tf_data);
+
+TimeFrequencyData ElementWiseDivide(const TimeFrequencyData& lhs,
+                                    const TimeFrequencyData& rhs);
+TimeFrequencyData ElementWiseNorm(const TimeFrequencyData& data);
+TimeFrequencyData ElementWiseSqrt(const TimeFrequencyData& data);
 
 #endif

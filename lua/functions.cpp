@@ -22,6 +22,7 @@
 
 #include "../quality/statisticscollection.h"
 
+#include <complex>
 #include <iostream>
 
 using algorithms::ApplyBandpass;
@@ -38,7 +39,7 @@ void apply_bandpass(Data& data, const std::string& filename,
                     ScriptData& scriptData) {
   std::unique_ptr<BandpassFile>& bpFile = scriptData.GetBandpassFile();
   {
-    std::lock_guard<std::mutex> lock(scriptData.BandpassMutex());
+    const std::lock_guard<std::mutex> lock(scriptData.BandpassMutex());
     if (bpFile == nullptr) {
       bpFile.reset(new BandpassFile(filename));
     }
@@ -50,7 +51,7 @@ void apply_bandpass(Data& data, const std::string& filename,
 void collect_statistics(const Data& dataAfter, const Data& dataBefore,
                         ScriptData& scriptData) {
   std::unique_ptr<StatisticsCollection>& statistics(scriptData.GetStatistics());
-  size_t polarizationCount = dataAfter.TFData().PolarizationCount();
+  const size_t polarizationCount = dataAfter.TFData().PolarizationCount();
   if (dataBefore.TFData().PolarizationCount() != polarizationCount)
     throw std::runtime_error(
         "Before and after have different nr of polarizations in call to "
@@ -71,15 +72,15 @@ void collect_statistics(const Data& dataAfter, const Data& dataBefore,
     throw std::runtime_error("collect_statistics(): missing band metadata");
   if (!statistics)
     statistics.reset(new StatisticsCollection(polarizationCount));
-  size_t bandIndex = dataBefore.MetaData()->Band().windowIndex;
+  const size_t bandIndex = dataBefore.MetaData()->Band().windowIndex;
   if (!statistics->HasBand(bandIndex)) {
     std::vector<double> channels(dataBefore.MetaData()->Band().channels.size());
     for (size_t i = 0; i != channels.size(); ++i)
       channels[i] = dataBefore.MetaData()->Band().channels[i].frequencyHz;
     statistics->InitializeBand(bandIndex, channels.data(), channels.size());
   }
-  bool useEmpty = (dataBefore.TFData().MaskCount() == 0 ||
-                   dataAfter.TFData().MaskCount() == 0);
+  const bool useEmpty = (dataBefore.TFData().MaskCount() == 0 ||
+                         dataAfter.TFData().MaskCount() == 0);
   Mask2DPtr emptyMask;
   if (useEmpty) {
     // TODO we can avoid this allocation when StatisticsCollection::AddImage()
@@ -177,8 +178,8 @@ void low_pass_filter(Data& data, size_t kernelWidth, size_t kernelHeight,
   filter.SetVWindowSize(kernelHeight);
   filter.SetHKernelSigmaSq(horizontalSigmaSquared);
   filter.SetVKernelSigmaSq(verticalSigmaSquared);
-  Mask2DCPtr mask = data.TFData().GetSingleMask();
-  size_t imageCount = data.TFData().ImageCount();
+  const Mask2DCPtr mask = data.TFData().GetSingleMask();
+  const size_t imageCount = data.TFData().ImageCount();
 
   for (size_t i = 0; i < imageCount; ++i)
     data.TFData().SetImage(
@@ -195,12 +196,17 @@ void high_pass_filter(Data& data, size_t kernelWidth, size_t kernelHeight,
   filter.SetVWindowSize(kernelHeight);
   filter.SetHKernelSigmaSq(horizontalSigmaSquared);
   filter.SetVKernelSigmaSq(verticalSigmaSquared);
-  Mask2DCPtr mask = data.TFData().GetSingleMask();
-  size_t imageCount = data.TFData().ImageCount();
+  const Mask2DCPtr mask = data.TFData().GetSingleMask();
+  const size_t imageCount = data.TFData().ImageCount();
 
   for (size_t i = 0; i < imageCount; ++i)
     data.TFData().SetImage(
         i, filter.ApplyHighPass(data.TFData().GetImage(i), mask));
+}
+
+Data norm(const Data& data) {
+  return Data(ElementWiseNorm(data.TFData()), data.MetaData(),
+              data.GetContext());
 }
 
 void save_heat_map(const char* filename, const Data& data) {
@@ -225,7 +231,7 @@ void print_polarization_statistics(const Data& data) {
 void scale_invariant_rank_operator(Data& data, double level_horizontal,
                                    double level_vertical) {
   if (!data.TFData().IsEmpty()) {
-    Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
+    const Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
 
     SIROperator::OperateHorizontally(*mask, level_horizontal);
     SIROperator::OperateVertically(*mask, level_vertical);
@@ -238,15 +244,20 @@ void scale_invariant_rank_operator_masked(Data& data, const Data& missing,
                                           double level_vertical,
                                           double penalty) {
   if (!data.TFData().IsEmpty()) {
-    Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
+    const Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
 
-    Mask2DCPtr missingMask = missing.TFData().GetSingleMask();
+    const Mask2DCPtr missingMask = missing.TFData().GetSingleMask();
     SIROperator::OperateHorizontallyMissing(*mask, *missingMask,
                                             level_horizontal, penalty);
     SIROperator::OperateVerticallyMissing(*mask, *missingMask, level_vertical,
                                           penalty);
     data.TFData().SetGlobalMask(mask);
   }
+}
+
+Data sqrt(const Data& data) {
+  return Data(ElementWiseSqrt(data.TFData()), data.MetaData(),
+              data.GetContext());
 }
 
 Data downsample(const Data& data, size_t horizontalFactor,
@@ -257,12 +268,12 @@ Data downsample(const Data& data, size_t horizontalFactor,
 
   if (horizontalFactor > 1) {
     for (size_t i = 0; i < imageCount; ++i) {
-      Image2DPtr newImage(new Image2D(
+      const Image2DPtr newImage(new Image2D(
           timeFrequencyData.GetImage(i)->ShrinkHorizontally(horizontalFactor)));
       timeFrequencyData.SetImage(i, newImage);
     }
     for (size_t i = 0; i < maskCount; ++i) {
-      Mask2DPtr newMask(new Mask2D(
+      const Mask2DPtr newMask(new Mask2D(
           timeFrequencyData.GetMask(i)->ShrinkHorizontally(horizontalFactor)));
       timeFrequencyData.SetMask(i, newMask);
     }
@@ -270,12 +281,12 @@ Data downsample(const Data& data, size_t horizontalFactor,
 
   if (verticalFactor > 1) {
     for (size_t i = 0; i < imageCount; ++i) {
-      Image2DPtr newImage(new Image2D(
+      const Image2DPtr newImage(new Image2D(
           timeFrequencyData.GetImage(i)->ShrinkVertically(verticalFactor)));
       timeFrequencyData.SetImage(i, newImage);
     }
     for (size_t i = 0; i < maskCount; ++i) {
-      Mask2DPtr newMask(new Mask2D(
+      const Mask2DPtr newMask(new Mask2D(
           timeFrequencyData.GetMask(i)->ShrinkVertically(verticalFactor)));
       timeFrequencyData.SetMask(i, newMask);
     }
@@ -312,11 +323,11 @@ static void sumthreshold_generic(Data& data, const Data* missing,
   if (data.TFData().PolarizationCount() != 1)
     throw std::runtime_error("Input data in sum_threshold has wrong format");
 
-  Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
-  Image2DCPtr image = data.TFData().GetSingleImage();
+  const Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
+  const Image2DCPtr image = data.TFData().GetSingleImage();
 
   if (missing != nullptr) {
-    Mask2DCPtr missingMask = missing->TFData().GetSingleMask();
+    const Mask2DCPtr missingMask = missing->TFData().GetSingleMask();
     thresholdConfig.ExecuteWithMissing(image.get(), mask.get(),
                                        missingMask.get(), false,
                                        hThresholdFactor, vThresholdFactor);
@@ -342,20 +353,20 @@ void sumthreshold_masked(Data& data, const Data& missing,
 
 void threshold_channel_rms(Data& data, double threshold,
                            bool thresholdLowValues) {
-  Image2DCPtr image(data.TFData().GetSingleImage());
+  const Image2DCPtr image(data.TFData().GetSingleImage());
   SampleRow channels = SampleRow::MakeEmpty(image->Height());
   Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
   for (size_t y = 0; y < image->Height(); ++y) {
-    SampleRow row =
+    const SampleRow row =
         SampleRow::MakeFromRowWithMissings(image.get(), mask.get(), y);
     channels.SetValue(y, row.RMSWithMissings());
   }
   bool change;
   do {
-    num_t median = channels.MedianWithMissings();
-    num_t stddev = channels.StdDevWithMissings(median);
+    const num_t median = channels.MedianWithMissings();
+    const num_t stddev = channels.StdDevWithMissings(median);
     change = false;
-    double effectiveThreshold = threshold * stddev;
+    const double effectiveThreshold = threshold * stddev;
     for (size_t y = 0; y < channels.Size(); ++y) {
       if (!channels.ValueIsMissing(y) &&
           (channels.Value(y) - median > effectiveThreshold ||
@@ -372,19 +383,19 @@ void threshold_channel_rms(Data& data, double threshold,
 
 void threshold_timestep_rms(Data& data, double threshold) {
   if (!data.TFData().IsEmpty()) {
-    Image2DCPtr image = data.TFData().GetSingleImage();
+    const Image2DCPtr image = data.TFData().GetSingleImage();
     SampleRow timesteps = SampleRow::MakeEmpty(image->Width());
     Mask2DPtr mask(new Mask2D(*data.TFData().GetSingleMask()));
     for (size_t x = 0; x < image->Width(); ++x) {
-      SampleRow row =
+      const SampleRow row =
           SampleRow::MakeFromColumnWithMissings(image.get(), mask.get(), x);
       timesteps.SetValue(x, row.RMSWithMissings());
     }
     bool change;
     MedianWindow<num_t>::SubtractMedian(timesteps, 511);
     do {
-      num_t median = 0.0;
-      num_t stddev = timesteps.StdDevWithMissings(0.0);
+      const num_t median = 0.0;
+      const num_t stddev = timesteps.StdDevWithMissings(0.0);
       change = false;
       for (size_t x = 0; x < timesteps.Size(); ++x) {
         if (!timesteps.ValueIsMissing(x) &&
@@ -410,7 +421,7 @@ Data trim_channels(const Data& data, size_t start_channel, size_t end_channel) {
   TimeFrequencyData trimmedData = data.TFData();
   trimmedData.Trim(0, start_channel, trimmedData.ImageWidth(), end_channel);
   if (data.MetaData()) {
-    TimeFrequencyMetaDataPtr metaData(
+    const TimeFrequencyMetaDataPtr metaData(
         new TimeFrequencyMetaData(*data.MetaData()));
     if (metaData->HasBand()) {
       // Correct the band data
@@ -432,12 +443,13 @@ Data trim_frequencies(const Data& data, double start_frequency,
     throw std::runtime_error(
         "trim_frequencies(): Invalid range (start >= end)");
   if (data.MetaData() != nullptr && data.MetaData()->HasBand()) {
-    std::pair<size_t, size_t> channelRange =
+    const std::pair<size_t, size_t> channelRange =
         data.MetaData()->Band().GetChannelRange(start_frequency, end_frequency);
     return trim_channels(data, channelRange.first, channelRange.second);
-  } else
+  } else {
     throw std::runtime_error(
         "trim_frequency(): No spectral band information available!");
+  }
 }
 
 void visualize(Data& data, const std::string& label, size_t sortingIndex,

@@ -5,11 +5,14 @@
 
 #include "../imagesets/imageset.h"
 
-#include <stack>
-#include <set>
-#include <mutex>
 #include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <stack>
+#include <string>
 #include <thread>
+#include <utility>
 
 class BaselineIterator {
  public:
@@ -20,7 +23,7 @@ class BaselineIterator {
            class ScriptData& scriptData);
 
  private:
-  bool IsBaselineSelected(imagesets::ImageSetIndex& index);
+  bool IsSequenceSelected(imagesets::ImageSetIndex& index);
   imagesets::ImageSetIndex GetNextIndex();
   static std::string memToStr(double memSize);
 
@@ -50,9 +53,9 @@ class BaselineIterator {
            !_finishedBaselines)
       _dataAvailable.wait(lock);
     if ((_finishedBaselines && _baselineBuffer.size() == 0) ||
-        _exceptionOccured)
+        _exceptionOccured) {
       return nullptr;
-    else {
+    } else {
       std::unique_ptr<imagesets::BaselineData> next =
           std::move(_baselineBuffer.top());
       _baselineBuffer.pop();
@@ -84,7 +87,7 @@ class BaselineIterator {
   const Options& _options;
   LuaThreadGroup* _lua;
   imagesets::ImageSet* _imageSet;
-  size_t _baselineCount, _nextIndex;
+  size_t _sequenceCount, _nextIndex;
   size_t _threadCount;
 
   imagesets::ImageSetIndex _loopIndex;

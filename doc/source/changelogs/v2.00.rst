@@ -22,4 +22,4 @@ Changes:
 * Bug fix: Times along x-axis in rfigui were not correct when splitting the data (reported by Raymond Oonk).
 * Performance of dilation algorithm improved (is not used in default strategy).
 * Slight performance improvement of SSE SumThreshold method.
-* New library interface: the statistics collector is used by NDPPP to accumulate statistics during averaging (NDPPP and AOFlagger remain independ though).
+* New library interface: the statistics collector is used by DP3 to accumulate statistics during averaging (DP3 and AOFlagger remain independent though).

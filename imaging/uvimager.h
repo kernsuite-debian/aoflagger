@@ -1,6 +1,8 @@
 #ifndef UVIMAGER_H
 #define UVIMAGER_H
 
+#include <vector>
+
 #include "../structures/timefrequencymetadata.h"
 #include "../structures/date.h"
 #include "../structures/timefrequencydata.h"

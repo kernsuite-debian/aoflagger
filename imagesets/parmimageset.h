@@ -1,10 +1,12 @@
 #ifndef PARM_IMAGE_H
 #define PARM_IMAGE_H
 
-#include <string>
 #include <cstring>
-#include <vector>
 #include <deque>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "../structures/types.h"
 #include "../structures/timefrequencydata.h"

@@ -4,6 +4,7 @@
 #include "coaddedimageset.h"
 #include "filterbankset.h"
 #include "fitsimageset.h"
+#include "h5imageset.h"
 #include "msimageset.h"
 #include "msstatset.h"
 #include "msoptions.h"
@@ -21,29 +22,31 @@ std::unique_ptr<ImageSet> ImageSet::Create(
   using P = std::unique_ptr<ImageSet>;
   if (files.size() == 1) {
     const std::string& file = files.front();
-    if (IsFitsFile(file))
+    if (IsFitsFile(file)) {
       return P(new FitsImageSet(file));
-    else if (IsBHFitsFile(file))
+    } else if (IsBHFitsFile(file)) {
       return P(new BHFitsImageSet(file));
-    else if (IsRCPRawFile(file))
+    } else if (IsH5File(file)) {
+      return P(new H5ImageSet(file));
+    } else if (IsRCPRawFile(file)) {
       throw std::runtime_error("Don't know how to open RCP raw files");
-    else if (IsTKPRawFile(file))
+    } else if (IsTKPRawFile(file)) {
       throw std::runtime_error("Don't know how to open TKP raw files");
-    else if (IsRawDescFile(file))
+    } else if (IsRawDescFile(file)) {
       throw std::runtime_error("Don't know how to open RCP desc files");
-    else if (IsParmFile(file))
+    } else if (IsParmFile(file)) {
       return P(new ParmImageSet(file));
-    else if (IsPngFile(file))
+    } else if (IsPngFile(file)) {
       return P(new PngReader(file));
-    else if (IsFilterBankFile(file))
+    } else if (IsFilterBankFile(file)) {
       return P(new FilterBankSet(file));
-    else if (IsQualityStatSet(file))
+    } else if (IsQualityStatSet(file)) {
       return P(new QualityStatImageSet(file));
-    else if (IsRFIBaselineSet(file))
+    } else if (IsRFIBaselineSet(file)) {
       return P(new RFIBaselineSet(file));
-    else if (IsSdhdfFile(file))
+    } else if (IsSdhdfFile(file)) {
       return P(new SdhdfImageSet(file));
-    else {  // it's an MS
+    } else {  // it's an MS
       if (options.baselineIntegration.enable.value_or(false))
         return P(new MSStatSet(
             file, options.dataColumnName,
@@ -59,6 +62,11 @@ std::unique_ptr<ImageSet> ImageSet::Create(
   } else {
     return P(new CoaddedImageSet(files, options.ioMode));
   }
+}
+
+bool ImageSet::IsH5File(const std::string& file) {
+  return (file.size() > 3 &&
+          boost::to_upper_copy(file.substr(file.size() - 3)) == ".H5");
 }
 
 bool ImageSet::IsBHFitsFile(const std::string& file) {

@@ -4,7 +4,7 @@ void Title::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
   initializeMetrics(cairo);
 
   cairo->set_source_rgb(0.0, 0.0, 0.0);
-  Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+  const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
   Pango::FontDescription fontDescription;
   fontDescription.set_size(_fontSize * PANGO_SCALE);
   layout->set_font_description(fontDescription);
@@ -18,7 +18,7 @@ void Title::Draw(const Cairo::RefPtr<Cairo::Context>& cairo) {
 
 void Title::initializeMetrics(const Cairo::RefPtr<Cairo::Context>& cairo) {
   if (!_metricsAreInitialized) {
-    Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
+    const Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(cairo);
     Pango::FontDescription fontDescription;
     fontDescription.set_size(_fontSize * PANGO_SCALE);
     layout->set_font_description(fontDescription);

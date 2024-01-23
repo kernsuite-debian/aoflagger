@@ -1,70 +1,62 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
+#include <limits>
+
 #include "xypointset.h"
 
 class Dimension {
  public:
-  Dimension() : _pointSets(0) {}
-  ~Dimension() {}
+  Dimension() = default;
 
-  void AdjustRanges(XYPointSet& pointSet) {
-    if (_pointSets == 0) {
-      _xRangeMin = pointSet.XRangeMin();
-      _xRangeMax = pointSet.XRangeMax();
-      _xRangePositiveMin = pointSet.XRangePositiveMin();
-      _xRangePositiveMax = pointSet.XRangePositiveMax();
-      _yRangeMin = pointSet.YRangeMin();
-      _yRangeMax = pointSet.YRangeMax();
-      _yRangePositiveMin = pointSet.YRangePositiveMin();
-      _yRangePositiveMax = pointSet.YRangePositiveMax();
-    } else {
-      if (_xRangeMin > pointSet.XRangeMin() &&
-          std::isfinite(pointSet.XRangeMin()))
-        _xRangeMin = pointSet.XRangeMin();
-      if (_xRangePositiveMin > pointSet.XRangePositiveMin() &&
-          std::isfinite(pointSet.XRangePositiveMin()))
-        _xRangePositiveMin = pointSet.XRangePositiveMin();
+  bool Empty() const { return n_sets_ == 0; }
 
-      if (_xRangeMax < pointSet.XRangeMax() &&
-          std::isfinite(pointSet.XRangeMax()))
-        _xRangeMax = pointSet.XRangeMax();
-      if (_xRangePositiveMax < pointSet.XRangePositiveMax() &&
-          std::isfinite(pointSet.XRangePositiveMax()))
-        _xRangePositiveMin = pointSet.XRangePositiveMax();
+  void Clear() {
+    n_sets_ = 0;
 
-      if (_yRangeMin > pointSet.YRangeMin() &&
-          std::isfinite(pointSet.YRangeMin()))
-        _yRangeMin = pointSet.YRangeMin();
-      if (_yRangePositiveMin > pointSet.YRangePositiveMin() &&
-          std::isfinite(pointSet.YRangePositiveMin()))
-        _yRangePositiveMin = pointSet.YRangePositiveMin();
-
-      if (_yRangeMax < pointSet.YRangeMax() &&
-          std::isfinite(pointSet.YRangeMax()))
-        _yRangeMax = pointSet.YRangeMax();
-      if (_yRangePositiveMax < pointSet.YRangePositiveMax() &&
-          std::isfinite(pointSet.YRangePositiveMax()))
-        _yRangePositiveMax = pointSet.YRangePositiveMax();
-    }
-    ++_pointSets;
+    min_ = std::numeric_limits<double>::quiet_NaN();
+    max_ = std::numeric_limits<double>::quiet_NaN();
+    positive_min_ = std::numeric_limits<double>::quiet_NaN();
+    positive_max_ = std::numeric_limits<double>::quiet_NaN();
   }
 
-  double XRangeMin() const { return _xRangeMin; }
-  double XRangeMax() const { return _xRangeMax; }
-  double XRangePositiveMin() const { return _xRangePositiveMin; }
-  double XRangePositiveMax() const { return _xRangePositiveMax; }
-  double YRangeMin() const { return _yRangeMin; }
-  double YRangeMax() const { return _yRangeMax; }
-  double YRangePositiveMin() const { return _yRangePositiveMin; }
-  double YRangePositiveMax() const { return _yRangePositiveMax; }
+  void AdjustRanges(XYPointSet& pointSet, bool use_x) {
+    const double set_min = use_x ? pointSet.XRangeMin() : pointSet.YRangeMin();
+    const double set_max = use_x ? pointSet.XRangeMax() : pointSet.YRangeMax();
+    const double set_positive_min =
+        use_x ? pointSet.XRangePositiveMin() : pointSet.YRangePositiveMin();
+    const double set_positive_max =
+        use_x ? pointSet.XRangePositiveMax() : pointSet.YRangePositiveMax();
+
+    if (n_sets_ == 0) {
+      min_ = set_min;
+      max_ = set_max;
+      positive_min_ = set_positive_min;
+      positive_max_ = set_positive_max;
+    } else {
+      if (min_ > set_min && std::isfinite(set_min)) min_ = set_min;
+      if (positive_min_ > set_positive_min && std::isfinite(set_positive_min))
+        positive_min_ = set_positive_min;
+
+      if (max_ < set_max && std::isfinite(set_max)) max_ = set_max;
+      if (positive_max_ < set_positive_max && std::isfinite(set_positive_max))
+        positive_min_ = set_positive_max;
+    }
+    ++n_sets_;
+  }
+
+  double Min() const { return min_; }
+  double Max() const { return max_; }
+  double PositiveMin() const { return positive_min_; }
+  double PositiveMax() const { return positive_max_; }
 
  private:
-  size_t _pointSets;
-  double _xRangeMin, _xRangeMax;
-  double _xRangePositiveMin, _xRangePositiveMax;
-  double _yRangeMin, _yRangeMax;
-  double _yRangePositiveMin, _yRangePositiveMax;
+  size_t n_sets_ = 0;
+
+  double min_ = std::numeric_limits<double>::quiet_NaN();
+  double max_ = std::numeric_limits<double>::quiet_NaN();
+  double positive_min_ = std::numeric_limits<double>::quiet_NaN();
+  double positive_max_ = std::numeric_limits<double>::quiet_NaN();
 };
 
 #endif

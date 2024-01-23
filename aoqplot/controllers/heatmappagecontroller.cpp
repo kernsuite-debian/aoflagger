@@ -10,11 +10,11 @@
 HeatMapPageController::HeatMapPageController()
     : _page(nullptr),
       _statisticKind(QualityTablesFormatter::StandardDeviationStatistic),
-      _polarization(Polarization::StokesI),
+      _polarization(aocommon::Polarization::StokesI),
       _phase(TimeFrequencyData::AmplitudePart) {
   _heatMap.SetCairoFilter(Cairo::FILTER_NEAREST);
   _heatMap.SetColorMap(ColorMap::HotCold);
-  _heatMap.SetZRange(Range::MinMax);
+  _heatMap.SetZRange(FullRange());
   _heatMap.SetLogZScale(true);
   _heatMap.SetZAxisDescription("Statistical value");
   _heatMap.SetManualZAxisDescription(true);
@@ -22,7 +22,7 @@ HeatMapPageController::HeatMapPageController()
 
 void HeatMapPageController::updateImageImpl(
     QualityTablesFormatter::StatisticKind statisticKind,
-    PolarizationEnum polarisation,
+    aocommon::PolarizationEnum polarisation,
     enum TimeFrequencyData::ComplexRepresentation phase) {
   std::pair<TimeFrequencyData, TimeFrequencyMetaDataCPtr> pair =
       constructImage(statisticKind);
@@ -55,7 +55,7 @@ void HeatMapPageController::updateImageImpl(
 Image2D HeatMapPageController::normalizeXAxis(const Image2D& input) {
   Image2D output = Image2D::MakeUnsetImage(input.Width(), input.Height());
   for (size_t x = 0; x < input.Width(); ++x) {
-    SampleRow row = SampleRow::MakeFromColumn(&input, x);
+    const SampleRow row = SampleRow::MakeFromColumn(&input, x);
     num_t norm;
     if (_normalization == Mean)
       norm = 1.0 / row.MeanWithMissings();
@@ -72,7 +72,7 @@ Image2D HeatMapPageController::normalizeXAxis(const Image2D& input) {
 Image2D HeatMapPageController::normalizeYAxis(const Image2D& input) {
   Image2D output = Image2D::MakeUnsetImage(input.Width(), input.Height());
   for (size_t y = 0; y < input.Height(); ++y) {
-    SampleRow row = SampleRow::MakeFromRow(&input, y);
+    const SampleRow row = SampleRow::MakeFromRow(&input, y);
     num_t norm;
     if (_normalization == Mean)
       norm = 1.0 / row.MeanWithMissings();
@@ -86,15 +86,16 @@ Image2D HeatMapPageController::normalizeYAxis(const Image2D& input) {
   return output;
 }
 
-void HeatMapPageController::setToPolarization(TimeFrequencyData& data,
-                                              PolarizationEnum polarisation) {
-  if ((polarisation == Polarization::StokesI &&
-       data.HasPolarization(Polarization::XX) &&
-       data.HasPolarization(Polarization::YY)) ||
-      (polarisation != Polarization::StokesI &&
+void HeatMapPageController::setToPolarization(
+    TimeFrequencyData& data, aocommon::PolarizationEnum polarisation) {
+  if ((polarisation == aocommon::Polarization::StokesI &&
+       data.HasPolarization(aocommon::Polarization::XX) &&
+       data.HasPolarization(aocommon::Polarization::YY)) ||
+      (polarisation != aocommon::Polarization::StokesI &&
        data.HasPolarization(polarisation))) {
     data = data.Make(polarisation);
-    if (polarisation == Polarization::StokesI) data.MultiplyImages(0.5);
+    if (polarisation == aocommon::Polarization::StokesI)
+      data.MultiplyImages(0.5);
   } else {
     data.SetImagesToZero();
   }

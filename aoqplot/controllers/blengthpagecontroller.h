@@ -1,21 +1,25 @@
 #ifndef BLENGTH_PATH_CONTROLLER_H
 #define BLENGTH_PATH_CONTROLLER_H
 
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "aoqplotpagecontroller.h"
 
 #include "../../quality/baselinestatisticsmap.h"
 #include "../../quality/statisticscollection.h"
 
-class BLengthPageController : public AOQPlotPageController {
+class BLengthPageController final : public AOQPlotPageController {
  public:
   void SetIncludeAutoCorrelations(bool inclAutos) {
     _includeAutoCorrelations = inclAutos;
   }
 
  protected:
-  virtual void processStatistics(
-      const StatisticsCollection* statCollection,
-      const std::vector<AntennaInfo>& antennas) override final {
+  void processStatistics(const StatisticsCollection* statCollection,
+                         const std::vector<AntennaInfo>& antennas) override {
     _statisticsWithAutocorrelations.clear();
     _statisticsWithoutAutocorrelations.clear();
 
@@ -36,16 +40,17 @@ class BLengthPageController : public AOQPlotPageController {
     }
   }
 
-  virtual const std::map<double, class DefaultStatistics>& getStatistics()
-      const override final {
+  const std::map<double, class DefaultStatistics>& getStatistics()
+      const override {
     return _includeAutoCorrelations ? _statisticsWithAutocorrelations
                                     : _statisticsWithoutAutocorrelations;
   }
 
-  virtual void startLine(XYPlot& plot, const std::string& name, int lineIndex,
-                         const std::string& yAxisDesc) override final {
-    plot.StartLine(name, "Baseline length (m)", yAxisDesc, false,
-                   XYPointSet::DrawPoints);
+  void startLine(XYPlot& plot, const std::string& name, int lineIndex,
+                 const std::string& yAxisDesc, bool second_axis) override {
+    XYPointSet& points = plot.StartLine(name, "Baseline length (m)", yAxisDesc,
+                                        XYPointSet::DrawPoints);
+    points.SetUseSecondYAxis(second_axis);
   }
 
  private:

@@ -1,17 +1,13 @@
 #include <boost/test/unit_test.hpp>
 
 #include "../../algorithms/highpassfilter.h"
-#include "../../algorithms/localfitmethod.h"
 
 #include "../../util/rng.h"
 #include "../../util/stopwatch.h"
 
 #include <iostream>
 
-using aocommon::Polarization;
-
 using algorithms::HighPassFilter;
-using algorithms::LocalFitMethod;
 
 BOOST_AUTO_TEST_SUITE(high_pass_filter_experiment,
                       *boost::unit_test::label("experiment") *
@@ -45,21 +41,6 @@ static void InitializeFlagged(Image2DPtr& image, Mask2DPtr& mask) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(time_fitting) {
-  Image2DPtr image;
-  Mask2DPtr mask;
-  Initialize(image, mask);
-
-  LocalFitMethod fitMethod;
-  TimeFrequencyData data(TimeFrequencyData::AmplitudePart,
-                         Polarization::StokesI, image);
-  fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
-  fitMethod.Initialize(data);
-  Stopwatch watch(true);
-  for (size_t i = 0; i < fitMethod.TaskCount(); ++i) fitMethod.PerformFit(i);
-  std::cout << " time token: " << watch.ToString() << ' ';
-}
-
 BOOST_AUTO_TEST_CASE(time_high_pass_filter) {
   Image2DPtr image;
   Mask2DPtr mask;
@@ -72,21 +53,6 @@ BOOST_AUTO_TEST_CASE(time_high_pass_filter) {
   filter.SetVKernelSigmaSq(5.0);
   Stopwatch watch(true);
   filter.ApplyHighPass(image, mask);
-  std::cout << " time token: " << watch.ToString() << ' ';
-}
-
-BOOST_AUTO_TEST_CASE(time_flagged_fitting) {
-  Image2DPtr image;
-  Mask2DPtr mask;
-  InitializeFlagged(image, mask);
-
-  LocalFitMethod fitMethod;
-  TimeFrequencyData data(TimeFrequencyData::AmplitudePart,
-                         Polarization::StokesI, image);
-  fitMethod.SetToWeightedAverage(10, 20, 2.5, 5.0);
-  fitMethod.Initialize(data);
-  Stopwatch watch(true);
-  for (size_t i = 0; i < fitMethod.TaskCount(); ++i) fitMethod.PerformFit(i);
   std::cout << " time token: " << watch.ToString() << ' ';
 }
 

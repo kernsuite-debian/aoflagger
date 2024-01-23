@@ -4,6 +4,7 @@
 #include "../imagesets/imageset.h"
 
 #include <condition_variable>
+#include <memory>
 #include <stack>
 #include <thread>
 #include <vector>

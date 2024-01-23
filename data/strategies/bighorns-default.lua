@@ -2,28 +2,27 @@
  This is the BigHorns strategy, version 2020-06-14.
  It is based on the generic "minimal" AOFlagger strategy, version 2020-06-14
  Author: André Offringa
-]]--
+]]
 
 function options()
-  bighorns = { }
+  bighorns = {}
   bighorns.baselines = "all"
   return { bighorns }
 end
 
 function execute(input)
-
   --
   -- Generic settings
   --
 
-  local base_threshold = 1.2  -- lower means more sensitive detection
+  local base_threshold = 1.2 -- lower means more sensitive detection
   -- How to flag complex values, options are: phase, amplitude, real, imaginary, complex
   local representation = "amplitude"
-  local iteration_count = 5  -- how many iterations to perform?
+  local iteration_count = 5 -- how many iterations to perform?
   local threshold_factor_step = 2.0 -- How much to increase the sensitivity each iteration?
   local frequency_resize_factor = 1.0 -- Amount of "extra" smoothing in frequency direction
   local transient_threshold_factor = 1.0 -- decreasing this value makes detection of transient RFI more aggressive
- 
+
   --
   -- End of generic settings
   --
@@ -33,22 +32,21 @@ function execute(input)
   input:clear_mask()
 
   -- For collecting statistics. Note that this is done after clear_mask(),
-  -- so that the statistics ignore any flags in the input data. 
+  -- so that the statistics ignore any flags in the input data.
   local copy_of_input = input:copy()
-  
-  for ipol,polarization in ipairs(inpPolarizations) do
- 
+
+  for ipol, polarization in ipairs(inpPolarizations) do
     local data = input:convert_to_polarization(polarization)
 
     data = data:convert_to_complex(representation)
     local original_data = data:copy()
 
-    for i=1,iteration_count-1 do
-      local threshold_factor = math.pow(threshold_factor_step, iteration_count-i)
+    for i = 1, iteration_count - 1 do
+      local threshold_factor = threshold_factor_step ^ (iteration_count - i)
 
       local sumthr_level = threshold_factor * base_threshold
-      aoflagger.sumthreshold(data, sumthr_level, sumthr_level*transient_threshold_factor, true, true)
- 
+      aoflagger.sumthreshold(data, sumthr_level, sumthr_level * transient_threshold_factor, true, true)
+
       -- Do timestep & channel flagging
       local chdata = data:copy()
       aoflagger.threshold_timestep_rms(data, 3.5)
@@ -65,22 +63,21 @@ function execute(input)
       tmp:set_mask(data)
       data = tmp
 
-      aoflagger.set_progress((ipol-1)*iteration_count+i, #inpPolarizations*iteration_count )
+      aoflagger.set_progress((ipol - 1) * iteration_count + i, #inpPolarizations * iteration_count)
     end -- end of iterations
 
     aoflagger.normalize_subbands(data, 48)
 
-    aoflagger.sumthreshold(data, base_threshold, base_threshold*transient_threshold_factor, true, true)
+    aoflagger.sumthreshold(data, base_threshold, base_threshold * transient_threshold_factor, true, true)
 
     if input:is_complex() then
       data = data:convert_to_complex("complex")
     end
     input:set_polarization_data(polarization, data)
 
-    aoflagger.set_progress(ipol, #inpPolarizations )
+    aoflagger.set_progress(ipol, #inpPolarizations)
   end -- end of polarization iterations
 
   aoflagger.scale_invariant_rank_operator(input, 0.2, 0.2)
   aoflagger.threshold_timestep_rms(input, 4.0)
 end
-

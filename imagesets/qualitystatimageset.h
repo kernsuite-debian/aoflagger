@@ -3,6 +3,11 @@
 
 #include "singleimageset.h"
 
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "../quality/qualitytablesformatter.h"
 #include "../quality/statisticsderivator.h"
 #include "../util/logger.h"
@@ -11,8 +16,6 @@
 #include <casacore/ms/MeasurementSets/MeasurementSet.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
-
-#include <filesystem>
 
 namespace imagesets {
 

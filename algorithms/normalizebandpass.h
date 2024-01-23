@@ -5,6 +5,7 @@
 
 #include <aocommon/uvector.h>
 
+#include <utility>
 #include <vector>
 
 #ifdef __SSE__

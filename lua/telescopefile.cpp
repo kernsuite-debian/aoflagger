@@ -1,5 +1,10 @@
 #include "telescopefile.h"
 
+#include <dlfcn.h>
+#include <filesystem>
+
+#include <boost/algorithm/string/case_conv.hpp>
+
 #include "../imagesets/bhfitsimageset.h"
 #include "../imagesets/filterbankset.h"
 #include "../imagesets/fitsimageset.h"
@@ -7,10 +12,6 @@
 #include "../imagesets/msimageset.h"
 
 #include "../structures/msmetadata.h"
-
-#include <boost/algorithm/string/case_conv.hpp>
-
-#include <filesystem>
 
 #include <version.h>
 
@@ -105,8 +106,7 @@ TelescopeFile::TelescopeId TelescopeFile::TelescopeIdFromName(
     return GENERIC_TELESCOPE;
 }
 
-std::string TelescopeFile::FindStrategy(const std::string& argv0,
-                                        enum TelescopeId telescopeId,
+std::string TelescopeFile::FindStrategy(enum TelescopeId telescopeId,
                                         const std::string& scenario) {
   std::string filename = boost::to_lower_copy(TelescopeName(telescopeId));
   if (scenario.empty())
@@ -120,13 +120,14 @@ std::string TelescopeFile::FindStrategy(const std::string& argv0,
            "share/aoflagger/strategies" / filename;
   if (std::filesystem::exists(search)) return search.string();
 
-  if (!argv0.empty()) {
-    std::filesystem::path root = std::filesystem::path(argv0).remove_filename();
-
-    search = root / "../share/aoflagger/strategies" / filename;
-    if (std::filesystem::exists(search)) return search.string();
-
-    search = root / "../data/strategies" / filename;
+  // Try using the directory of the AOFlagger library.
+  // When bundled as a python binary wheel, the strategies are there.
+  Dl_info dl_info;
+  if (dladdr(reinterpret_cast<const void*>(&TelescopeFile::FindStrategy),
+             &dl_info)) {
+    std::filesystem::path aoflagger_library_path(dl_info.dli_fname);
+    search = aoflagger_library_path.remove_filename() / "aoflagger/strategies" /
+             filename;
     if (std::filesystem::exists(search)) return search.string();
   }
 

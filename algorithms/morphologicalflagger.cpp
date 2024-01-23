@@ -1,5 +1,7 @@
 #include "morphologicalflagger.h"
 
+#include <utility>
+
 namespace algorithms {
 
 bool MorphologicalFlagger::SquareContainsFlag(const Mask2D* mask, size_t xLeft,

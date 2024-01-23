@@ -1,7 +1,7 @@
 Using ``aoqplot``
 =================
 
-``aoqplot`` is an interactive tool to browse through quality statistics, but also allows non-interactive access to plots that can e.g. be stored automatically to disk. These quality statistics are added to a measurement set by the :doc:`aoquality <using_aoquality>` tool or within certain pipelines (e.g. ``DPPP``, ``cotter``).
+``aoqplot`` is an interactive tool to browse through quality statistics, but also allows non-interactive access to plots that can e.g. be stored automatically to disk. These quality statistics are added to a measurement set by the :doc:`aoquality <using_aoquality>` tool or within certain pipelines (e.g. ``DP3``, ``cotter``).
 
 The normal way of running ``aoqplot`` is:
 

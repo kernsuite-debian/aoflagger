@@ -7,7 +7,7 @@
 
 #include "../../algorithms/testsetgenerator.h"
 
-using namespace aocommon;
+using aocommon::Polarization;
 
 BOOST_AUTO_TEST_SUITE(lua_flagnans, *boost::unit_test::label("lua"))
 

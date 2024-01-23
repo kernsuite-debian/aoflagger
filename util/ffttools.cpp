@@ -12,8 +12,8 @@ Image2D* FFTTools::CreateFFTImage(const Image2D& original,
   else
     image =
         Image2D::CreateUnsetImage(original.Width() / 2 + 1, original.Height());
-  unsigned long n_in = original.Width() * original.Height();
-  unsigned long n_out = original.Width() * (original.Height() / 2 + 1);
+  const unsigned long n_in = original.Width() * original.Height();
+  const unsigned long n_out = original.Width() * (original.Height() / 2 + 1);
 
   double* in = (double*)fftw_malloc(sizeof(double) * n_in);
   fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_out);
@@ -36,7 +36,7 @@ Image2D* FFTTools::CreateFFTImage(const Image2D& original,
   // Copy data to new image
   if (method != Both) {
     ptr = 0;
-    unsigned long halfwidth = original.Width() / 2 + 1;
+    const unsigned long halfwidth = original.Width() / 2 + 1;
     for (unsigned long y = 0; y < image->Height(); ++y) {
       for (unsigned long x = 0; x < halfwidth; ++x) {
         switch (method) {
@@ -58,7 +58,7 @@ Image2D* FFTTools::CreateFFTImage(const Image2D& original,
     }
   } else {
     unsigned out_ptr = 0;
-    unsigned long halfwidth = original.Width() / 2 + 1;
+    const unsigned long halfwidth = original.Width() / 2 + 1;
     for (unsigned long y = 0; y < image->Height(); ++y) {
       for (unsigned long x = 0; x < halfwidth; ++x) {
         image->SetValue(x, y, out[out_ptr][0]);
@@ -82,11 +82,11 @@ Image2D* FFTTools::CreateFFTImage(const Image2D& original,
 void FFTTools::CreateFFTImage(const Image2D& real, const Image2D& imaginary,
                               Image2D& realOut, Image2D& imaginaryOut,
                               bool centerAfter, bool negate) {
-  unsigned long n_in = real.Width() * real.Height();
+  const unsigned long n_in = real.Width() * real.Height();
   fftw_complex* in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_in);
   fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_in);
 
-  bool centerBefore = true;
+  const bool centerBefore = true;
   if (centerBefore) {
     Image2D* tmp = CreateShiftedImageFromFFT(real);
     realOut = *tmp;
@@ -137,7 +137,7 @@ void FFTTools::CreateFFTImage(const Image2D& real, const Image2D& imaginary,
 }
 
 Image2D* FFTTools::CreateFullImageFromFFT(const Image2D& fft) {
-  int width = fft.Width() * 2;
+  const int width = fft.Width() * 2;
   Image2D* image = Image2D::CreateUnsetImage(width, fft.Height());
   for (unsigned y = 0; y < fft.Height(); ++y) {
     for (unsigned x = 0; x < fft.Width(); ++x) {
@@ -265,10 +265,10 @@ void FFTTools::Multiply(Image2D& leftReal, Image2D& leftImaginary,
                         const Image2D& rightImaginary) {
   for (unsigned y = 0; y < leftReal.Height(); ++y) {
     for (unsigned x = 0; x < leftReal.Width(); ++x) {
-      num_t r1 = leftReal.Value(x, y);
-      num_t i1 = leftImaginary.Value(x, y);
-      num_t r2 = rightReal.Value(x, y);
-      num_t i2 = rightImaginary.Value(x, y);
+      const num_t r1 = leftReal.Value(x, y);
+      const num_t i1 = leftImaginary.Value(x, y);
+      const num_t r2 = rightReal.Value(x, y);
+      const num_t i2 = rightImaginary.Value(x, y);
       leftReal.SetValue(x, y, r1 * r2 - i1 * i2);
       leftImaginary.SetValue(x, y, r1 * i2 + r2 * i1);
     }
@@ -297,7 +297,7 @@ void FFTTools::SignedSqrt(Image2D& image) {
 void FFTTools::CreateHorizontalFFTImage(Image2D& real, Image2D& imaginary,
                                         bool inverse) {
   if (real.Height() == 0) return;
-  unsigned long n_in = real.Width();
+  const unsigned long n_in = real.Width();
   fftw_complex* in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_in);
   fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_in);
 
@@ -340,7 +340,7 @@ void FFTTools::CreateDynamicHorizontalFFTImage(Image2DPtr real,
   Image2D destReal = Image2D::MakeUnsetImage(real->Width(), real->Height()),
           destImag = Image2D::MakeUnsetImage(real->Width(), real->Height());
 
-  unsigned long n_in = width;
+  const unsigned long n_in = width;
   fftw_complex* in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_in);
   fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n_in);
 
@@ -363,7 +363,7 @@ void FFTTools::CreateDynamicHorizontalFFTImage(Image2DPtr real,
 
     size_t maxF = secEnd - secStart;
     if (maxF > destReal.Height()) maxF = destReal.Height();
-    unsigned xEnd = width * (sec + 1) / sections;
+    const unsigned xEnd = width * (sec + 1) / sections;
     for (unsigned long x = width * sec / sections; x < xEnd; ++x) {
       for (unsigned long y = 0; y < maxF; ++y) {
         destReal.SetValue(x, y, out[y][0]);
@@ -382,7 +382,7 @@ void FFTTools::CreateDynamicHorizontalFFTImage(Image2DPtr real,
 }
 
 Image2DPtr FFTTools::AngularTransform(Image2DCPtr image) {
-  size_t minDim =
+  const size_t minDim =
       image->Width() > image->Height() ? image->Height() : image->Width();
   Image2D* transformedImage = Image2D::CreateUnsetImage(minDim, minDim);
   numl_t halfMinDim = (numl_t)minDim / 2.0,
@@ -403,7 +403,7 @@ Image2DPtr FFTTools::AngularTransform(Image2DCPtr image) {
 }
 
 void FFTTools::FFT(SampleRow& realRow, SampleRow& imaginaryRow) {
-  size_t n = realRow.Size();
+  const size_t n = realRow.Size();
   fftw_complex *in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n),
                *out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n);
   for (unsigned i = 0; i < n; ++i) {

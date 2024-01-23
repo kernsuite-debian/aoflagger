@@ -9,7 +9,7 @@ class VersionString {
   VersionString()
       : _major(0), _minor(0), _subminor(0), _hasMinor(0), _hasSubminor(0) {}
 
-  VersionString(const std::string& str) {
+  explicit VersionString(const std::string& str) {
     if (str.empty()) throw std::runtime_error("Empty version string specified");
     for (size_t i = 0; i != str.size(); ++i)
       if (str[i] != '.' && (str[i] < '0' || str[i] > '9'))
@@ -51,8 +51,9 @@ class VersionString {
       } else {
         return std::to_string(_major) + '.' + std::to_string(_minor);
       }
-    } else
+    } else {
       return std::to_string(_major);
+    }
   }
 
  private:

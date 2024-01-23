@@ -18,16 +18,35 @@ void AOQPlotPageController::UpdatePlot() {
 }
 
 void AOQPlotPageController::updatePlotForSettings(
-    const std::set<QualityTablesFormatter::StatisticKind>& kinds,
+    const std::vector<QualityTablesFormatter::StatisticKind>& kinds,
     const std::set<SelectedPol>& pols, const std::set<PhaseType>& phases) {
   if (HasStatistics()) {
     _plot.Clear();
 
+    std::map<std::string, int> units;
+    for (const QualityTablesFormatter::StatisticKind k : kinds) {
+      const std::string unit_str = StatisticsDerivator::GetUnits(k);
+      std::map<std::string, int>::const_iterator iterator =
+          units.find(unit_str);
+      if (iterator == units.end()) {
+        units.emplace(unit_str, units.size() % 2);
+      }
+    }
+    _plot.Y2Axis().SetShow(false);
     int index = 0;
-    for (QualityTablesFormatter::StatisticKind k : kinds) {
-      for (SelectedPol p : pols) {
-        for (PhaseType ph : phases) {
-          plotStatistic(k, p, ph, index, getYDesc(kinds));
+    for (const QualityTablesFormatter::StatisticKind k : kinds) {
+      const std::string unit_str = StatisticsDerivator::GetUnits(k);
+      const int axis_number = units.find(unit_str)->second;
+      const bool multiple_units =
+          units.size() > 3 || (units.size() > 2 && (axis_number % 2) == 0);
+      XYPlotAxis& y_axis = axis_number == 1 ? _plot.Y2Axis() : _plot.YAxis();
+      y_axis.SetShow(true);
+      for (const SelectedPol p : pols) {
+        for (const PhaseType ph : phases) {
+          const std::string description =
+              multiple_units ? "Value"
+                             : StatisticsDerivator::GetDescWithUnits(k);
+          plotStatistic(k, p, ph, index, description, axis_number == 1);
           ++index;
         }
       }
@@ -58,9 +77,10 @@ double AOQPlotPageController::getValue(enum PhaseType phase,
 
 void AOQPlotPageController::plotStatistic(
     QualityTablesFormatter::StatisticKind kind, SelectedPol pol,
-    PhaseType phase, int lineIndex, const std::string& yDesc) {
-  StatisticsDerivator derivator(*_statCollection);
-  size_t polCount = _statCollection->PolarizationCount();
+    PhaseType phase, int lineIndex, const std::string& yDesc,
+    bool second_axis) {
+  const StatisticsDerivator derivator(*_statCollection);
+  const size_t polCount = _statCollection->PolarizationCount();
   const std::map<double, DefaultStatistics>& statistics = getStatistics();
   std::ostringstream s;
   int polIndex = -1;
@@ -95,7 +115,7 @@ void AOQPlotPageController::plotStatistic(
   else if (phase == ImaginaryPhaseType)
     s << " (imag)";
   if (polIndex >= 0) {
-    startLine(_plot, s.str(), lineIndex, yDesc);
+    startLine(_plot, s.str(), lineIndex, yDesc, second_axis);
     for (std::map<double, DefaultStatistics>::const_iterator i =
              statistics.begin();
          i != statistics.end(); ++i) {
@@ -103,10 +123,10 @@ void AOQPlotPageController::plotStatistic(
       std::complex<long double> val;
 
       if (pol == PolI) {
-        const std::complex<long double> valA = derivator.GetComplexStatistic(
-                                            kind, i->second, 0),
-                                        valB = derivator.GetComplexStatistic(
-                                            kind, i->second, polCount - 1);
+        const std::complex<long double> valA =
+            derivator.GetComplexStatistic(kind, i->second, 0);
+        const std::complex<long double> valB =
+            derivator.GetComplexStatistic(kind, i->second, polCount - 1);
         val = valA * 0.5l + valB * 0.5l;
       } else {
         val = derivator.GetComplexStatistic(kind, i->second, polIndex);
@@ -116,25 +136,15 @@ void AOQPlotPageController::plotStatistic(
   }
 }
 
-std::string AOQPlotPageController::getYDesc(
-    const std::set<QualityTablesFormatter::StatisticKind>& kinds) const {
-  if (kinds.size() != 1)
-    return "Value";
-  else {
-    QualityTablesFormatter::StatisticKind kind = *kinds.begin();
-    return StatisticsDerivator::GetDescWithUnits(kind);
-  }
-}
-
 void AOQPlotPageController::SavePdf(
     const string& filename, QualityTablesFormatter::StatisticKind kind) {
-  std::set<QualityTablesFormatter::StatisticKind> kinds{kind};
-  std::set<SelectedPol> pols{PolI};
-  std::set<PhaseType> phases{AmplitudePhaseType};
+  const std::vector<QualityTablesFormatter::StatisticKind> kinds{kind};
+  const std::set<SelectedPol> pols{PolI};
+  const std::set<PhaseType> phases{AmplitudePhaseType};
 
   updatePlotForSettings(kinds, pols, phases);
 
-  _plot.SavePdf(filename);
+  _plot.SavePdf(filename, 640, 480);
 }
 
 void AOQPlotPageController::SetStatistics(
